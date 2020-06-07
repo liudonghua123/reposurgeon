@@ -408,8 +408,9 @@ func (lbs *LineBufferedSource) HasLineBuffered() bool {
 
 // Properties -- represent revision or node properties
 type Properties struct {
-	properties map[string]string
-	propkeys   []string
+	properties  map[string]string
+	propkeys    []string
+	propdelkeys []string
 }
 
 // NewProperties - create a new Properties object for a revision or node
@@ -418,8 +419,17 @@ func NewProperties(source *DumpfileSource) Properties {
 	newprops := make(map[string]string)
 	props.properties = newprops
 	for {
-		if bytes.HasPrefix(source.Lbs.Peek(), []byte("PROPS-END")) {
+		currentline := source.Lbs.Peek()
+		if bytes.HasPrefix(currentline, []byte("PROPS-END")) {
 			break
+		}
+
+		if bytes.HasPrefix(currentline, []byte("D ")) {
+			source.Lbs.Require("D")
+			keyhd := string(source.Lbs.Readline())
+			key := strings.TrimRight(keyhd, linesep)
+			props.propdelkeys = append(props.propdelkeys, key)
+			continue
 		}
 		source.Lbs.Require("K")
 		keyhd := string(source.Lbs.Readline())
@@ -443,6 +453,10 @@ func (props *Properties) Stringer() string {
 		fmt.Fprintf(&b, "%s%s", key, linesep)
 		fmt.Fprintf(&b, "V %d%s", len(props.properties[key]), linesep)
 		fmt.Fprintf(&b, "%s%s", props.properties[key], linesep)
+	}
+	for _, key := range props.propdelkeys {
+		fmt.Fprintf(&b, "D %d%s", len(key), linesep)
+		fmt.Fprintf(&b, "%s%s", key, linesep)
 	}
 	b.WriteString("PROPS-END\n")
 	return b.String()
@@ -938,6 +952,12 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 					break
 				}
 			}
+			for delindex, item := range props.propdelkeys {
+				if item == propname {
+					props.propdelkeys = append(props.propdelkeys[:delindex], props.propdelkeys[delindex+1:]...)
+					break
+				}
+			}
 		}
 	}
 	source.Report(selection, dumpall, revhook, true, true)
@@ -968,6 +988,11 @@ func proprename(source DumpfileSource, propnames []string, selection SubversionR
 				for i, item := range props.propkeys {
 					if item == fields[0] {
 						props.propkeys[i] = fields[1]
+					}
+				}
+				for i, item := range props.propdelkeys {
+					if item == fields[0] {
+						props.propdelkeys[i] = fields[1]
 					}
 				}
 			}
