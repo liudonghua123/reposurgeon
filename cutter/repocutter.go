@@ -594,6 +594,31 @@ func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) ([]byte, []by
 	return header, []byte(properties), content
 }
 
+// ReadUntilNextRevision - Must only be called
+func (ds *DumpfileSource) ReadUntilNextRevision(contentLength int) []byte {
+	stash := []byte{}
+	for {
+		line := ds.Lbs.Readline()
+		if len(line) == 0 {
+			return stash
+		}
+		if string(line) == "\n" {
+			if contentLength > 0 {
+				stash = append(stash, ds.Lbs.Read(contentLength)...)
+				contentLength = 0
+			}
+		} else if strings.HasPrefix(string(line), "Revision-number:") {
+			ds.Lbs.Push(line)
+			return stash
+		}
+
+		stash = append(stash, line...)
+		if strings.HasPrefix(string(line), "Content-length:") {
+			contentLength, _ = strconv.Atoi(string(bytes.Fields(line)[1]))
+		}
+	}
+}
+
 // ReadUntilNext - accumulate lines until the next matches a specified prefix.
 func (ds *DumpfileSource) ReadUntilNext(prefix string, revmap map[int]int) []byte {
 	if debug {
@@ -703,7 +728,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	prophook func(properties *Properties),
 	passthrough bool, passempty bool) {
 	emit := passthrough && selection.intervals[0][0] == 0
-	stash := ds.ReadUntilNext("Revision-number:", nil)
+	stash := ds.ReadUntilNextRevision(0)
 	if emit {
 		if debug {
 			fmt.Fprintf(os.Stderr, "<early stash dump: %s>\n", vis(stash))
@@ -723,7 +748,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			if ds.Revision > selection.Upperbound() {
 				return
 			}
-			ds.ReadUntilNext("Revision-number:", nil)
+			ds.ReadUntilNextRevision(0)
 			ds.Index = 0
 			continue
 		}
@@ -1331,57 +1356,212 @@ func renumber(source DumpfileSource) {
 	renumbering := make(map[string]int)
 	counter := base
 	var p []byte
-	var state int
+	type HeaderState int
+	const (
+		AwaitingHeader HeaderState = iota
+		InHeader
+		InProps
+		InText
+	)
+
+	type TextLengthState int
+	const (
+		awaitingTextLength TextLengthState = iota
+	)
+
+	type RenumberState int
+	const (
+		awaitingRevisionNumber RenumberState = iota
+		awaitingContentLength
+		awaitingMergeInfoKey
+	)
+
+	type PropParserState int
+	const (
+		awaitingNext PropParserState = iota
+		awaitingPropDelete
+		awaitingKeyValue
+		awaitingValueLength
+		awaitingMergeInfoValueLength
+		readingValue
+		readingMergeInfo
+		propsEnd
+	)
+
+	var propParserState = awaitingNext
+
+	var headerState = AwaitingHeader
+	var textContentLength int
+	var propContentLength int
+
 	for {
 		line := source.Lbs.Readline()
 		if len(line) == 0 {
 			break
 		}
+
+		if string(line) == "\n" {
+			if headerState == InHeader {
+				if propContentLength > 0 {
+					headerState = InProps
+				} else if textContentLength > 0 {
+					headerState = InText
+				} else {
+					//os.Stdout.WriteString("Awaiting header, no props or content\n")
+					headerState = AwaitingHeader
+				}
+			} else if headerState == InProps && propParserState == propsEnd {
+				if textContentLength > 0 {
+					headerState = InText
+				} else {
+					//os.Stdout.WriteString("Awaiting header, props done, no content\n")
+					headerState = AwaitingHeader
+				}
+			} else if headerState == InProps {
+				panic("empty lines inside Props-Section should be processed directly in properties parser!")
+			}
+			os.Stdout.Write(line)
+
+			if headerState == InText {
+				os.Stdout.Write(source.Lbs.Read(textContentLength))
+				os.Stdout.Write(source.Lbs.Readline())
+				//os.Stdout.WriteString("Awaiting header after content\n")
+				headerState = AwaitingHeader
+			}
+			continue
+		}
+
 		if p = payload("Revision-number", line); p != nil {
+			if headerState != AwaitingHeader {
+				panic("headerState should be in InHeader, was: " + string(headerState))
+			}
+			headerState = InHeader
+			propContentLength = 0
+			textContentLength = 0
+			propParserState = awaitingNext
+
 			fmt.Printf("Revision-number: %d\n", counter)
 			renumbering[string(p)] = counter
 			counter++
+		} else if p = payload("Node-path", line); p != nil {
+			if headerState != AwaitingHeader {
+				panic("headerState should be in InHeader, was: " + string(headerState))
+			}
+			headerState = InHeader
+			propContentLength = 0
+			textContentLength = 0
+			propParserState = awaitingNext
+
+			os.Stdout.Write(line)
+		} else if p = payload("Text-content-length", line); p != nil {
+			textContentLength, _ = strconv.Atoi(string(p))
+			os.Stdout.Write(line)
+		} else if p = payload("SVN-fs-dump-format-version", line); p != nil {
+			os.Stdout.Write(line)
+		} else if p = payload("UUID", line); p != nil {
+			os.Stdout.Write(line)
+		} else if p = payload("Prop-content-length", line); p != nil {
+			propContentLength, _ = strconv.Atoi(string(p))
+			os.Stdout.Write(line)
+			continue
 		} else if p = payload("Node-copyfrom-rev", line); p != nil {
 			fmt.Printf("Node-copyfrom-rev: %d\n", renumbering[string(p)])
 		} else {
+			if headerState == AwaitingHeader {
+				os.Stdout.Write(line)
+				continue
+			}
+
 			// A typical mergeinfo entry looks like this:
 			// K 13
 			// svn:mergeinfo
 			// V 18
 			// /branches/v1.0:4-6
+			//                        <- Optional empty line
 			// PROPS-END
-			if bytes.HasPrefix(line, []byte("svn:mergeinfo")) {
-				state = 1
-			} else if state == 1 && bytes.HasPrefix(line, []byte("V ")) {
-				state = 2
-			} else if bytes.HasPrefix(line, []byte("PROPS-END")) {
-				state = 0
-			}
-			if state == 3 {
-				fields := bytes.Split(line, []byte(":"))
-				fields[0] = append(fields[0], []byte(":")...)
-				out := make([]byte, 0)
-				digits := make([]byte, 0)
-				for _, c := range fields[1] {
-					if bytes.ContainsAny([]byte{c}, "0123456789") {
-						digits = append(digits, c)
-					} else {
-						if len(digits) > 0 {
-							d := fmt.Sprintf("%d", renumbering[string(digits)])
-							out = append(out, []byte(d)...)
-							digits = make([]byte, 0)
+			needsWrite := true
+
+			if headerState == InProps {
+				if propParserState == awaitingNext {
+					if bytes.HasPrefix(line, []byte("K ")) {
+						propParserState = awaitingKeyValue
+					} else if bytes.HasPrefix(line, []byte("D ")) {
+						propParserState = awaitingPropDelete
+					} else if bytes.HasPrefix(line, []byte("PROPS-END")) {
+						needsWrite = false
+						propParserState = propsEnd
+						os.Stdout.Write(line)
+						if textContentLength > 0 {
+							os.Stdout.Write(source.Lbs.Read(textContentLength))
+							os.Stdout.Write(source.Lbs.Readline())
+							//os.Stdout.WriteString("Awaiting header after content after PROPS-END\n")
+							headerState = AwaitingHeader
 						}
-						out = append(out, c)
+					} else {
+						panic("Unkown property entry begin: " + string(line))
+					}
+				} else if propParserState == awaitingPropDelete {
+					propParserState = awaitingNext
+				} else if propParserState == awaitingKeyValue {
+					needsWrite = false
+					if bytes.HasPrefix(line, []byte("svn:mergeinfo")) {
+						os.Stdout.Write(line)
+						lengthline := source.Lbs.Readline()
+						os.Stdout.Write(lengthline)
+						mergeinfolength, _ := strconv.Atoi(string(bytes.Fields(lengthline)[1]))
+						os.Stdout.Write(renumberMergeInfo(source.Lbs.Read(mergeinfolength), renumbering))
+						// ignore trailing newline, already artifically appended in renumberMergeInfo
+						source.Lbs.Readline()
+						propParserState = awaitingNext
+					} else {
+						os.Stdout.Write(line)
+						lengthline := source.Lbs.Readline()
+						os.Stdout.Write(lengthline)
+						mergeinfolength, _ := strconv.Atoi(string(bytes.Fields(lengthline)[1]))
+						os.Stdout.Write(source.Lbs.Read(mergeinfolength))
+						os.Stdout.Write(source.Lbs.Readline()) // trailing newline
+						propParserState = awaitingNext
 					}
 				}
-				line = append(fields[0], out...)
 			}
-			os.Stdout.Write(line)
-			if state == 2 {
-				state = 3
+
+			if needsWrite {
+				os.Stdout.Write(line)
 			}
 		}
 	}
+}
+
+func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
+	modified_lines := make([]byte, 0)
+	for _, line := range bytes.Split(lines, []byte("\n")) {
+		line = append(line, '\n')
+		out := make([]byte, 0)
+		fields := bytes.Split(line, []byte(":"))
+
+		if len(fields) == 1 {
+			modified_lines = append(modified_lines, fields[0]...)
+			continue
+		}
+		fields[0] = append(fields[0], []byte(":")...)
+		digits := make([]byte, 0)
+		for _, c := range fields[1] {
+			if bytes.ContainsAny([]byte{c}, "0123456789") {
+				digits = append(digits, c)
+			} else {
+				if len(digits) > 0 {
+					d := fmt.Sprintf("%d", renumbering[string(digits)])
+					out = append(out, []byte(d)...)
+					digits = make([]byte, 0)
+				}
+				out = append(out, c)
+			}
+		}
+
+		modified_lines = append(modified_lines, append(fields[0], out...)...)
+	}
+
+	return modified_lines
 }
 
 // Neutralize the input test load
