@@ -681,6 +681,10 @@ func NewSubversionRange(txt string) SubversionRange {
 	var upperbound int
 	for _, item := range strings.Split(txt, ",") {
 		var parts [2]int
+		if strings.Contains(item, "-") {
+			panic("repocutter: use ':' for version ranges instead of '-'")
+		}
+
 		if strings.Contains(item, ":") {
 			fields := strings.Split(item, ":")
 			if fields[0] == "HEAD" {
