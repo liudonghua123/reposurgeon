@@ -514,10 +514,10 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 							node.props = propertyStash[node.path]
 						}
 						if !node.isBogon() {
+							node.index = intToNodeidx(len(nodes) + 1)
 							if logEnable(logSVNPARSE) {
 								logit("node parsing, line %d: node %s appended", sp.importLine, node)
 							}
-							node.index = intToNodeidx(len(nodes) + 1)
 							nodes = append(nodes, node)
 							sp.streamview = append(sp.streamview, node)
 							if logEnable(logEXTRACT) {
