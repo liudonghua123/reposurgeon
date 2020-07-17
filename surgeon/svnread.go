@@ -240,9 +240,14 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 	}
 
 	h.revision = revision
-	if logEnable(logFILEMAP) {
-		logit("Filemap at %d: %v", revision, h.visible[revision])
-	}
+
+	// This is horribly verbose and not needed unless early stages
+	// of the dump reader develop some serious bug.  As the dump
+	// reader has been stable for many months now we'll just
+	// comment it out.
+	//if logEnable(logFILEMAP) {
+	//	logit("Filemap at %d: %v", revision, h.visible[revision])
+	//}
 }
 
 func (h *History) getActionNode(revision revidx, source string) *NodeAction {

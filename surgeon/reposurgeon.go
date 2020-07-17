@@ -654,12 +654,12 @@ func init() {
 const (
 	logSHOUT    uint = 1 << iota // Errors and urgent messages
 	logWARN                      // Exceptional condition, probably not bug
-	logBATON                     // Log messages produced by the progress meters, for better understanding of messages that are only visible for short intervals
+	logBATON                     // Log progress-meter messages, normally only visible for short intervals
 	logTAGFIX                    // Log tag fixups
 	logSVNDUMP                   // Log Subversion dumping
 	logTOPOLOGY                  // Log repo-extractor logic (coarse-grained)
 	logEXTRACT                   // Log repo-extractor logic (fine-grained)
-	logFILEMAP                   // Log building of filemaps
+	logFILEMAP                   // Log building of filemaps (warning: very verbose!)
 	logDELETE                    // Log canonicalization after deletes
 	logIGNORES                   // Log ignore generation
 	logSVNPARSE                  // Lower-level Subversion parsing details
