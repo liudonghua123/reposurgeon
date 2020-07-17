@@ -2205,7 +2205,7 @@ TAG o123-o123
 			// all tests have valid --regex lines, not checking nil
 			fhook := newFilterCommand(repo, fmt.Sprint("--regex ", test.regex))
 
-			rs.dataTraverse("", fhook.do, fhook.attributes, test.safety, true)
+			rs.chosen().dataTraverse("", rs.selection, fhook.do, fhook.attributes, test.safety, true)
 
 			// test results
 
