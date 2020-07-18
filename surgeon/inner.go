@@ -5519,7 +5519,7 @@ func (repo *Repository) byCommit(hook func(commit *Commit)) {
 }
 
 // Read a legacy-references dump and use it to initialize the repo's legacy map.
-func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) error {
+func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) (int, int, error) {
 	type dyad struct {
 		a string
 		b string
@@ -5551,12 +5551,12 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) error {
 		}
 		fields := strings.Fields(line)
 		if len(fields) != 2 {
-			return lineError("bad line syntax in legacy map")
+			return matched, unmatched, lineError("bad line syntax in legacy map")
 		}
 		legacy, stamp := fields[0], fields[1]
 		parts := strings.Split(stamp, "!")
 		if len(fields) != 2 {
-			return lineError("bad action stamp syntax in legacy map.")
+			return matched, unmatched, lineError("bad action stamp syntax in legacy map.")
 		}
 		var seq int
 		var person, seqstr string
@@ -5566,7 +5566,7 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) error {
 			person, seqstr = fields[0], fields[1]
 			d, err := strconv.Atoi(seqstr)
 			if err != nil {
-				lineError("bad sequence number")
+				return matched, unmatched, lineError("bad sequence number")
 			}
 			seq = d - 1
 		} else {
@@ -5577,7 +5577,7 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) error {
 		}
 		when, err2 := newDate(timefield)
 		if err2 != nil {
-			return lineError(err2.Error())
+			return matched, unmatched, lineError(err2.Error())
 		}
 		whenWho := dyad{when.timestamp.String(), person}
 		if _, ok := commitMap[whenWho]; ok {
@@ -5592,9 +5592,7 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) error {
 		baton.twirl()
 	}
 
-	respond("%d matched, %d unmatched, %d total",
-		matched, unmatched, matched+unmatched)
-	return nil
+	return matched, unmatched, nil
 }
 
 // commits returns a slice of the commits in a specified selection set
