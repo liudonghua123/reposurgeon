@@ -1,6 +1,8 @@
 // Inner types, classes, and surgical primitives for operating on repository DAGs.
 // Nothing in here is dependent on the DSL surface syntax.  It does
-// assume logit(), throw(), and catch() do sane things.
+// assume logit(), announce(), croak(), throw() and catch() do sane things.
+// Many functions are passed a Baton reference so they can ship progress
+// reports.
 //
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause

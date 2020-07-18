@@ -22,6 +22,11 @@
 //
 // Accordingly, this code will probably make your head hurt.  That is,
 // alas, a normal reaction.
+//
+// Nothing in here is dependent on the DSL surface syntax.  It does
+// assume logit(), announce(), croak(), throw() and catch() do sane things.
+// The code also assumes a control block that includes a baton for
+// reports.
 
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause
