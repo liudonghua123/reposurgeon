@@ -90,7 +90,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"os/user"
-	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -6889,151 +6888,9 @@ func (rs *Reposurgeon) DoIncorporate(line string) bool {
 	}
 	if len(tarballs) == 0 {
 		croak("no tarball specified.")
-		return false
 	}
-	// The extra three slots are for the previous commit,
-	// the firewall commit (if any) and the following commit.
-	// The slots representing leaduing and following commits
-	// could be nil if the insertion is at beginning or end of repo.
-	var fw int
-	if parse.options.Contains("--firewall") {
-		fw = 1
-	}
-	segment := make([]*Commit, len(tarballs)+2+fw)
-
-	// Compute the point where we want to start inserting generated commits
-	var insertionPoint int
-	if _, t := parse.OptVal("--after"); t {
-		insertionPoint = repo.markToIndex(commit.mark) + 1
-		segment[0] = commit
-	} else {
-		insertionPoint = repo.markToIndex(commit.mark) - 1
-		for insertionPoint > 0 {
-			prev, ok := repo.events[insertionPoint].(*Commit)
-			if ok {
-				segment[0] = prev
-				break
-			} else {
-				insertionPoint--
-			}
-		}
-	}
-
-	// Generate tarball commits
-	for i, tarpath := range tarballs {
-		// Create new commit to carry the new content
-		blank := newCommit(repo)
-		attr, _ := newAttribution("")
-		blank.committer = *attr
-		blank.repo = repo
-		blank.committer.fullname, blank.committer.email = whoami()
-		blank.Branch = commit.Branch
-		blank.Comment = fmt.Sprintf("Content from %s\n", tarpath)
-		var err error
-		blank.committer.date, _ = newDate("1970-01-01T00:00:00Z")
-
-		// Clear the branch
-		op := newFileOp(repo)
-		op.construct(deleteall)
-		blank.appendOperation(op)
-
-		// Incorporate the tarball content
-		tarfile, err := os.Open(tarpath)
-		if err != nil {
-			croak("open or read failed on %s", tarpath)
-			return false
-		}
-		defer tarfile.Close()
-
-		if logEnable(logSHUFFLE) {
-			logit("extracting %s into %s", tarpath, repo.subdir(""))
-		}
-		repo.makedir("incorporate")
-		headers, err := extractTar(repo.subdir(""), tarfile)
-		if err != nil {
-			croak("error while extracting tarball %s: %s", tarpath, err.Error())
-		}
-		// Pre-sorting avoids an indeterminacy bug in tarfile
-		// order traversal.
-		sort.SliceStable(headers, func(i, j int) bool { return headers[i].Name < headers[j].Name })
-		newest := time.Date(1970, 1, 1, 0, 0, 0, 0, time.FixedZone("UTC", 0))
-		for _, header := range headers {
-			if header.ModTime.After(newest) {
-				newest = header.ModTime
-			}
-			b := newBlob(repo)
-			repo.insertEvent(b, insertionPoint, "")
-			insertionPoint++
-			b.setMark(repo.newmark())
-			//b.size = header.size
-			b.setBlobfile(filepath.Join(repo.subdir(""), header.Name))
-			op := newFileOp(repo)
-			fn := path.Join(strings.Split(header.Name, string(os.PathSeparator))[strip:]...)
-			mode := 0100644
-			if header.Mode&0111 != 0 {
-				mode = 0100755
-			}
-			op.construct(opM, strconv.FormatInt(int64(mode), 8), b.mark, fn)
-			blank.appendOperation(op)
-		}
-
-		blank.committer.date = Date{timestamp: newest}
-
-		// Splice it into the repository
-		blank.mark = repo.newmark()
-		repo.insertEvent(blank, insertionPoint, "")
-		insertionPoint++
-
-		segment[i+1] = blank
-
-		// We get here if incorporation worked OK.
-		date, present := parse.OptVal("--date")
-		if present {
-			blank.committer.date, err = newDate(date)
-			if err != nil {
-				croak("invalid date: %s", date)
-				return false
-			}
-		}
-	}
-
-	if fw == 1 {
-		blank := newCommit(repo)
-		attr, _ := newAttribution("")
-		blank.committer = *attr
-		blank.mark = repo.newmark()
-		blank.repo = repo
-		blank.committer.fullname, blank.committer.email = whoami()
-		blank.Branch = commit.Branch
-		blank.Comment = fmt.Sprintf("Firewall commit\n")
-		op := newFileOp(repo)
-		op.construct(deleteall)
-		blank.appendOperation(op)
-		repo.insertEvent(blank, insertionPoint, "")
-		insertionPoint++
-		segment[len(tarballs)+1] = blank
-	}
-
-	// Go to next commit, if any, and add it to the segment.
-	for insertionPoint < len(repo.events) {
-		nxt, ok := repo.events[insertionPoint].(*Commit)
-		if ok {
-			segment[len(segment)-1] = nxt
-			break
-		} else {
-			insertionPoint++
-		}
-	}
-
-	// Make parent-child links
-	for i := 0; i < len(segment)-1; i++ {
-		if segment[i] != nil && segment[i+1] != nil {
-			segment[i+1].setParents([]CommitLike{segment[i]})
-		}
-	}
-	repo.declareSequenceMutation("")
-	repo.invalidateObjectMap()
-
+	date, _ := parse.OptVal("--date")
+	repo.doIncorporate(tarballs, commit, strip, parse.options.Contains("--firewall"), parse.options.Contains("--after"), date)
 	return false
 }
 
