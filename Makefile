@@ -17,7 +17,8 @@ SOURCES += $(META) $(DOCS)
 .PHONY: all build install uninstall version check release refresh \
 	docker-build docker-check docker-check-noscm get test fmt lint
 
-BINARIES  = reposurgeon repotool repomapper repocutter repobench
+BINARIES  = reposurgeon repotool repomapper repocutter
+INSTALLABLES = $(BINARIES) repobench
 MANPAGES  = $(PAGES:.adoc=.1)
 HTMLFILES = $(DOCS:.adoc=.html)
 SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES)
@@ -93,7 +94,7 @@ install:
 	$(INSTALL) -d "$(target)/bin"
 	$(INSTALL) -d "$(target)/share/doc/reposurgeon"
 	$(INSTALL) -d "$(target)/$(mandir)/man1"
-	$(INSTALL) -m 755 $(BINARIES) "$(target)/bin"
+	$(INSTALL) -m 755 $(INSTALLABLES) "$(target)/bin"
 	$(INSTALL) -m 644 $(SHARED) "$(target)/share/doc/reposurgeon"
 	$(INSTALL) -m 644 $(MANPAGES) "$(target)/$(mandir)/man1"
 
@@ -101,7 +102,7 @@ install:
 # Uninstallation
 #
 
-INSTALLED_BINARIES := $(BINARIES:%="$(target)/bin/%")
+INSTALLED_BINARIES := $(INSTALLABLES:%="$(target)/bin/%")
 INSTALLED_SHARED   := $(SHARED:%="$(target)/share/doc/reposurgeon/%")
 INSTALLED_MANPAGES := $(MANPAGES:%="$(target)/$(mandir)/man1/%")
 
