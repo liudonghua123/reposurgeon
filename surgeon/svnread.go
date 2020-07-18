@@ -2738,7 +2738,8 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	if !preserve {
 		sp.repo.deleteBranch(nil, func(branch string) bool {
 			return strings.HasPrefix(branch, "refs/deleted/")
-		})
+		},
+			control.baton)
 	}
 	baton.endProgress()
 	// Canonicalize all commits except all-deletes
@@ -2899,7 +2900,8 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 					tagname(commit),
 					commit.getMark(),
 					taglegend(commit),
-					false)
+					false,
+					control.baton)
 			} else {
 				msg := ""
 				if commit.legacyID != "" {
@@ -2922,7 +2924,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 		}
 		baton.percentProgress(uint64(index) + 1)
 	}
-	sp.repo.delete(deletia, []string{"--pushforward", "--tagback"})
+	sp.repo.delete(deletia, []string{"--pushforward", "--tagback"}, control.baton)
 	baton.endProgress()
 
 	sp.branchRoots = nil

@@ -1219,7 +1219,7 @@ func TestBranchbase(t *testing.T) {
 }
 
 func TestCapture(t *testing.T) {
-	data, err0 := captureFromProcess("echo stdout; echo 1>&2 stderr")
+	data, err0 := captureFromProcess("echo stdout; echo 1>&2 stderr", control.baton)
 	if err0 != nil {
 		t.Fatalf("error while spawning process: %v", err0)
 	}
@@ -1306,7 +1306,7 @@ M 100644 :3 README
 	defer repo.cleanup()
 	sp := newStreamParser(repo)
 	r := strings.NewReader(rawdump)
-	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load")
+	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load", control.baton)
 
 	assertBool(t, len(repo.events) == 4, true)
 	assertBool(t, repo.events[3].getMark() == ":4", true)
@@ -1479,7 +1479,7 @@ func TestFastImportParse2(t *testing.T) {
 	defer repo.cleanup()
 	sp := newStreamParser(repo)
 	r := strings.NewReader(rawdump)
-	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load")
+	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load", control.baton)
 
 	testTag1, ok1 := repo.events[len(repo.events)-1].(*Tag)
 	assertBool(t, ok1, true)
@@ -1495,7 +1495,7 @@ func TestFastImportParse2(t *testing.T) {
 
 	// Check roundtripping via fastExport
 	var a strings.Builder
-	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil); err != nil {
+	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	assertEqual(t, rawdump, a.String())
@@ -1525,7 +1525,7 @@ data 0
 `
 	a.Reset()
 	// Check partial export - Event 4 is the second commit
-	if err := repo.fastExport(newOrderedIntSet(4), &a, nullStringSet, nil); err != nil {
+	if err := repo.fastExport(newOrderedIntSet(4), &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	assertEqual(t, onecommit, a.String())
@@ -1586,12 +1586,12 @@ func TestDelete(t *testing.T) {
 	defer repo.cleanup()
 	sp := newStreamParser(repo)
 	r := strings.NewReader(rawdump)
-	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load")
+	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load", control.baton)
 
 	thirdcommit := repo.markToIndex(":6")
-	repo.delete(orderedIntSet{thirdcommit}, nil)
+	repo.delete(orderedIntSet{thirdcommit}, nil, control.baton)
 	var a strings.Builder
-	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil); err != nil {
+	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -1645,7 +1645,7 @@ func TestResort(t *testing.T) {
 	defer repo.cleanup()
 	sp := newStreamParser(repo)
 	r := strings.NewReader(rawdump)
-	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load")
+	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load", control.baton)
 
 	// Reverse the event array, trick from SliceTricks
 	for i := len(repo.events)/2 - 1; i >= 0; i-- {
@@ -1657,7 +1657,7 @@ func TestResort(t *testing.T) {
 	//repo.resort()
 
 	var a strings.Builder
-	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil); err != nil {
+	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	//assertEqual(t, "", a.String())
@@ -1744,13 +1744,13 @@ this is a test tag
 	defer repo.cleanup()
 	sp := newStreamParser(repo)
 	r := strings.NewReader(doubled)
-	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load")
+	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load", control.baton)
 
 	//verbose = debugUNITE
 	repo.renumber(1, nil)
 
 	var a strings.Builder
-	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil); err != nil {
+	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -2193,7 +2193,7 @@ TAG o123-o123
 			defer repo.cleanup() // needed?
 			r := strings.NewReader(rawdump)
 			sp := newStreamParser(repo)
-			sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load")
+			sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load", control.baton)
 
 			// create surgeon, set repo and selection set
 			// control.listOptions = make(map[string]orderedStringSet)
@@ -2205,7 +2205,7 @@ TAG o123-o123
 			// all tests have valid --regex lines, not checking nil
 			fhook := newFilterCommand(repo, fmt.Sprint("--regex ", test.regex))
 
-			rs.chosen().dataTraverse("", rs.selection, fhook.do, fhook.attributes, test.safety, true)
+			rs.chosen().dataTraverse("", rs.selection, fhook.do, fhook.attributes, test.safety, true, control.baton)
 
 			// test results
 

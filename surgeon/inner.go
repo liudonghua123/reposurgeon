@@ -722,8 +722,12 @@ screen width, and the ID of the invoking user. Use in regression-test loads.
 `},
 }
 
+// innerControl is all the control-block stuff used by this module.
 type innerControl struct {
-	blobseq blobidx
+	lineSep     string
+	blobseq     blobidx
+	flagOptions map[string]bool
+	readLimit   uint64
 }
 
 // whoami - ask various programs that keep track of who you are
@@ -3476,10 +3480,10 @@ func (commit *Commit) descendedFrom(other *Commit) bool {
 }
 
 // fileopDump reports file ops without data or inlines; used for logging only.
-func (commit *Commit) fileopDump() {
-	fmt.Fprintf(control.baton, "commit %d, mark %s:\n", commit.repo.markToIndex(commit.mark)+1, commit.mark)
+func (commit *Commit) fileopDump(output io.Writer) {
+	fmt.Fprintf(output, "commit %d, mark %s:\n", commit.repo.markToIndex(commit.mark)+1, commit.mark)
 	for i, op := range commit.operations() {
-		fmt.Fprintf(control.baton, "%d: %s", i, op.String())
+		fmt.Fprintf(output, "%d: %s", i, op.String())
 	}
 }
 
@@ -3991,8 +3995,8 @@ func (commit *Commit) decodable() bool {
 }
 
 // delete severs this commit from its repository.
-func (commit *Commit) delete(policy orderedStringSet) {
-	commit.repo.delete([]int{commit.index()}, policy)
+func (commit *Commit) delete(policy orderedStringSet, baton *Baton) {
+	commit.repo.delete([]int{commit.index()}, policy, baton)
 }
 
 // Save this commit to a stream in fast-import format
@@ -4190,14 +4194,14 @@ func (p Passthrough) isCommit() bool {
 // Generic extractor code begins here
 
 // capture runs a specified command, capturing the output.
-func captureFromProcess(command string) (string, error) {
+func captureFromProcess(command string, baton *Baton) (string, error) {
 	if logEnable(logCOMMANDS) {
 		logit("%s: capturing %s", rfc3339(time.Now()), command)
 	}
 	cmd := exec.Command("sh", "-c", command)
 	content, err := cmd.CombinedOutput()
 	if logEnable(logCOMMANDS) {
-		control.baton.printLog(content)
+		baton.printLog(content)
 	}
 	return string(content), err
 }
@@ -4715,7 +4719,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 // The main event
 //
 
-func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options stringSet, source string) {
+func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options stringSet, source string, baton *Baton) {
 	// Initialize the repo from a fast-import stream or Subversion dump.
 	defer func() {
 		if e := catch("parse", recover()); e != nil {
@@ -4738,7 +4742,6 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 		source = sp.repo.seekstream.Name()
 	}
 	sp.source = source
-	baton := control.baton
 	//baton.startProcess(fmt.Sprintf("reposurgeon: from %s", source), "")
 	sp.repo.legacyCount = 0
 	// First, determine the input type
@@ -5514,7 +5517,7 @@ func (repo *Repository) byCommit(hook func(commit *Commit)) {
 }
 
 // Read a legacy-references dump and use it to initialize the repo's legacy map.
-func (repo *Repository) readLegacyMap(fp io.Reader) error {
+func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) error {
 	type dyad struct {
 		a string
 		b string
@@ -5584,7 +5587,7 @@ func (repo *Repository) readLegacyMap(fp io.Reader) error {
 		} else {
 			unmatched++
 		}
-		control.baton.twirl()
+		baton.twirl()
 	}
 
 	respond("%d matched, %d unmatched, %d total",
@@ -5629,7 +5632,7 @@ func (repo *Repository) cleanLegacyMap() {
 }
 
 // Dump legacy references.
-func (repo *Repository) writeLegacyMap(fp io.Writer) error {
+func (repo *Repository) writeLegacyMap(fp io.Writer, baton *Baton) error {
 	keylist := make([]string, 0)
 	repo.cleanLegacyMap()
 	for key := range repo.legacyMap {
@@ -5654,13 +5657,13 @@ func (repo *Repository) writeLegacyMap(fp io.Writer) error {
 		}
 		seen[id]++
 		fmt.Fprintf(fp, "%s\t%s%s\n", cookie, id, serial)
-		control.baton.twirl()
+		baton.twirl()
 	}
 	return nil
 }
 
 // Turn a commit into a tag.
-func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string, legend string, delete bool) {
+func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string, legend string, delete bool, baton *Baton) {
 	if logEnable(logEXTRACT) {
 		commitID := commit.mark
 		if commit.legacyID != "" {
@@ -5683,16 +5686,16 @@ func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string
 	tag.legacyID = commit.legacyID
 	repo.addEvent(tag)
 	if delete {
-		commit.delete([]string{"--tagback"})
+		commit.delete([]string{"--tagback"}, baton)
 	}
 }
 
 // Turn a commit into a tag.
-func (repo *Repository) tagify(commit *Commit, name string, target string, legend string, delete bool) {
+func (repo *Repository) tagify(commit *Commit, name string, target string, legend string, delete bool, baton *Baton) {
 	if len(commit.operations()) > 0 {
 		panic("Attempting to tagify a commit with fileops.")
 	}
-	repo.tagifyNoCheck(commit, name, target, legend, delete)
+	repo.tagifyNoCheck(commit, name, target, legend, delete, baton)
 }
 
 // Default scheme to name tags generated from empty commits
@@ -5736,7 +5739,7 @@ func defaultEmptyTagName(commit *Commit) string {
                       * createTags:    whether to create tags.
 */
 
-func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, tagifyMerges bool, canonicalize bool, nameFunc func(*Commit) string, legendFunc func(*Commit) string, createTags bool) error {
+func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, tagifyMerges bool, canonicalize bool, nameFunc func(*Commit) string, legendFunc func(*Commit) string, createTags bool, baton *Baton) error {
 	// Turn into tags commits without (meaningful) fileops.
 	// Use a separate loop because delete() invalidates manifests.
 	if canonicalize {
@@ -5785,7 +5788,8 @@ func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, ta
 						name,
 						commit.parents()[0].getMark(),
 						legend,
-						false)
+						false,
+						baton)
 				}
 				deletia = append(deletia, index)
 			} else {
@@ -5807,7 +5811,7 @@ func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, ta
 				}
 			}
 		}
-		control.baton.twirl()
+		baton.twirl()
 	}
 
 	if len(selection) == 0 {
@@ -5819,13 +5823,13 @@ func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, ta
 			tagifyEvent(index)
 		}
 	}
-	repo.delete(deletia, []string{"--tagback", "--no-preserve-refs"})
+	repo.delete(deletia, []string{"--tagback", "--no-preserve-refs"}, baton)
 	return errout
 }
 
 // Read a stream file and use it to populate the repo.
-func (repo *Repository) fastImport(ctx context.Context, fp io.Reader, options stringSet, source string) {
-	newStreamParser(repo).fastImport(ctx, fp, options, source)
+func (repo *Repository) fastImport(ctx context.Context, fp io.Reader, options stringSet, source string, baton *Baton) {
+	newStreamParser(repo).fastImport(ctx, fp, options, source, baton)
 	repo.readtime = time.Now()
 }
 
@@ -5951,7 +5955,7 @@ func (repo *Repository) exportStyle() orderedStringSet {
 
 // Dump the repo object in Subversion dump or fast-export format.
 func (repo *Repository) fastExport(selection orderedIntSet,
-	fp io.Writer, options stringSet, target *VCS) error {
+	fp io.Writer, options stringSet, target *VCS, baton *Baton) error {
 	repo.writeOptions = options
 	repo.preferred = target
 	repo.internals = nil
@@ -5980,13 +5984,12 @@ func (repo *Repository) fastExport(selection orderedIntSet,
 					selection.Add(repo.eventToIndex(tag))
 				}
 			}
-			control.baton.twirl()
+			baton.twirl()
 		}
 		selection.Sort()
 	}
 	repo.realized = make(map[string]bool)          // Track what branches are made
 	repo.branchPosition = make(map[string]*Commit) // Track what branches are made
-	baton := control.baton
 	baton.startProgress("export", uint64(len(repo.events)))
 	for idx, ei := range selection {
 		baton.twirl()
@@ -6379,7 +6382,7 @@ var allPolicies = orderedStringSet{
 }
 
 // Delete a set of events, or rearrange it forward or backwards.
-func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet) error {
+func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, baton *Baton) error {
 	if logEnable(logDELETE) {
 		logit("Deletion list is %v", selected)
 	}
@@ -6732,14 +6735,14 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet) 
 				if logEnable(logDELETE) {
 					logit("Before canonicalization:")
 				}
-				commit.fileopDump()
+				commit.fileopDump(baton)
 			}
 			commit.simplify()
 			if logEnable(logDELETE) {
 				if logEnable(logDELETE) {
 					logit("After canonicalization:")
 				}
-				commit.fileopDump()
+				commit.fileopDump(baton)
 			}
 		}
 	}
@@ -6750,14 +6753,14 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet) 
 }
 
 // Delete a set of events.
-func (repo *Repository) delete(selected orderedIntSet, policy orderedStringSet) {
+func (repo *Repository) delete(selected orderedIntSet, policy orderedStringSet, baton *Baton) {
 	options := append(orderedStringSet{"--delete", "--quiet"}, policy...)
-	repo.squash(selected, options)
+	repo.squash(selected, options, baton)
 }
 
 // Replace references to duplicate blobs according to the given dupMap,
 // which maps marks of duplicate blobs to canonical marks`
-func (repo *Repository) dedup(dupMap map[string]string) {
+func (repo *Repository) dedup(dupMap map[string]string, baton *Baton) {
 	walkEvents(repo.events, func(idx int, event Event) {
 		commit, ok := event.(*Commit)
 		if !ok {
@@ -6768,7 +6771,7 @@ func (repo *Repository) dedup(dupMap map[string]string) {
 				fileop.ref = dupMap[fileop.ref]
 			}
 		}
-		control.baton.twirl()
+		baton.twirl()
 	})
 	repo.gcBlobs()
 }
@@ -7552,7 +7555,7 @@ func (repo *Repository) dumptimes(w io.Writer) {
 }
 
 // Read a repository using fast-import.
-func readRepo(source string, options stringSet, preferred *VCS, extractor Extractor, quiet bool) (*Repository, error) {
+func readRepo(source string, options stringSet, preferred *VCS, extractor Extractor, quiet bool, baton *Baton) (*Repository, error) {
 	if logEnable(logSHUFFLE) {
 		legend := "nil"
 		if extractor != nil {
@@ -7652,7 +7655,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 		if err != nil {
 			return nil, err
 		}
-		repo.fastImport(context.TODO(), tp, options, source)
+		repo.fastImport(context.TODO(), tp, options, source, baton)
 		tp.Close()
 		if suppressBaton {
 			control.flagOptions["progress"] = true
@@ -7675,7 +7678,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 			if err != nil {
 				return nil, err
 			}
-			repo.readLegacyMap(rfp)
+			repo.readLegacyMap(rfp, baton)
 			rfp.Close()
 		}
 		if vcs.pathlister != "" {
@@ -7806,7 +7809,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 
 // Rebuild a repository from the captured state.
 func (repo *Repository) rebuildRepo(target string, options stringSet,
-	preferred *VCS) error {
+	preferred *VCS, baton *Baton) error {
 	if target == "" && repo.sourcedir != "" {
 		target = repo.sourcedir
 	}
@@ -7884,7 +7887,7 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 	if err != nil {
 		return err
 	}
-	repo.fastExport(nil, tp, options, preferred)
+	repo.fastExport(nil, tp, options, preferred, baton)
 	tp.Close()
 	cls.Wait()
 	if repo.writeLegacy {
@@ -7896,7 +7899,7 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 				legacyfile, err)
 		}
 		defer wfp.Close()
-		err = repo.writeLegacyMap(wfp)
+		err = repo.writeLegacyMap(wfp, baton)
 		if err != nil {
 			return err
 		}
@@ -8348,7 +8351,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 }
 
 // Filter commit metadata (and possibly blobs) through a specified hook.
-func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hook func(string, map[string]string) string, attributes orderedStringSet, safety bool, quiet bool) {
+func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hook func(string, map[string]string) string, attributes orderedStringSet, safety bool, quiet bool, baton *Baton) {
 	blobs := false
 	nonblobs := false
 	for _, ei := range selection {
@@ -8385,7 +8388,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 		selection.Sort()
 	}
 	if !quiet {
-		control.baton.startProgress(prompt, uint64(len(selection)))
+		baton.startProgress(prompt, uint64(len(selection)))
 	}
 	altered := new(Safecounter)
 	repo.walkEvents(selection, func(idx int, event Event) {
@@ -8472,11 +8475,11 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 			}
 		}
 		if !quiet {
-			control.baton.percentProgress(uint64(idx))
+			baton.percentProgress(uint64(idx))
 		}
 	})
 	if !quiet {
-		control.baton.endProgress()
+		baton.endProgress()
 	} else {
 		respond("%d items modified by %s.", altered.value, strings.ToLower(prompt))
 	}
@@ -8519,7 +8522,7 @@ func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 // Delete branches as git does, by forgetting all commits reachable only from
 // these branches, then renaming the branch of all commits still reachable to
 // ensure the deleted branches no longer appear anywhere
-func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(string) bool) {
+func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(string) bool, baton *Baton) {
 	if selection == nil {
 		selection = repo.all()
 	}
@@ -8546,7 +8549,7 @@ func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(
 				toKeep.Add(i)
 			}
 		}
-		control.baton.twirl()
+		baton.twirl()
 	}
 	// Augment to all commits reachable from toKeep
 	toKeep = repo.accumulateCommits(toKeep,
@@ -8565,7 +8568,7 @@ func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(
 				deletia = append(deletia, i)
 			}
 		}
-		control.baton.twirl()
+		baton.twirl()
 	}
 	// Now the last remaining commit with the correct branch has necessarily a
 	// child with a branch to keep (or it would be unreachable). It has been
@@ -8593,12 +8596,12 @@ func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(
 			if selected.Contains(i) && toKeep.Contains(i) && wrongBranch.Contains(i) {
 				ev.(*Commit).setBranch(newBranch)
 			}
-			control.baton.twirl()
+			baton.twirl()
 		}
 	}
 	// Actually delete the commits only reachable from wrong branches.
 	// --no-preserve-refs is to avoid creating new resets on wrong branches
-	repo.delete(orderedIntSet(deletia), orderedStringSet{"--no-preserve-refs"})
+	repo.delete(orderedIntSet(deletia), orderedStringSet{"--no-preserve-refs"}, baton)
 }
 
 // readMessageBox modifies repo metadata by reading/merging in a mailbox stream.
@@ -8912,7 +8915,7 @@ func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
 	fmt.Fprint(output, "}\n")
 }
 
-func (repo *Repository) doCoalesce(selection orderedIntSet, timefuzz int, changelog bool, debug bool) int {
+func (repo *Repository) doCoalesce(selection orderedIntSet, timefuzz int, changelog bool, debug bool, baton *Baton) int {
 	isChangelog := func(commit *Commit) bool {
 		return strings.Contains(commit.Comment, "empty log message") && len(commit.operations()) == 1 && commit.operations()[0].op == opM && strings.HasSuffix(commit.operations()[0].Path, "ChangeLog")
 	}
@@ -8979,7 +8982,7 @@ func (repo *Repository) doCoalesce(selection orderedIntSet, timefuzz int, change
 		for _, mark := range span[:len(span)-1] {
 			squashable = append(squashable, repo.markToIndex(mark))
 		}
-		repo.squash(squashable, orderedStringSet{})
+		repo.squash(squashable, orderedStringSet{}, baton)
 	}
 	return len(squashes)
 }
@@ -9484,7 +9487,7 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 }
 
 // Expunge a set of files from the commits in the selection set.
-func (rl *RepositoryList) expunge(selection orderedIntSet, matchers []string) error {
+func (rl *RepositoryList) expunge(selection orderedIntSet, matchers []string, baton *Baton) error {
 	digest := func(toklist []string) (*regexp.Regexp, bool) {
 		digested := make([]string, 0)
 		notagify := false
@@ -9640,7 +9643,7 @@ func (rl *RepositoryList) expunge(selection orderedIntSet, matchers []string) er
 	}
 	rl.repo.events = filtered
 	rl.repo.invalidateMarkToIndex()
-	errout := rl.repo.tagifyEmpty(nil, false, false, false, nil, nil, !notagify)
+	errout := rl.repo.tagifyEmpty(nil, false, false, false, nil, nil, !notagify, baton)
 	// And tell we changed the manifests and the event sequence.
 	//rl.repo.invalidateManifests()
 	rl.repo.declareSequenceMutation("expunge cleanup")

@@ -117,21 +117,17 @@ type Control struct {
 	innerControl
 	logmask    uint
 	logfp      io.Writer
-	baton      *Baton
 	logcounter int
 	signals    chan os.Signal
 	logmutex   sync.Mutex
 	// The abort flag
 	abortScript    bool
 	abortLock      sync.Mutex
-	flagOptions    map[string]bool
 	listOptions    map[string]orderedStringSet
-	mapOptions     map[string]map[string]string
 	branchMappings []branchMapping
-	readLimit      uint64
 	profileNames   map[string]string
 	startTime      time.Time
-	lineSep        string
+	baton          *Baton
 }
 
 type branchMapping struct {
@@ -150,7 +146,6 @@ func (ctx *Control) isInteractive() bool {
 func (ctx *Control) init() {
 	ctx.flagOptions = make(map[string]bool)
 	ctx.listOptions = make(map[string]orderedStringSet)
-	ctx.mapOptions = make(map[string]map[string]string)
 	ctx.signals = make(chan os.Signal, 1)
 	ctx.logmask = (logWARN << 1) - 1
 	batonLogFunc := func(s string) {
@@ -2184,7 +2179,7 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 				break
 			}
 		}
-		repo.fastImport(context.TODO(), parse.stdin, parse.options.toStringSet(), "")
+		repo.fastImport(context.TODO(), parse.stdin, parse.options.toStringSet(), "", control.baton)
 	} else if parse.line == "" || parse.line == "." {
 		var err2 error
 		// This is slightly asymmetrical with the write side, which
@@ -2194,14 +2189,14 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 			croak(err2.Error())
 			return false
 		}
-		repo, err2 = readRepo(cdir, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"])
+		repo, err2 = readRepo(cdir, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"], control.baton)
 		if err2 != nil {
 			croak(err2.Error())
 			return false
 		}
 	} else if isdir(parse.line) {
 		var err2 error
-		repo, err2 = readRepo(parse.line, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"])
+		repo, err2 = readRepo(parse.line, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"], control.baton)
 		if err2 != nil {
 			croak(err2.Error())
 			return false
@@ -2297,9 +2292,9 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 				break
 			}
 		}
-		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred)
+		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
 	} else if isdir(parse.line) {
-		err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred)
+		err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
 		if err != nil {
 			croak(err.Error())
 		}
@@ -2439,7 +2434,7 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 				deletia.Add(i)
 			}
 		}
-		repo.delete(deletia, nil)
+		repo.delete(deletia, nil, control.baton)
 		respond("From %d to %d events.", oldlen, len(repo.events))
 	}
 	return false
@@ -2499,7 +2494,7 @@ func (rs *Reposurgeon) DoRebuild(line string) bool {
 	}
 	parse := rs.newLineParse(line, nil)
 	defer parse.Closem()
-	err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred)
+	err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
 	if err != nil {
 		croak(err.Error())
 	}
@@ -2869,7 +2864,7 @@ func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
 			filterhook.do,
 			filterhook.attributes,
 			!strings.HasPrefix(line, "--dedos"),
-			rs.inScript())
+			rs.inScript(), control.baton)
 	}
 	return false
 }
@@ -2925,7 +2920,7 @@ func (rs *Reposurgeon) DoTranscode(line string) bool {
 		rs.selection,
 		transcode,
 		newOrderedStringSet("c", "a", "C"),
-		true, !rs.inScript())
+		true, !rs.inScript(), control.baton)
 	return false
 }
 
@@ -3156,7 +3151,7 @@ func (rs *Reposurgeon) DoSquash(line string) bool {
 	}
 	parse := rs.newLineParse(line, nil)
 	defer parse.Closem()
-	rs.chosen().squash(rs.selection, parse.options)
+	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
 }
 
@@ -3188,7 +3183,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 	parse := rs.newLineParse(line, nil)
 	defer parse.Closem()
 	parse.options.Add("--delete")
-	rs.chosen().squash(rs.selection, parse.options)
+	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
 }
 
@@ -3241,7 +3236,7 @@ func (rs *Reposurgeon) DoCoalesce(line string) bool {
 			return false
 		}
 	}
-	modified := repo.doCoalesce(selection, timefuzz, changelog, parse.options.Contains("--debug"))
+	modified := repo.doCoalesce(selection, timefuzz, changelog, parse.options.Contains("--debug"), control.baton)
 	respond("%d spans coalesced.", modified)
 	return false
 }
@@ -3591,7 +3586,7 @@ func (rs *Reposurgeon) DoDedup(line string) bool {
 		}
 		control.baton.twirl()
 	}
-	rs.chosen().dedup(dupMap)
+	rs.chosen().dedup(dupMap, control.baton)
 	return false
 }
 
@@ -3886,7 +3881,7 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 		croak("malformed expunge command")
 		return false
 	}
-	err = rs.expunge(selection, fields)
+	err = rs.expunge(selection, fields, control.baton)
 	if err != nil {
 		respond(err.Error())
 	}
@@ -4192,7 +4187,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 		}
 	}
 	if sourceReset != -1 {
-		repo.delete([]int{sourceReset}, nil)
+		repo.delete([]int{sourceReset}, nil, control.baton)
 	}
 	repo.declareSequenceMutation("debranch operation")
 	return false
@@ -4527,7 +4522,8 @@ func (rs *Reposurgeon) DoTagify(line string) bool {
 		parse.options.Contains("--canonicalize"),
 		nil,
 		nil,
-		true)
+		true,
+		control.baton)
 	if err != nil {
 		control.baton.printLogString(err.Error())
 	}
@@ -4945,7 +4941,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 				return branch == theref
 			}
 		}
-		repo.deleteBranch(selection, shouldDelete)
+		repo.deleteBranch(selection, shouldDelete, control.baton)
 	} else {
 		croak("unknown verb '%s' in branch command.", verb)
 		return false
@@ -5145,7 +5141,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			// Delete everything only reachable from the old tag position,
 			// and change the Branch of every commit that happened on that
 			// old tag but is still reachable from elsewhere.
-			repo.deleteBranch(selection, refMatches)
+			repo.deleteBranch(selection, refMatches, control.baton)
 		}
 	} else if verb == "rename" {
 		if len(tags) > 1 {
@@ -5179,7 +5175,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	} else if verb == "delete" {
 		for _, tag := range tags {
 			// the order here in important
-			repo.delete([]int{tag.index()}, nil)
+			repo.delete([]int{tag.index()}, nil, control.baton)
 			tag.forget()
 			control.baton.twirl()
 		}
@@ -5188,13 +5184,13 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		}
 		for _, reset := range resets {
 			reset.forget()
-			repo.delete([]int{repo.eventToIndex(reset)}, nil)
+			repo.delete([]int{repo.eventToIndex(reset)}, nil, control.baton)
 		}
 		if len(resets) > 0 {
 			repo.declareSequenceMutation("reset deletion")
 		}
 		if len(commits) > 0 {
-			repo.deleteBranch(selection, refMatches)
+			repo.deleteBranch(selection, refMatches, control.baton)
 		}
 	} else {
 		croak("unknown verb '%s' in tag command.", verb)
@@ -5379,7 +5375,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		}
 		for _, reset := range resets {
 			reset.forget()
-			repo.delete([]int{repo.eventToIndex(reset)}, nil)
+			repo.delete([]int{repo.eventToIndex(reset)}, nil, control.baton)
 		}
 		repo.declareSequenceMutation("reset delete")
 	} else {
@@ -5815,7 +5811,7 @@ func (rs *Reposurgeon) DoLegacy(line string) bool {
 			croak("legacy write does not take a filename argument - use > redirection instead")
 			return false
 		}
-		rs.chosen().writeLegacyMap(parse.stdout)
+		rs.chosen().writeLegacyMap(parse.stdout, control.baton)
 	} else {
 		if strings.HasPrefix(line, "read") {
 			line = strings.TrimSpace(line[4:])
@@ -5826,7 +5822,7 @@ func (rs *Reposurgeon) DoLegacy(line string) bool {
 			croak("legacy read does not take a filename argument - use < redirection instead")
 			return false
 		}
-		rs.chosen().readLegacyMap(parse.stdin)
+		rs.chosen().readLegacyMap(parse.stdin, control.baton)
 	}
 	return false
 }

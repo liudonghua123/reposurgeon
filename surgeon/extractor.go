@@ -378,7 +378,7 @@ func (ge *GitExtractor) gatherAllReferences(rs *RepoStreamer) error {
 			return err2
 		}
 		tag := strings.Trim(fline, "\n")
-		taghash, terr := captureFromProcess("git rev-parse " + tag)
+		taghash, terr := captureFromProcess("git rev-parse "+tag, control.baton)
 		if terr != nil {
 			panic(throw("extractor", "Could not spawn git rev-parse: %v", terr))
 		}
@@ -448,7 +448,7 @@ func (ge *GitExtractor) colorBranches(rs *RepoStreamer) error {
 		return err1
 	}
 	defer markfile.Close()
-	data, err3 := captureFromProcess("git fast-export --all --export-marks=" + file.Name())
+	data, err3 := captureFromProcess("git fast-export --all --export-marks="+file.Name(), control.baton)
 	if err3 != nil {
 		panic(throw("extractor", "Couldn't spawn git-fast-export: %v", err3))
 	}
@@ -491,7 +491,7 @@ func (ge *GitExtractor) colorBranches(rs *RepoStreamer) error {
 }
 
 func (ge *GitExtractor) _metadata(rev string, format string) string {
-	line, err := captureFromProcess(fmt.Sprintf("git log -1 --format='%s' %s", format, rev))
+	line, err := captureFromProcess(fmt.Sprintf("git log -1 --format='%s' %s", format, rev), control.baton)
 	if err != nil {
 		panic(throw("extractor", "Couldn't spawn git log: %v", err))
 	}
@@ -511,7 +511,7 @@ func (ge *GitExtractor) postExtract(_repo *Repository) {
 
 // isClean is a predicate;  return true if repo has no unsaved changes.
 func (ge *GitExtractor) isClean() bool {
-	data, err := captureFromProcess("git ls-files --modified")
+	data, err := captureFromProcess("git ls-files --modified", control.baton)
 	if err != nil {
 		panic(throw("extractor", "Couldn't spawn git ls-files --modified: %v", err))
 	}
@@ -520,7 +520,7 @@ func (ge *GitExtractor) isClean() bool {
 
 // manifest lists all files present as of a specified revision.
 func (ge *GitExtractor) manifest(rev string) []manifestEntry {
-	data, err := captureFromProcess("git ls-tree -rz --full-tree " + rev)
+	data, err := captureFromProcess("git ls-tree -rz --full-tree "+rev, control.baton)
 	if err != nil {
 		panic(throw("extractor", "Couldn't spawn git ls-tree in manifest: %v", err))
 	}
@@ -612,7 +612,7 @@ func (he *HgExtractor) keepHouse() error {
 func (he *HgExtractor) capture(cmd ...string) (string, error) {
 	command := shellquote.Join(cmd...)
 	if he == nil || he.hgcl == nil {
-		return captureFromProcess(command)
+		return captureFromProcess(command, control.baton)
 	}
 	if logEnable(logCOMMANDS) {
 		logit("%s: capturing %s", rfc3339(time.Now()), command)
