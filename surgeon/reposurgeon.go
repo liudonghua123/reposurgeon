@@ -4229,7 +4229,7 @@ func (pa pathAction) String() string {
 	return fmt.Sprintf("[%s(%d) %s=%s]", pa.commit.idMe(), i, pa.attr, pa.newpath)
 }
 
-// DoPath rename paths in the history.
+// DoPath renames paths in the history.
 func (rs *Reposurgeon) DoPath(line string) bool {
 	if rs.chosen() == nil {
 		croak("no repo has been chosen.")
@@ -4262,36 +4262,7 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 			}
 			return false
 		}
-		actions := make([]pathAction, 0)
-		for _, commit := range repo.commits(selection) {
-			for idx := range commit.fileops {
-				for _, attr := range []string{"Path", "Source", "Target"} {
-					fileop := commit.fileops[idx]
-					if oldpath, ok := getAttr(fileop, attr); ok {
-						if ok && oldpath != "" && sourceRE.MatchString(oldpath) {
-							newpath := GoReplacer(sourceRE, oldpath, targetPattern)
-							if !force && commit.visible(newpath) != nil {
-								if logEnable(logWARN) {
-									logit("rename of %s at %s failed, %s visible in ancestry", oldpath, commit.idMe(), newpath)
-								}
-								return false
-							} else if !force && commit.paths(nil).Contains(newpath) {
-								if logEnable(logWARN) {
-									logit("rename of %s at %s failed, %s exists there", oldpath, commit.idMe(), newpath)
-								}
-								return false
-							} else {
-								actions = append(actions, pathAction{fileop, commit, attr, newpath})
-							}
-						}
-					}
-				}
-			}
-		}
-		// All checks must pass before any renames
-		for _, action := range actions {
-			setAttr(action.fileop, action.attr, action.newpath)
-		}
+		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
 	} else {
 		if logEnable(logWARN) {
 			logit("unknown verb '%s' in path command.", verb)

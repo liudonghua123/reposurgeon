@@ -568,7 +568,7 @@ func runProcess(dcmd string, legend string) error {
 	return nil
 }
 
-// An assumption qbout line endings: we presently assume that only
+// An assumption about line endings: we presently assume that only
 // commit comments ever need to be corrected for whether crlf is
 // enabled - that is, portions of fast-import streams other than
 // comment text always have Unix-style lime endings.
@@ -8517,6 +8517,40 @@ func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 		}
 	}
 	return result
+}
+
+// pathRename performas batch path renames by regular expression
+func (repo *Repository) pathRename(selection orderedIntSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
+	actions := make([]pathAction, 0)
+	for _, commit := range repo.commits(selection) {
+		for idx := range commit.fileops {
+			for _, attr := range []string{"Path", "Source", "Target"} {
+				fileop := commit.fileops[idx]
+				if oldpath, ok := getAttr(fileop, attr); ok {
+					if ok && oldpath != "" && sourceRE.MatchString(oldpath) {
+						newpath := GoReplacer(sourceRE, oldpath, targetPattern)
+						if !force && commit.visible(newpath) != nil {
+							if logEnable(logWARN) {
+								logit("rename of %s at %s failed, %s visible in ancestry", oldpath, commit.idMe(), newpath)
+							}
+							return
+						} else if !force && commit.paths(nil).Contains(newpath) {
+							if logEnable(logWARN) {
+								logit("rename of %s at %s failed, %s exists there", oldpath, commit.idMe(), newpath)
+							}
+							return
+						} else {
+							actions = append(actions, pathAction{fileop, commit, attr, newpath})
+						}
+					}
+				}
+			}
+		}
+	}
+	// All checks must pass before any renames
+	for _, action := range actions {
+		setAttr(action.fileop, action.attr, action.newpath)
+	}
 }
 
 // Delete branches as git does, by forgetting all commits reachable only from
