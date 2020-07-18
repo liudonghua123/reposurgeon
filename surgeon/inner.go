@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"io/ioutil"
 	"log"
@@ -36,7 +37,6 @@ import (
 	"unicode/utf8"
 
 	shlex "github.com/anmitsu/go-shlex"
-
 	orderedset "github.com/emirpasic/gods/sets/linkedhashset"
 	difflib "github.com/ianbruene/go-difflib/difflib"
 	shutil "github.com/termie/go-shutil"
@@ -8481,6 +8481,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 	}
 }
 
+// accumulateCommits returns the commits derived from a section set through a hook
 func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 	operation func(*Commit) []CommitLike, recurse bool) *fastOrderedIntSet {
 	commits := repo.commits(newOrderedIntSet(subarg.Values()...))
@@ -8852,6 +8853,134 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			}
 		}
 	}
+}
+
+func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
+	fmt.Fprint(output, "digraph {\n")
+	for _, ei := range selection {
+		event := repo.events[ei]
+		if commit, ok := event.(*Commit); ok {
+			for _, parent := range commit.parentMarks() {
+				if selection.Contains(repo.markToIndex(parent)) {
+					fmt.Fprintf(output, "\t%s -> %s;\n",
+						parent[1:], commit.mark[1:])
+				}
+			}
+		}
+		if tag, ok := event.(*Tag); ok {
+			fmt.Fprintf(output, "\t\"%s\" -> \"%s\" [style=dotted];\n",
+				tag.name, tag.committish[1:])
+			fmt.Fprintf(output, "\t{rank=same; \"%s\"; \"%s\"}\n",
+				tag.name, tag.committish[1:])
+		}
+	}
+	for _, ei := range selection {
+		event := repo.events[ei]
+		if commit, ok := event.(*Commit); ok {
+			firstline, _ := splitRuneFirst(commit.Comment, '\n')
+			if len(firstline) > 42 {
+				firstline = firstline[:42]
+			}
+			summary := html.EscapeString(firstline)
+			cid := commit.mark
+			if commit.legacyID != "" {
+				cid = commit.showlegacy() + " &rarr; " + cid
+			}
+			fmt.Fprintf(output, "\t%s [shape=box,width=5,label=<<table cellspacing=\"0\" border=\"0\" cellborder=\"0\"><tr><td><font color=\"blue\">%s</font></td><td>%s</td></tr></table>>];\n",
+				commit.mark[1:], cid, summary)
+			newbranch := true
+			for _, cchild := range commit.children() {
+				if child, ok := cchild.(*Commit); ok && commit.Branch == child.Branch {
+					newbranch = false
+				}
+			}
+			if newbranch {
+				fmt.Fprintf(output, "\t\"%s\" [shape=oval,width=2];\n", commit.Branch)
+				fmt.Fprintf(output, "\t\"%s\" -> \"%s\" [style=dotted];\n", commit.mark[1:], commit.Branch)
+			}
+		}
+		if tag, ok := event.(*Tag); ok {
+			firstLine, _ := splitRuneFirst(tag.Comment, '\n')
+			if len(firstLine) >= graphCaptionLength {
+				firstLine = firstLine[:graphCaptionLength]
+			}
+			summary := html.EscapeString(firstLine)
+			fmt.Fprintf(output, "\t\"%s\" [label=<<table cellspacing=\"0\" border=\"0\" cellborder=\"0\"><tr><td><font color=\"blue\">%s</font></td><td>%s</td></tr></table>>];\n", tag.name, tag.name, summary)
+		}
+	}
+	fmt.Fprint(output, "}\n")
+}
+
+func (repo *Repository) doCoalesce(selection orderedIntSet, timefuzz int, changelog bool, debug bool) int {
+	isChangelog := func(commit *Commit) bool {
+		return strings.Contains(commit.Comment, "empty log message") && len(commit.operations()) == 1 && commit.operations()[0].op == opM && strings.HasSuffix(commit.operations()[0].Path, "ChangeLog")
+	}
+	coalesceMatch := func(cthis *Commit, cnext *Commit) bool {
+		croakOnFail := logEnable(logDELETE) || debug
+		if cthis.committer.email != cnext.committer.email {
+			if croakOnFail {
+				croak("committer email mismatch at %s", cnext.idMe())
+			}
+			return false
+		}
+		if cthis.committer.date.delta(cnext.committer.date) >= time.Duration(timefuzz)*time.Second {
+			if croakOnFail {
+				croak("time fuzz exceeded at %s", cnext.idMe())
+			}
+			return false
+		}
+		if changelog && !isChangelog(cthis) && isChangelog(cnext) {
+			return true
+		}
+		if cthis.Comment != cnext.Comment {
+			if croakOnFail {
+				croak("comment mismatch at %s", cnext.idMe())
+			}
+			return false
+		}
+		return true
+	}
+	eligible := make(map[string][]string)
+	squashes := make([][]string, 0)
+	for _, commit := range repo.commits(selection) {
+		trial, ok := eligible[commit.Branch]
+		if !ok {
+			// No active commit span for this branch - start one
+			// with the mark of this commit
+			eligible[commit.Branch] = []string{commit.mark}
+		} else if coalesceMatch(
+			repo.markToEvent(trial[len(trial)-1]).(*Commit),
+			commit) {
+			// This commit matches the one at the
+			// end of its branch span.  Append its
+			// mark to the span.
+			eligible[commit.Branch] = append(eligible[commit.Branch], commit.mark)
+		} else {
+			// This commit doesn't match the one
+			// at the end of its span.  Coalesce
+			// the span and start a new one with
+			// this commit.
+			if len(eligible[commit.Branch]) > 1 {
+				squashes = append(squashes, eligible[commit.Branch])
+			}
+			eligible[commit.Branch] = []string{commit.mark}
+		}
+	}
+	for _, endspan := range eligible {
+		if len(endspan) > 1 {
+			squashes = append(squashes, endspan)
+		}
+	}
+	for _, span := range squashes {
+		// Prevent lossage when last is a ChangeLog commit
+		repo.markToEvent(span[len(span)-1]).(*Commit).Comment = repo.markToEvent(span[0]).(*Commit).Comment
+		squashable := make([]int, 0)
+		for _, mark := range span[:len(span)-1] {
+			squashable = append(squashable, repo.markToIndex(mark))
+		}
+		repo.squash(squashable, orderedStringSet{})
+	}
+	return len(squashes)
 }
 
 // A RepositoryList is a repository list with selection and access by name.
