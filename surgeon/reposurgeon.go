@@ -473,32 +473,6 @@ func (rs *Reposurgeon) inScript() bool {
 }
 
 //
-// Command implementation begins here
-//
-
-// DoEOF is the handler for end of command input.
-func (rs *Reposurgeon) DoEOF(lineIn string) bool {
-	if rs.inputIsStdin {
-		respond(control.lineSep)
-	}
-	return true
-}
-
-// HelpQuit says "Shut up, golint!"
-func (rs *Reposurgeon) HelpQuit() {
-	rs.helpOutput(`
-quit
-
-Terminate reposurgeon cleanly.
-`)
-}
-
-// DoQuit is the handler for the "quit" command.
-func (rs *Reposurgeon) DoQuit(lineIn string) bool {
-	return true
-}
-
-//
 // Housekeeping hooks.
 //
 var inlineCommentRE = regexp.MustCompile(`\s+#`)
@@ -564,43 +538,14 @@ func (rs *Reposurgeon) PostCmd(stop bool, lineIn string) bool {
 	return stop
 }
 
-// HelpShell says "Shut up, golint!"
-func (rs *Reposurgeon) HelpShell() {
-	rs.helpOutput(`
-shell [COMMAND-TEXT]
-
-Run a shell command. Honors the $SHELL environment variable.
-`)
-}
-
-// DoShell is the handler for the "shell" command.
-func (rs *Reposurgeon) DoShell(line string) bool {
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/sh"
-	}
-	if logEnable(logCOMMANDS) {
-		logit("Spawning %s -c %#v...", shell, line)
-	}
-	cmd := exec.Command(shell, "-c", line)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		croak("spawn of %s returned error: %v", shell, err)
-	}
-	return false
-}
+//
+// Helpers
+//
 
 func (rs *Reposurgeon) accumulateCommits(subarg *fastOrderedIntSet,
 	operation func(*Commit) []CommitLike, recurse bool) *fastOrderedIntSet {
 	return rs.chosen().accumulateCommits(subarg, operation, recurse)
 }
-
-//
-// Helpers
-//
 
 // Generate a repository report on all objects with a specified display method.
 func (rs *Reposurgeon) reportSelect(parse *LineParse, display func(*LineParse, int, Event) string) {
@@ -756,6 +701,57 @@ func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
 //
 // Command implementation begins here
 //
+
+// DoEOF is the handler for end of command input.
+func (rs *Reposurgeon) DoEOF(lineIn string) bool {
+	if rs.inputIsStdin {
+		respond(control.lineSep)
+	}
+	return true
+}
+
+// HelpQuit says "Shut up, golint!"
+func (rs *Reposurgeon) HelpQuit() {
+	rs.helpOutput(`
+quit
+
+Terminate reposurgeon cleanly.
+`)
+}
+
+// DoQuit is the handler for the "quit" command.
+func (rs *Reposurgeon) DoQuit(lineIn string) bool {
+	return true
+}
+
+// HelpShell says "Shut up, golint!"
+func (rs *Reposurgeon) HelpShell() {
+	rs.helpOutput(`
+shell [COMMAND-TEXT]
+
+Run a shell command. Honors the $SHELL environment variable.
+`)
+}
+
+// DoShell is the handler for the "shell" command.
+func (rs *Reposurgeon) DoShell(line string) bool {
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+	if logEnable(logCOMMANDS) {
+		logit("Spawning %s -c %#v...", shell, line)
+	}
+	cmd := exec.Command(shell, "-c", line)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		croak("spawn of %s returned error: %v", shell, err)
+	}
+	return false
+}
 
 //
 // On-line help and instrumentation
@@ -1078,7 +1074,7 @@ func stopTracing() {
 // HelpProfile says "Shut up, golint!"
 func (rs *Reposurgeon) HelpProfile() {
 	rs.helpOutput(`
-profile [live|start|save] [SUBJECT]
+profile [live|start|save] [PORT | SUBJECT [FILENAME]]
 
 Manages data collection for profiling.
 
@@ -1245,7 +1241,7 @@ func (rs *Reposurgeon) DoMemory(line string) bool {
 // HelpBench says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBench() {
 	rs.helpOutput(`
-elapsed
+bench
 
 Report elapsed time and memory usage in the format expected by repobench. Note: this
 comment is not intended for interactive use or to be used by scripts other than repobench.  The
@@ -6366,7 +6362,7 @@ func (rs *Reposurgeon) DoClear(line string) bool {
 // HelpReadLimit says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReadLimit() {
 	rs.helpOutput(`
-realimit {N}
+readlimit {N}
 
 Set a maximum number of commits to read from a stream.  If the limit
 is reached before EOF it will be logged. Mainly useful for benchmarking.
@@ -6924,7 +6920,7 @@ func (rs *Reposurgeon) DoVersion(line string) bool {
 // HelpElapsed says "Shut up, golint!"
 func (rs *Reposurgeon) HelpElapsed() {
 	rs.helpOutput(`
-elapsed
+elapsed [>OUTFILE]
 
 Display elapsed time since start. Accepts output redirection.
 `)
