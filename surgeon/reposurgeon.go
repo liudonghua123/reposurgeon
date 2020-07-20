@@ -1103,7 +1103,7 @@ Corresponding subcommands are these:
 	will be overwritten. If no filename is specified, this will fall
 	back to the filename previously stored by 'profile start'.
 
-For a list of available profile subjects, call this commnd without arguments.
+For a list of available profile subjects, call the profile command without arguments.
 The list is in part extracted from the Go runtime and is subject to change.
 
 For documentation, see https://github.com/google/pprof/blob/master/doc/README.md
