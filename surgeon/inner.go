@@ -1,5 +1,5 @@
 // Inner types, classes, and surgical primitives for operating on repository DAGs.
-// Nothing in here is dependent on the DSL surface syntax.  It does
+// Nothing in here is dependent on the DSL surface syntax or Kommandant.  It does
 // assume logit(), announce(), croak(), throw() and catch() do sane things.
 // Many functions are passed a Baton reference so they can ship progress
 // reports.
@@ -640,7 +640,6 @@ const (
 	logWARN                      // Exceptional condition, probably not bug
 	logBATON                     // Log progress-meter messages, normally only visible for short intervals
 	logTAGFIX                    // Log tag fixups
-	logSVNDUMP                   // Log Subversion dumping
 	logTOPOLOGY                  // Log repo-extractor logic (coarse-grained)
 	logEXTRACT                   // Log repo-extractor logic (fine-grained)
 	logFILEMAP                   // Log building of filemaps (warning: very verbose!)
@@ -659,7 +658,6 @@ var logtags = map[string]uint{
 	"baton":    logBATON,
 	"warn":     logWARN,
 	"tagfix":   logTAGFIX,
-	"svndump":  logSVNDUMP,
 	"topology": logTOPOLOGY,
 	"extract":  logEXTRACT,
 	"filemap":  logFILEMAP,
