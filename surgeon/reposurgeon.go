@@ -5677,9 +5677,7 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 // HelpAuthors says "Shut up, golint!"
 func (rs *Reposurgeon) HelpAuthors() {
 	rs.helpOutput(`
-authors read {<INFILE}
-
-authors write {>OUTFILE}
+authors {read <INFILE | write >OUTFILE}
 
 Apply or dump author-map information for the specified selection
 set, defaulting to all events.
@@ -5753,9 +5751,7 @@ func (rs *Reposurgeon) DoAuthors(line string) bool {
 // HelpLegacy says "Shut up, golint!"
 func (rs *Reposurgeon) HelpLegacy() {
 	rs.helpOutput(`
-legacy read [<INFILE]
-
-legacy write [>OUTFILE]
+legacy {read [<INFILE] | write [>OUTFILE]}
 
 Apply or list legacy-reference information. Does not take a
 selection set. The 'read' variant reads from standard input or a
