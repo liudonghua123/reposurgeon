@@ -926,7 +926,8 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	timeit := func(tag string) {
 		runtime.GC()
 		sp.timeMark(tag)
-		if control.flagOptions["bigprofile"] {
+		// This option is undocumented, for developer use only.
+		if options.Contains("--bigprofile") {
 			e := len(sp.repo.timings) - 1
 			fmt.Fprintf(baton, "%s:%v...", tag, sp.repo.timings[e].stamp.Sub(sp.repo.timings[e-1].stamp))
 		} else {

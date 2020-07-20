@@ -671,10 +671,6 @@ var logtags = map[string]uint{
 	"lexer":    logLEXER,
 }
 var optionFlags = [...][2]string{
-	{"bigprofile",
-		`Extra profiling for large repositories.  Mainly of interest to reposurgeon
-developers.
-`},
 	{"canonicalize",
 		`If set, import stream reads and msgin and edit will canonicalize
 comments by replacing CR-LF with LF, stripping leading and trailing whitespace,
