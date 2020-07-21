@@ -1400,7 +1400,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				// Generate a deleteall operation, but with a path, contrary to
 				// the git-fast-import specification. This is so that the pass
 				// splitting the commits and setting the branch from the paths
-				// will be able to affect this deleteall to the correct branch
+				// will be able to attach this deleteall to the correct branch
 				// then remove the spec-violating path.
 				fileop := newFileOp(sp.repo)
 				fileop.construct(deleteall)
