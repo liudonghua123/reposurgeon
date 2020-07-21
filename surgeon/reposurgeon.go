@@ -6265,13 +6265,9 @@ func (rs *Reposurgeon) HelpSet() {
 set [OPTION]
 
 Set a (tab-completed) boolean option to control reposurgeon's
-behavior.  With no arguments, displays the state of all flags and
-options. The following flags and options are defined:
-
+behavior.  With no arguments, displays the state of all flags.
+Do "help options" to see the vailable options.
 `)
-	for _, opt := range optionFlags {
-		fmt.Fprintf(control.baton, "%s:\n%s\n", opt[0], opt[1])
-	}
 }
 
 // CompleteSet is a completion hook across the set of flag options that are not set.
@@ -6328,13 +6324,9 @@ func (rs *Reposurgeon) HelpClear() {
 clear [OPTION]
 
 Clear a (tab-completed) boolean option to control reposurgeon's
-behavior.  With no arguments, displays the state of all flags. The
-following flags and options are defined:
-
+behavior.  With no arguments, displays the state of all flags.
+Do "help options" to see the vailable options.
 `)
-	for _, opt := range optionFlags {
-		fmt.Fprintf(control.baton, "%s:\n%s\n", opt[0], opt[1])
-	}
 }
 
 // CompleteClear is a completion hook across flag opsions that are set
