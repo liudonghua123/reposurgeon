@@ -7419,6 +7419,20 @@ func (rs *Reposurgeon) DoHash(lineIn string) bool {
 	return false
 }
 
+// HelpSizeof says "Shut up, golint!"
+func (rs *Reposurgeon) HelpSizeof() {
+	rs.helpOutput(`
+sizeof
+
+This command is for developer use when optimizing structure packing to reduce memory use.
+It is probably not of interest to ordinary reposurgeon users.
+
+It displays byte-extent sizes for various reposurgeon internal types.  Note that these
+sizes are *not* stride lengths; this means that for structs they not include whatever trailing padding 
+is required for insyances in an array of the structs.
+`)
+}
+
 // DoSizeof is for developer use when optimizing structure packing to reduce memory use
 // const MaxUint = ^uint(0)
 // const MinUint = 0
@@ -7458,7 +7472,7 @@ func (rs *Reposurgeon) DoSizeof(lineIn string) bool {
 	fmt.Fprintf(control.baton, "int:               %3d\n", unsafe.Sizeof(0))
 	fmt.Fprintf(control.baton, "map[string]string: %3d\n", unsafe.Sizeof(make(map[string]string)))
 	fmt.Fprintf(control.baton, "[]string:          %3d\n", unsafe.Sizeof(make([]string, 0)))
-	fmt.Fprintf(control.baton, "map[string]bool:  %3d\n", unsafe.Sizeof(make(map[string]bool)))
+	fmt.Fprintf(control.baton, "map[string]bool:   %3d\n", unsafe.Sizeof(make(map[string]bool)))
 	seq := NewNameSequence()
 	fmt.Fprintf(control.baton, "raw modulus:      %-5d\n", len(seq.color)*len(seq.item))
 	fmt.Fprintf(control.baton, "modulus/phi:      %-5d\n", int((float64(len(seq.color)*len(seq.item)))/phi))
