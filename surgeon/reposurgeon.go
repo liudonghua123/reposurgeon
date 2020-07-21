@@ -7420,8 +7420,8 @@ This command is for developer use when optimizing structure packing to reduce me
 It is probably not of interest to ordinary reposurgeon users.
 
 It displays byte-extent sizes for various reposurgeon internal types.  Note that these
-sizes are *not* stride lengths; this means that for structs they not include whatever trailing padding 
-is required for insyances in an array of the structs.
+sizes are stride lengths, as in C's sizeof(); this means that for structs they will include
+ whatever trailing padding is required for instances in an array of the structs.
 `)
 }
 
