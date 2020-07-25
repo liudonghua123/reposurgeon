@@ -13,6 +13,10 @@
 //
 // https://svn.apache.org/repos/asf/subversion/trunk/notes/dump-load-format.txt
 //
+// This reader only supports the (default) dump version 2 and Version 1
+// (which is long obsolete); 3 is just an optimization hack to yield shorter
+// dumpfiles and doesn't add any new semantics.
+//
 // While great effort has been expended attempting to make it
 // comprehensible, the poor semantic locality of the dumpfile format
 // makes interpreting it a complex and messy task. Another source

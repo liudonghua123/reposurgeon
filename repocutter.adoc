@@ -15,7 +15,8 @@ This program does surgical and filtering operations on Subversion dump
 files.  While it is is not as flexible as reposurgeon(1), it can
 perform Subversion-specific transformations that reposurgeon cannot,
 and can be useful for processing Subversion repositories into a form
-suitable for conversion.
+suitable for conversion. Also, it supports the version 3 dumpfile
+format, which reposurgeon does not.
 
 (As a matter of possible historical interest, the reason for the
 partial functional overlap between repocutter and reposurgeon is that

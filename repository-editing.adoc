@@ -3661,6 +3661,11 @@ However, see the `--preserve` option of the `read` command.
 
 === Reading Subversion repositories
 
+Note that the Subversion dump reader only supports versions 1 and
+2 of the dump file format, not version 3 with diff-based file changes.
+This shouldn't be a problem with normal use of reposurgeon, which
+calls svnadmin dump in its default mode generating version 2.
+
 Certain optional modifiers on the `read` command change
 its behavior when reading Subversion repositories:
 

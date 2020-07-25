@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Support property deletions from version 3 dump file format in repocutter.
+
 4.15: 2020-07-18::
      Documentation polishing.
      Fix buggy handling of symlinks in the tarball-maker production.
