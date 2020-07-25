@@ -1533,14 +1533,14 @@ func renumber(source DumpfileSource) {
 }
 
 func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
-	modified_lines := make([]byte, 0)
+	modifiedLines := make([]byte, 0)
 	for _, line := range bytes.Split(lines, []byte("\n")) {
 		line = append(line, '\n')
 		out := make([]byte, 0)
 		fields := bytes.Split(line, []byte(":"))
 
 		if len(fields) == 1 {
-			modified_lines = append(modified_lines, fields[0]...)
+			modifiedLines = append(modifiedLines, fields[0]...)
 			continue
 		}
 		fields[0] = append(fields[0], []byte(":")...)
@@ -1558,10 +1558,10 @@ func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
 			}
 		}
 
-		modified_lines = append(modified_lines, append(fields[0], out...)...)
+		modifiedLines = append(modifiedLines, append(fields[0], out...)...)
 	}
 
-	return modified_lines
+	return modifiedLines
 }
 
 // Neutralize the input test load
