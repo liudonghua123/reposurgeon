@@ -12,7 +12,7 @@ DOCS = $(PAGES) repository-editing.adoc oops.svg
 SOURCES = $(shell ls */*.go) repobench reposurgeon-mode.el go.mod go.sum extractversion.sh
 SOURCES += Makefile control reposturgeon.png reposurgeon-git-aliases
 SOURCES += Dockerfile ci/prepare.sh .gitlab-ci.yml
-SOURCES += $(META) $(DOCS)
+SOURCES += $(META) $(DOCS) test
 
 .PHONY: all build install uninstall version check release refresh \
 	docker-build docker-check docker-check-noscm get test fmt lint
