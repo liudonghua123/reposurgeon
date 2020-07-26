@@ -268,6 +268,11 @@ func (baton *Baton) End(msg string) {
 	fmt.Fprintf(baton.stream, "...(%s) %s.\n", time.Since(baton.time), msg)
 }
 
+func croak(msg string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "repocutter: croaking, "+msg, args...)
+	os.Exit(1)
+}
+
 // LineBufferedSource - Generic class for line-buffered input with pushback.
 type LineBufferedSource struct {
 	Linebuffer []byte
@@ -327,7 +332,7 @@ func (lbs *LineBufferedSource) Readline() (line []byte) {
 		return []byte{}
 	}
 	if err != nil {
-		panic("repocutter: I/O error in Readline of LineBufferedSource")
+		croak("I/O error in Readline of LineBufferedSource")
 	}
 	return
 }
@@ -348,14 +353,14 @@ func (lbs *LineBufferedSource) Require(prefix string) []byte {
 // Straight read from underlying file, no buffering.
 func (lbs *LineBufferedSource) Read(rlen int) []byte {
 	if len(lbs.Linebuffer) != 0 {
-		panic(fmt.Sprintf("repocutter: line buffer unexpectedly nonempty after line %d", lbs.linenumber))
+		croak(fmt.Sprintf("repocutter: line buffer unexpectedly nonempty after line %d", lbs.linenumber))
 	}
 	text := make([]byte, 0, rlen)
 	chunk := make([]byte, rlen)
 	for {
 		n, err := lbs.reader.Read(chunk)
 		if err != nil && err != io.EOF {
-			panic("repocutter: I/O error in Read of LineBufferedSource")
+			croak("I/O error in Read of LineBufferedSource")
 		}
 		text = append(text, chunk[0:n]...)
 		if n == rlen {
@@ -374,7 +379,7 @@ func (lbs *LineBufferedSource) Peek() []byte {
 	nxtline, err := lbs.reader.ReadBytes('\n')
 	lbs.linenumber++
 	if err != nil && err != io.EOF {
-		panic(fmt.Sprintf("repocutter: I/O error in Peek of LineBufferedSource: %s", err))
+		croak(fmt.Sprintf("repocutter: I/O error in Peek of LineBufferedSource: %s", err))
 	}
 	if debug {
 		fmt.Fprintf(os.Stderr, "<Peek %d: buffer=%s + next=%s>\n",
@@ -682,13 +687,13 @@ func NewSubversionRange(txt string) SubversionRange {
 	for _, item := range strings.Split(txt, ",") {
 		var parts [2]int
 		if strings.Contains(item, "-") {
-			panic("repocutter: use ':' for version ranges instead of '-'")
+			croak("use ':' for version ranges instead of '-'")
 		}
 
 		if strings.Contains(item, ":") {
 			fields := strings.Split(item, ":")
 			if fields[0] == "HEAD" {
-				panic("repocutter: can't accept HEAD as lower bound of a range.")
+				croak("can't accept HEAD as lower bound of a range.")
 			}
 			parts[0], _ = strconv.Atoi(fields[0])
 			if fields[1] == "HEAD" {
@@ -704,7 +709,7 @@ func NewSubversionRange(txt string) SubversionRange {
 		if parts[0] >= upperbound {
 			upperbound = parts[0]
 		} else {
-			panic("ill-formed range specification")
+			croak("ill-formed range specification")
 		}
 		s.intervals = append(s.intervals, parts)
 	}
@@ -1086,7 +1091,7 @@ func log(source DumpfileSource, selection SubversionRange) {
 func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 	fd, ok := os.Open(logpath)
 	if ok != nil {
-		panic("couldn't open " + logpath)
+		croak("couldn't open " + logpath)
 	}
 	logpatch := NewLogfile(fd, &selection)
 	loghook := func(prop *Properties) {
@@ -1110,7 +1115,7 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 			r := regexp.MustCompile(name + ": ([0-9]*)")
 			m := r.FindSubmatchIndex(hd)
 			if len(m) != 4 {
-				panic(fmt.Sprintf("While setting length of %s", name))
+				croak("failed while setting length of %s", name)
 			}
 			after := make([]byte, len(hd)-m[3])
 			copy(after, hd[m[3]:])
@@ -1422,7 +1427,7 @@ func renumber(source DumpfileSource) {
 					headerState = AwaitingHeader
 				}
 			} else if headerState == InProps {
-				panic("empty lines inside Props-Section should be processed directly in properties parser!")
+				croak("empty lines inside Props-Section should be processed directly in properties parser!")
 			}
 			os.Stdout.Write(line)
 
@@ -1437,7 +1442,7 @@ func renumber(source DumpfileSource) {
 
 		if p = payload("Revision-number", line); p != nil {
 			if headerState != AwaitingHeader {
-				panic("headerState should be in InHeader, was: " + string(headerState))
+				croak("headerState should be in InHeader, was: " + string(headerState))
 			}
 			headerState = InHeader
 			propContentLength = 0
@@ -1449,7 +1454,7 @@ func renumber(source DumpfileSource) {
 			counter++
 		} else if p = payload("Node-path", line); p != nil {
 			if headerState != AwaitingHeader {
-				panic("headerState should be in InHeader, was: " + string(headerState))
+				croak("headerState should be in InHeader, was: " + string(headerState))
 			}
 			headerState = InHeader
 			propContentLength = 0
@@ -1502,7 +1507,7 @@ func renumber(source DumpfileSource) {
 							headerState = AwaitingHeader
 						}
 					} else {
-						panic("Unkown property entry begin: " + string(line))
+						croak("unkown property entry begin: " + string(line))
 					}
 				} else if propParserState == awaitingPropDelete {
 					propParserState = awaitingNext
