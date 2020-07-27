@@ -68,7 +68,6 @@ which began life as 'svncutter' in 2009.  The obsolete
 var debug = false
 
 var oneliners = map[string]string{
-	//"squash":     "Squashing revisions",
 	"deselect":   "Deselecting revisions",
 	"expunge":    "Expunge operations by Node-path header",
 	"log":        "Extracting log entries",
@@ -309,16 +308,12 @@ func (lbs *LineBufferedSource) Rewind() {
 	}
 }
 
-func vis(line []byte) string {
-	return strconv.Quote(string(line))
-}
-
 // Readline - line-buffered readline.  Return "" on EOF.
 func (lbs *LineBufferedSource) Readline() (line []byte) {
 	if len(lbs.Linebuffer) != 0 {
 		line = lbs.Linebuffer
 		if debug {
-			fmt.Fprintf(os.Stderr, "<Readline: popping %s>\n", vis(line))
+			fmt.Fprintf(os.Stderr, "<Readline: popping %q>\n", line)
 		}
 		lbs.Linebuffer = []byte{}
 		return
@@ -326,7 +321,7 @@ func (lbs *LineBufferedSource) Readline() (line []byte) {
 	line, err := lbs.reader.ReadBytes('\n')
 	lbs.linenumber++
 	if debug {
-		fmt.Fprintf(os.Stderr, "<Readline %d: read %s>\n", lbs.linenumber, vis(line))
+		fmt.Fprintf(os.Stderr, "<Readline %d: read %q>\n", lbs.linenumber, line)
 	}
 	if err == io.EOF {
 		return []byte{}
@@ -345,7 +340,7 @@ func (lbs *LineBufferedSource) Require(prefix string) []byte {
 		os.Exit(1)
 	}
 	//if debug {
-	//	fmt.Fprintf(os.Stderr, "<Require %s -> %s>\n", strconv.Quote(prefix), vis(line))
+	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
 	//}
 	return line
 }
@@ -382,8 +377,8 @@ func (lbs *LineBufferedSource) Peek() []byte {
 		croak(fmt.Sprintf("repocutter: I/O error in Peek of LineBufferedSource: %s", err))
 	}
 	if debug {
-		fmt.Fprintf(os.Stderr, "<Peek %d: buffer=%s + next=%s>\n",
-			lbs.linenumber, vis(lbs.Linebuffer), vis(nxtline))
+		fmt.Fprintf(os.Stderr, "<Peek %d: buffer=%q + next=%q>\n",
+			lbs.linenumber, lbs.Linebuffer, nxtline)
 	}
 	lbs.Linebuffer = nxtline
 	return lbs.Linebuffer
@@ -401,7 +396,7 @@ func (lbs *LineBufferedSource) Flush() []byte {
 func (lbs *LineBufferedSource) Push(line []byte) {
 	//assert(lbs.linebuffer is None)
 	if debug {
-		fmt.Fprintf(os.Stderr, "<Push: pushing %s>\n", vis(line))
+		fmt.Fprintf(os.Stderr, "<Push: pushing %q>\n", line)
 	}
 	lbs.Linebuffer = line
 }
@@ -542,8 +537,8 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 		ds.Baton.Twirl("")
 	}
 	if debug {
-		fmt.Fprintf(os.Stderr, "<ReadRevisionHeader %d: returns stash=%s>\n",
-			ds.Lbs.linenumber, vis(stash))
+		fmt.Fprintf(os.Stderr, "<ReadRevisionHeader %d: returns stash=%q>\n",
+			ds.Lbs.linenumber, stash)
 	}
 	return stash, props.properties
 }
@@ -601,7 +596,7 @@ func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) ([]byte, []by
 
 // ReadUntilNextRevision - Must only be called from renumber, as it
 // doesn't apply the revmap.  On the other hand, it can't be confused
-// by content resembling dumpfile haders.
+// by content resembling dumpfile headers.
 func (ds *DumpfileSource) ReadUntilNextRevision(contentLength int) []byte {
 	stash := []byte{}
 	for {
@@ -635,7 +630,7 @@ func (ds *DumpfileSource) ReadUntilNext(prefix string, revmap map[int]int) []byt
 	for {
 		line := ds.Lbs.Readline()
 		if debug {
-			fmt.Fprintf(os.Stderr, "<ReadUntilNext: sees %s>\n", vis(line))
+			fmt.Fprintf(os.Stderr, "<ReadUntilNext: sees %q>\n", line)
 		}
 		if len(line) == 0 {
 			return stash
@@ -643,7 +638,7 @@ func (ds *DumpfileSource) ReadUntilNext(prefix string, revmap map[int]int) []byt
 		if strings.HasPrefix(string(line), prefix) {
 			ds.Lbs.Push(line)
 			if debug {
-				fmt.Fprintf(os.Stderr, "<ReadUntilNext pushes: %s>\n", vis(line))
+				fmt.Fprintf(os.Stderr, "<ReadUntilNext pushes: %q>\n", line)
 			}
 			return stash
 		}
@@ -662,7 +657,7 @@ func (ds *DumpfileSource) ReadUntilNext(prefix string, revmap map[int]int) []byt
 		}
 		stash = append(stash, line...)
 		if debug {
-			fmt.Fprintf(os.Stderr, "<ReadUntilNext: appends %s>\n", vis(line))
+			fmt.Fprintf(os.Stderr, "<ReadUntilNext: appends %q>\n", line)
 		}
 
 	}
@@ -742,7 +737,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	stash := ds.ReadUntilNextRevision(0)
 	if emit {
 		if debug {
-			fmt.Fprintf(os.Stderr, "<early stash dump: %s>\n", vis(stash))
+			fmt.Fprintf(os.Stderr, "<early stash dump: %q>\n", stash)
 		}
 		os.Stdout.Write(stash)
 	}
@@ -771,7 +766,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			if string(line) == "\n" {
 				if passthrough && emit {
 					if debug {
-						fmt.Fprintf(os.Stderr, "<passthrough dump: %s>\n", vis(line))
+						fmt.Fprintf(os.Stderr, "<passthrough dump: %q>\n", line)
 					}
 					os.Stdout.Write(line)
 				}
@@ -782,7 +777,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				if len(stash) != 0 && nodecount == 0 && passempty {
 					if passthrough {
 						if debug {
-							fmt.Fprintf(os.Stderr, "<revision stash dump: %s>\n", vis(stash))
+							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
 						}
 						ds.say(stash)
 					}
@@ -797,34 +792,34 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				ds.Lbs.Push(line)
 				header, properties, content := ds.ReadNode(prophook)
 				if debug {
-					fmt.Fprintf(os.Stderr, "<header: %s>\n", vis(header))
-					fmt.Fprintf(os.Stderr, "<properties: %s>\n", vis(properties))
-					fmt.Fprintf(os.Stderr, "<content: %s>\n", vis(content))
+					fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
+					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
+					fmt.Fprintf(os.Stderr, "<content: %q>\n", content)
 				}
 				var nodetxt []byte
 				if nodehook != nil {
 					nodetxt = nodehook(header, properties, content)
 				}
 				if debug {
-					fmt.Fprintf(os.Stderr, "<nodetxt: %s>\n", vis(nodetxt))
+					fmt.Fprintf(os.Stderr, "<nodetxt: %q>\n", nodetxt)
 				}
 				emit = len(nodetxt) > 0
 				if emit && len(stash) > 0 {
 					if debug {
-						fmt.Fprintf(os.Stderr, "<appending to: %s>\n", vis(stash))
+						fmt.Fprintf(os.Stderr, "<appending to: %q>\n", stash)
 					}
 					nodetxt = append(stash, nodetxt...)
 					stash = []byte{}
 				}
 				if passthrough && len(nodetxt) > 0 {
 					if debug {
-						fmt.Fprintf(os.Stderr, "<node dump: %s>\n", vis(nodetxt))
+						fmt.Fprintf(os.Stderr, "<node dump: %q>\n", nodetxt)
 					}
 					ds.say(nodetxt)
 				}
 				continue
 			}
-			fmt.Fprintf(os.Stderr, "repocutter: parse at %d doesn't look right (%s), aborting!\n", ds.Revision, vis(line))
+			fmt.Fprintf(os.Stderr, "repocutter: parse at %d doesn't look right (%q), aborting!\n", ds.Revision, line)
 			os.Exit(1)
 		}
 	}
@@ -934,7 +929,7 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 	for {
 		stash := source.ReadUntilNext("Revision-number:", nil)
 		if debug {
-			fmt.Fprintf(os.Stderr, "<stash: %s>\n", vis(stash))
+			fmt.Fprintf(os.Stderr, "<stash: %q>\n", stash)
 		}
 		if emit {
 			os.Stdout.Write(stash)
@@ -1663,7 +1658,7 @@ func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange)
 func see(source DumpfileSource, selection SubversionRange) {
 	seenode := func(header []byte, _, _ []byte) []byte {
 		if debug {
-			fmt.Fprintf(os.Stderr, "<header: %s>\n", vis(header))
+			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 		}
 		path := payload("Node-path", header)
 		kind := payload("Node-kind", header)

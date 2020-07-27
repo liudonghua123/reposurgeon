@@ -2,6 +2,7 @@
 
 Repository head::
      Support property deletions from version 3 dump file format in repocutter.
+     Performance of repocutter renumber is greatly improved.
 
 4.15: 2020-07-18::
      Documentation polishing.
