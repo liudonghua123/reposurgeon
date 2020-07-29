@@ -6808,6 +6808,170 @@ func (repo *Repository) gcBlobs() {
 // Delete machinery ends here
 //
 
+// Expunge a set of files from the commits in the selection set.
+func (repo *Repository) expunge(selection orderedIntSet, matchers []string, baton *Baton) error {
+	digest := func(toklist []string) (*regexp.Regexp, bool) {
+		digested := make([]string, 0)
+		notagify := false
+		for _, s := range toklist {
+			if strings.HasPrefix(s, "/") && strings.HasSuffix(s, "/") {
+				digested = append(digested, "(?:"+s[1:len(s)-1]+")")
+			} else if s == "--notagify" {
+				notagify = true
+			} else {
+				digested = append(digested, "^"+regexp.QuoteMeta(s)+"$")
+			}
+		}
+		return regexp.MustCompile(strings.Join(digested, "|")), notagify
+	}
+
+	// First argument parsing - there might be a reparse later
+	delete := matchers[0] != "~"
+	if !delete {
+		matchers = matchers[1:]
+	}
+	expunge, notagify := digest(matchers)
+
+	// First pass: compute fileop deletions
+	alterations := make([][]int, 0)
+	for _, ei := range selection {
+		event := repo.events[ei]
+		deletia := make([]int, 0)
+		commit, ok := event.(*Commit)
+		if ok {
+			for i, fileop := range commit.operations() {
+				if logEnable(logDELETE) {
+					logit(fileop.String() + control.lineSep)
+				}
+				if fileop.op == opD || fileop.op == opM {
+					if expunge.MatchString(fileop.Path) == delete {
+						deletia = append(deletia, i)
+					}
+				} else if fileop.op == opR || fileop.op == opC {
+					sourcedelete := expunge.MatchString(fileop.Source) == delete
+					targetdelete := expunge.MatchString(fileop.Path) == delete
+					if sourcedelete {
+						deletia = append(deletia, i)
+						//if logEnable(logSHOUT) {logit("following %s of %s to %s", fileop.op, fileop.Source, fileop.Path)}
+						if fileop.op == opR {
+							newmatchers := make([]string, 0)
+							for _, m := range matchers {
+								if m != "^"+fileop.Source+"$" {
+									newmatchers = append(newmatchers, m)
+								}
+							}
+							matchers = newmatchers
+						}
+						matchers = append(matchers, "^"+fileop.Path+"$")
+						expunge, notagify = digest(matchers)
+					} else if targetdelete {
+						if fileop.op == opR {
+							fileop.op = opD
+						} else if fileop.op == opC {
+							deletia = append(deletia, i)
+						}
+						matchers = append(matchers, "^"+fileop.Path+"$")
+						expunge, notagify = digest(matchers)
+					}
+				}
+			}
+		}
+		alterations = append(alterations, deletia)
+	}
+	// Second pass: perform actual fileop expunges
+	for i, ei := range selection {
+		deletia := alterations[i]
+		if len(deletia) == 0 {
+			continue
+		}
+		commit := repo.events[ei].(*Commit)
+		keepers := make([]*FileOp, 0)
+		blobs := make([]*Blob, 0)
+		for _, j := range deletia {
+			fileop := commit.fileops[j]
+			var sourcedelete bool
+			var targetdelete bool
+			if fileop.op == opD {
+				keepers = append(keepers, fileop)
+				respond("at %d, expunging D %s",
+					ei+1, fileop.Path)
+			} else if fileop.op == opM {
+				keepers = append(keepers, fileop)
+				if fileop.ref != "inline" {
+					bi := repo.markToIndex(fileop.ref)
+					blob := repo.events[bi].(*Blob)
+					blob.removeOperation(fileop)
+					//assert(isinstance(blob, Blob))
+					blobs = append(blobs, blob)
+				}
+				respond("at %d, expunging M %s", ei+1, fileop.Path)
+			} else if fileop.op == opR || fileop.op == opC {
+				//assert(sourcedelete || targetdelete)
+				if sourcedelete && targetdelete {
+					keepers = append(keepers, fileop)
+				}
+			}
+		}
+
+		nondeletia := make([]*FileOp, 0)
+		deletiaSet := newOrderedIntSet(deletia...)
+		for i, op := range commit.operations() {
+			if !deletiaSet.Contains(i) {
+				nondeletia = append(nondeletia, op)
+			}
+		}
+		commit.setOperations(nondeletia)
+	}
+	backreferences := make(map[string]int)
+	for _, commit := range repo.commits(nil) {
+		for _, fileop := range commit.operations() {
+			if fileop.op == opM {
+				backreferences[fileop.ref]++
+			}
+		}
+	}
+	// Now remove commits that no longer have fileops, and released blobs.
+	// log events that will be deleted.
+	if logEnable(logDELETE) {
+		toDelete := make([]int, 0)
+		for i, event := range repo.events {
+			switch event.(type) {
+			case *Blob:
+				blob := event.(*Blob)
+				if backreferences[blob.mark] == 0 {
+					toDelete = append(toDelete, i+1)
+				}
+			case *Commit:
+				commit := event.(*Commit)
+				if len(commit.operations()) == 0 {
+					toDelete = append(toDelete, i+1)
+				}
+			}
+		}
+		if len(toDelete) == 0 {
+			respond("deletion set is empty.")
+		} else {
+			respond("deleting blobs and empty commits %v", toDelete)
+		}
+	}
+	// First delete the blobs.  Use the SliceTricks idiom for filtering
+	// in place so no additional allocation is required.
+	filtered := repo.events[:0]
+	for _, event := range repo.events {
+		blob, ok := event.(*Blob)
+		if !ok || backreferences[blob.mark] > 0 {
+			filtered = append(filtered, event)
+		}
+	}
+	repo.events = filtered
+	repo.invalidateMarkToIndex()
+	errout := repo.tagifyEmpty(nil, false, false, false, nil, nil, !notagify, baton)
+	// And tell we changed the manifests and the event sequence.
+	//repo.invalidateManifests()
+	repo.declareSequenceMutation("expunge cleanup")
+	return errout
+}
+
 // Return options and features.  Makes a copy slice.
 func (repo *Repository) frontEvents() []Event {
 	var front = make([]Event, 0)
@@ -9515,170 +9679,6 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	// Put the result on the load list
 	rl.repolist = append(rl.repolist, union)
 	rl.choose(union)
-}
-
-// Expunge a set of files from the commits in the selection set.
-func (rl *RepositoryList) expunge(selection orderedIntSet, matchers []string, baton *Baton) error {
-	digest := func(toklist []string) (*regexp.Regexp, bool) {
-		digested := make([]string, 0)
-		notagify := false
-		for _, s := range toklist {
-			if strings.HasPrefix(s, "/") && strings.HasSuffix(s, "/") {
-				digested = append(digested, "(?:"+s[1:len(s)-1]+")")
-			} else if s == "--notagify" {
-				notagify = true
-			} else {
-				digested = append(digested, "^"+regexp.QuoteMeta(s)+"$")
-			}
-		}
-		return regexp.MustCompile(strings.Join(digested, "|")), notagify
-	}
-
-	// First argument parsing - there might be a reparse later
-	delete := matchers[0] != "~"
-	if !delete {
-		matchers = matchers[1:]
-	}
-	expunge, notagify := digest(matchers)
-
-	// First pass: compute fileop deletions
-	alterations := make([][]int, 0)
-	for _, ei := range selection {
-		event := rl.repo.events[ei]
-		deletia := make([]int, 0)
-		commit, ok := event.(*Commit)
-		if ok {
-			for i, fileop := range commit.operations() {
-				if logEnable(logDELETE) {
-					logit(fileop.String() + control.lineSep)
-				}
-				if fileop.op == opD || fileop.op == opM {
-					if expunge.MatchString(fileop.Path) == delete {
-						deletia = append(deletia, i)
-					}
-				} else if fileop.op == opR || fileop.op == opC {
-					sourcedelete := expunge.MatchString(fileop.Source) == delete
-					targetdelete := expunge.MatchString(fileop.Path) == delete
-					if sourcedelete {
-						deletia = append(deletia, i)
-						//if logEnable(logSHOUT) {logit("following %s of %s to %s", fileop.op, fileop.Source, fileop.Path)}
-						if fileop.op == opR {
-							newmatchers := make([]string, 0)
-							for _, m := range matchers {
-								if m != "^"+fileop.Source+"$" {
-									newmatchers = append(newmatchers, m)
-								}
-							}
-							matchers = newmatchers
-						}
-						matchers = append(matchers, "^"+fileop.Path+"$")
-						expunge, notagify = digest(matchers)
-					} else if targetdelete {
-						if fileop.op == opR {
-							fileop.op = opD
-						} else if fileop.op == opC {
-							deletia = append(deletia, i)
-						}
-						matchers = append(matchers, "^"+fileop.Path+"$")
-						expunge, notagify = digest(matchers)
-					}
-				}
-			}
-		}
-		alterations = append(alterations, deletia)
-	}
-	// Second pass: perform actual fileop expunges
-	for i, ei := range selection {
-		deletia := alterations[i]
-		if len(deletia) == 0 {
-			continue
-		}
-		commit := rl.repo.events[ei].(*Commit)
-		keepers := make([]*FileOp, 0)
-		blobs := make([]*Blob, 0)
-		for _, j := range deletia {
-			fileop := commit.fileops[j]
-			var sourcedelete bool
-			var targetdelete bool
-			if fileop.op == opD {
-				keepers = append(keepers, fileop)
-				respond("at %d, expunging D %s",
-					ei+1, fileop.Path)
-			} else if fileop.op == opM {
-				keepers = append(keepers, fileop)
-				if fileop.ref != "inline" {
-					bi := rl.repo.markToIndex(fileop.ref)
-					blob := rl.repo.events[bi].(*Blob)
-					blob.removeOperation(fileop)
-					//assert(isinstance(blob, Blob))
-					blobs = append(blobs, blob)
-				}
-				respond("at %d, expunging M %s", ei+1, fileop.Path)
-			} else if fileop.op == opR || fileop.op == opC {
-				//assert(sourcedelete || targetdelete)
-				if sourcedelete && targetdelete {
-					keepers = append(keepers, fileop)
-				}
-			}
-		}
-
-		nondeletia := make([]*FileOp, 0)
-		deletiaSet := newOrderedIntSet(deletia...)
-		for i, op := range commit.operations() {
-			if !deletiaSet.Contains(i) {
-				nondeletia = append(nondeletia, op)
-			}
-		}
-		commit.setOperations(nondeletia)
-	}
-	backreferences := make(map[string]int)
-	for _, commit := range rl.repo.commits(nil) {
-		for _, fileop := range commit.operations() {
-			if fileop.op == opM {
-				backreferences[fileop.ref]++
-			}
-		}
-	}
-	// Now remove commits that no longer have fileops, and released blobs.
-	// log events that will be deleted.
-	if logEnable(logDELETE) {
-		toDelete := make([]int, 0)
-		for i, event := range rl.repo.events {
-			switch event.(type) {
-			case *Blob:
-				blob := event.(*Blob)
-				if backreferences[blob.mark] == 0 {
-					toDelete = append(toDelete, i+1)
-				}
-			case *Commit:
-				commit := event.(*Commit)
-				if len(commit.operations()) == 0 {
-					toDelete = append(toDelete, i+1)
-				}
-			}
-		}
-		if len(toDelete) == 0 {
-			respond("deletion set is empty.")
-		} else {
-			respond("deleting blobs and empty commits %v", toDelete)
-		}
-	}
-	// First delete the blobs.  Use the SliceTricks idiom for filtering
-	// in place so no additional allocation is required.
-	filtered := rl.repo.events[:0]
-	for _, event := range rl.repo.events {
-		blob, ok := event.(*Blob)
-		if !ok || backreferences[blob.mark] > 0 {
-			filtered = append(filtered, event)
-		}
-	}
-	rl.repo.events = filtered
-	rl.repo.invalidateMarkToIndex()
-	errout := rl.repo.tagifyEmpty(nil, false, false, false, nil, nil, !notagify, baton)
-	// And tell we changed the manifests and the event sequence.
-	//rl.repo.invalidateManifests()
-	rl.repo.declareSequenceMutation("expunge cleanup")
-	return errout
 }
 
 // end

@@ -3810,7 +3810,7 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 		croak("malformed expunge command")
 		return false
 	}
-	err = rs.expunge(selection, fields, control.baton)
+	err = rs.chosen().expunge(selection, fields, control.baton)
 	if err != nil {
 		respond(err.Error())
 	}
