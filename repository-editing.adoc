@@ -4963,6 +4963,18 @@ All code that knows about the DSL syntax should live in reposurgeon.go
 alonmg with the program main and the functions for reporting errors,
 logging, handling signals and aborts, etc.
 
+=== svnread.go
+
+This is the reader for Subversion dumpfiles. It is the only exception
+to the rule that reads support for version control systems is
+implemented by front ends that read them and emit a fast-import
+stream.
+
+The reason it's an exception is that Subversion has its own
+serialization format, and the total complexity of embedding
+support for those strams was estimated to be lower than that
+if writing a a completely separate front end.
+
 === Style notes
 
 The code was translated from Python. It retains, for internal
@@ -4978,6 +4990,58 @@ compatibility with the setfield command in the Python
 implementation, others (like some members of FileOp) because
 there's an internal requirement that they be settable by the Go
 reflection primitives.
+
+[appendix]
+== Adding support for more version-control systems
+
+The best way way to add support for a version-control system not
+already on the list is to write a pair of foo-fast-export and
+foo-fast-import utilities (separate from reposurgeon) that generate
+and consume git fast-import streams. When this is achievable, it
+enables full read/write support for repositories of that type. In this
+case the supporting changes in reposurgeon will be trivial, just a
+pair of table entries.
+
+The next best route is to write a FooExtractor class in reposurgeon
+itself. This is less good because (a) it provides only read-side
+support, and (b) it adds complexity to reposurgeon.  There's also a
+filter derived from testing requirements; a command-line client of
+your FooVCS must be freely available running under Unix in order for the
+reposurgeon maintainers to run tests on it.  We are not willing to
+ship features we can't test.
+
+Finally, if your VCS supports a native serialization format that it
+can use as a dump/restore for live repositories, and has or both of a
+pair of foo-dump/foo-load utilities analogous to git-fast-export and
+git-fast-import, it may be possible to support your FooVCS through
+that format. Subversion's svnadmin dump/load commands fit this
+pattern.
+
+In this case it is still best to try to write filters that
+interconvert between the native serialization and git-fast-import
+streams, separately from reposurgeon. This makes the testing problem
+more tractable, and means that reposurgeon itself needs only a couple
+of additional table entries calling simple pipelines.
+
+As a last resort, the reposurgeon maintainers may consider adding
+support for reading and writing a native serialization format
+to reposurgeon itself.  So far this has only been done once, for
+Subversion, and there is an important precondition; the serialization
+format must have complete public documentation.
+
+Be aware that proprietary VCSes in general are likely to cause us
+serious testing problems and we are reluctant to try to support
+them. If a maintainer has to pay money to have binaries he or she can
+run tests with, you will have to pay a maintainer money to make that
+happen.
+
+It's also basically a crash landing if your FooVCS can only be
+accessed through a GUI, or its clients only run on Windows, or
+it has a CLI that is not capable enough to support an extractor
+class. We know of cases where proprietatary VCS vendors have
+deliberately crippled their export and CLI features in order to
+lock customers in; that is no fun to deal with, so you'll
+have to pay somebody money.
 
 [appendix]
 == Reposurgeon success stories
