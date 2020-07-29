@@ -592,10 +592,14 @@ Perforce user IDs to a Git-style name/address pair will be desirable.
 AccuRev: There are a couple of tools for translating AccuRev
 repositories to live Git repositories. Of these
 https://stackoverflow.com/questions/10983442/how-to-export-accurev-to-another-vcs[the
-most developed apppears to be called "ac2git.py"]; you should be able
+most developed appears to be called "ac2git.py"]; you should be able
 to find it with a search engine.  We recommend you use this tool to
 get a first-pass conversion to Git, then use reposurgeon to clean up
-the result.
+the result. The ac2git.py converter's goal is to produce an accurate
+representation of a collection of ac2git streams, as multiple
+disconnected git branches; while there is functionality to identify
+branch and merge points, actually weaving the streams into a single
+DAG is something best done in reposurgeon.
 
 For other systems, see the
 https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Interaction_with_other_Revision_Control_Systems[Git
