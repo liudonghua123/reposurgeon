@@ -1,8 +1,11 @@
 // Inner types, classes, and surgical primitives for operating on repository DAGs.
-// Nothing in here is dependent on the DSL surface syntax or Kommandant.  It does
-// assume logit(), announce(), croak(), respond(), throw() and catch() do sane things.
-// Many functions are passed a Baton reference so they can ship progress
-// reports.
+// Also, the code for deserializing a dumnp fuile to a DAG and
+// serializing a DAG to a dump file.  Nothing in here is dependent on
+// the DSL surface syntax or Kommandant.  It does assume logit(),
+// announce(), croak(), respond(), throw() and catch() do sane things.
+// Many functions are passed a Baton reference so they can ship
+// progress reports.
+
 //
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause

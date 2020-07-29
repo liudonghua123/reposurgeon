@@ -1,78 +1,11 @@
 // reposurgeon is an editor/converter for version-control histories.
-package main
-
-// This code is intended to be hackable to support for special-purpose or
-// custom operations, though it's even better if you can come up with a new
-// surgical primitive general enough to ship with the stock version.  For
-// either case, here's a guide to the architecture.
 //
-// The core classes are largely about deserializing and reserializing
-// import streams.  In between these two operations the repo state
-// lives in a fairly simple object, Repository. The main part of
-// Repository is just a list of objects implementing the Event
-// interface - Commits, Blobs, Tags, Resets, and Passthroughs.
-// These are straightforward representations of the command types in
-// an import stream, with Passthrough as a way of losslessly conveying
-// lines the parser does not recognize.
-//
-//  +-------------+    +---------+    +-------------+
-//  | Deserialize |--->| Operate |--->| Reserialize |
-//  +-------------+    +---------+    +-------------+
-//
-// The general theory of reposurgeon is: you deserialize, you do stuff
-// to the event list that preserves correctness invariants, you
-// reserialize.  The "do stuff" is mostly not in the core classes, but
-// there is one major exception.  The primitive to delete a commit and
-// squash its fileops forwards or backwards is seriously intertwined
-// with the core classes and actually makes up almost 50% of Repository
-// by line count.
-//
-// The rest of the surgical code lives outside the core classes. Most
-// of it lives in the RepoSurgeon class (the command interpreter) or
-// the RepositoryList class (which encapsulated by-name access to a list
-// of repositories and also hosts surgical operations involving
-// multiple repositories). A few bits, like the repository reader and
-// builder, have enough logic that's independent of these
-// classes to be factored out of it.
-//
-// In designing new commands for the interpreter, try hard to keep them
-// orthogonal to the selection-set code. As often as possible, commands
-// should all have a similar form with a (single) selection set argument.
-//
-// VCS is not a core class.  The code for manipulating actual repos is bolted
-// on the the ends of the pipeline, like this:
-//
-//  +--------+    +-------------+    +---------+    +-----------+    +--------+
-//  | Import |--->| Deserialize |--->| Operate |--->| Serialize |--->| Export |
-//  +--------+    +-------------+ A  +---------+    +-----------+    +--------+
-//       +-----------+            |
-//       | Extractor |------------+
-//       +-----------+
-//
-// The Import and Export boxes call methods in VCS.
-//
-// Extractor classes build the deserialized internal representation directly.
-// Each extractor class is a set of VCS-specific methods to be used by the
-// RepoStreamer driver class.  Key detail: when a repository is recognized by
-// an extractor it sets the repository type to point to the corresponding
-// VCS instance.
-
-// This code was translated from Python. It retains, for internal
-// documentation purposes, the Python convention of using leading
-// underscores on field names to flag fields that should never be
-// referenced outside a method of the associated struct.
-//
-// The capitalization of other fieldnames looks inconsistent because
-// the code tries to retain the lowercase Python names and
-// compartmentalize as much as possible to be visible only within the
-// declaring package.  Some fields are capitalized for backwards
-// compatibility with the setfield command in the Python
-// implementation, others (like some members of FileOp) because
-// there's an internal requirement that they be settable by the Go
-// reflection primitives.
+// This file incliudes the program main and defines the syntax for the DSL.
 //
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause
+
+package main
 
 import (
 	"archive/tar"
