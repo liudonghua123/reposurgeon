@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-4.16: 2020-08-02::
+4.16: 2020-08-03::
      Support property deletions from version 3 dump file format in repocutter.
      Performance of repocutter renumber is greatly improved.
      Add notes on how to support AccuRev.
