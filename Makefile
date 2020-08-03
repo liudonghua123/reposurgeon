@@ -12,7 +12,7 @@ DOCS = $(PAGES) repository-editing.adoc oops.svg
 SOURCES = $(shell ls */*.go) repobench reposurgeon-mode.el go.mod go.sum extractversion.sh
 SOURCES += Makefile control reposturgeon.png reposurgeon-git-aliases
 SOURCES += Dockerfile ci/prepare.sh .gitlab-ci.yml
-SOURCES += $(META) $(DOCS) test
+SOURCES += $(META) $(DOCS)
 
 .PHONY: all build install uninstall version check release refresh \
 	docker-build docker-check docker-check-noscm get test fmt lint
@@ -152,12 +152,11 @@ docker-check-noscm: docker-check-only-bzr docker-check-only-cvs \
 #
 
 # Don't try using tar --transform, it tries to get too clever with symlinks 
-SHIPPABLE = $(SOURCES) $(MANPAGES)
 reposurgeon-$(VERS).tar.xz: $(SHIPPABLE)
-	@ls $(SHIPPABLE) | sed s:^:reposurgeon-$(VERS)/: >MANIFEST
-	@(cd ..; ln -s reposurgeon reposurgeon-$(VERS))
-	@(cd ..; tar -cJf reposurgeon/reposurgeon-$(VERS).tar.xz `cat reposurgeon/MANIFEST`)
-	@(cd ..; rm reposurgeon-$(VERS) reposurgeon/MANIFEST)
+	(git ls-files; ls *.1) | sed s:^:reposurgeon-$(VERS)/: >MANIFEST
+	(cd ..; ln -s reposurgeon reposurgeon-$(VERS))
+	(cd ..; tar -cJf reposurgeon/reposurgeon-$(VERS).tar.xz `cat reposurgeon/MANIFEST`)
+	(cd ..; rm reposurgeon-$(VERS) reposurgeon/MANIFEST)
 
 dist: reposurgeon-$(VERS).tar.xz
 
