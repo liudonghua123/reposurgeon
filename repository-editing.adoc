@@ -4145,7 +4145,7 @@ likely:
 [[reporting-bugs]]
 === How to report bugs
 
-It is generally not possible to reproduce reposurgeon bugs without a
+It is generally not possible to reproduce reposurgeon/repocutter bugs without a
 copy of the history on which they occurred. When you find a bug,
 please send the maintainers:
 
@@ -4155,7 +4155,7 @@ behavior.  If reposurgeon died, include the backtrace.
 (b) A git fast-import or Subversion dump file of the repository you
 were operating on, or a pointer to where it can be pulled from.
 
-(c) A script containing the sequence of reposurgeon commands that
+(c) A script containing the sequence of reposurgeon or repocutter commands that
 revealed the bug.  If you were exploring interactively, remember
 that the "history" command exists and can dump your command history
 to a file.
