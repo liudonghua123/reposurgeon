@@ -4150,7 +4150,7 @@ copy of the history on which they occurred. When you find a bug,
 please send the maintainers:
 
 (a) An exact description of how observed behavior differed from expected
-behavior.  If reposurgeon died, include the backtrace.
+behavior.  If reposurgeon/repocutter died, include the backtrace.
 
 (b) A git fast-import or Subversion dump file of the repository you
 were operating on, or a pointer to where it can be pulled from.
@@ -4174,7 +4174,7 @@ needs 1.19.2 or later.
 ==== Test case reduction
 
 If you know how to reproduce the error, the best possible test case
-is a hand-crafted repository of minimal size with content that
+is a hand-crafted dump stream of minimal size with content that
 explains how it breaks the tool. Those are turned into regression tests
 instantly.
 
@@ -4254,8 +4254,9 @@ any property changes; in a git dump it must not be referred to by any
 tag or reset.  Interesting commits are not boring, or have a
 not-boring parent or not-boring child.
 
-Try using the 'reduce' subcommand of repocutter to strip boring commits
-out of a Subversion dump. For a git dump, look at "strip reduce".
+Try using the 'reduce' subcommand of repocutter to strip boring
+commits out of a Subversion dump. For a git dump, look at reposugeon's
+"strip --reduce" command.
 
 ==== Prune irrelevant branches
 
