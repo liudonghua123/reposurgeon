@@ -1,5 +1,10 @@
 = reposurgeon project news =
 
+Repository head::
+     Improvements to documentation and bug-reporting guidance.
+     Quash a Go 1.15 warning.
+     Performance improvement in the hgclient code.
+
 4.16: 2020-08-03::
      Support property deletions from version 3 dump file format in repocutter.
      Performance of repocutter renumber is greatly improved.
