@@ -19,25 +19,14 @@ import (
 // repo reader; also see the extractor classes; also see the dump method
 // in the Blob() class.
 //
-// The members are, respectively:
-//
-// * Name of its characteristic subdirectory.
-// * Command to export from the VCS to the interchange format
-// * Import/export style flags.
+// Import/export style flags are as follows:
 //     "no-nl-after-commit" = no extra NL after each commit
 //     "nl-after-comment" = inserts an extra NL after each comment
 //     "export-progress" = exporter generates its own progress messages,
 //                         no need for baton prompt.
 //     "import-defaults" = Import sets default ignores
-// * Flag specifying whether it handles per-commit properties on import
-// * Command to initialize a new repo
-// * Command to import from the interchange format
-// * Command to check out working copies of the repo files.
-// * Default preserve set (e.g. config & hook files; parts can be directories).
-// * Likely location for an importer to drop an authormap file
-// * Command to list files under repository control.
-// * Command to list tags defined in the repository.
-// * Command to list branches defined in the repository.
+//
+// Preserve and prenuke parts can be directories.
 //
 // Note that some of the commands used here are plugins or extensions
 // that are not part of the basic VCS. Thus these may fail when called;
@@ -47,28 +36,28 @@ import (
 
 // VCS is a class representing a version-control system.
 type VCS struct {
-	name         string
-	subdirectory string
-	exporter     string
-	quieter      string
-	styleflags   orderedStringSet
-	extensions   orderedStringSet
-	initializer  string
-	pathlister   string
-	taglister    string
-	branchlister string
-	importer     string
-	checkout     string
-	preserve     orderedStringSet
-	prenuke      orderedStringSet
-	authormap    string
-	ignorename   string
-	dfltignores  string
-	cookies      []regexp.Regexp
-	project      string
-	notes        string
-	// hidden
-	checkignore string
+	name         string           // Name of the VCS
+	subdirectory string           // Name of its metadata subdirectory
+	exporter     string           // Import/export style flags.
+	quieter      string           // How to make exporter quieter
+	styleflags   orderedStringSet // fast-export style flags
+	extensions   orderedStringSet // Format extension flags
+	initializer  string           // Command to initualize a repo
+	pathlister   string           // Command to list registered files
+	taglister    string           // Command to list tag names
+	branchlister string           // Coommand to list branch names
+	importer     string           // Command to import from stream format
+	checkout     string           // Command to check out working copy
+	preserve     orderedStringSet // Config and hook stuff to be preserved
+	prenuke      orderedStringSet // Things to be removed from staging
+	authormap    string           // Where importer might drop an authormap
+	ignorename   string           // Where the ignore patterns live
+	dfltignores  string           // Default ignore patterns
+	cookies      []regexp.Regexp  // How to recogbnize a commit reference
+	project      string           // VCS project URL
+	notes        string           // Notes and caveats
+	// Hidden members
+	checkignore string // how to tell if directory is a checkout
 }
 
 // Constants needed in VCS class methods
