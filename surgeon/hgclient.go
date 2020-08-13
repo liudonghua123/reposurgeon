@@ -199,7 +199,7 @@ func (hgcl *HgClient) sendToHg(cmd string, args []byte) error {
 }
 
 func (hgcl *HgClient) runInHg(command string, hgcmd []string) (stdout []byte, stderr []byte, rc int32, err error) {
-	args := []byte(strings.Join(hgcmd, string(0x0)))
+	args := []byte(strings.Join(hgcmd, string(rune(0x0))))
 
 	err = hgcl.sendToHg(command, args)
 	if err != nil {
