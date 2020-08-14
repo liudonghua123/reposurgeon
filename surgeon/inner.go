@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"math/bits"
 	"os"
 	"os/exec"
 	"path"
@@ -41,7 +42,6 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
-	"unsafe"
 
 	shlex "github.com/anmitsu/go-shlex"
 	orderedset "github.com/emirpasic/gods/sets/linkedhashset"
@@ -1437,7 +1437,7 @@ func (m markidx) String() string {
 }
 
 func markNumber(markstring string) markidx {
-	n, _ := strconv.ParseUint(markstring[1:], 10, int(unsafe.Sizeof(uint(0))*8))
+	n, _ := strconv.ParseUint(markstring[1:], 10, bits.UintSize)
 	return markidx(n & uint64(^markidx(0)))
 }
 
