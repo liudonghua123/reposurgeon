@@ -29,8 +29,25 @@ You will need git at version 2.19.2 or later.  Versions of reposurgeon
 after 4.7 assume the --show-original-ids option of git-fast-export is
 available.
 
-You will need the Go compiler at revision 1.12 or later.  Note, you
-may have to tweak your $PATH variable to make the Go tools visible.
+You will need the Go compiler at revision 1.12 or later.  It is
+recommended that you run with the most recent version of the Go
+compiler, as point releases often have GC performance improvements
+that are significant on reposurgeon's workload.
+
+Note that if you install a non-default version of golang under
+Debian-derived Linuxes you may have to tweak your $PATH variable to
+make the Go tools visible.  To avoid this, consider enabling the
+official Go backports PPA:
+
+---------------------------------------------------------
+sudo add-apt-repository ppa:longsleep/golang-backports
+sudo apt update
+sudo apt install golang-go
+---------------------------------------------------------
+
+This will always install the most recent compiler version. Note
+that if you do this, the stock version-numbered golang packages
+carried by your distribution need not be installed.
 
 hg-git-fast-import is required if you want to write Mercurial
 repositories, but not to read them. Note that this is not part of
