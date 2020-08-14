@@ -127,7 +127,7 @@ func (hgcl *HgClient) receiveFromHg() (string, []byte, error) {
 	}
 	// get channel and length
 	data := make([]byte, 5)
-	_, err := hgcl.pipeOut.Read(data)
+	_, err := io.ReadFull(hgcl.pipeOut, data)
 	if err != io.EOF && err != nil {
 		return "", data, err
 	}
@@ -147,14 +147,9 @@ func (hgcl *HgClient) receiveFromHg() (string, []byte, error) {
 
 	// now get ln bytes of data
 	data = make([]byte, ln)
-	var totalBytesRead uint32 = 0
-	for totalBytesRead < ln {
-		bytesRead := 0
-		bytesRead, err = hgcl.pipeOut.Read(data[totalBytesRead:])
-		if err != io.EOF && err != nil {
-			return ch, data, err
-		}
-		totalBytesRead += uint32(bytesRead)
+	_, err = io.ReadFull(hgcl.pipeOut, data)
+	if err != io.EOF && err != nil {
+		return ch, data, err
 	}
 
 	return ch, data, nil
