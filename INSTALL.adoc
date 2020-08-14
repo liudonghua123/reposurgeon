@@ -43,11 +43,12 @@ official Go backports PPA:
 sudo add-apt-repository ppa:longsleep/golang-backports
 sudo apt update
 sudo apt install golang-go
+go version
 ---------------------------------------------------------
 
-This will always install the most recent compiler version. Note
-that if you do this, the stock version-numbered golang packages
-carried by your distribution need not be installed.
+This will always install the most recent compiler version; the last
+line reports it. Note that if you do this, the stock version-numbered
+golang packages carried by your distribution need not be installed.
 
 hg-git-fast-import is required if you want to write Mercurial
 repositories, but not to read them. Note that this is not part of
