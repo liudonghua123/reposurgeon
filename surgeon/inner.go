@@ -41,6 +41,7 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
+	"unsafe"
 
 	shlex "github.com/anmitsu/go-shlex"
 	orderedset "github.com/emirpasic/gods/sets/linkedhashset"
@@ -1436,13 +1437,13 @@ func (m markidx) String() string {
 }
 
 func markNumber(markstring string) markidx {
-	n, _ := strconv.Atoi(markstring[1:])
-	return markidx(n & int(^markidx(0)))
+	n, _ := strconv.ParseUint(markstring[1:], 10, int(unsafe.Sizeof(uint(0))*8))
+	return markidx(n & uint64(^markidx(0)))
 }
 
-func intToMarkidx(markint int) markidx {
-	return markidx(markint & int(^markidx(0)))
-}
+//func intToMarkidx(markint uint) markidx {
+//	return markidx(markint & uint(^markidx(0)))
+//}
 
 // Blob represents a detached blob of data referenced by a mark.
 type Blob struct {
