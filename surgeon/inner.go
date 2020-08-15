@@ -66,6 +66,13 @@ type revidx uint32  // Revision indices
 // is not safe for this to be uint16.
 type nodeidx uint32 // Node indices within revisions.
 
+// Use these for distinguished extreme values of indices wuth int type
+const (
+	maxInt  = 1<<(bits.UintSize-1) - 1 // 1<<31 - 1 or 1<<63 - 1
+	minInt  = -maxInt - 1              // -1 << 31 or -1 << 63
+	maxUint = 1<<bits.UintSize - 1     // 1<<32 - 1 or 1<<64 - 1
+)
+
 // Go's panic/defer/recover feature is a weak primitive for catchable
 // exceptions, but it's all we have. So we write a throw/catch pair;
 // throw() must pass its exception payload to panic(), catch() can only be

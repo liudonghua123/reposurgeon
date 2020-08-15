@@ -9,7 +9,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"math"
 	"reflect"
 	"regexp"
 	"sort"
@@ -933,8 +932,8 @@ func (p *SelectionParser) parsePolyrange() selEvaluator {
 	return polyrange
 }
 
-const polyrangeRange = math.MinInt64
-const polyrangeDollar = math.MaxInt64
+const polyrangeRange = minInt
+const polyrangeDollar = maxInt
 
 // evalPolyrange evaluates a polyrange specification (list of intervals)
 func (p *SelectionParser) evalPolyrange(state selEvalState,
@@ -950,7 +949,7 @@ func (p *SelectionParser) evalPolyrange(state selEvalState,
 	}
 	// Resolve spans
 	resolved := newFastOrderedIntSet()
-	last := int(math.MinInt64)
+	last := minInt
 	spanning := false
 	it := selection.Iterator()
 	for it.Next() {
@@ -959,7 +958,7 @@ func (p *SelectionParser) evalPolyrange(state selEvalState,
 			i = state.nItems() - 1
 		}
 		if i == polyrangeRange { // ".."
-			if last == math.MinInt64 {
+			if last == minInt {
 				panic(throw("command", "start of span is missing"))
 			}
 			spanning = true
