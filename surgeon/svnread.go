@@ -634,7 +634,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 			}
 			sp.revisions = appendRevisionRecords(sp.revisions, *newRecord)
 			sp.repo.legacyCount++
-			if sp.repo.legacyCount == maxRevidx-1 {
+			if sp.repo.legacyCount == int(maxRevidx-1) {
 				panic("revision counter overflow, recompile with a larger size")
 			}
 			// End Revision processing
@@ -660,7 +660,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 	sp.svnProcess(ctx, *options, baton)
 }
 
-const maxRevidx = int(^revidx(0)) // Use for bounds-checking in range loops.
+const maxRevidx = uint(^revidx(0)) // Use for bounds-checking in range loops.
 
 func intToRevidx(revint int) revidx {
 	return revidx(revint & int(^revidx(0)))

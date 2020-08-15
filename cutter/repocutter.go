@@ -1196,7 +1196,7 @@ func doreduce(source DumpfileSource) {
 			continue
 		}
 		prev = item
-		selection += string(item)
+		selection += fmt.Sprint(item)
 	}
 	source.Lbs.Rewind()
 	// -1 is to trim off trailing comma
@@ -1439,7 +1439,7 @@ func renumber(source DumpfileSource) {
 
 		if p = payload("Revision-number", line); p != nil {
 			if headerState != AwaitingHeader {
-				croak("headerState should be in InHeader, was: " + string(headerState))
+				croak("headerState should be in InHeader, was: " + fmt.Sprint(headerState))
 			}
 			headerState = InHeader
 			propContentLength = 0
@@ -1451,7 +1451,7 @@ func renumber(source DumpfileSource) {
 			counter++
 		} else if p = payload("Node-path", line); p != nil {
 			if headerState != AwaitingHeader {
-				croak("headerState should be in InHeader, was: " + string(headerState))
+				croak("headerState should be in InHeader, was: " + fmt.Sprint(headerState))
 			}
 			headerState = InHeader
 			propContentLength = 0
