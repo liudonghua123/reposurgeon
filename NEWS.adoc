@@ -4,6 +4,7 @@ Repository head::
      Improvements to documentation and bug-reporting guidance.
      Quash a Go 1.15 warning.
      Performance improvement in the hgclient code.
+     Build and passes tests on 32-but machines.
 
 4.16: 2020-08-03::
      Support property deletions from version 3 dump file format in repocutter.

@@ -21,9 +21,10 @@ This code is developed under Linux and expected to work under any
 other Unix, including OS X. Full function has been confirmed under
 MS-Windows/WSL, but native MS-Windows is not supported.
 
-You will need 64-bit hardware. This code is not intended to run on
-32-bit machines (which have an address space too small to be useful
-for surgery on large repositories) and may not even build on them.
+You will want 64-bit hardware. While this code passes its tests on 
+32-bit machines, they have an address space too small to be useful
+for surgery on large repositories.  (32-bit build is tested with
+"make GOOS=linux GOARCH=386".)
 
 You will need git at version 2.19.2 or later.  Versions of reposurgeon
 after 4.7 assume the --show-original-ids option of git-fast-export is
