@@ -90,50 +90,10 @@ var oneliners = map[string]string{
 }
 
 var helpdict = map[string]string{
-	"select": `select: usage: repocutter [-q] [-r SELECTION] select
-
-The 'select' subcommand selects a range and permits only revisions in
-that range to pass to standard output.  A range beginning with 0
-includes the dumpfile header.
-`,
 	"deselect": `deselect: usage: repocutter [-q] [-r SELECTION] deselect
 
 The 'deselect' subcommand selects a range and permits only revisions NOT in
 that range to pass to standard output.
-`,
-	"propdel": `propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
-
-Delete the property PROPNAME. May be restricted by a revision
-selection. You may specify multiple properties to be deleted.
-
-`,
-	"propset": `propset: usage: repocutter [-r SELECTION] propset PROPNAME=PROPVAL...
-
-Set the property PROPNAME to PROPVAL. May be restricted by a revision
-selection. You may specify multiple property settings.
-`,
-	"proprename": `proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
-
-Rename the property OLDNAME to NEWNAME. May be restricted by a
-revision selection. You may specify multiple properties to be renamed.
-`,
-	"log": `log: usage: repocutter [-r SELECTION] log
-
-Generate a log report, same format as the output of svn log on a
-repository, to standard output.
-`,
-	"setlog": `setlog: usage: repocutter [-r SELECTION] -logentries=LOGFILE setlog
-
-Replace the log entries in the input dumpfile with the corresponding entries
-in the LOGFILE, which should be in the format of an svn log output.
-Replacements may be restricted to a specified range.
-`,
-	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
-
-Replace content with unique generated cookies on all node paths
-matching the specified regular expressions; if no expressions are
-given, match all paths.  Useful when you need to examine a
-particularly complex node structure.
 `,
 	"expunge": `expunge: usage: repocutter [-r SELECTION ] expunge PATTERN...
 
@@ -142,18 +102,16 @@ Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
 record removed as well.
 `,
-	"sift": `sift: usage: repocutter [-r SELECTION ] sift PATTERN...
+	"log": `log: usage: repocutter [-r SELECTION] log
 
-Delete all operations with Node-path headers *not* matching specified
-Golang regular expressions (opposite of 'expunge').  Any revision left
-with no Node records after this filtering has its Revision record
-removed as well.
+Generate a log report, same format as the output of svn log on a
+repository, to standard output.
 `,
-	"pop": `pop: usage: repocutter [-r SELECTION ] pop
+	"obscure": `obscure: usage: repocutter [-r SELECTION] obscure
 
-Pop initial segment off each path. May be useful after a sift command to turn
-a dump from a subproject stripped from a dump for a multiple-project repository
-into the normal form with trunk/tags/branches at the top level.
+Replace path segments and committer IDs with arbitrary but consistent
+names in order to obscure them. The replacement algorithm is tuned to
+make the replacements readily distinguishable by eyeball.
 `,
 	"pathrename": `pathrename: usage: repocutter [-r SELECTION ] pathrename FROM TO
 
@@ -162,6 +120,28 @@ svn:mergeinfo properties matching the specified Golang regular
 expression FROM; replace with TO.  TO may contain Golang-style
 backreferences (${1}, ${2} etc - parentheses not optional) to
 parenthesized portions of FROM.
+`,
+	"propdel": `propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
+
+Delete the property PROPNAME. May be restricted by a revision
+selection. You may specify multiple properties to be deleted.
+
+`,
+	"pop": `pop: usage: repocutter [-r SELECTION ] pop
+
+Pop initial segment off each path. May be useful after a sift command to turn
+a dump from a subproject stripped from a dump for a multiple-project repository
+into the normal form with trunk/tags/branches at the top level.
+`,
+	"proprename": `proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
+
+Rename the property OLDNAME to NEWNAME. May be restricted by a
+revision selection. You may specify multiple properties to be renamed.
+`,
+	"propset": `propset: usage: repocutter [-r SELECTION] propset PROPNAME=PROPVAL...
+
+Set the property PROPNAME to PROPVAL. May be restricted by a revision
+selection. You may specify multiple property settings.
 `,
 	"renumber": `renumber: usage: repocutter renumber
 
@@ -194,6 +174,32 @@ Directory paths are distinguished by a trailing slash.  The 'copy'
 operation is really an 'add' with a directory source and target;
 the display name is changed to make them easier to see.
 `,
+	"select": `select: usage: repocutter [-q] [-r SELECTION] select
+
+The 'select' subcommand selects a range and permits only revisions in
+that range to pass to standard output.  A range beginning with 0
+includes the dumpfile header.
+`,
+	"setlog": `setlog: usage: repocutter [-r SELECTION] -logentries=LOGFILE setlog
+
+Replace the log entries in the input dumpfile with the corresponding entries
+in the LOGFILE, which should be in the format of an svn log output.
+Replacements may be restricted to a specified range.
+`,
+	"sift": `sift: usage: repocutter [-r SELECTION ] sift PATTERN...
+
+Delete all operations with Node-path headers *not* matching specified
+Golang regular expressions (opposite of 'expunge').  Any revision left
+with no Node records after this filtering has its Revision record
+removed as well.
+`,
+	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
+
+Replace content with unique generated cookies on all node paths
+matching the specified regular expressions; if no expressions are
+given, match all paths.  Useful when you need to examine a
+particularly complex node structure.
+`,
 	"swap": `swap: usage: repocutter [-r SELECTION] swap
 
 Swap the top two elements of each pathname in every revision in the
@@ -207,12 +213,6 @@ starting at the Unix epoch and advancing by 10 seconds per commit.
 Replace all attributions with 'fred'.  Discard the repository UUID.
 Use this to neutralize procedurally-generated streams so they can be
 compared.
-`,
-	"obscure": `obscure: usage: repocutter [-r SELECTION] obscure
-
-Replace path segments and committer IDs with arbitrary but consistent
-names in order to obscure them. The replacement algorithm is tuned to
-make the replacements readily distinguishable by eyeball.
 `,
 	"version": `report major and minor repocutter version
 `,
@@ -921,9 +921,11 @@ func payload(hd string, header []byte) []byte {
 	return header[offs : offs+end]
 }
 
+// Subcommand implememtations begin here
+
 func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 	if debug {
-		fmt.Fprintf(os.Stderr, "<entering sselect>")
+		fmt.Fprintf(os.Stderr, "<entering select>")
 	}
 	emit := (selection.Contains(0) != invert)
 	for {
@@ -954,14 +956,35 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 	}
 }
 
-// Select a portion of the dump file not defined by a revision selection.
-func sselect(source DumpfileSource, selection SubversionRange) {
-	doSelect(source, selection, false)
-}
-
 // Select a portion of the dump file defined by a revision selection.
 func deselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, true)
+}
+
+// Strip out ops defined by a revision selection and a path regexp.
+func expunge(source DumpfileSource, selection SubversionRange, patterns []string) {
+	expungehook := func(header []byte, properties []byte, content []byte) []byte {
+		matched := false
+		nodepath := payload("Node-path", header)
+		if nodepath != nil {
+			for _, pattern := range patterns {
+				r := regexp.MustCompile(pattern)
+				if r.Match(nodepath) {
+					matched = true
+					break
+				}
+			}
+		}
+		if !matched {
+			all := make([]byte, 0)
+			all = append(all, header...)
+			all = append(all, properties...)
+			all = append(all, content...)
+			return all
+		}
+		return []byte{}
+	}
+	source.Report(selection, expungehook, nil, true, true)
 }
 
 func dumpall(header []byte, properties []byte, content []byte) []byte {
@@ -970,6 +993,87 @@ func dumpall(header []byte, properties []byte, content []byte) []byte {
 	all = append(all, properties...)
 	all = append(all, content...)
 	return all
+}
+
+// Hack pathnames to obscure them.
+func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange) {
+	pathMutator := func(s []byte) []byte {
+		parts := strings.Split(filepath.ToSlash(string(s)), "/")
+		for i := range parts {
+			if parts[i] != "trunk" && parts[i] != "tags" && parts[i] != "branches" && parts[i] != "" {
+				parts[i] = seq.obscureString(parts[i])
+			}
+		}
+		return []byte(filepath.FromSlash(strings.Join(parts, "/")))
+	}
+
+	nameMutator := func(s string) string {
+		return strings.ToLower(seq.obscureString(s))
+	}
+
+	min := func(a, b int) int {
+		if a < b {
+			return a
+		}
+		return b
+	}
+
+	contentMutator := func(s []byte) []byte {
+		// Won't bijectively map link target names longer or
+		// shorter than the generated fancyname.  The problem
+		// here is that we can't change the length of this
+		// content - no way to patch the length headers. Note:
+		// ideally we'd also remove the content hashes, they
+		// become invalid after this transformation.
+		if bytes.HasPrefix(s, []byte("link ")) {
+			t := pathMutator(s[5:])
+			c := min(len(s)-5, len(t))
+			for i := 0; i < c; i++ {
+				s[5+i] = t[i]
+			}
+		}
+		return s
+	}
+
+	mutatePaths(source, selection, pathMutator, nameMutator, contentMutator)
+}
+
+// Pop the top segment off each pathname in an input dump
+func pop(source DumpfileSource, selection SubversionRange) {
+	popSegment := func(ins string) string {
+		if strings.Contains(ins, "/") {
+			return ins[strings.Index(ins, "/")+1:]
+		}
+		return ""
+	}
+	revhook := func(props *Properties) {
+		if _, present := props.properties["svn:mergeinfo"]; present {
+			props.properties["svn:mergeinfo"] = popSegment(props.properties["svn:mergeinfo"])
+		}
+	}
+	nodehook := func(header []byte, properties []byte, content []byte) []byte {
+		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
+			offs := bytes.Index(header, []byte(htype))
+			if offs > -1 {
+				offs += len(htype)
+				endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
+				before := header[:offs]
+				pathline := header[offs:endoffs]
+				after := make([]byte, len(header)-endoffs)
+				copy(after, header[endoffs:])
+				pathline = []byte(popSegment(string(pathline)))
+				header = before
+				header = append(header, pathline...)
+				header = append(header, after...)
+			}
+		}
+		all := make([]byte, 0)
+		all = append(all, header...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+	source.Report(selection, nodehook, revhook, true, false)
 }
 
 // propdel - Delete properties
@@ -1084,215 +1188,6 @@ func log(source DumpfileSource, selection SubversionRange) {
 	source.Report(selection, nil, prophook, false, true)
 }
 
-// Mutate log entries.
-func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
-	fd, ok := os.Open(logpath)
-	if ok != nil {
-		croak("couldn't open " + logpath)
-	}
-	logpatch := NewLogfile(fd, &selection)
-	loghook := func(prop *Properties) {
-		_, haslog := prop.properties["svn:log"]
-		if haslog && logpatch.Contains(source.Revision) {
-			logentry := logpatch.comments[source.Revision]
-			if string(logentry.author) != getAuthor(prop.properties) {
-				fmt.Fprintf(os.Stderr, "repocutter: author of revision %d doesn't look right, aborting!\n", source.Revision)
-				os.Exit(1)
-			}
-			prop.properties["svn:log"] = string(logentry.text)
-		}
-	}
-	source.Report(selection, dumpall, loghook, true, true)
-}
-
-// Strip a portion of the dump file defined by a revision selection.
-func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
-	innerstrip := func(header []byte, properties []byte, content []byte) []byte {
-		setLength := func(hd []byte, name string, val int) []byte {
-			r := regexp.MustCompile(name + ": ([0-9]*)")
-			m := r.FindSubmatchIndex(hd)
-			if len(m) != 4 {
-				croak("failed while setting length of %s", name)
-			}
-			after := make([]byte, len(hd)-m[3])
-			copy(after, hd[m[3]:])
-			res := hd[0:m[2]]
-			res = append(res, []byte(strconv.Itoa(val))...)
-			res = append(res, after...)
-			return res
-		}
-
-		// first check against the patterns, if any are given
-		ok := true
-		nodepath := payload("Node-path", header)
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				ok = false
-				re := regexp.MustCompile(pattern)
-				if re.Match(nodepath) {
-					//os.Stderr.Write("strip skipping: %s\n", nodepath)
-					ok = true
-					break
-				}
-			}
-		}
-		if ok {
-			if len(content) > 0 { //len([]nil == 0)
-				tell := fmt.Sprintf("Revision is %d, file path is %s.\n\n\n",
-					source.Revision, getHeader(header, "Node-path"))
-				// Avoid replacing symlinks, a reposurgeon sanity check barfs.
-				if bytes.HasPrefix(content, []byte("link ")) {
-					content = append(content, []byte(tell)...)
-				} else {
-					content = []byte(tell)
-				}
-				header = setLength(header,
-					"Text-content-length", len(content)-2)
-				header = setLength(header,
-					"Content-length", len(properties)+len(content)-2)
-			}
-			r1 := regexp.MustCompile("Text-content-md5:.*\n")
-			header = r1.ReplaceAll(header, []byte{})
-			r2 := regexp.MustCompile("Text-content-sha1:.*\n")
-			header = r2.ReplaceAll(header, []byte{})
-			r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
-			header = r3.ReplaceAll(header, []byte{})
-			r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
-			header = r4.ReplaceAll(header, []byte{})
-		}
-
-		all := make([]byte, 0)
-		all = append(all, header...)
-		all = append(all, properties...)
-		all = append(all, content...)
-		return all
-	}
-	source.Report(selection, innerstrip, nil, true, true)
-}
-
-// Topologically reduce a dump, removing spans of plain file modifications.
-func doreduce(source DumpfileSource) {
-	interesting := make([]int, 0)
-	interesting = append(interesting, 0)
-	reducehook := func(header []byte, properties []byte, _ []byte) []byte {
-		if !(string(getHeader(header, "Node-kind")) == "file" && string(getHeader(header, "Node-action")) == "change") || len(properties) > 0 { //len([]nil == 0)
-			interesting = append(interesting, source.Revision-1, source.Revision, source.Revision+1)
-		}
-		copysource := getHeader(header, "Node-copyfrom-rev")
-		if copysource != nil {
-			n, err := strconv.Atoi(string(copysource))
-			if err == nil {
-				interesting = append(interesting, n-1, n, n+1)
-			}
-		}
-		return nil
-	}
-	source.Report(NewSubversionRange("0:HEAD"), reducehook, nil, false, true)
-	var selection string
-	sort.Ints(interesting[:])
-	prev := -1
-	for _, item := range interesting {
-		if item == prev {
-			continue
-		}
-		prev = item
-		selection += fmt.Sprint(item)
-	}
-	source.Lbs.Rewind()
-	// -1 is to trim off trailing comma
-	sselect(source, NewSubversionRange(selection[0:len(selection)-1]))
-}
-
-// Strip out ops defined by a revision selection and a path regexp.
-func expunge(source DumpfileSource, selection SubversionRange, patterns []string) {
-	expungehook := func(header []byte, properties []byte, content []byte) []byte {
-		matched := false
-		nodepath := payload("Node-path", header)
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				r := regexp.MustCompile(pattern)
-				if r.Match(nodepath) {
-					matched = true
-					break
-				}
-			}
-		}
-		if !matched {
-			all := make([]byte, 0)
-			all = append(all, header...)
-			all = append(all, properties...)
-			all = append(all, content...)
-			return all
-		}
-		return []byte{}
-	}
-	source.Report(selection, expungehook, nil, true, true)
-}
-
-// Sift for ops defined by a revision selection and a path regexp.
-func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
-	sifthook := func(header []byte, properties []byte, content []byte) []byte {
-		matched := false
-		nodepath := payload("Node-path", header)
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				r := regexp.MustCompile(pattern)
-				if r.Match(nodepath) {
-					matched = true
-					break
-				}
-			}
-		}
-		if matched {
-			all := make([]byte, 0)
-			all = append(all, header...)
-			all = append(all, properties...)
-			all = append(all, content...)
-			return all
-		}
-		return []byte{}
-	}
-	source.Report(selection, sifthook, nil, true, true)
-}
-
-// Pop the top segment off each pathname in an input dump
-func pop(source DumpfileSource, selection SubversionRange) {
-	popSegment := func(ins string) string {
-		if strings.Contains(ins, "/") {
-			return ins[strings.Index(ins, "/")+1:]
-		}
-		return ""
-	}
-	revhook := func(props *Properties) {
-		if _, present := props.properties["svn:mergeinfo"]; present {
-			props.properties["svn:mergeinfo"] = popSegment(props.properties["svn:mergeinfo"])
-		}
-	}
-	nodehook := func(header []byte, properties []byte, content []byte) []byte {
-		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
-			offs := bytes.Index(header, []byte(htype))
-			if offs > -1 {
-				offs += len(htype)
-				endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
-				before := header[:offs]
-				pathline := header[offs:endoffs]
-				after := make([]byte, len(header)-endoffs)
-				copy(after, header[endoffs:])
-				pathline = []byte(popSegment(string(pathline)))
-				header = before
-				header = append(header, pathline...)
-				header = append(header, after...)
-			}
-		}
-		all := make([]byte, 0)
-		all = append(all, header...)
-		all = append(all, properties...)
-		all = append(all, content...)
-		return all
-	}
-	source.Report(selection, nodehook, revhook, true, false)
-}
-
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func([]byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
 	revhook := func(props *Properties) {
@@ -1355,6 +1250,71 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 	}
 
 	mutatePaths(source, selection, mutator, nil, nil)
+}
+
+// Topologically reduce a dump, removing spans of plain file modifications.
+func reduce(source DumpfileSource) {
+	interesting := make([]int, 0)
+	interesting = append(interesting, 0)
+	reducehook := func(header []byte, properties []byte, _ []byte) []byte {
+		if !(string(getHeader(header, "Node-kind")) == "file" && string(getHeader(header, "Node-action")) == "change") || len(properties) > 0 { //len([]nil == 0)
+			interesting = append(interesting, source.Revision-1, source.Revision, source.Revision+1)
+		}
+		copysource := getHeader(header, "Node-copyfrom-rev")
+		if copysource != nil {
+			n, err := strconv.Atoi(string(copysource))
+			if err == nil {
+				interesting = append(interesting, n-1, n, n+1)
+			}
+		}
+		return nil
+	}
+	source.Report(NewSubversionRange("0:HEAD"), reducehook, nil, false, true)
+	var selection string
+	sort.Ints(interesting[:])
+	prev := -1
+	for _, item := range interesting {
+		if item == prev {
+			continue
+		}
+		prev = item
+		selection += fmt.Sprint(item)
+	}
+	source.Lbs.Rewind()
+	// -1 is to trim off trailing comma
+	sselect(source, NewSubversionRange(selection[0:len(selection)-1]))
+}
+
+func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
+	modifiedLines := make([]byte, 0)
+	for _, line := range bytes.Split(lines, []byte("\n")) {
+		line = append(line, '\n')
+		out := make([]byte, 0)
+		fields := bytes.Split(line, []byte(":"))
+
+		if len(fields) == 1 {
+			modifiedLines = append(modifiedLines, fields[0]...)
+			continue
+		}
+		fields[0] = append(fields[0], []byte(":")...)
+		digits := make([]byte, 0)
+		for _, c := range fields[1] {
+			if bytes.ContainsAny([]byte{c}, "0123456789") {
+				digits = append(digits, c)
+			} else {
+				if len(digits) > 0 {
+					d := fmt.Sprintf("%d", renumbering[string(digits)])
+					out = append(out, []byte(d)...)
+					digits = make([]byte, 0)
+				}
+				out = append(out, c)
+			}
+		}
+
+		modifiedLines = append(modifiedLines, append(fields[0], out...)...)
+	}
+
+	return modifiedLines
 }
 
 // Renumber all revisions.
@@ -1538,122 +1498,6 @@ func renumber(source DumpfileSource) {
 	}
 }
 
-func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
-	modifiedLines := make([]byte, 0)
-	for _, line := range bytes.Split(lines, []byte("\n")) {
-		line = append(line, '\n')
-		out := make([]byte, 0)
-		fields := bytes.Split(line, []byte(":"))
-
-		if len(fields) == 1 {
-			modifiedLines = append(modifiedLines, fields[0]...)
-			continue
-		}
-		fields[0] = append(fields[0], []byte(":")...)
-		digits := make([]byte, 0)
-		for _, c := range fields[1] {
-			if bytes.ContainsAny([]byte{c}, "0123456789") {
-				digits = append(digits, c)
-			} else {
-				if len(digits) > 0 {
-					d := fmt.Sprintf("%d", renumbering[string(digits)])
-					out = append(out, []byte(d)...)
-					digits = make([]byte, 0)
-				}
-				out = append(out, c)
-			}
-		}
-
-		modifiedLines = append(modifiedLines, append(fields[0], out...)...)
-	}
-
-	return modifiedLines
-}
-
-// Neutralize the input test load
-func testify(source DumpfileSource) {
-	const NeutralUser = "fred"
-	counter := base
-	var p []byte
-	var state int
-	for {
-		line := source.Lbs.Readline()
-		if len(line) == 0 {
-			break
-		}
-		if p = payload("UUID", line); p != nil && source.Lbs.linenumber <= 10 {
-			continue
-		} else if p = payload("Revision-number", line); p != nil {
-			counter++
-		} else if bytes.HasPrefix(line, []byte("svn:author")) {
-			state = 1
-		} else if state == 1 && bytes.HasPrefix(line, []byte("V ")) {
-			line = []byte(fmt.Sprintf("V %d\n", len(NeutralUser)))
-			state = 2
-		} else if bytes.HasPrefix(line, []byte("svn:date")) {
-			state = 4
-		} else if bytes.HasPrefix(line, []byte("PROPS-END")) {
-			state = 0
-		}
-		if state == 3 {
-			line = []byte(NeutralUser + "\n")
-			state = 0
-		} else if state == 6 {
-			t := time.Unix(int64((counter-1)*10), 0).UTC().Format(time.RFC3339)
-			t2 := t[:19] + ".000000Z"
-			line = []byte(t2 + "\n")
-			state = 0
-		}
-		os.Stdout.Write(line)
-		if state >= 2 {
-			state++
-		}
-	}
-}
-
-// Hack pathnames to obscure them.
-func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange) {
-	pathMutator := func(s []byte) []byte {
-		parts := strings.Split(filepath.ToSlash(string(s)), "/")
-		for i := range parts {
-			if parts[i] != "trunk" && parts[i] != "tags" && parts[i] != "branches" && parts[i] != "" {
-				parts[i] = seq.obscureString(parts[i])
-			}
-		}
-		return []byte(filepath.FromSlash(strings.Join(parts, "/")))
-	}
-
-	nameMutator := func(s string) string {
-		return strings.ToLower(seq.obscureString(s))
-	}
-
-	min := func(a, b int) int {
-		if a < b {
-			return a
-		}
-		return b
-	}
-
-	contentMutator := func(s []byte) []byte {
-		// Won't bijectively map link target names longer or
-		// shorter than the generated fancyname.  The problem
-		// here is that we can't change the length of this
-		// content - no way to patch the length headers. Note:
-		// ideally we'd also remove the content hashes, they
-		// become invalid after this transformation.
-		if bytes.HasPrefix(s, []byte("link ")) {
-			t := pathMutator(s[5:])
-			c := min(len(s)-5, len(t))
-			for i := 0; i < c; i++ {
-				s[5+i] = t[i]
-			}
-		}
-		return s
-	}
-
-	mutatePaths(source, selection, pathMutator, nameMutator, contentMutator)
-}
-
 // Strip out ops defined by a revision selection and a path regexp.
 func see(source DumpfileSource, selection SubversionRange) {
 	seenode := func(header []byte, _, _ []byte) []byte {
@@ -1680,6 +1524,123 @@ func see(source DumpfileSource, selection SubversionRange) {
 		return nil
 	}
 	source.Report(selection, seenode, nil, false, true)
+}
+
+// Mutate log entries.
+func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
+	fd, ok := os.Open(logpath)
+	if ok != nil {
+		croak("couldn't open " + logpath)
+	}
+	logpatch := NewLogfile(fd, &selection)
+	loghook := func(prop *Properties) {
+		_, haslog := prop.properties["svn:log"]
+		if haslog && logpatch.Contains(source.Revision) {
+			logentry := logpatch.comments[source.Revision]
+			if string(logentry.author) != getAuthor(prop.properties) {
+				fmt.Fprintf(os.Stderr, "repocutter: author of revision %d doesn't look right, aborting!\n", source.Revision)
+				os.Exit(1)
+			}
+			prop.properties["svn:log"] = string(logentry.text)
+		}
+	}
+	source.Report(selection, dumpall, loghook, true, true)
+}
+
+// Strip a portion of the dump file defined by a revision selection.
+// Sift for ops defined by a revision selection and a path regexp.
+func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
+	sifthook := func(header []byte, properties []byte, content []byte) []byte {
+		matched := false
+		nodepath := payload("Node-path", header)
+		if nodepath != nil {
+			for _, pattern := range patterns {
+				r := regexp.MustCompile(pattern)
+				if r.Match(nodepath) {
+					matched = true
+					break
+				}
+			}
+		}
+		if matched {
+			all := make([]byte, 0)
+			all = append(all, header...)
+			all = append(all, properties...)
+			all = append(all, content...)
+			return all
+		}
+		return []byte{}
+	}
+	source.Report(selection, sifthook, nil, true, true)
+}
+
+func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
+	innerstrip := func(header []byte, properties []byte, content []byte) []byte {
+		setLength := func(hd []byte, name string, val int) []byte {
+			r := regexp.MustCompile(name + ": ([0-9]*)")
+			m := r.FindSubmatchIndex(hd)
+			if len(m) != 4 {
+				croak("failed while setting length of %s", name)
+			}
+			after := make([]byte, len(hd)-m[3])
+			copy(after, hd[m[3]:])
+			res := hd[0:m[2]]
+			res = append(res, []byte(strconv.Itoa(val))...)
+			res = append(res, after...)
+			return res
+		}
+
+		// first check against the patterns, if any are given
+		ok := true
+		nodepath := payload("Node-path", header)
+		if nodepath != nil {
+			for _, pattern := range patterns {
+				ok = false
+				re := regexp.MustCompile(pattern)
+				if re.Match(nodepath) {
+					//os.Stderr.Write("strip skipping: %s\n", nodepath)
+					ok = true
+					break
+				}
+			}
+		}
+		if ok {
+			if len(content) > 0 { //len([]nil == 0)
+				tell := fmt.Sprintf("Revision is %d, file path is %s.\n\n\n",
+					source.Revision, getHeader(header, "Node-path"))
+				// Avoid replacing symlinks, a reposurgeon sanity check barfs.
+				if bytes.HasPrefix(content, []byte("link ")) {
+					content = append(content, []byte(tell)...)
+				} else {
+					content = []byte(tell)
+				}
+				header = setLength(header,
+					"Text-content-length", len(content)-2)
+				header = setLength(header,
+					"Content-length", len(properties)+len(content)-2)
+			}
+			r1 := regexp.MustCompile("Text-content-md5:.*\n")
+			header = r1.ReplaceAll(header, []byte{})
+			r2 := regexp.MustCompile("Text-content-sha1:.*\n")
+			header = r2.ReplaceAll(header, []byte{})
+			r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
+			header = r3.ReplaceAll(header, []byte{})
+			r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
+			header = r4.ReplaceAll(header, []byte{})
+		}
+
+		all := make([]byte, 0)
+		all = append(all, header...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+	source.Report(selection, innerstrip, nil, true, true)
+}
+
+// Select a portion of the dump file not defined by a revision selection.
+func sselect(source DumpfileSource, selection SubversionRange) {
+	doSelect(source, selection, false)
 }
 
 // Hack paths by swapping the top two components.
@@ -1778,6 +1739,47 @@ PROPS-END
 	source.Report(selection, nodehook, revhook, true, true)
 }
 
+// Neutralize the input test load
+func testify(source DumpfileSource) {
+	const NeutralUser = "fred"
+	counter := base
+	var p []byte
+	var state int
+	for {
+		line := source.Lbs.Readline()
+		if len(line) == 0 {
+			break
+		}
+		if p = payload("UUID", line); p != nil && source.Lbs.linenumber <= 10 {
+			continue
+		} else if p = payload("Revision-number", line); p != nil {
+			counter++
+		} else if bytes.HasPrefix(line, []byte("svn:author")) {
+			state = 1
+		} else if state == 1 && bytes.HasPrefix(line, []byte("V ")) {
+			line = []byte(fmt.Sprintf("V %d\n", len(NeutralUser)))
+			state = 2
+		} else if bytes.HasPrefix(line, []byte("svn:date")) {
+			state = 4
+		} else if bytes.HasPrefix(line, []byte("PROPS-END")) {
+			state = 0
+		}
+		if state == 3 {
+			line = []byte(NeutralUser + "\n")
+			state = 0
+		} else if state == 6 {
+			t := time.Unix(int64((counter-1)*10), 0).UTC().Format(time.RFC3339)
+			t2 := t[:19] + ".000000Z"
+			line = []byte(t2 + "\n")
+			state = 0
+		}
+		os.Stdout.Write(line)
+		if state >= 2 {
+			state++
+		}
+	}
+}
+
 func main() {
 	selection := NewSubversionRange("0:HEAD")
 	var quiet bool
@@ -1829,57 +1831,10 @@ func main() {
 	}
 
 	switch flag.Arg(0) {
-	case "version":
-		fmt.Println(version)
-	case "propdel":
-		propdel(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
-	case "propset":
-		propset(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
-	case "proprename":
-		proprename(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
-	case "select":
-		sselect(NewDumpfileSource(input, baton), selection)
 	case "deselect":
 		deselect(NewDumpfileSource(input, baton), selection)
-	case "log":
-		log(NewDumpfileSource(input, baton), selection)
-	case "setlog":
-		if logentries == "" {
-			fmt.Fprintf(os.Stderr, "repocutter: setlog requires a log entries file.\n")
-			os.Exit(1)
-		}
-		setlog(NewDumpfileSource(input, baton), logentries, selection)
-	case "strip":
-		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
-	case "pathrename":
-		pathrename(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "expunge":
 		expunge(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
-	case "sift":
-		sift(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
-	case "pop":
-		pop(NewDumpfileSource(input, baton), selection)
-	case "renumber":
-		renumber(NewDumpfileSource(input, baton))
-	case "reduce":
-		if len(flag.Args()) < 2 {
-			fmt.Fprintf(os.Stderr, "repocutter: reduce requires a file argument.\n")
-			os.Exit(1)
-		}
-		f, err := os.Open(flag.Args()[1])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "repocutter: can't open stream to reduce.\n")
-			os.Exit(1)
-		}
-		doreduce(NewDumpfileSource(f, baton))
-	case "see":
-		see(NewDumpfileSource(input, baton), selection)
-	case "swap":
-		swap(NewDumpfileSource(input, baton), selection)
-	case "testify":
-		testify(NewDumpfileSource(input, baton))
-	case "obscure":
-		obscure(NewNameSequence(), NewDumpfileSource(input, baton), selection)
 	case "help":
 		if len(flag.Args()) == 1 {
 			os.Stdout.WriteString(doc)
@@ -1891,6 +1846,53 @@ func main() {
 		}
 		fmt.Fprintf(os.Stderr, "repocutter: no such command\n")
 		os.Exit(1)
+	case "log":
+		log(NewDumpfileSource(input, baton), selection)
+	case "obscure":
+		obscure(NewNameSequence(), NewDumpfileSource(input, baton), selection)
+	case "pathrename":
+		pathrename(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+	case "pop":
+		pop(NewDumpfileSource(input, baton), selection)
+	case "propdel":
+		propdel(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
+	case "propset":
+		propset(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
+	case "proprename":
+		proprename(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
+	case "reduce":
+		if len(flag.Args()) < 2 {
+			fmt.Fprintf(os.Stderr, "repocutter: reduce requires a file argument.\n")
+			os.Exit(1)
+		}
+		f, err := os.Open(flag.Args()[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "repocutter: can't open stream to reduce.\n")
+			os.Exit(1)
+		}
+		reduce(NewDumpfileSource(f, baton))
+	case "renumber":
+		renumber(NewDumpfileSource(input, baton))
+	case "see":
+		see(NewDumpfileSource(input, baton), selection)
+	case "select":
+		sselect(NewDumpfileSource(input, baton), selection)
+	case "setlog":
+		if logentries == "" {
+			fmt.Fprintf(os.Stderr, "repocutter: setlog requires a log entries file.\n")
+			os.Exit(1)
+		}
+		setlog(NewDumpfileSource(input, baton), logentries, selection)
+	case "sift":
+		sift(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+	case "strip":
+		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+	case "swap":
+		swap(NewDumpfileSource(input, baton), selection)
+	case "testify":
+		testify(NewDumpfileSource(input, baton))
+	case "version":
+		fmt.Println(version)
 	default:
 		fmt.Fprintf(os.Stderr, "repocutter: \"%s\": unknown subcommand\n", flag.Arg(0))
 		os.Exit(1)
