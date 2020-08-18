@@ -50,6 +50,7 @@ Available subcommands:
    propset
    reduce
    renumber
+   replace
    see
    select
    deselect
@@ -79,6 +80,7 @@ var oneliners = map[string]string{
 	"propset":    "Setting revision properties",
 	"reduce":     "Topologically reduce a dump.",
 	"renumber":   "Renumber revisions so they're contiguous",
+	"replace":    "Regexp replace in blobs",
 	"see":        "Report only essential topological information",
 	"select":     "Selecting revisions",
 	"setlog":     "Mutating log entries",
@@ -163,6 +165,13 @@ Because the 'interesting' status of a commit is not known for sure
 until all future commits have been checked for copy operations, this
 command requires an input file.  It cannot operate on standard input.
 The reduced dump is emitted to standard output.
+`,
+	"replace": `replace: usage: repocutter replace /REGEXP/REPLACE/
+
+Perform a regular expression search/replace on blog content. The first
+character of the argument (normally /) is treadted as the end delimiter 
+for the regulat-expression and replacement parts.
+
 `,
 	"see": `see: usage: repocutter [-r SELECTION] see
 
@@ -268,7 +277,7 @@ func (baton *Baton) End(msg string) {
 }
 
 func croak(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "repocutter: croaking, "+msg, args...)
+	fmt.Fprintf(os.Stderr, "repocutter: croaking, "+msg+"\n", args...)
 	os.Exit(1)
 }
 
@@ -1498,6 +1507,38 @@ func renumber(source DumpfileSource) {
 	}
 }
 
+func replace(source DumpfileSource, selection SubversionRange, transform string) {
+	patternParts := strings.Split(transform[1:], transform[0:1])
+	if len(patternParts) != 3 || patternParts[2] != "" {
+		croak("ill-formed transdform specification")
+	}
+	tre, err := regexp.Compile(patternParts[0])
+	if err != nil {
+		croak("illegal regular expression: %v", err)
+	}
+
+	innerreplace := func(header []byte, properties []byte, content []byte) []byte {
+		content = tre.ReplaceAll(content, []byte(patternParts[1]))
+		header = []byte(SetLength("Text-content", header, len(content)))
+		header = []byte(SetLength("Content", header, len(properties)+len(content)))
+		r1 := regexp.MustCompile("Text-content-md5:.*\n")
+		header = r1.ReplaceAll(header, []byte{})
+		r2 := regexp.MustCompile("Text-content-sha1:.*\n")
+		header = r2.ReplaceAll(header, []byte{})
+		r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
+		header = r3.ReplaceAll(header, []byte{})
+		r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
+		header = r4.ReplaceAll(header, []byte{})
+
+		all := make([]byte, 0)
+		all = append(all, header...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+	source.Report(selection, innerreplace, nil, true, true)
+}
+
 // Strip out ops defined by a revision selection and a path regexp.
 func see(source DumpfileSource, selection SubversionRange) {
 	seenode := func(header []byte, _, _ []byte) []byte {
@@ -1873,6 +1914,8 @@ func main() {
 		reduce(NewDumpfileSource(f, baton))
 	case "renumber":
 		renumber(NewDumpfileSource(input, baton))
+	case "replace":
+		replace(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "see":
 		see(NewDumpfileSource(input, baton), selection)
 	case "select":

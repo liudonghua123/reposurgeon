@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Repocutter now has a "replace" commant for replacing text in blobs.
+
 4.17: 2020-08-16::
      Improvements to documentation and bug-reporting guidance.
      Quash a Go 1.15 warning.

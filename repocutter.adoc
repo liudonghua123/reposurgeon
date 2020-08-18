@@ -60,13 +60,40 @@ help::
 Without arguments, list available commands. With a
 command-name argument, show detailed help for that subcommand.
 
-select::
-The 'select' subcommand selects a range and permits
-only revisions in that range to pass to standard output.  A range
-beginning with 0 includes the dumpfile header.
-
 The 'deselect' subcommand selects a range and permits
 only revisions NOT in that range to pass to standard output.
+
+deselect::
+The 'deselect' subcommand selects a range and permits only revisions *not^ in
+that range to pass to standard output.
+
+expunge::
+Delete all operations with Node-path headers matching
+specified Go regular expressions.  Any revision left with no Node
+records after this filtering has its Revision record removed as
+well.
+
+log::
+Generate a log report, same format as the output of svn
+log on a repository, to standard output.
+
+obscure::
+Replace path segments and committer IDs with arbitrary but consistent
+names in order to obscure them.  The replacement algorithm is tuned to
+male the replacements readily distinguishable by eyeball.
+
+pathrename::
+Modify Node-path and Node-copyfrom-path headers
+matching a specified regular expression; replace with a given string.
+The string may contain references to parenthesized portions of the
+pattern - note, these must be Go-style references led by $, not by a
+backslash as in reposurgeon itself. See the embedded help for syntax
+details.
+
+pop::
+Pop initial segment off each path. May be useful after a sift command to turn
+a dump from a subproject stripped from a dump for a multiple-project repository
+into the normal form with trunk/tags/branches at the top level.
 
 propset::
 Set a property to a value. May be restricted by a
@@ -83,57 +110,20 @@ Rename a property. May be restricted by a
 revision selection. You may specify multiple properties to be
 renamed. See the embedded help for syntax details.
 
-log::
-Generate a log report, same format as the output of svn
-log on a repository, to standard output.
-
-setlog::
-Replace the log entries in the input dumpfile with the
-corresponding entries in a specified file, which should be in the
-format of an svn log output.  Replacements may be restricted to a
-specified range. See the embedded help for syntax
-details.
-
-strip::
-Replace content with unique generated cookies on all node paths
-matching the specified regular expressions; if no expressions are
-given, match all paths.  Useful when you need to examine a
-particularly complex node structure.
-
-expunge::
-Delete all operations with Node-path headers matching
-specified Go regular expressions.  Any revision left with no Node
-records after this filtering has its Revision record removed as
-well.
-
-sift::
-Delete all operations with Node-path headers *not* matching specified
-Go regular expressions (opposite of 'expunge').  Any revision left
-with no Node records after this filtering has its Revision record
-removed as well.
-
-pop::
-Pop initial segment off each path. May be useful after a sift command to turn
-a dump from a subproject stripped from a dump for a multiple-project repository
-into the normal form with trunk/tags/branches at the top level.
-
-pathrename::
-Modify Node-path and Node-copyfrom-path headers
-matching a specified regular expression; replace with a given string.
-The string may contain references to parenthesized portions of the
-pattern - note, these must be Go-style references led by $, not by a
-backslash as in reposurgeon itself. See the embedded help for syntax
-details.
+reduce::
+Strip revisions out of a dump so the only parts left those likely to
+be relevant to a conversion problem. See the embedded help for syntax
+details and the relevance filter.
 
 renumber::
 Renumber all revisions, patching Node-copyfrom headers as required.
 Any selection option is ignored. Takes no arguments. The -b option set
 the base to renumber, defaulting to 0.
 
-reduce::
-Strip revisions out of a dump so the only parts left those likely to
-be relevant to a conversion problem. See the embedded help for syntax
-details and the relevance filter.
+replace::
+Perform a regular expression search/replace on blog content. The first
+character of the argument (normally /) is treadted as the end delimiter 
+for the regulat-expression and replacement parts.
 
 see::
 Render a very condensed report on the repository node
@@ -144,6 +134,30 @@ path, and the copy source (if any).  Directory paths are distinguished
 by a trailing slash.  The 'copy' operation is really an 'add' with a
 directory source and target; the display name is changed to make them
 easier to see.
+
+select::
+The 'select' subcommand selects a range and permits
+only revisions in that range to pass to standard output.  A range
+beginning with 0 includes the dumpfile header.
+
+setlog::
+Replace the log entries in the input dumpfile with the
+corresponding entries in a specified file, which should be in the
+format of an svn log output.  Replacements may be restricted to a
+specified range. See the embedded help for syntax
+details.
+
+sift::
+Delete all operations with Node-path headers *not* matching specified
+Go regular expressions (opposite of 'expunge').  Any revision left
+with no Node records after this filtering has its Revision record
+removed as well.
+
+strip::
+Replace content with unique generated cookies on all node paths
+matching the specified regular expressions; if no expressions are
+given, match all paths.  Useful when you need to examine a
+particularly complex node structure.
 
 swap::
 Swap the top two components of every path.  This is
@@ -158,11 +172,6 @@ starting at the Unix epoch and advancing by 10 seconds per commit.
 Replace all attributions with 'fred'.  Discard the repository UUID.
 Use this to neutralize procedurally-generated streams so they can be
 compared.
-
-obscure::
-Replace path segments and committer IDs with arbitrary but consistent
-names in order to obscure them.  The replacement algorithm is tuned to
-male the replacements readily distinguishable by eyeball.
 
 [[history]]
 == HISTORY ==
