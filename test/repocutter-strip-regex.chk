@@ -89,8 +89,6 @@ PROPS-END
 Revision is 2, file path is trunk/file1.
 
 
-
-
 Revision-number: 3
 Prop-content-length: 115
 Content-length: 115
@@ -119,8 +117,6 @@ Content-length: 41
 Revision is 3, file path is trunk/file1.
 
 
-
-
 Revision-number: 4
 Prop-content-length: 114
 Content-length: 114
@@ -147,8 +143,6 @@ Text-content-length: 41
 Content-length: 41
 
 Revision is 4, file path is trunk/file1.
-
-
 
 
 Revision-number: 5

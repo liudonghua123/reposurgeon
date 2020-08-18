@@ -1617,20 +1617,6 @@ func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
 
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
 	innerstrip := func(header []byte, properties []byte, content []byte) []byte {
-		setLength := func(hd []byte, name string, val int) []byte {
-			r := regexp.MustCompile(name + ": ([0-9]*)")
-			m := r.FindSubmatchIndex(hd)
-			if len(m) != 4 {
-				croak("failed while setting length of %s", name)
-			}
-			after := make([]byte, len(hd)-m[3])
-			copy(after, hd[m[3]:])
-			res := hd[0:m[2]]
-			res = append(res, []byte(strconv.Itoa(val))...)
-			res = append(res, after...)
-			return res
-		}
-
 		// first check against the patterns, if any are given
 		ok := true
 		nodepath := payload("Node-path", header)
@@ -1647,27 +1633,23 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 		}
 		if ok {
 			if len(content) > 0 { //len([]nil == 0)
-				tell := fmt.Sprintf("Revision is %d, file path is %s.\n\n\n",
-					source.Revision, getHeader(header, "Node-path"))
 				// Avoid replacing symlinks, a reposurgeon sanity check barfs.
-				if bytes.HasPrefix(content, []byte("link ")) {
-					content = append(content, []byte(tell)...)
-				} else {
+				if !bytes.HasPrefix(content, []byte("link ")) {
+					tell := fmt.Sprintf("Revision is %d, file path is %s.\n",
+						source.Revision, getHeader(header, "Node-path"))
 					content = []byte(tell)
+					header = SetLength("Text-content", header, len(content))
+					header = SetLength("Content", header, len(properties)+len(content))
+					r1 := regexp.MustCompile("Text-content-md5:.*\n")
+					header = r1.ReplaceAll(header, []byte{})
+					r2 := regexp.MustCompile("Text-content-sha1:.*\n")
+					header = r2.ReplaceAll(header, []byte{})
+					r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
+					header = r3.ReplaceAll(header, []byte{})
+					r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
+					header = r4.ReplaceAll(header, []byte{})
 				}
-				header = setLength(header,
-					"Text-content-length", len(content)-2)
-				header = setLength(header,
-					"Content-length", len(properties)+len(content)-2)
 			}
-			r1 := regexp.MustCompile("Text-content-md5:.*\n")
-			header = r1.ReplaceAll(header, []byte{})
-			r2 := regexp.MustCompile("Text-content-sha1:.*\n")
-			header = r2.ReplaceAll(header, []byte{})
-			r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
-			header = r3.ReplaceAll(header, []byte{})
-			r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
-			header = r4.ReplaceAll(header, []byte{})
 		}
 
 		all := make([]byte, 0)
