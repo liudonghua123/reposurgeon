@@ -515,6 +515,19 @@ func SetLength(header string, data []byte, val int) []byte {
 	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
 }
 
+// stripChecksums - remove chweckauums from a blob header
+func stripChecksums(header []byte) []byte {
+	r1 := regexp.MustCompile("Text-content-md5:.*\n")
+	header = r1.ReplaceAll(header, []byte{})
+	r2 := regexp.MustCompile("Text-content-sha1:.*\n")
+	header = r2.ReplaceAll(header, []byte{})
+	r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
+	header = r3.ReplaceAll(header, []byte{})
+	r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
+	header = r4.ReplaceAll(header, []byte{})
+	return header
+}
+
 // ReadRevisionHeader - read a revision header, parsing its properties.
 func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]byte, map[string]string) {
 	stash := ds.Lbs.Require("Revision-number:")
@@ -1521,14 +1534,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 		content = tre.ReplaceAll(content, []byte(patternParts[1]))
 		header = []byte(SetLength("Text-content", header, len(content)))
 		header = []byte(SetLength("Content", header, len(properties)+len(content)))
-		r1 := regexp.MustCompile("Text-content-md5:.*\n")
-		header = r1.ReplaceAll(header, []byte{})
-		r2 := regexp.MustCompile("Text-content-sha1:.*\n")
-		header = r2.ReplaceAll(header, []byte{})
-		r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
-		header = r3.ReplaceAll(header, []byte{})
-		r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
-		header = r4.ReplaceAll(header, []byte{})
+		header = stripChecksums(header)
 
 		all := make([]byte, 0)
 		all = append(all, header...)
@@ -1640,14 +1646,7 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 					content = []byte(tell)
 					header = SetLength("Text-content", header, len(content))
 					header = SetLength("Content", header, len(properties)+len(content))
-					r1 := regexp.MustCompile("Text-content-md5:.*\n")
-					header = r1.ReplaceAll(header, []byte{})
-					r2 := regexp.MustCompile("Text-content-sha1:.*\n")
-					header = r2.ReplaceAll(header, []byte{})
-					r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
-					header = r3.ReplaceAll(header, []byte{})
-					r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
-					header = r4.ReplaceAll(header, []byte{})
+					header = stripChecksums(header)
 				}
 			}
 		}
