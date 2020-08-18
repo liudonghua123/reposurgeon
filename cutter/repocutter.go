@@ -169,8 +169,8 @@ The reduced dump is emitted to standard output.
 	"replace": `replace: usage: repocutter replace /REGEXP/REPLACE/
 
 Perform a regular expression search/replace on blog content. The first
-character of the argument (normally /) is treadted as the end delimiter 
-for the regulat-expression and replacement parts.
+character of the argument (normally /) is treated as the end delimiter 
+for the regular-expression and replacement parts.
 
 `,
 	"see": `see: usage: repocutter [-r SELECTION] see
@@ -1523,7 +1523,7 @@ func renumber(source DumpfileSource) {
 func replace(source DumpfileSource, selection SubversionRange, transform string) {
 	patternParts := strings.Split(transform[1:], transform[0:1])
 	if len(patternParts) != 3 || patternParts[2] != "" {
-		croak("ill-formed transdform specification")
+		croak("ill-formed transform specification")
 	}
 	tre, err := regexp.Compile(patternParts[0])
 	if err != nil {
