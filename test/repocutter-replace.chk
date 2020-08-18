@@ -83,6 +83,8 @@ Node-kind: file
 Node-action: add
 Prop-content-length: 10
 Text-content-length: 23
+Text-content-md5: a60319cd0397d5c9bcc0652f9a54c56c
+Text-content-sha1: 29cb70183455e46d32a129a75de9fb544c248c08
 Content-length: 33
 
 PROPS-END

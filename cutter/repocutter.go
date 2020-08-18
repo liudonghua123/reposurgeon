@@ -1531,15 +1531,17 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 	}
 
 	innerreplace := func(header []byte, properties []byte, content []byte) []byte {
-		content = tre.ReplaceAll(content, []byte(patternParts[1]))
-		header = []byte(SetLength("Text-content", header, len(content)))
-		header = []byte(SetLength("Content", header, len(properties)+len(content)))
-		header = stripChecksums(header)
+		newcontent := tre.ReplaceAll(content, []byte(patternParts[1]))
+		if string(content) != string(newcontent) {
+			header = []byte(SetLength("Text-content", header, len(newcontent)))
+			header = []byte(SetLength("Content", header, len(properties)+len(newcontent)))
+			header = stripChecksums(header)
+		}
 
 		all := make([]byte, 0)
 		all = append(all, header...)
 		all = append(all, properties...)
-		all = append(all, content...)
+		all = append(all, newcontent...)
 		return all
 	}
 	source.Report(selection, innerreplace, nil, true, true)
