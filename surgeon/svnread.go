@@ -1309,6 +1309,9 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	// Revisions with no nodes are skipped here. This guarantees
 	// being able to assign them to a branch later.
 	//
+	// Alas, ancestry pointers do get modified in this phase - has
+	// to do with how the hashmap is generated.
+	//
 	defer trace.StartRegion(ctx, "SVN Phase 5: build commits").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 5: build commits")
@@ -1451,7 +1454,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				} else if node.action == sdADD || node.action == sdCHANGE || node.action == sdREPLACE {
 					if node.blob != nil {
 						// It's really ugly that we're modifying node ancestry pointers at this point
-						// rather than back in Phase 4.  Unfortunartely, asttempts to move this code
+						// rather than back in Phase 4.  Unfortunartely, attempts to move this code
 						// back there fall afoul of the way the hashmap is updated (see in particular
 						// the next conditional where new content is introduced).
 						if lookback, ok := sp.hashmap[node.contentHash]; ok {
