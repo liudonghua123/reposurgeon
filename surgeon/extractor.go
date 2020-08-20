@@ -817,12 +817,13 @@ func (he *HgExtractor) gatherAllReferences(rs *RepoStreamer) error {
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, "\t")
 		h := fields[len(fields)-1]
-		n := strings.Join(fields[:len(fields)-1], "\t")
-		if n == "tip" { // pseudo-tag for most recent commit
-			return nil // We don't want it
+		for _, tag := range strings.Split(fields[0], " ") {
+			if tag == "tip" { // pseudo-tag for most recent commit
+				continue // We don't want it
+			}
+			he.tagsFound = true
+			rs.refs.set("refs/tags/"+tag, h[:12])
 		}
-		he.tagsFound = true
-		rs.refs.set("refs/tags/"+n, h[:12])
 		return nil
 	}
 	err = he.byLine(rs,
