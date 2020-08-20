@@ -1363,8 +1363,26 @@ func (rs *RepoStreamer) extract(repo *Repository, vcs *VCS) (_repo *Repository, 
 		}
 		return false
 	})
+	isBranchColor := func(name string) bool {
+		for rev, commit := range rs.commitMap {
+			if name == commit.Branch && rs.refs.get(name) == rev {
+				return true
+			}
+		}
+		return false
+	}
+	isAnnotatedTag := func(name string) bool {
+		for _, tag := range rs.tags {
+			if tag.name == name {
+				return true
+			}
+		}
+		return false
+	}
 	for _, resetname := range rs.refs.keys {
-		if !strings.Contains(resetname, "/tags/") {
+		if !isAnnotatedTag(resetname) && (
+				!strings.Contains(resetname, "/tags/") ||
+				!isBranchColor(resetname)) {
 			committish := rs.commitMap[rs.refs.get(resetname)].mark
 			if committish == "" {
 				panic(throw("extractor", "could not get a mark for the target of %s", resetname))
