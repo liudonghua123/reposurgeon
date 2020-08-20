@@ -28,23 +28,24 @@ var doc = `repocutter - stream surgery on SVN dump files
 general usage: repocutter [-q] [-r SELECTION] SUBCOMMAND
 
 In all commands, the -r (or --range) option limits the selection of revisions
-over which an operation will be performed. A selection consists of
-one or more comma-separated ranges. A range may consist of an integer
-revision number or the special name HEAD for the head revision. Or it
-may be a colon-separated pair of integers, or an integer followed by a
-colon followed by HEAD.
+over which an operation will be performed. A selection consists of one or more
+comma-separated ranges. A range may consist of an integer revision number or
+the special name HEAD for the head revision. Or it may be a colon-separated
+pair of integers, or an integer followed by a colon followed by HEAD.
 
-Normally, each subcommand produces a progress spinner on standard
-error; each turn means another revision has been filtered. The -q (or
---quiet) option suppresses this.
+Normally, each subcommand produces a progress spinner on standard error; each
+turn means another revision has been filtered. The -q (or --quiet) option
+suppresses this.
 
 Type 'repocutter help <subcommand>' for help on a specific subcommand.
 
-Available subcommands:
+Available subcommands and help topics:
    deselect
    expunge
    log
+   obscure
    pathrename
+   pop
    propdel
    proprename
    propset
@@ -53,18 +54,17 @@ Available subcommands:
    replace
    see
    select
-   deselect
    setlog
    sift
-   pop
    strip
    swap
+   testify
    version
-
-Translated from the 2017-12-13 version of repocutter,
-which began life as 'svncutter' in 2009.  The obsolete 
-'squash' command has been omitted.
 `
+
+// Translated from the 2017-12-13 version of repocutter,
+// which began life as 'svncutter' in 2009.  The obsolete
+// 'squash' command has been omitted.
 
 var debug = false
 

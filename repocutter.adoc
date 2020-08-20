@@ -18,14 +18,6 @@ and can be useful for processing Subversion repositories into a form
 suitable for conversion. Also, it supports the version 3 dumpfile
 format, which reposurgeon does not.
 
-(As a matter of possible historical interest, the reason for the
-partial functional overlap between repocutter and reposurgeon is that
-repocutter was first written earlier and became a testbed for some of
-the design concepts in reposurgeon. After reposurgeon was written, the
-author learned that it could not naturally support some useful
-operations very specific to Subversion, and enhanced repocutter to do
-those.)
-
 In all commands, the -r (or --range) option limits the selection
 of revisions over which an operation will be performed. Usually it
 behaves like an implied select on the revision output range. A selection
@@ -185,6 +177,12 @@ from Python to Go in August 2018, at which time the obsolete "squash"
 command was retired.  The syntax of regular expressions in the
 pathrename command changed at that time.
 
+The reason for the partial functional overlap between repocutter and
+reposurgeon is that repocutter was first written earlier and became a
+testbed for some of the design concepts in reposurgeon. After
+reposurgeon was written, the author learned that it could not
+naturally support some useful operations very specific to Subversion,
+and enhanced repocutter to do those.
 
 [[BUGS]]
 == BUGS ==
