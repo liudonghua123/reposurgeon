@@ -237,7 +237,7 @@ bzr-orphans
 			initializer:  "hg init",
 			pathlister:   "hg status -macn",
 			taglister:    "hg tags --quiet",
-			branchlister: "hg branches --template '{branch}\n' | grep -v '^default$'",
+			branchlister: "hg branches --closed --template '{branch}\n' | grep -v '^default$'",
 			importer:     "hg-git-fast-import",
 			checkout:     "hg checkout",
 			prenuke:      newOrderedStringSet(".hg/hgrc"),
