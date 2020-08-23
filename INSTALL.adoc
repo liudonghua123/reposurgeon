@@ -3,16 +3,19 @@
 == Quick recipe for systems using apt ==
 
 ---------------------------------------------------------------------
-sudo apt-get install golang                 # To build it
-sudo apt-get install cvs-fast-export        # For importing CVS repos
-sudo apt-get install subversion             # For importing SVN ropos
-sudo apt-get install hg-git-fast-import     # For exporting hg repos
-sudo apt-get install asciidoctor            # To render docs
-sudo apt-get install golint shellcheck      # For testing
-sudo apt-get install mercurial rsync cvs    # For testing
-sudo apt-get install gnuplot                # For benchmarking
-make                                        # Build it
-make check                                  # Run the tests
+make prereqs                            # Install prequisites
+make                                    # Build it
+make check                              # Run the tests
+---------------------------------------------------------------------
+
+For higher performance, follow this with:
+
+---------------------------------------------------------------------
+sudo apt remove golang
+make golang-current
+make clean
+make
+make check
 ---------------------------------------------------------------------
 
 == Prerequisites ==
@@ -37,19 +40,11 @@ that are significant on reposurgeon's workload.
 
 Note that if you install a non-default version of golang under
 Debian-derived Linuxes you may have to tweak your $PATH variable to
-make the Go tools visible.  To avoid this, consider enabling the
-official Go backports PPA:
-
----------------------------------------------------------
-sudo add-apt-repository ppa:longsleep/golang-backports
-sudo apt update
-sudo apt install golang-go
-go version
----------------------------------------------------------
-
-This will always install the most recent compiler version; the last
-line reports it. Note that if you do this, the stock version-numbered
-golang packages carried by your distribution need not be installed.
+make the Go tools visible.  To avoid this, the golang-current
+production enables the official Go backports PPA. This will always
+install the most recent compiler version; the last line reports
+it. Note that if you do this, the stock version-numbered golang
+packages carried by your distribution need not be installed.
 
 hg-git-fast-import is required if you want to write Mercurial
 repositories, but not to read them. Note that this is not part of

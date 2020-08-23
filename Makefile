@@ -23,6 +23,9 @@ MANPAGES  = $(PAGES:.adoc=.1)
 HTMLFILES = $(DOCS:.adoc=.html)
 SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES)
 
+.PHONY: all fullinstall build stable-golang current-golang helpers test-helpers \
+		get test lint fmt clean install uninstall dist release refresh
+
 # Binaries need to be built before generated documentation parts can be made.
 # Must force options.adoc to be built earky so it will be available for inclusion.
 all: build options.adoc $(MANPAGES) $(HTMLFILES)
@@ -36,6 +39,27 @@ build:
 	go build $(GOFLAGS) -o repomapper ./mapper
 	go build $(GOFLAGS) -o reposurgeon ./surgeon
 	go build $(GOFLAGS) -o repotool ./tool
+
+#
+# Fast installation in apt-world. Fire either stable-golang or current-golang,
+# then helpers, then test-helpers if you want to run the test suite,
+#
+fullinstall: stable-golang helpers test-helpers
+
+stable-golang:
+	sudo apt install golang
+
+current-golang:
+	sudo add-apt-repository ppa:longsleep/golang-backports
+	sudo apt update
+	sudo apt install golang-go
+	go version
+
+helpers:
+	sudo apt-get install asciidoc cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync
+
+test-helpers: 
+	sudo apt install golint shellcheck
 
 #
 # Documentation
