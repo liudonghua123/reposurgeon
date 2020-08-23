@@ -63,10 +63,10 @@ will work. Shell is almost certainly already installed on your system.
 You will need asciidoctor to format the documentation.
 
 golint, shellcheck, mercurial, cvs, and rsync are required for the
-full regression tests, but not for running the code.  The importers
-are also required for testing. Very old
-versions of Subversion (certainly 1.6 or earlier, but not 1.9 or
-later) will cause one spurious test failure.
+full regression tests, but not for running the code.  The
+cvs-fast-export and Subversion svnadmin importer are also required for
+testing. Very old versions of Subversion (certainly 1.6 or earlier,
+but not 1.9 or later) will cause one spurious test failure.
 
 gnuplot is only required if you're planning to try performance-tuning
 with repobench.
