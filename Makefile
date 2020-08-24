@@ -32,7 +32,6 @@ all: build options.adoc $(MANPAGES) $(HTMLFILES)
 
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
-GOFLAGS=-gcflags '-N -l'
 build:
 	sh extractversion.sh -g <NEWS.adoc >surgeon/version.go
 	go build $(GOFLAGS) -o repocutter ./cutter
