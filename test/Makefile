@@ -122,7 +122,7 @@ $(RULES_MESSAGE_BOX): messagebox-%: %
 	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "edit echo>/dev/null" "write -" \
 	>/tmp/regress-a$$$$ || exit $(STOPOUT); \
 	[ -s /tmp/regress-a$$$$ ] && diff --text -u $< /tmp/regress-a$$$$ \
-	|| ( rm -f /tmp/regress-a$$$$; exit $(STOPOUT); ) \
+	|| { rm -f /tmp/regress-a$$$$; exit $(STOPOUT); }; \
 	rm -f /tmp/regress-a$$$$
 
 # General regression testing of commands and output; look at the *.tst and
@@ -155,8 +155,8 @@ $(TESTLOADS:%=fi-regress-%): fi-regress-%: %.tst
 	    diff --text -u $${file}.chk /tmp/regress-b$$$$ >/tmp/diff$$$$; \
 	    case $$? in \
 	    0) ;; \
-	    1) if [ $(QUIET) = 1 ]; then echo FAILED; else cat /tmp/diff$$$$; fi; if [ $(STOPOUT) = 1 ]; then ( rm -f /tmp/regress-b$$$$ .tmp/diff$$$$; exit 1 ); fi;; \
-	    *) echo "*** diff had trouble, status $$?"; (rm -f /tmp/regress-b$$$$ /tmp/diff$$$$; exit $(STOPOUT));; \
+	    1) if [ $(QUIET) = 1 ]; then echo FAILED; else cat /tmp/diff$$$$; fi; if [ $(STOPOUT) = 1 ]; then { rm -f /tmp/regress-b$$$$ .tmp/diff$$$$; exit 1; }; fi;; \
+	    *) echo "*** diff had trouble, status $$?"; { rm -f /tmp/regress-b$$$$ /tmp/diff$$$$; exit $(STOPOUT); };; \
 	    esac ; \
 	rm -f /tmp/regress-b$$$$ /tmp/diff$$$$
 
@@ -208,8 +208,8 @@ $(RULES_GIT_REGRESS): git-regress-test-%: %.fi
 	test=$(<:.fi=); \
 		if (echo "  $${test}.fi" >&2; \
 		./fi-to-fi) <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-c$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-c$$$$ || ( rm -f /tmp/regress-c$$$$; exit $(STOPOUT) ); \
-		else echo "*** Nonzero return status on $${test}!"; ( rm -f /tmp/regress-c$$$$; exit $(STOPOUT) ); fi; \
+		then diff --text -u $${test}.fi /tmp/regress-c$$$$ || { rm -f /tmp/regress-c$$$$; exit $(STOPOUT); }; \
+		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-c$$$$; exit $(STOPOUT); }; fi; \
 	rm -f /tmp/regress-c$$$$
 
 
@@ -223,8 +223,8 @@ hg-regress:
 	    for test in $(HGLOADS); do \
 		if (echo "  $${test}.fi" >&2; \
 		./hg-to-fi) <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >/tmp/regress-d$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-d$$$$ || ( rm -f /tmp/regress-d$$$$; exit $(STOPOUT) ); \
-		else echo "*** Nonzero return status on $${test}!"; ( rm -f /tmp/regress-d$$$$; exit $(STOPOUT) ); fi \
+		then diff --text -u $${test}.fi /tmp/regress-d$$$$ || { rm -f /tmp/regress-d$$$$; exit $(STOPOUT); }; \
+		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-d$$$$; exit $(STOPOUT); }; fi \
 	    done; \
 	else echo "    Skipped, hg or git missing."; exit 0; \
 	fi; \
@@ -248,8 +248,8 @@ hg-regress-branches:
 	    for test in $(HGBRANCHES); do \
 		if (echo "  $${test}" >&2; \
 		./hg-$${test}-test) | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-e$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-e$$$$ || ( rm -f /tmp/regress-e$$$$; exit $(STOPOUT) ); \
-		else echo "*** Nonzero return status on $${test}!"; ( rm -f /tmp/regress-e$$$$; exit $(STOPOUT) ); fi \
+		then diff --text -u $${test}.fi /tmp/regress-e$$$$ || { rm -f /tmp/regress-e$$$$; exit $(STOPOUT); }; \
+		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-e$$$$; exit $(STOPOUT); }; fi \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -272,8 +272,8 @@ hg-regress-merges:
 	    for test in $(HGMERGES); do \
 		if (echo "  $${test}" >&2; \
 		./hg-$${test}-test) | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-f$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-f$$$$ || ( rm -f /tmp/regress-f$$$$; exit $(STOPOUT) ); \
-		else echo "*** Nonzero return status on $${test}!"; ( rm -f /tmp/regress-f$$$$; exit $(STOPOUT) ); fi \
+		then diff --text -u $${test}.fi /tmp/regress-f$$$$ || { rm -f /tmp/regress-f$$$$; exit $(STOPOUT); }; \
+		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-f$$$$; exit $(STOPOUT); }; fi \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -296,8 +296,8 @@ hg-regress-tags:
 	    for test in $(HGTAGS); do \
 		if (echo "  $${test}" >&2; \
 		./hg-$${test}-test) | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-g$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-g$$$$ || ( rm -f /tmp/regress-g$$$$; exit $(STOPOUT) ); \
-		else echo "*** Nonzero return status on $${test}!"; ( rm -f /tmp/regress-g$$$$; exit $(STOPOUT) ); fi \
+		then diff --text -u $${test}.fi /tmp/regress-g$$$$ || { rm -f /tmp/regress-g$$$$; exit $(STOPOUT); }; \
+		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-g$$$$; exit $(STOPOUT); }; fi \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -320,8 +320,8 @@ hg-regress-patho:
 	    for test in $(HGPATHO); do \
 		if (echo "  $${test}" >&2; \
 		./hg-$${test}-test 2>/dev/null) | sed -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >/tmp/regress-h$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-h$$$$ || ( rm -f /tmp/regress-h$$$$; exit $(STOPOUT) ); \
-		else echo "*** Nonzero return status on $${test}!"; ( rm -f /tmp/regress-h$$$$; exit $(STOPOUT) ); fi \
+		then diff --text -u $${test}.fi /tmp/regress-h$$$$ || { rm -f /tmp/regress-h$$$$; exit $(STOPOUT); }; \
+		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-h$$$$; exit $(STOPOUT); }; fi \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -365,7 +365,7 @@ $(SVNLOADS:%=svnload-regress-%): svnload-regress-%: %.svn
 		    (cd /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
 			git init --quiet || exit $(STOPOUT); \
 			grep --text -v 'reposurgeon:' /tmp/regress-i$$$$ | git fast-import --quiet) \
-			    || ( rm -f /tmp/regress-i$$$$ .tmp/diff$$$$; exit $(STOPOUT) ); \
+			    || { rm -fr /tmp/reposurgeon$$$$ /tmp/regress-i$$$$ .tmp/diff$$$$; exit $(STOPOUT); }; \
 		    rm -fr /tmp/reposurgeon$$$$\
 		else \
 		    echo "    Skipped, git missing."; \
@@ -505,8 +505,8 @@ legacy-regress:
 	do \
 	    if echo "  $${test}.svn" >&2; \
 	    $(REPOSURGEON) "$(TESTOPT)" "read <$${test}.svn" "legacy write -" | grep -v '^reposurgeon:' >/tmp/regress-j$$$$ 2>/dev/null; \
-	    then diff --text -u $${test}.map /tmp/regress-j$$$$ || exit $(STOPOUT); \
-	    else echo "*** Nonzero return status on $${test}!"; exit $(STOPOUT); fi; \
+	    then diff --text -u $${test}.map /tmp/regress-j$$$$ || { rm -f /tmp/regress-j$$$$; exit $(STOPOUT); }; \
+	    else echo "*** Nonzero return status on $${test}!"; rm -f /tmp/regress-j$$$$; exit $(STOPOUT); fi; \
 	done; \
 	rm -f /tmp/regress-j$$$$
 
