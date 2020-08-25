@@ -191,7 +191,7 @@ git-regress-merges:
 	fi
 
 # Test the git extractor with tags
-GITTAGS = bt bt2
+GITTAGS = bt bt2 bt3
 git-regress-tags:
 	@echo "=== Testing git-extractor with tags:"
 	@if command -v git >/dev/null 2>&1 ; \
@@ -280,7 +280,7 @@ hg-regress-merges:
 	rm -f /tmp/regress-f$$$$
 
 # Test the hg extractor with tags
-HGTAGS = bt bt2
+HGTAGS = bt bt2 bt3-hg bt3-hg-local
 hg-buildregress-tags:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
 	for file in $(HGTAGS); do \
