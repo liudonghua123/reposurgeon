@@ -1,10 +1,10 @@
 = reposurgeon project news =
 
-Repository head::
+4.18: 2020-08-26::
      Repocutter now has a "replace" commant for replacing text in blobs.
      repotool now shows closed Mercurial branches.
      The extractor logic creates all resets for multiply0tagged commits.
-     Compiler optimizations are enabled for ibcreased performance.
+     Compiler optimizations are enabled for increased performance.
 
 4.17: 2020-08-16::
      Improvements to documentation and bug-reporting guidance.
