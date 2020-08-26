@@ -2,6 +2,9 @@
 
 Repository head::
      Repocutter now has a "replace" commant for replacing text in blobs.
+     repotool now shows closed Mercurial branches.
+     The extractor logic creates all resets for multiply0tagged commits.
+     Compiler optimizations are enabled for ibcreased performance.
 
 4.17: 2020-08-16::
      Improvements to documentation and bug-reporting guidance.
