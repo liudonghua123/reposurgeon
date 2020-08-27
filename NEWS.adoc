@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Fix for a bug that produced incorrect splits of mixed Subversion commits.
+
 4.18: 2020-08-26::
      Repocutter now has a "replace" commant for replacing text in blobs.
      repotool now shows closed Mercurial branches.

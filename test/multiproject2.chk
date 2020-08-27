@@ -49,7 +49,7 @@ Add App_A, App_B, and App_C.
 M 100644 :1 .gitignore
 M 100644 :2 trunk/foo_A.txt
 
-commit refs/heads/trunk
+commit refs/heads/App_B
 #legacy-id 1.2
 mark :6
 committer jlu <jlu> 1598458315 +0000
@@ -60,7 +60,7 @@ Add App_A, App_B, and App_C.
 M 100644 :1 .gitignore
 M 100644 :3 trunk/foo_B.txt
 
-commit refs/heads/App_B
+commit refs/heads/trunk
 #legacy-id 1.3
 mark :7
 committer jlu <jlu> 1598458315 +0000

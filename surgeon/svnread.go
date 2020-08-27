@@ -1735,7 +1735,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 			fragment.legacyID = baseID + "." + strconv.Itoa(j+1)
 			sp.repo.legacyMap["SVN:"+fragment.legacyID] = fragment
 			fragment.Comment += splitwarn
-			fragment.Branch = split.cliques[j-1].branch
+			fragment.Branch = split.cliques[len(split.cliques)-j].branch
 			baton.twirl()
 		}
 		baton.percentProgress(uint64(i) + 1)
