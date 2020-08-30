@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.19: 2020-08-30::
      Fix for a bug that produced incorrect splits of mixed Subversion commits.
 
 4.18: 2020-08-26::
