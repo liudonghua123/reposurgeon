@@ -1,0 +1,106 @@
+SVN-fs-dump-format-version: 2
+ ## The symlink and the file in this repository have the same content; Reposurgeon should not deduplicate these two blobs.
+
+UUID: 01e03646-5fb9-42cb-bb26-0b0b924573fc
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+2020-10-09T13:00:04.088078Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 119
+Content-length: 119
+
+K 10
+svn:author
+V 11
+foo@bar.org
+K 8
+svn:date
+V 27
+2020-10-09T13:00:04.119110Z
+K 7
+svn:log
+V 12
+Create trunk
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 142
+Content-length: 142
+
+K 10
+svn:author
+V 11
+foo@bar.org
+K 8
+svn:date
+V 27
+2020-10-09T13:00:04.182352Z
+K 7
+svn:log
+V 35
+Add *file* that contains `link foo'
+PROPS-END
+
+Node-path: trunk/bar
+Node-kind: file
+Node-action: add
+Text-content-md5: 1043146e49ef02cab12eef865cb34ff3
+Text-content-sha1: a38ef243b9b0aefb5462453b6c5d13b35f31c2f5
+Prop-content-length: 10
+Text-content-length: 8
+Content-length: 18
+
+PROPS-END
+link foo
+
+Revision-number: 3
+Prop-content-length: 127
+Content-length: 127
+
+K 10
+svn:author
+V 11
+foo@bar.org
+K 8
+svn:date
+V 27
+2020-10-09T13:00:04.235155Z
+K 7
+svn:log
+V 20
+Add symlink to *foo*
+PROPS-END
+
+Node-path: trunk/link_to_foo
+Node-kind: file
+Node-action: add
+Text-content-md5: 1043146e49ef02cab12eef865cb34ff3
+Text-content-sha1: a38ef243b9b0aefb5462453b6c5d13b35f31c2f5
+Prop-content-length: 33
+Text-content-length: 8
+Content-length: 41
+
+K 11
+svn:special
+V 1
+*
+PROPS-END
+link foo
+

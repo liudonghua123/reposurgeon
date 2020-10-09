@@ -499,6 +499,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 								if trackSymlinks.Contains(node.path) {
 									node.blob.setContent(
 										text[5:], start+5)
+									node.contentHash = ""
 								}
 							}
 						}
