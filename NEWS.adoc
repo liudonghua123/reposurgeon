@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Fixed a bug when an SVN file's content looked exactly like a link special.
+
 4.19: 2020-08-30::
      Fix for a bug that produced incorrect splits of mixed Subversion commits.
 
