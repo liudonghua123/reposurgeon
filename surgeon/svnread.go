@@ -1457,21 +1457,23 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						// rather than back in Phase 4.  Unfortunartely, attempts to move this code
 						// back there fall afoul of the way the hashmap is updated (see in particular
 						// the next conditional where new content is introduced).
-						if lookback, ok := sp.hashmap[node.contentHash]; ok {
-							if logEnable(logEXTRACT) {
-								logit("r%d: blob of %s matches existing hash %s, assigning '%s' from %s",
-									record.revision, node, node.contentHash, lookback.blobmark.String(), lookback)
+						if node.contentHash != "" {
+							if lookback, ok := sp.hashmap[node.contentHash]; ok {
+								if logEnable(logEXTRACT) {
+									logit("r%d: blob of %s matches existing hash %s, assigning '%s' from %s",
+										record.revision, node, node.contentHash, lookback.blobmark.String(), lookback)
+								}
+								// Blob matches an existing one -
+								// node was created by a
+								// non-Subversion copy followed by
+								// add.  Get the ancestry right,
+								// otherwise parent pointers won't
+								// be computed properly.
+								ancestor = lookback
+								node.fromPath = ancestor.fromPath
+								node.fromRev = ancestor.fromRev
+								node.blobmark = ancestor.blobmark
 							}
-							// Blob matches an existing one -
-							// node was created by a
-							// non-Subversion copy followed by
-							// add.  Get the ancestry right,
-							// otherwise parent pointers won't
-							// be computed properly.
-							ancestor = lookback
-							node.fromPath = ancestor.fromPath
-							node.fromRev = ancestor.fromRev
-							node.blobmark = ancestor.blobmark
 						}
 						if node.blobmark == emptyMark {
 							// This is the normal way new blobs get created
