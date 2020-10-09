@@ -1,5 +1,7 @@
 SVN-fs-dump-format-version: 2
- ## The symlink and the file in this repository have the same content; Reposurgeon should not deduplicate these two blobs.
+ ## Test collision between symlink special form and idntical content.
+ # The symlink and the file in this repository have the same content;
+ # reposurgeon should not deduplicate these two blobs.
 
 UUID: 01e03646-5fb9-42cb-bb26-0b0b924573fc
 
