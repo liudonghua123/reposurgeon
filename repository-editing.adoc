@@ -4842,7 +4842,28 @@ http://gitorious.org/svn2git
 Written in C++.  Says it's based on svn-fast-export by Chris Lee.  Not
 easy to figure out what it actually does, as there is no documentation
 at all and no test cases.  May be genetically related to
-svn-all-fast-export, but if so they diverged in 2008.
+svn-all-fast-export, but if so they diverged in 2008. Noteable for
+having a configuration language for specifying rules that guide the
+conversion, allowing the conversion to be incrementally developed.
+
+As Gitorious has shut down, this repository is now available from the
+link:https://archive.softwareheritage.org/swh:1:snp:737821a420cbc6a1c946949da74425c011ae4784;origin=https://gitorious.org/svn2git/svn2git.git/[Software Heritage Archive].
+
+Now apparently hosted
+link:https://svn.freebsd.org/base/user/uqs/git_conv/svn2git/[on
+GitHub]. This version has been extened and modified somewhat, and some
+documentation has been added.
+
+A later version turned up in
+link:https://svn.freebsd.org/base/user/uqs/git_conv/svn2git/[FreeBSD's
+SVN repository]. The git history has been removed from this version,
+but the SVN log indicates that it is a fork of the GitHub repository.
+
+Both the link:https://svn.freebsd.org/base/user/uqs/git_conv/[FreeBSD
+repository] and the
+link:https://github.com/svn-all-fast-export/kde-ruleset[kde-ruleset
+repository on GitHub] contain rules used by actual conversions, making
+them a useful source of inspiration for your own.
 
 CONFIGURATION, NO_DOCUMENTATION.
 
