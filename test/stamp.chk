@@ -1,0 +1,56 @@
+<2010-10-22T13:36:22Z!esr@thyrsus.com> The adventure begins.
+<2010-10-22T13:52:44Z!esr@thyrsus.com> Beginnings of core classes.
+<2010-10-22T14:50:14Z!esr@thyrsus.com> Beginning of design notes.
+<2010-10-22T17:26:58Z!esr@thyrsus.com> Sync data structures with design notes.
+<2010-10-24T11:18:27Z!esr@thyrsus.com> Skeleton of fast-import logic.
+<2010-10-24T13:09:49Z!esr@thyrsus.com> Fast-import reading except for commit obj
+<2010-10-24T21:37:54Z!esr@thyrsus.com> First commands are executing.
+<2010-10-25T07:30:09Z!esr@thyrsus.com> Options processing for subcommands.
+<2010-10-25T08:24:26Z!esr@thyrsus.com> First parse of an entire dump.
+<2010-10-25T12:26:08Z!esr@thyrsus.com> Typo fix and name change.
+<2010-10-25T12:26:32Z!esr@thyrsus.com> Upate theory of operation.
+<2010-10-25T18:37:24Z!esr@thyrsus.com> First successful interpreted command.
+<2010-10-25T18:56:28Z!esr@thyrsus.com> Document limitations.
+<2010-10-25T19:11:45Z!esr@thyrsus.com> Fix a bug, add instrumentation.
+<2010-10-25T19:35:46Z!esr@thyrsus.com> Partial fast-export (everything but blobs
+<2010-10-25T23:24:52Z!esr@thyrsus.com> Blob dumping appears to work.
+<2010-10-26T01:43:01Z!esr@thyrsus.com> We interpret command-ine arguments now.
+<2010-10-26T01:57:57Z!esr@thyrsus.com> We're pretty close to round-tripping a gi
+<2010-10-26T04:40:11Z!esr@thyrsus.com> Checkpoint before tring to write only req
+<2010-10-26T05:04:04Z!esr@thyrsus.com> This round-trips everything except the li
+<2010-10-26T08:33:51Z!esr@thyrsus.com> OK, now we have perfect round-tripping.
+<2010-10-26T09:02:25Z!esr@thyrsus.com> Add and document a regression test.
+<2010-10-26T09:04:42Z!esr@thyrsus.com> git-fast-export captures lightweight tags
+<2010-10-26T10:01:42Z!esr@thyrsus.com> Re-enable command interpretation.
+<2010-10-26T10:09:32Z!esr@thyrsus.com> repr -> str.
+<2010-10-26T10:10:32Z!esr@thyrsus.com> Quiet the regression tests a little.
+<2010-10-26T10:13:30Z!esr@thyrsus.com> Pass through mystery lines.
+<2010-10-26T11:24:30Z!esr@thyrsus.com> Add do_shell and some help.
+<2010-10-26T11:39:45Z!esr@thyrsus.com> Add doccumentation, a makefile, help comm
+<2010-10-26T11:46:25Z!esr@thyrsus.com> Name change.
+<2010-10-26T11:48:48Z!esr@thyrsus.com> Avoid an aliasing problem.
+<2010-10-26T11:51:31Z!esr@thyrsus.com> Follow up on name change.
+<2010-10-26T11:53:18Z!esr@thyrsus.com> There is no specfile.
+<2010-10-26T13:35:46Z!esr@thyrsus.com> Implemented 'prefer'.
+<2010-10-26T13:51:02Z!esr@thyrsus.com> Fix buggy implementation of "prefer".
+<2010-10-26T14:00:02Z!esr@thyrsus.com> Set the write default type more intellige
+<2010-10-26T17:03:32Z!esr@thyrsus.com> Try to get the write and rebuild logic ri
+<2010-10-26T17:26:02Z!esr@thyrsus.com> Add twirling-batob progress meters.
+<2010-10-26T17:58:00Z!esr@thyrsus.com> Cut verbosity, improve statistics.
+<2010-10-26T18:24:01Z!esr@thyrsus.com> Added the 'view' command.
+<2010-10-27T06:19:34Z!esr@thyrsus.com> Implement and document 'index'; document 
+<2010-10-27T10:00:15Z!esr@thyrsus.com> First try at an expression language.
+<2010-10-27T11:41:58Z!esr@thyrsus.com> Numbers, mark lookup, and $ are working. 
+<2010-10-27T12:07:32Z!esr@thyrsus.com> Span resolution is working.
+<2010-10-27T15:30:58Z!esr@thyrsus.com> New recursive evaluator almost working.
+<2010-10-27T15:42:45Z!esr@thyrsus.com> OK, thismakes the binary logical operator
+<2010-10-27T15:53:46Z!esr@thyrsus.com> No hang on commandless line.
+<2010-10-27T17:17:37Z!esr@thyrsus.com> Document the new selection-set language.
+<2010-10-27T17:25:36Z!esr@thyrsus.com> Documentation fixes.
+<2010-10-27T17:54:20Z!esr@thyrsus.com> Minor refactoring step, and lower the deb
+<2010-10-27T18:01:02Z!esr@thyrsus.com> Fix brown-paper-bag bug that broke the ro
+<2010-10-27T18:22:01Z!esr@thyrsus.com> Document a failed attempt.
+<2010-10-27T18:30:05Z!esr@thyrsus.com> Cut down on expensive input editing.
+<2010-10-27T18:43:32Z!esr@thyrsus.com> Switch selection sets from prefix to post
+<2010-10-27T19:03:05Z!esr@thyrsus.com> Compute the correct default set for the i
+<2010-10-27T19:13:00Z!esr@thyrsus.com> We want an anntated tag in the repo for r

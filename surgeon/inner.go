@@ -2117,7 +2117,7 @@ func branchname(tagname string) string {
 func (t *Tag) stamp(_modifiers orderedStringSet, _eventnum int, cols int) string {
 	firstLine, _ := splitRuneFirst(t.Comment, '\n')
 	report := "<" + t.tagger.actionStamp() + "> " + firstLine
-	if cols > 0 {
+	if cols > 0 && len(report) > cols {
 		report = report[0:cols]
 	}
 	return report
