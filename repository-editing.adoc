@@ -319,7 +319,8 @@ and repotool) are on your $PATH.
 
 Create a scratch directory for your conversion work.
 
-Run "repotool initialize" in the scratch directory.  This will create
+Run "repotool initialize" in the scratch directory (it requires that
+you follow the initialize verb with a project name).  This will create
 a Makefile designed to sequence your conversion, and an empty lift
 script. Then set the variables near the top appropriately for your
 project.
