@@ -1938,7 +1938,7 @@ for append rather than write.
    This is the main command for identifying the events
    you want to modify.  It lists commits in the selection set by event
    sequence number with summary information. The first column is raw
-   event numbers, the second a timestamp in local time. If the repository
+   event numbers, the second a timestamp in UTC. If the repository
    has legacy IDs, they will be displayed in the third column. The
    leading portion of the comment follows.
 
