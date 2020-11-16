@@ -141,7 +141,7 @@ references lift
 
 # Sometimes it's useful to drop files from the repo that should
 # never have been checked in.
-1,$ expunge :documents/.*.pdf:
+1..$ expunge /documents/.*.pdf/
 
 # Process GNU Changelogs to get better attributions for changesets.
 # When a commit was derived from a patch and checked in by someone

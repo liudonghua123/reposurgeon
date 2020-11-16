@@ -2892,8 +2892,8 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 	if err != nil || len(fields) != 2 {
 		croak("missing or malformed setfield line")
 	}
-	// Caling strings,Title so that Python-sytyle (uncapitalized)
-	// fieldnsmes will still work.
+	// Caling strings.Title so that Python-sytyle (uncapitalized)
+	// fieldnames will still work.
 	field := strings.Title(fields[0])
 	value, err := stringEscape(fields[1])
 	if err != nil {
