@@ -3719,7 +3719,8 @@ Do not generate _.gitignore_ files from `svn:ignore` and
 When a branch or tag was deleted in SVN, preserve the history up to
 deletion in a git ref under `refs/deleted/`, instead of deleting the branch
 and only keeping the commits that are also part of the history of other
-branches.
+branches.  The reference is disambiguated using the base revision
+number of the dead branch.
 
 `--cvsignores`::
 Suppress the normal deletion of _.cvsignore_ files.
