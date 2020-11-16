@@ -4007,7 +4007,7 @@ project1 looks like this:
 
 --------
 branchify project1/trunk project1/branches/* project1/tags/* *
-branchmap :project1/trunk:heads/master: :project1/tags:tags: :project1/branches:branches:
+branchmap :project1/trunk:heads/master: :project1/tags:refs/tags: :project1/branches:refs/branches:
 set testmode
 read <multiproject.svn
 branch project2 delete
