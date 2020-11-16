@@ -2,7 +2,7 @@
 
 4.20: 2020-11-16::
      Fixed a bug when an SVN file's content looked exactly like a link special.
-     Prevented a crasj when "stamp" was given with no selection.
+     Prevented a crash when "stamp" was given with no selection.
      Various small improvements to documentation.
 
 4.19: 2020-08-30::

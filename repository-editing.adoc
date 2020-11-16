@@ -2478,8 +2478,10 @@ the repo is not divided.
    Expunge files from the selected portion of the repo history; the
    default is the entire history.  The arguments to this command may be
    paths or regular expressions matching paths (regexps must
-   be marked by being surrounded with `//`). String quotes and backslash
-   escapes are interpreted when parsing the command line.
+   be marked by being surrounded with `//`). Shell-like interpretation of
+   string quotes snd backslashes is performeed when parsing this command 
+   line; in particular, a preceding backslash may be used to embed a literal
+   / character.
 +
 Exceptionally, the first argument may be the token "~" which chooses
 all file paths other than those selected by the remaining arguments.
@@ -3720,7 +3722,11 @@ When a branch or tag was deleted in SVN, preserve the history up to
 deletion in a git ref under `refs/deleted/`, instead of deleting the branch
 and only keeping the commits that are also part of the history of other
 branches.  The reference is disambiguated using the base revision
-number of the dead branch.
+number of the dead branch. (Note that the reason --preserve is not the
+default behavior is because of experience with large old repositories
+that may have hundreds or even thousands of dead branches. While it is
+important that content copies fron dead branches be resolved
+correctly, the branches themselves are almost never interesting.)
 
 `--cvsignores`::
 Suppress the normal deletion of _.cvsignore_ files.

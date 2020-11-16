@@ -3767,8 +3767,10 @@ func (rs *Reposurgeon) HelpExpunge() {
 Expunge files from the selected portion of the repo history; the
 default is the entire history.  The arguments to this command may be
 paths or regular expressions matching paths (regexps must
-be marked by being surrounded with //).  String quotes and backslash
-escapes are interpreted when parsing the command line.
+be marked by being surrounded with //).  Shell-like interpretation of
+string quotes snd backslashes is performed when parsing this command 
+line; in particular, a preceding backslash may be used to embed a literal
+/ character.
 
 Exceptionally, the first argument may be the token "~" which chooses
 all file paths other than those selected by the remaining arguments to
