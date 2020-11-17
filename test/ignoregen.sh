@@ -25,7 +25,7 @@ trap 'rm -fr test-repo-$$ test-checkout-$$ test-checkout2-$$' EXIT HUP INT QUIT 
 svnadmin create test-repo-$$
 svn checkout --quiet "file://$(pwd)/test-repo-$$" test-checkout-$$
 
-cd test-checkout-$$ >/dev/null || ( echo "$0: cd failed"/ exit 1 )
+cd test-checkout-$$ >/dev/null || ( echo "$0: cd failed"; exit 1 )
 
 mkdir -p trunk/subdir
 svn add --quiet trunk
@@ -62,7 +62,7 @@ svn add --quiet * --force
 svn commit --quiet -m "Test svn:global-ignores property."
 
 # test that the property is stored in the repository by using a new clean checkout
-cd .. >/dev/null || ( echo "$0: cd failed"/ exit 1 )
+cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 svn checkout --quiet "file://$(pwd)/test-repo-$$" test-checkout2-$$
 cd test-checkout2-$$ >/dev/null
 echo "ignored" > trunk/something.foo
@@ -73,7 +73,7 @@ echo "ignored" > trunk/subdir/something.foo
 
 # create dump and ship to standard output
 # shellcheck disable=2103
-cd .. >/dev/null || ( echo "$0: cd failed"/ exit 1 )
+cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 # shellcheck disable=1117
 svnadmin dump --quiet test-repo-$$  | repocutter -q testify | sed "1a\
 \ ## svn:$1 property-setting example
