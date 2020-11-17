@@ -2,9 +2,12 @@
 # Generate a Subversion output stream with a pathological tag pair.
 #
 # As described in https://gitlab.com/esr/reposurgeon/-/issues/305 With
-# reposurgeon 4.20, the Git lift is incorrect. The "replace my-tag tag"
-# commit has the wrong parent: it should have the "file: add bar"
-# commit as its parent, as in the svn repository.
+# reposurgeon 4.20, the Git lift is incorrect. The "replace my-tag
+# tag" commit made from r5 has wrong content in "file": it should have
+# the "file: add bar" from r4 as its parent, as in the svn repository
+# But it gets the r2 content "foo" instead.  The problem is known to go
+# away if the tag delete and recreation in r5 are split into separate
+# Subversion commit.
 #
 # repocutter see produces this listing:
 #
@@ -47,8 +50,8 @@ svn commit --quiet -m 'file: add bar'
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 svn up --quiet
 
-svn rm tags/my-tag
-svn cp trunk tags/my-tag
+svn rm --quiet tags/my-tag
+svn cp --quiet trunk tags/my-tag
 svn commit --quiet -m 'replace my-tag tag'
 
 cd trunk >/dev/null || ( echo "$0: cd failed"; exit 1 )
