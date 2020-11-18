@@ -38,12 +38,12 @@ This is primarily useful when running the program under a debugger.
 When this option is not present the program expects to read a 
 stream from standard input.
 
-Generally, if you need to use this program at all, you will find
-that you need to pipe your dump file through multiple instances of it
-doing one kind of operation each.  This is not as expensive as it
-sounds; with the exception of the reduce subcommand, the working set
-of this program is bounded by the size of the largest commit metadata
-item.  It does not need to hold the entire repo metadata in
+Generally, if you need to use this program at all, you will find that
+you need to pipe your dump file through multiple instances of it doing
+one kind of operation each.  This is not as expensive as it sounds;
+with the exception of the reduce subcommand, the working set of this
+program is bounded by the size of the the largest single blob plus its
+metadata.  It does not need to hold the entire repo metadata in
 memory.
 
 The following subcommands are available:
@@ -56,7 +56,7 @@ The 'deselect' subcommand selects a range and permits
 only revisions NOT in that range to pass to standard output.
 
 deselect::
-The 'deselect' subcommand selects a range and permits only revisions *not^ in
+The 'deselect' subcommand selects a range and permits only revisions *not* in
 that range to pass to standard output.
 
 expunge::
