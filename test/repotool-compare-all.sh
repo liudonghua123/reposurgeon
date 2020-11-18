@@ -1,5 +1,5 @@
 #!/bin/sh
-## Test comparing all named locations tags between svn and git repo
+## Test comparing all named locations between svn & git repo
 
 # Should be a multiple-tag, multiple-branch repository
 stem=nontipcopy

@@ -1,5 +1,5 @@
 #!/bin/sh
-## Test repotool initialize with svn source and git dest
+## Test repotool initialize, svn->git
 
 mkdir /tmp/test-workdir$$
 (cd /tmp/test-workdir$$ >/dev/null || ( echo "$0: cd failed" >&2; exit 1 ); ${REPOTOOL:-repotool} initialize xyzzy svn git >/tmp/out$$; echo Return code: $? >>/tmp/out$$)

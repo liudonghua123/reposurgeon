@@ -1,5 +1,5 @@
 #!/bin/sh
-## Test repotool initialize with svn source and hg dest
+## Test repotool initialize, svn->hg
 
 mkdir /tmp/test-workdir$$
 cd /tmp/test-workdir$$ >/dev/null || ( echo "$0: cd failed" >&2; exit 1 )

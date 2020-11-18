@@ -1,5 +1,5 @@
 SVN-fs-dump-format-version: 2
- ## Test collision between symglink special form and identical content.
+ ## Test clash between symlink special form and identical content.
  # The symlink and the file in this repository have the same content;
  # reposurgeon should not deduplicate these two blobs.
 

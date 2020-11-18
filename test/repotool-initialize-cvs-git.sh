@@ -1,5 +1,5 @@
 #!/bin/sh
-## Test repotool initialize with cvs source and git dest
+## Test repotool initialize, cvs->git
 
 mkdir /tmp/test-workdir$$
 cd /tmp/test-workdir$$ || ( echo "$0: cd failed"; exit 1 )
