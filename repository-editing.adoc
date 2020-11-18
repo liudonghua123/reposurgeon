@@ -2479,7 +2479,7 @@ the repo is not divided.
    default is the entire history.  The arguments to this command may be
    paths or regular expressions matching paths (regexps must
    be marked by being surrounded with `//`). Shell-like interpretation of
-   string quotes snd backslashes is performeed when parsing this command 
+   string quotes and backslashes is performed when parsing this command
    line; in particular, a preceding backslash may be used to embed a literal
    / character.
 +
@@ -3725,7 +3725,7 @@ branches.  The reference is disambiguated using the base revision
 number of the dead branch. (Note that the reason --preserve is not the
 default behavior is because of experience with large old repositories
 that may have hundreds or even thousands of dead branches. While it is
-important that content copies fron dead branches be resolved
+important that content copies from dead branches be resolved
 correctly, the branches themselves are almost never interesting.)
 
 `--cvsignores`::
@@ -4850,7 +4850,7 @@ http://gitorious.org/svn2git
 Written in C++.  Says it's based on svn-fast-export by Chris Lee.  Not
 easy to figure out what it actually does, as there is no documentation
 at all and no test cases.  May be genetically related to
-svn-all-fast-export, but if so they diverged in 2008. Noteable for
+svn-all-fast-export, but if so they diverged in 2008. Notable for
 having a configuration language for specifying rules that guide the
 conversion, allowing the conversion to be incrementally developed.
 
@@ -4859,7 +4859,7 @@ link:https://archive.softwareheritage.org/swh:1:snp:737821a420cbc6a1c946949da744
 
 Now apparently hosted
 link:https://svn.freebsd.org/base/user/uqs/git_conv/svn2git/[on
-GitHub]. This version has been extened and modified somewhat, and some
+GitHub]. This version has been extended and modified somewhat, and some
 documentation has been added.
 
 A later version turned up in
