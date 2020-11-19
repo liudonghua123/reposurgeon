@@ -1420,7 +1420,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				// All .cvsignores should be ignored as remnants from
 				// a previous up-conversion to Subversion.
 				// This is a philosophical choice; we're taking the
-				//users' Subversion settings as authoritative
+				// users' Subversion settings as authoritative
 				// rather than trying to mimic the exact CVS behavior.
 				if strings.HasSuffix(node.path, ".cvsignore") && !options.Contains("--cvsignores") {
 					continue
@@ -1455,7 +1455,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				} else if node.action == sdADD || node.action == sdCHANGE || node.action == sdREPLACE {
 					if node.blob != nil {
 						// It's really ugly that we're modifying node ancestry pointers at this point
-						// rather than back in Phase 4.  Unfortunartely, attempts to move this code
+						// rather than back in Phase 4.  Unfortunately, attempts to move this code
 						// back there fall afoul of the way the hashmap is updated (see in particular
 						// the next conditional where new content is introduced).
 						if node.contentHash != "" {
@@ -1506,7 +1506,10 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						}
 						continue
 					}
-					// This should never happen.  It indicates that file content is missing from the stream.
+					// This should never happen.
+					// It indicates that file
+					// content is missing from the
+					// stream.
 					if node.blobmark == emptyMark {
 						if logEnable(logSHOUT) {
 							logit("r%d: %s gets impossibly empty blob mark from ancestor %s, skipping",
@@ -1553,10 +1556,10 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 		// directory creations in a Subversion repository
 		// with standard layout also look like this.
 		//
-		// to avoid proliferating code paths and auxiliary
+		// To avoid proliferating code paths and auxiliary
 		// data structures, we're going to punt the theoretical
 		// case of a simultaneous property change on multiple
-		// directories.
+		// directories. No such case has been reported in the wild.
 		if len(commit.fileops) == 0 {
 			// A directory-only commit at position one pretty much has to be
 			// trunk and branches creation.  If we were to tagify it there
@@ -2165,8 +2168,8 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	}
 
 	// We could make branch-tip resets here.  Older versions of
-	// git might have required one per branch tip.  We chose not
-	// to so the resets that are really visible die to tag
+	// git might have required one per branch tip.  We choose not
+	// to so the resets that are really visible due to tag
 	// reduction will stand out.
 }
 
