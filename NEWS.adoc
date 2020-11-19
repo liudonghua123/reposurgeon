@@ -1,7 +1,7 @@
 = reposurgeon project news =
 
-Repository head::
-      Fix for a bug that could scrample history in pathological tag-copy cases.
+4.21: 2020-11-18::
+      Fix for a bug that could scramble history in pathological tag-copy cases.
 
 4.20: 2020-11-16::
      Fixed a bug when an SVN file's content looked exactly like a link special.
@@ -14,7 +14,7 @@ Repository head::
 4.18: 2020-08-26::
      Repocutter now has a "replace" commant for replacing text in blobs.
      repotool now shows closed Mercurial branches.
-     The extractor logic creates all resets for multiply0tagged commits.
+     The extractor logic creates all resets for multiply-tagged commits.
      Compiler optimizations are enabled for increased performance.
 
 4.17: 2020-08-16::
@@ -52,7 +52,7 @@ Repository head::
      New crlf operation allows editing comments with Windows line endings.
      Bug fix for timequake and timeoffset commands.
      Randomize temporary directories during repotool compare.
-     The ignores and strip commands now use the regular option syntax.
+     The ignore and strip commands now use the regular option syntax.
      All command help items now begin with a syntax summary.
      Repomapper can now mine project mail archives.
      The "prompt" command has been retired.
