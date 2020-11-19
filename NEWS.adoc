@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+      Fix for a bug that could scrample history in pathological tag-copy cases.
+
 4.20: 2020-11-16::
      Fixed a bug when an SVN file's content looked exactly like a link special.
      Prevented a crash when "stamp" was given with no selection.

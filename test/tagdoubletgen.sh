@@ -9,6 +9,11 @@
 # away if the tag delete and recreation in r5 are split into separate
 # Subversion commit.
 #
+# Turns out this bug was produced by parallelizing pass 4a.  The tag
+# create/delete/rename has to be done in the same otrder it was
+# committed of havoc will ensue.  Warning: this is a nondetereministic
+# failure, you may falsely appear to dodge it if you reparallelize!
+#
 # repocutter see produces this listing:
 #
 # 1-1   add      branches/

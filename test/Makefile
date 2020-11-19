@@ -128,7 +128,7 @@ $(RULES_MESSAGE_BOX): messagebox-%: %
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
 TESTLOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
-fi-buildregress: multigen.svn ignore.svn global-ignores.svn
+fi-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 	@for file in $(TESTLOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
@@ -146,6 +146,8 @@ ignore.svn: ignoregen.sh
 	sh ignoregen.sh ignore >ignore.svn
 global-ignores.svn: ignoregen.sh
 	sh ignoregen.sh global-ignores >global-ignores.svn
+tagdoublet.svn: tagdoubletgen.sh
+	sh tagdoubletgen.sh >tagdoublet.svn
 
 $(TESTLOADS:%=fi-regress-%): fi-regress-%: %.tst
 	@file=$(<:.tst=); \

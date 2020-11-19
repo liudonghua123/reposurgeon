@@ -802,43 +802,6 @@ func newRevisionRecord(nodes []*NodeAction, props OrderedMap, revision revidx) *
 	return rr
 }
 
-func walkRevisions(revs []RevisionRecord, hook func(int, *RevisionRecord)) {
-	if control.flagOptions["serial"] {
-		for i := range revs {
-			hook(i, &revs[i])
-		}
-		return
-	}
-
-	var (
-		maxWorkers = runtime.GOMAXPROCS(0)
-		channel    = make(chan int, maxWorkers)
-		done       = make(chan bool, maxWorkers)
-	)
-
-	// Create the workers that will loop though events
-	for n := 0; n < maxWorkers; n++ {
-		go func() {
-			// The for loop will stop when channel is closed
-			for i := range channel {
-				hook(i, &revs[i])
-			}
-			done <- true
-		}()
-	}
-
-	// Populate the channel with the events
-	for i := range revs {
-		channel <- i
-	}
-	close(channel)
-
-	// Wait for all workers to finish
-	for n := 0; n < maxWorkers; n++ {
-		<-done
-	}
-}
-
 // Cruft recognizers
 var cvs2svnTagBranchRE = regexp.MustCompile("This commit was manufactured by cvs2svn to create ")
 
@@ -1090,10 +1053,12 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	// may carry properties we're going to need later - notably
 	// mergeinfo properties.  svn:ignore is handled here.
 	//
-	// This phase looks like it should have revision-order
-	// dependencies, but it doesn't.  Having file visibility
-	// information pre-computed for all revisions forestalls that.
-	// Thus, it can be parallelized.
+	// Having file visibility information pre-computed for all
+	// revisions almost forestalls having a revision-order
+	// dependency, but not quite. Consider a tag create, followed
+	// by a tag delete, followed by a recreate with the same name.
+	// Those must be replaiyed in the order they were committed ur
+	// havoc will ensue. Thus, it can't be parallelized.
 	//
 	// This pass is almost entirely indifferent to Subversion
 	// branch structure.  One exceptions in what it does to
@@ -1123,7 +1088,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	baton.startProgress("SVN phase 4a: directory copy expansion", uint64(len(sp.revisions)))
 	nobranch := options.Contains("--nobranch")
 	count := 0
-	walkRevisions(sp.revisions, func(ri int, record *RevisionRecord) {
+	for ri, record := range sp.revisions {
 		expandedNodes := make([]*NodeAction, 0)
 		for _, node := range record.nodes {
 			appendExpanded := func(newnode *NodeAction) {
@@ -1216,7 +1181,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 		sp.revisions[ri].nodes = expandedNodes
 		count++
 		baton.percentProgress(uint64(count))
-	})
+	}
 	baton.endProgress()
 
 	// Try to figure out who the ancestor of this node is.
