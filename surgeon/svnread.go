@@ -1668,12 +1668,12 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 				reqlock.Unlock()
 			}
 			if len(cliques) > 0 {
-				commit.Branch = cliques[len(cliques)-1].branch
+				commit.setBranch(cliques[len(cliques)-1].branch)
 			} else {
 				// If there is no clique, there are no fileops. All such
 				// commits have been filtered out early except those with
 				// a single NodeAction: we can try to figure out a branch.
-				commit.Branch = branchOfEmptyCommit(sp, commit)
+				commit.setBranch(branchOfEmptyCommit(sp, commit))
 			}
 		}
 		baton.percentProgress(uint64(i) + 1)
@@ -1706,7 +1706,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 			fragment.legacyID = baseID + "." + strconv.Itoa(j+1)
 			sp.repo.legacyMap["SVN:"+fragment.legacyID] = fragment
 			fragment.Comment += splitwarn
-			fragment.Branch = split.cliques[len(split.cliques)-j].branch
+			fragment.setBranch(split.cliques[len(split.cliques)-j].branch)
 			baton.twirl()
 		}
 		baton.percentProgress(uint64(i) + 1)
