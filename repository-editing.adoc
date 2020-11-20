@@ -6,6 +6,8 @@
 [[howto]]
 == How to use this manual
 
+This is the long-form manual for the reposurgeon tool suite.
+
 Everybody should read the Introduction (immediately after this
 section) to be sure reposurgeon is the tool you actually want.
 
@@ -98,9 +100,8 @@ fred = Fred Foonly <fred@foonly.net> America/Chicago
 jrh = J. Random Hacker <jrh@random.org> America/Los_Angeles
 esr = Eric S. Raymond <esr@thyrsus.com> America/New_York
 julien = Julien '_FrnchFrgg_' RIVAUD <julien@frnchfrgg.pw> Europe/Paris
-db48x = <Daniel Brooks <db48x@db48x.net> America/Los_Angeles
+db48x = Daniel Brooks <db48x@db48x.net> America/Los_Angeles
 ecree = Edward Cree <ecree@solarflare.com> Europe/London
-
 EOF
 
 # Massage comments into Git-like form (with a topic sentence and a
@@ -328,6 +329,13 @@ project.
 This Makefile will help you avoid typing a lot of fiddly commands
 by hand, and ensure that later products of the conversion pipeline
 are always updated when earlier ones have been modified or removed.
+
+The most important variables to set in the Makefile are the ones that
+set up local mirroring of your repository.  The _repotool_ command has
+a mode that handles the details of making (and, when necessary,
+updating) a local mirror.  To enable this you need to fill in either
+REMOTE_URL or CVS_HOST and CVS_MODULE; read the header comment of the
+conversion makefile for details.
 
 Later, you will put your custom commands in the lift script
 file. Doing this helps you not lose older steps as you experiment with
@@ -613,8 +621,8 @@ and putting it into production, you should check it for basic
 correctness.
 
 Pay attention to error messages emitted during the lift.  Most
-of these, and remedial actions to take, are described in the
-reposurgeon manual.
+of these, and remedial actions to take, are described in this
+guide.
 
 For Subversion lifts, use the "headcompare", "tagscompare" and
 "branchescompare" productions to compare the converted with the
