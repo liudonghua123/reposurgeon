@@ -12,7 +12,7 @@ For higher performance, follow this with:
 
 ---------------------------------------------------------------------
 sudo apt remove golang
-make golang-current
+make current-golang
 make clean
 make
 make check
