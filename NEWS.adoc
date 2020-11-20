@@ -1,7 +1,10 @@
 = reposurgeon project news =
 
+Repository head::
+     Massage any Subversion branch name to be legal as a git reference.
+
 4.21: 2020-11-18::
-      Fix for a bug that could scramble history in pathological tag-copy cases.
+     Fix for a bug that could scramble history in pathological tag-copy cases.
 
 4.20: 2020-11-16::
      Fixed a bug when an SVN file's content looked exactly like a link special.
