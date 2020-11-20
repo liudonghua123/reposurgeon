@@ -8,10 +8,12 @@ trap 'rm -fr ${repo}' EXIT HUP INT QUIT TERM
 
 command -v git >/dev/null 2>&1 || ( echo "$0: git is not installed"; exit 1 )
 
+version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
+
 # shellcheck disable=SC2046
 set -- $(git --version)
 version="$3"
-if [ "$version" != "2.25.1" ]
+if version_gt "2.25.1" "$version";
 then
     # This script will have mysterious failures if the local git chokes
     # on --show-original-ids.

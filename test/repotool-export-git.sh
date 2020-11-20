@@ -5,10 +5,12 @@ command -v git >/dev/null 2>&1 || { echo "    Skipped, git missing."; exit 0; }
 
 mode=${1:---regress}
 
+version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
+
 # shellcheck disable=SC2046
 set -- $(git --version)
 version="$3"
-if [ "$version" != "2.25.1" ] && [ "$mode" = "--regress" ]
+if version_gt "2.25.1" "$version" && [ "$mode" = "--regress" ]
 then
     # 2.20.1 emits terminal resets that 2.25.1 does not.
     echo "SKIPPED - sensitive to Git version skew, seeing unsupported $version"
