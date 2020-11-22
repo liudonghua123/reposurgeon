@@ -682,6 +682,9 @@ var logtags = map[string]uint{
 	"lexer":    logLEXER,
 }
 var optionFlags = [...][2]string{
+	{"asciidoc",
+		`Dump help items using asciiidoc definition markup.
+`},
 	{"canonicalize",
 		`If set, import stream reads and msgin and edit will canonicalize
 comments by replacing CR-LF with LF, stripping leading and trailing whitespace,

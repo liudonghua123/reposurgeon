@@ -78,6 +78,136 @@ options.adoc: build
 .adoc.html:
 	asciidoctor -D. -a webfonts! $<
 
+# This is a list of help topics for which the help is in regular format.
+# This means there's one line of BNF, a blank separator line, and one or
+# more blank-line-separated paragraphs of running text.
+TOPICS = \
+	append \
+	assign \
+	authors \
+	bench \
+	blob \
+	branch \
+	branchify \
+	branchmap \
+	changelogs \
+	checkout \
+	choose \
+	clear \
+	coalesce \
+	count \
+	debranch \
+	dedup \
+	define \
+	delete \
+	diff \
+	divide \
+	do \
+	drop \
+	edit \
+	elapsed \
+	exit \
+	expunge \
+	filter \
+	gc \
+	gitify \
+	graft \
+	graph \
+	hash \
+	help \
+	history \
+	ignores \
+	incorporate \
+	index \
+	inspect \
+	legacy \
+	lint \
+	list \
+	log \
+	logfile \
+	manifest \
+	memory \
+	merge \
+	msgin \
+	msgout \
+	names \
+	path \
+	paths \
+	prefer \
+	preserve \
+	print \
+	quit \
+	read \
+	readlimit \
+	rebuild \
+	references \
+	remove \
+	rename \
+	renumber \
+	reorder \
+	reset \
+	resolve \
+	script \
+	set \
+	setfield \
+	setperm \
+	shell \
+	sizeof \
+	sizes \
+	sourcetype \
+	split \
+	squash \
+	stamp \
+	stats \
+	strip \
+	tag \
+	tagify \
+	tags \
+	timeoffset \
+	timequake \
+	timing \
+	tip \
+	transcode \
+	unassign \
+	undefine \
+	unite \
+	unmerge \
+	unpreserve \
+	version \
+	when \
+	write
+# These are all the non-regular topics
+EXCEPTIONS = \
+	add \
+	attribution \
+	functions \
+	lint \
+	options \
+	profile \
+	reparent \
+	selection \
+	split \
+	syntax
+
+# Most othe command descriptions in Repositpory editing are reposurgeon's embedded
+# help, lightly massaged into asciidoc format.
+repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
+	rm -fr docinclude; mkdir docinclude
+	for topic in $(TOPICS); \
+	do \
+	    reposurgeon "set asciidoc" "help $${topic}" >docinclude/$${topic}.adoc; \
+	done
+	asciidoctor -D. -a webfonts! repository-editing.adoc
+
+# Audit for embedded-help entries not used as inclusions (column 1)
+# or inclusions for which there are no corresponding help topics (column 2).
+# Column 2 should always be empty.
+helpcheck:
+	@(for topic in $(TOPICS); do echo $${topic}; done) | sort >/tmp/topics$$$$; \
+	sed -n <repository-editing.adoc '/include::docinclude\/\([a-z]*\).adoc\[\]/s//\1/p' | sort >/tmp/includes$$$$ ; \
+	comm -3 /tmp/topics$$$$ /tmp/includes$$$$; \
+	rm /tmp/topics$$$$ /tmp/includes$$$$
+
 #
 # Auxillary Go tooling productions
 #
@@ -101,7 +231,7 @@ fmt:
 #
 clean:
 	rm -f $(BINARIES) options.adoc surgeon/version.go
-	rm -fr  *~ *.1 *.html *.tar.xz MANIFEST *.md5
+	rm -fr docinclude *~ *.1 *.html *.tar.xz MANIFEST *.md5
 	rm -fr .rs .rs* test/.rs test/.rs*
 	rm -f typescript test/typescript
 

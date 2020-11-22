@@ -4,6 +4,7 @@ repomapper
 repotool
 options.adoc
 surgeon/version.go
+docinclude
 pkg
 *.1
 *.html

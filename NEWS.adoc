@@ -2,6 +2,7 @@
 
 Repository head::
      Massage any Subversion branch name to be legal as a git reference.
+     Much of "Repository Editing" is now generated from embedded help.
 
 4.21: 2020-11-18::
      Fix for a bug that could scramble history in pathological tag-copy cases.
