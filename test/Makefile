@@ -44,8 +44,12 @@ CONCURRENT_JOBS=$(shell getconf _NPROCESSORS_ONLN || getconf NPROCESSORS_ONLN ||
 # Exploit make parallelism
 PARALLEL_MAKE=$(MAKE) --output-sync --no-print-directory -j $(CONCURRENT_JOBS)
 
+# check-aux must not be run in parallel.
+check:
+	$(MAKE) -j1 check-aux
+
 # This should always be a full test
-check: clean disclose $(BASIC) $(FULLSUBVERSION) $(GIT_EXTRACTOR) $(HG_EXTRACTOR) $(AUXTOOLS) sporadic
+check-aux: clean disclose $(BASIC) $(FULLSUBVERSION) $(GIT_EXTRACTOR) $(HG_EXTRACTOR) $(AUXTOOLS) sporadic
 	@echo "=== No diff output is good news ==="
 
 disclose:
