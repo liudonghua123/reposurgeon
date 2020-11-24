@@ -1201,10 +1201,10 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 			// the target of a directory copy that created
 			// the ancestor we are looking for
 			lookback = sp.history.getActionNode(node.fromRev, node.fromPath)
-			if lookback != nil && logEnable(logTOPOLOGY) {
-				logit("r%d~%s -> %v (via filemap of %d)",
-					node.revision, node.path, lookback, node.fromRev)
-			}
+			//if lookback != nil && logEnable(logTOPOLOGY) {
+			//	logit("r%d~%s -> %v (via filemap of %d)",
+			//		node.revision, node.path, lookback, node.fromRev)
+			//}
 		} else if node.action != sdADD {
 			// The ancestor could be a file copy node expanded
 			// from an earlier expanded directory copy.
@@ -1240,6 +1240,9 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 			node.fromIdx = 0
 			if node.kind == sdFILE {
 				ancestor := seekAncestor(sp, node, revisionPathHash)
+				if logEnable(logANCESTRY) {
+					logit("%s gets ancestor %s", node, ancestor)
+				}
 				// It is possible for ancestor to still be nil here,
 				// if the node was a pure property change
 				if ancestor != nil {
@@ -1444,6 +1447,9 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 							// otherwise parent pointers won't
 							// be computed properly.
 							ancestor = lookback
+							if logEnable(logANCESTRY) {
+								logit("%s gets ancestor %s (via hashmap)", node, ancestor)
+							}
 							node.fromPath = ancestor.fromPath
 							node.fromRev = ancestor.fromRev
 							node.blobmark = ancestor.blobmark

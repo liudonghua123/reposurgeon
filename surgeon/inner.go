@@ -654,6 +654,7 @@ const (
 	logTOPOLOGY                  // Log repo-extractor logic (coarse-grained)
 	logEXTRACT                   // Log repo-extractor logic (fine-grained)
 	logFILEMAP                   // Log building of filemaps (warning: very verbose!)
+	logANCESTRY                  // Log ancestry computation
 	logDELETE                    // Log canonicalization after deletes
 	logIGNORES                   // Log ignore generation
 	logSVNPARSE                  // Lower-level Subversion parsing details
@@ -672,6 +673,7 @@ var logtags = map[string]uint{
 	"topology": logTOPOLOGY,
 	"extract":  logEXTRACT,
 	"filemap":  logFILEMAP,
+	"ancestry": logANCESTRY,
 	"delete":   logDELETE,
 	"ignores":  logIGNORES,
 	"svnparse": logSVNPARSE,
