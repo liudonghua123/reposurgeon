@@ -1427,24 +1427,26 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						// It's really ugly that we're modifying node ancestry pointers at this point
 						// rather than back in Phase 4.  Unfortunately, attempts to move this code
 						// back there fall afoul of the way the hashmap is updated (see in particular
-						// the next conditional where new content is introduced).
-						if node.contentHash != "" {
-							if lookback, ok := sp.hashmap[node.contentHash]; ok {
-								if logEnable(logEXTRACT) {
-									logit("r%d: blob of %s matches existing hash %s, assigning '%s' from %s",
-										record.revision, node, node.contentHash, lookback.blobmark.String(), lookback)
-								}
-								// Blob matches an existing one -
-								// node was created by a
-								// non-Subversion copy followed by
-								// add.  Get the ancestry right,
-								// otherwise parent pointers won't
-								// be computed properly.
-								ancestor = lookback
-								node.fromPath = ancestor.fromPath
-								node.fromRev = ancestor.fromRev
-								node.blobmark = ancestor.blobmark
+						// the next conditional where new content is introduced).  The problem: if
+						// we do blob hash computation early, emitting blobs in the Git canonical way
+						// - each one exactly once, just in time before the first commit to reference
+						// it - would becomes significantly more difficult. And final ancestry
+						// computation depends on this map.
+						if lookback, ok := sp.hashmap[node.contentHash]; ok {
+							if logEnable(logEXTRACT) {
+								logit("r%d: blob of %s matches existing hash %s, assigning '%s' from %s",
+									record.revision, node, node.contentHash, lookback.blobmark.String(), lookback)
 							}
+							// Blob matches an existing one -
+							// node was created by a
+							// non-Subversion copy followed by
+							// add.  Get the ancestry right,
+							// otherwise parent pointers won't
+							// be computed properly.
+							ancestor = lookback
+							node.fromPath = ancestor.fromPath
+							node.fromRev = ancestor.fromRev
+							node.blobmark = ancestor.blobmark
 						}
 						if node.blobmark == emptyMark {
 							// This is the normal way new blobs get created
