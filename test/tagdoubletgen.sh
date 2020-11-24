@@ -5,9 +5,9 @@
 # reposurgeon 4.20 reported the Git lift is incorrect.
 #
 # Inspection revealed a content bug.  The "replace my-tag tag" commit
-# made from r5 has wrong content in "file": it should have the "file:
-# add bar" from r4 as its parent, as in the svn repository But it gets
-# the r2 content "foo" instead.  The problem is known to go away if
+# made from r5 has wrong content in "file": it should have "foo\nbar\n"
+# from r4 as content, as in the svn repository But it gets
+# the r2 content "foo\n" instead.  The problem is known to go away if
 # the tag delete and recreation in r5 are split into separate
 # Subversion commits.
 #
