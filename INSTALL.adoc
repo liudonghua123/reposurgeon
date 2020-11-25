@@ -67,10 +67,10 @@ later) will cause one spurious test failure.
 gnuplot is only required if you're planning to try performance-tuning
 with repobench.
 
-== Building the software ==
+== Building the software from the repository ==
 
-To build the tools, simply run "make" in the toplevel directory.  This
-also builds the suite documentation.
+To build the tools after cloning the repository, simply run "make" in
+the toplevel directory.  This also builds the suite documentation.
 
 == Testing the software ==
 
