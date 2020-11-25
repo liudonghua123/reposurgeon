@@ -1,6 +1,7 @@
 = reposurgeon project news =
 
 Repository head::
+     Properly handle yet another bizarre Subversion tag-rename case.
      Massage any Subversion branch name to be legal as a git reference.
      Much of "Repository Editing" is now generated from embedded help.
 
