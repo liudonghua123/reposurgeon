@@ -437,7 +437,7 @@ func mirror(args []string) {
 	}
 	operand := args[0]
 	mirrordir := ""
-	if len(args) >= 1 {
+	if len(args) >= 2 {
 		mirrordir = args[1]
 	}
 	pwd, err := os.Getwd()
