@@ -49,18 +49,8 @@ file: add bar
 from :3
 M 100644 :4 file
 
-commit refs/tags/my-tag
-#legacy-id 5
-mark :6
-committer fred <fred> 50 +0000
-data 19
-replace my-tag tag
-from :3
-D .gitignore
-M 100644 :4 file
-
 blob
-mark :7
+mark :6
 data 12
 foo
 bar
@@ -68,17 +58,19 @@ end
 
 commit refs/heads/master
 #legacy-id 6
-mark :8
+mark :7
 committer fred <fred> 60 +0000
 data 14
 file: add end
 from :5
-M 100644 :7 file
+M 100644 :6 file
 
-tag my-tag-root
-#legacy-id 3
-from :3
-tagger fred <fred> 30 +0000
-data 15
-add my-tag tag
+tag my-tag
+#legacy-id 5.2
+from :5
+tagger fred <fred> 50 +0000
+data 57
+replace my-tag tag
+
+[[Split portion of a mixed commit.]]
 

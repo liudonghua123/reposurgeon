@@ -1666,14 +1666,21 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 		if commit, ok := event.(*Commit); ok {
 			var oldbranch, newbranch string
 			cliques := make([]clique, 0)
+			startclique := true // Always add the first clique
 			// We only generated M and D ops, or special deleteall ops with
 			// their path set, therefore we only care about the Path member.
 			for j, fileop := range commit.fileops {
 				newbranch, commit.fileops[j].Path = sp.splitSVNBranchPath(fileop.Path)
-				if j == 0 || newbranch != oldbranch {
+				if startclique || newbranch != oldbranch {
+					// A new clique is started:
+					//  * at the first op following the commit start or a deleteall
+					//  * when the branch changes (in a mixed commit)
 					cliques = append([]clique{clique{j, newbranch}}, cliques...)
 					oldbranch = newbranch
 				}
+				// If this operation is a deleteall, a new clique should be started
+				// at the next operation so that tipdeletes are their own commit.
+				startclique = (fileop.op == deleteall)
 			}
 			if len(cliques) > 1 {
 				reqlock.Lock()
@@ -1726,6 +1733,32 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	}
 	baton.endProgress()
 
+	/* Phase 6d: fixing the parent links to restore the namespace continuity.
+	* In this comment, a namespace is a branch, a tag or anything recognized
+	* by the branchify setting. The previous subphase stripped the namespace
+	* from the file paths and transferred it to the commit branch.  By doing
+	* so, it entangled the histories of files in different namespaces.  This
+	* phase is about getting the contents correctness back by separating the
+	* linear history into disconnected chains of commits, one per namespace.
+	* The deleteall operations comes from total deletion of namespaces which
+	* should cut the chain in two and disconnect the latter history from the
+	* history preceding the deleteall. Phase 6a and 6b ensure that deleteall
+	* operations always are the last of their commit.
+	*
+	* This is also a good time to fill an helper structure remembering which
+	* commit last happened on every namespace at every revision. That struct
+	* is a dictionary mapping namespaces to lists of commits where
+	*   sp.lastCommitOnBranchAt[namespace][rev_id]
+	* is a pointer to  the last commit  that happened  in the namespace at a
+	* revision id less than or equal to rev_id. If rev_id is past the end of
+	* the list, then no commit happened in the namespace *after* rev_id, and
+	* the wanted last commit is the last element of the list.
+	*
+	* This is used as an invariant to incrementally build the lists: when we
+	* encounter a new commit on a namespace, we complete the list by copying
+	* its last item enough times so that  previously implicit information is
+	* explicitly filled, then then fill list[rev_id] with the commit we just
+	* encountered. */
 	baton.startProgress("SVN phase 6c: fix content-changing parent links",
 		uint64(len(sp.repo.events)))
 	sp.lastCommitOnBranchAt = make(map[string][]*Commit)
@@ -1738,16 +1771,16 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 			list, found := sp.lastCommitOnBranchAt[commit.Branch]
 			lastrev := -1
 			var prev *Commit
-			if found {
+			if found { // the namespace has already had commits
 				lastrev = len(list) - 1
 				prev = list[lastrev]
-			} else {
+			} else { // this is a brand new namespace
 				// lastrev == -1, prev == nil
 				list = make([]*Commit, 0, maxRev+1)
 			}
 			list = list[:rev+1] // enlarge the list to go up to rev
 			for i := lastrev + 1; i < rev; i++ {
-				list[i] = prev
+				list[i] = prev // implicit information becoming explicit
 			}
 			list[rev] = commit
 			sp.lastCommitOnBranchAt[commit.Branch] = list
@@ -1893,7 +1926,7 @@ func svnProcessBranches(ctx context.Context, sp *StreamParser, options stringSet
 
 // Return the last commit with legacyID in (0;maxrev] whose SVN branch is equal
 // to branch, or nil if not found.  It needs sp.lastCommitOnBranchAt to be
-// filled, so can only be used after phase 8a has run.
+// filled, so can only be used after phase 6c has run.
 func lastRelevantCommit(sp *StreamParser, maxrev revidx, branch string) *Commit {
 	if list, ok := sp.lastCommitOnBranchAt[trimSep(branch)]; ok {
 		l := revidx(len(list)) - 1
