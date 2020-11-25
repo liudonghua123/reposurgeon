@@ -2002,7 +2002,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	//
 	// All of those copies need to be re-played to compute thee
 	// content at each revision properly, but in computing branch
-	// links it's the location of the *last copy* to to the root
+	// links it's the location of the *last copy* to the root
 	// commit of each branch that we want.
 	//
 	// If there was only ever one Subversion directory copy life
@@ -2039,6 +2039,10 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// the new branch. And CVS didn't actually record branch
 	// creation times.  But the branch creation can't have been
 	// before the last copy.
+	//
+	// 5. Tag or branch delete followed by recreating copy
+	// *within the same revision*.  Rgww tests/tagdoublet.svn
+	// for an example.
 	//
 	// These cases are rebarbative. Dealing with them is by far the
 	// most likely source of bugs in the analyzer.

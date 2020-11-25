@@ -19,9 +19,10 @@
 #
 # However, this is not the bug the submitter was attempting to
 # report. His actual issue are: (1) the Git commit corresponfing to r5
-# has a wrong parent, and (2) while the file content at each translted
-# Git revision is correct, the second file content change
-# corresponding to r4 is missing from the translated log.
+# has a wrong parent corresponding to r3 rather than r4, and (2) while
+# the file content at each translated Git revision is correct, the
+# second file content change corresponding to r4 is missing from the
+# translated log.
 #
 # He further reported that these bugs went away if the operations in
 # r5 are split up so the tag removal and replacement happen in
