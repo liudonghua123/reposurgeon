@@ -2075,6 +2075,16 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	}
 	count := 0
 	for branch, roots := range sp.branchRoots {
+		if logEnable(logTOPOLOGY) {
+			legend := ""
+			for _, root := range roots {
+				legend += fmt.Sprintf("%s=<%s>, ", root.mark, root.legacyID)
+			}
+			if len(roots) >= 1 {
+				legend = legend[:len(legend)-2]
+			}
+			logit("Branch %s has roots %s", branch, legend)
+		}
 		for _, commit := range roots {
 			rev, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
 			record := sp.revision(intToRevidx(rev))
