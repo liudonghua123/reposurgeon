@@ -690,7 +690,7 @@ var optionFlags = [...][2]string{
 	{"canonicalize",
 		`If set, import stream reads and msgin and edit will canonicalize
 comments by replacing CR-LF with LF, stripping leading and trailing whitespace,
-and then appending a LF. This behavior inverts of the crlf option is on - LF is
+and then appending a LF. This behavior inverts if the crlf option is on - LF is
 replaced with Cr-LF and CR-LF is appended.
 `},
 	{"crlf",
@@ -8218,7 +8218,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 
 	// Machinery for recognizing and skipping dates in
 	// ChangeLog attribution lines. To add more date formats,
-	// put Go time format specifications in the dateFormata
+	// put Go time format specifications in the dateFormats
 	// literal. The third literal is the common case. The
 	// first two are malformations from the GCC history that
 	// might be found elsewhere; they need to be before YYYY-MM-DD

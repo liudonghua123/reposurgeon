@@ -923,7 +923,7 @@ Display four columns of info on selected objects: their number, their
 type, the associate mark (or '-' if no mark) and a summary field
 varying by type.  For a branch or tag it's the reference; for a commit
 it's the commit branch; for a blob it's the repository path of the
-file in the blob.  Supports > redirection.
+file in the blob.
 `)
 }
 
@@ -1241,7 +1241,7 @@ func (rs *Reposurgeon) HelpStats() {
 sizes [>OUTFILE]
 
 Report size statistics and import/export method information of the
-currently chosen repository. Supports > redirection.
+currently chosen repository.
 `)
 }
 
@@ -1296,7 +1296,7 @@ func (rs *Reposurgeon) HelpCount() {
 {SELECTION} count [>OUTFILE]
 
 Report a count of items in the selection set. Default set is everything
-in the currently-selected repo. Supports > redirection.
+in the currently-selected repo.
 `)
 }
 
@@ -1324,7 +1324,7 @@ func (rs *Reposurgeon) HelpList() {
 Display commits in a human-friendly format; the first column is raw
 event numbers, the second a timestamp in local time. If the repository
 has legacy IDs, they will be displayed in the third column. The
-leading portion of the comment follows. Supports > redirection.
+leading portion of the comment follows.
 
 Options to issue only partial reports are supported; "lint --options"
 or "lint -?" lists them.
@@ -1365,8 +1365,6 @@ If a commit is at a branch tip, its tip is its branch name.  If it has
 only one child, its tip is the child's tip.  If it has multiple children,
 then if there is a child with a matching branch name its tip is the
 child's tip.  Otherwise this function throws a recoverable error.
-
-Supports > redirection.
 `)
 }
 
@@ -1394,7 +1392,7 @@ func (rs *Reposurgeon) HelpTags() {
 
 Display tags and resets: three fields, an event number and a type and a name.
 Branch tip commits associated with tags are also displayed with the type
-field 'commit'. Supports > redirection.
+field 'commit'.
 `)
 }
 
@@ -1428,7 +1426,6 @@ func (rs *Reposurgeon) HelpStamp() {
 
 Display full action stamps corresponding to commits in a select.
 The stamp is followed by the first line of the commit message.
-Supports > redirection.
 `)
 }
 
@@ -1464,7 +1461,7 @@ blobs, commit and tag comments, and other metadata strings (a blob is
 counted each time a commit points at it).  Not an exact measure of
 storage size: intended mainly as a way to get information on how to
 efficiently partition a repository that has become large enough to be
-unwieldy. Supports > redirection.
+unwieldy.
 `)
 }
 
@@ -1548,8 +1545,6 @@ branch labels descending from the same commit, (7) time and
 action-stamp collisions.
 
 Give it the -? option for a list of available options.
-
-Supports > redirection.
 `)
 }
 
@@ -2516,7 +2511,7 @@ func (rs *Reposurgeon) HelpMsgout() {
 Emit a file of messages in RFC822 format representing the contents of
 repository metadata. Takes a selection set; members of the set other
 than commits, annotated tags, and passthroughs are ignored (that is,
-presently, blobs and resets). Supports > redirection.
+presently, blobs and resets).
 
 May have an option --filter, followed by = and a /-enclosed regular expression.
 If this is given, only headers with names matching it are emitted.  In this
@@ -2572,7 +2567,7 @@ func (rs *Reposurgeon) DoMsgout(lineIn string) bool {
 // HelpMsgin says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgin() {
 	rs.helpOutput(`
-msgin [--create] [<INFILE]
+msgin [--create] [<INFILE] [>OUTFILE]
 
 Accept a file of messages in RFC822 format representing the
 contents of the metadata in selected commits and annotated tags. Takes
@@ -2646,8 +2641,6 @@ Normally this command ignores blobs because msgout does.
 However, if you specify a selection set consisting of a single
 blob, your editor will be called on the blob file; alternatively,
 as with msgout, the --blobs option will include blobs in the file.
-
-Supports < and > redirection.
 `)
 }
 
@@ -4390,7 +4383,7 @@ expression.  For each commit in the selection set, print the mapping
 of all paths in that commit tree to the corresponding blob marks,
 mirroring what files would be created in a checkout of the commit. If
 a regular expression is given, only print "path -> mark" lines for
-paths matching it.  This command supports > redirection.
+paths matching it.
 `)
 }
 
@@ -5841,7 +5834,7 @@ func (rs *Reposurgeon) HelpReferences() {
 
 With the 'list' modifier, produces a listing of events that may have
 Subversion or CVS commit references in them.  This version
-of the command supports >-redirection.  Equivalent to '=N list'.
+of the command supports > redirection.  Equivalent to '=N list'.
 
 With the modifier 'edit', edit this set.  This version of the command
 supports < and > redirection.  Equivalent to '=N edit'.
@@ -6082,10 +6075,10 @@ func (rs *Reposurgeon) DoCheckout(line string) bool {
 // HelpDiff says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDiff() {
 	rs.helpOutput(`
-{SELECTION} diff
+{SELECTION} diff [>OUTFILE]
 
 Display the difference between commits. Takes a selection-set argument which
-must resolve to exactly two commits. Supports > redirection.
+must resolve to exactly two commits.
 `)
 }
 
