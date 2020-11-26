@@ -39,6 +39,8 @@ build:
 	go build $(GOFLAGS) -o reposurgeon ./surgeon
 	go build $(GOFLAGS) -o repotool ./tool
 
+reposurgeon: build
+
 #
 # Fast installation in apt-world. Fire either stable-golang or current-golang,
 # then helpers, then test-helpers if you want to run the test suite,
@@ -191,11 +193,11 @@ EXCEPTIONS = \
 
 # Most othe command descriptions in Repositpory editing are reposurgeon's embedded
 # help, lightly massaged into asciidoc format.
-repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
+repository-editing.html: surgeon/reposurgeon.go reposurgeon options.adoc repository-editing.adoc
 	rm -fr docinclude; mkdir docinclude
 	for topic in $(TOPICS); \
 	do \
-	    reposurgeon "set asciidoc" "help $${topic}" >docinclude/$${topic}.adoc; \
+	    ./reposurgeon "set asciidoc" "help $${topic}" >docinclude/$${topic}.adoc; \
 	done
 	asciidoctor -D. -a webfonts! repository-editing.adoc
 
