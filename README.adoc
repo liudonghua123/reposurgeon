@@ -30,7 +30,7 @@ This distribution supports a generic conversion workflow using these
 tools, and includes a long-form manual "Repository Editing and
 Conversion With Reposurgeon" that describes how to use it.
 
-The file 'reposurgeon-git-aliases` can be appended to your `~/.gitconfig' to
+The file `reposurgeon-git-aliases` can be appended to your `~/.gitconfig` to
 support working directly with action stamps in git.
 
 Finally, an Emacs Lisp mode with useful functions for editing large
