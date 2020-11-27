@@ -457,9 +457,8 @@ func mirror(args []string) {
 	isFullURL, badre := regexp.Match("svn://|svn\\+ssh://|https://|http://", []byte(operand))
 	if (badre == nil && isFullURL) || localrepo(operand, "file:///", "svn") {
 		if mirrordir == "" {
-			locald = filepath.Base(operand) + "-mirror"
-		}
-		if mirrordir[0] == os.PathSeparator {
+			locald = filepath.Join(pwd, filepath.Base(operand)+"-mirror")
+		} else if mirrordir[0] == os.PathSeparator {
 			locald = mirrordir
 		} else {
 			locald = filepath.Join(pwd, mirrordir)
