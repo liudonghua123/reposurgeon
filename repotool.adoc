@@ -150,7 +150,9 @@ the repository in a directory named after the last segment of the URL,
 with the suffix "-mirror" (the local mirror name can be
 overridden by an optional second argument). The second form updates
 the local mirror, doing an incremental fetch; just give the mirror
-directory name.
+directory name.  If the environment variables RUSERNAME and RPASSWORD
+are set, they are used as login/password credentials for Subversion
+mirroring.
 
 Subversion URLs are as specified in the public documentation for
 Subversion.  CVS URLs must specify a host and repository path,

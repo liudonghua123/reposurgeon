@@ -452,6 +452,8 @@ func mirror(args []string) {
 		vtype := identifyRepo(operand[len(prefix)-1:])
 		return vtype != nil && vtype.name == vcs
 	}
+	username := os.Getenv("RUSERNAME")
+	password := os.Getenv("RPASSWORD")
 	var locald string
 	tillHash := regexp.MustCompile("^.*#")
 	isFullURL, badre := regexp.Match("svn://|svn\\+ssh://|https://|http://", []byte(operand))
@@ -463,6 +465,13 @@ func mirror(args []string) {
 		} else {
 			locald = filepath.Join(pwd, mirrordir)
 		}
+		credentials := ""
+		if username != "" {
+			credentials = fmt.Sprintf("--source-username %q", username)
+		}
+		if password != "" {
+			credentials += fmt.Sprintf(" --source-password %q", username)
+		}
 		runShellProcessOrDie("svnadmin create "+locald, "mirror creation")
 		makeStub(locald+"/hooks/pre-revprop-change", "#!/bin/sh\nexit 0;\n")
 		os.Remove(locald + "/hooks/post-revprop-change")
@@ -473,7 +482,7 @@ func mirror(args []string) {
 		// very sure you have not made any local changes to the repo
 		// since rsyncing, or havoc will ensue.
 		runShellProcessOrDie(fmt.Sprintf("chmod a+x %s/hooks/pre-revprop-change", locald), "mirroring")
-		runShellProcessOrDie(fmt.Sprintf("svnsync init -q --allow-non-empty file://%s %s", locald, operand), "mirroring")
+		runShellProcessOrDie(fmt.Sprintf("svnsync init -q %s --allow-non-empty file://%s %s", credentials, locald, operand), "mirroring")
 		runShellProcessOrDie(fmt.Sprintf("svnsync synchronize -q --steal-lock file://%s", locald), "mirroring")
 	} else if isdir(filepath.Join(operand, "locks")) {
 		if operand[0] == os.PathSeparator {
