@@ -491,6 +491,15 @@ func mirror(args []string) {
 			locald = filepath.Join(pwd, operand)
 		}
 		runShellProcessOrDie(fmt.Sprintf("svnsync synchronize -q --steal-lock file://%s", locald), "mirroring")
+	} else if strings.HasPrefix(operand, "rsync://") {
+		if mirrordir == "" {
+			locald = filepath.Join(pwd, filepath.Base(operand)+"-mirror")
+		} else if mirrordir[0] == os.PathSeparator {
+			locald = mirrordir
+		} else {
+			locald = filepath.Join(pwd, mirrordir)
+		}
+		runShellProcessOrDie(fmt.Sprintf("rsync --delete --progress -avz %s/ %s", operand, locald), "mirroring")
 	} else if strings.HasPrefix(operand, "cvs://") || localrepo(operand, "file://", "cvs") {
 		if mirrordir != "" {
 			locald = mirrordir
