@@ -59,7 +59,8 @@ var makefileTemplate = `# Makefile for {{.Project}} conversion using reposurgeon
 # Steps to using this:
 # 1. Make sure reposurgeon and repotool are on your $PATH.
 # 2. (Skip this step if you're starting from a stream file.) For svn, set
-#    REMOTE_URL to point at the remote repository you want to convert.
+#    REMOTE_URL to point at the remote repository you want to convert;
+#    you can use either an svn: URL or an rsync: UIRL for this.
 #    If the repository is already in a DVCS such as hg or git,
 #    set REMOTE_URL to either the normal cloning URL (starting with hg://,
 #    git://, etc.) or to the path of a local clone.
@@ -499,7 +500,12 @@ func mirror(args []string) {
 		} else {
 			locald = filepath.Join(pwd, mirrordir)
 		}
-		runShellProcessOrDie(fmt.Sprintf("rsync --delete --progress -avz %s/ %s", operand, locald), "mirroring")
+		// Sadly, due to a limitation of rsync we can't simply copy over the rsync URL.
+		// Those can't be tested locally and they tell rsync to look for rsyncd on the server
+		// side. So, we're going to transform the source address to a : spec.
+		parts := strings.Split(operand[8:], "/")
+		operand = parts[0] + ":/" + strings.Join(parts[1:], "/")
+		runShellProcessOrDie(fmt.Sprintf("rsync --delete -az %s/ %s", operand, locald), "mirroring")
 	} else if strings.HasPrefix(operand, "cvs://") || localrepo(operand, "file://", "cvs") {
 		if mirrordir != "" {
 			locald = mirrordir

@@ -344,6 +344,18 @@ updating) a local mirror.  To enable this you need to fill in either
 REMOTE_URL or CVS_HOST and CVS_MODULE; read the header comment of the
 conversion makefile for details.
 
+If you're lifting a Subversion repository you can specify the
+repository URL in either of two ways:  as a standard Subversion
+repository URL (service prefix "svn:") or as an rsync URL pointing
+at the same repository master directory (service prefix "rsync:").
+Usually rsync mirroring is faster, but it depends on sshd running
+at the server end and may being in complications around its security
+features.  Use a "svn:" URL, which uses mirroring by svnsync, when you
+can't make rsync work.  Note by the way that repotool mirror's "rsync:" URLs
+do *not* have the requirement for a remote rsyncd that an rsync URL fed
+to rsync itself does; internally, repotool turns them into a
+single-colon host plus path rsync source specification.
+
 Later, you will put your custom commands in the lift script
 file. Doing this helps you not lose older steps as you experiment with
 newer ones, and it documents what you did.

@@ -4,6 +4,7 @@ Repository head::
      Properly handle yet another bizarre Subversion tag-rename case.
      Massage any Subversion branch name to be legal as a git reference.
      Much of "Repository Editing" is now generated from embedded help.
+     repotool mirror can now use rsync for pulling repositories.
 
 4.21: 2020-11-18::
      Fix for a bug that could scramble history in pathological tag-copy cases.
