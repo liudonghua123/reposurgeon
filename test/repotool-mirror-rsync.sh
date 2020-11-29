@@ -6,7 +6,7 @@ command -v rsync >/dev/null 2>&1 || { echo "    Skipped, rsync missing."; exit 0
 
 case $1 in
     --regress)
-        if ! ssh -o PasswordAuthentication=no localhost 2>/dev/null 1>&2; then
+        if ! ssh -o PasswordAuthentication=no -n localhost true 2>/dev/null 1>&2; then
             echo "SKIPPED - this test needs to be able to ssh to localhost, but that doesn't appear to be possible"
             exit 0;
         fi;;
