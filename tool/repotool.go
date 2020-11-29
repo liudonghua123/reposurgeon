@@ -503,8 +503,8 @@ func mirror(args []string) {
 		// Sadly, due to a limitation of rsync we can't simply copy over the rsync URL.
 		// Those can't be tested locally and they tell rsync to look for rsyncd on the server
 		// side. So, we're going to transform the source address to a : spec.
-		parts := strings.Split(operand[8:], "/")
-		operand = parts[0] + ":/" + strings.Join(parts[1:], "/")
+		parts := strings.SplitN(operand[8:], "/", 2)
+		operand = parts[0] + ":/" + parts[1]
 		runShellProcessOrDie(fmt.Sprintf("rsync --delete -az %s/ %s", operand, locald), "mirroring")
 	} else if strings.HasPrefix(operand, "cvs://") || localrepo(operand, "file://", "cvs") {
 		if mirrordir != "" {
