@@ -4,6 +4,14 @@
 command -v svn >/dev/null 2>&1 || { echo "    Skipped, svn missing."; exit 0; }
 command -v rsync >/dev/null 2>&1 || { echo "    Skipped, rsync missing."; exit 0; }
 
+case $1 in
+    --regress)
+        if ! ssh -o PasswordAuthentication=no localhost 2>/dev/null; then
+            echo "SKIPPED - this test needs to be able to ssh to localhost, but that doesn't appear to be possible"
+            exit 0;
+        fi;;
+esac
+
 trap 'rm -rf /tmp/test-repo-$$ /tmp/out$$ /tmp/mirror$$' EXIT HUP INT QUIT TERM
 
 # This is how we detect we're in Gitlab CI.
