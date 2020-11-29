@@ -4474,9 +4474,12 @@ mark, or from its index in the repository, with a disambiguation
 suffix if needed.
 
 tagify currently recognizes three options: first is '--canonicalize' which
-makes tagify try harder to detect trivial commits by first ensuring that all
-fileops of selected commits will have an actual effect when processed by
-fast-import.
+makes tagify try harder to detect trivial commits by first removing all
+fileops of the selected commits which have no actual effect when processed by
+fast-import. For example, file modification ops that don't actually change the
+content of the file, or deletion ops that delete a file that doesn't exist in
+the parent commit get removed. This rarely happens naturally, but can happen
+after some surgical operations, such as reparenting.
 
 The second option is '--tipdeletes' which makes tagify also consider branch
 tips with only deleteall fileops to be candidates for tagification. The
