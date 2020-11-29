@@ -5396,10 +5396,31 @@ func (repo *Repository) invalidateObjectMap() {
 	repo.invalidateMarkToIndex()
 }
 
+func parseContributionLine(netwide string) (Contributor, *time.Location, error) {
+	// Using parseAttrinutionLine here is a kludge that relies
+	// on the fact that it doesn't interpret its third (timestamp)
+	// field, so we can interpret it as a timezone spec instead.
+	// That third field is actually the rest of the line after
+	// the address and any interventing spaces; it is open to
+	// other interpretations, including as multiple
+	// fields with whitespace or other separators.
+	name, mail, timezone, err := parseAttributionLine(netwide)
+	var loc *time.Location
+	if timezone != "" {
+		loc, err = time.LoadLocation(timezone)
+		if err != nil {
+			loc, err = locationFromZoneOffset(timezone)
+		}
+	}
+	return Contributor{"", name, mail, timezone}, loc, err
+}
+
 func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) error {
 	// Read an author-mapping file and apply it to the repo.
 	scanner := bufio.NewScanner(fp)
 	var principal Contributor
+	var loc *time.Location
+	var err error
 	var currentLineNumber uint64
 	complain := func(msg string, args ...interface{}) {
 		if logEnable(logSHOUT) {
@@ -5417,28 +5438,20 @@ func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) err
 			fields := strings.SplitN(line, "=", 3)
 			local := strings.TrimSpace(fields[0])
 			netwide := strings.TrimSpace(fields[1])
-			name, mail, timezone, err := parseAttributionLine(netwide)
+			principal, loc, err = parseContributionLine(netwide)
+			principal.local = local
 			if err != nil {
 				complain("%v", err)
 				continue
 			}
-			if mail == "" {
+			if principal.email == "" {
 				complain("can't recognize address in '%s'", netwide)
 				continue
 			}
-			if timezone != "" {
-				loc, err2 := time.LoadLocation(timezone)
-				if err2 != nil {
-					loc, err2 = locationFromZoneOffset(timezone)
-					if err2 != nil {
-						complain("timezone lookup: %v", err2)
-						continue
-					}
-				}
-				repo.tzmap[mail] = loc
+			if loc != nil {
+				repo.tzmap[principal.email] = loc
 			}
 			key := strings.ToLower(local)
-			principal = Contributor{local, name, mail, timezone}
 			repo.authormap[key] = principal
 		}
 		// Process aliases gathered from Changelog entries
@@ -5448,22 +5461,14 @@ func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) err
 				continue
 			}
 			line = strings.TrimSpace(line[1:])
-			aname, aemail, atimezone, aerr := parseAttributionLine(line)
+			alias, loc, aerr := parseContributionLine(line)
 			if aerr != nil {
 				complain("bad contributor alias: %v", aerr)
 				continue
 			}
-			repo.aliases[ContributorID{aname, aemail}] = ContributorID{principal.fullname, principal.email}
-			if atimezone != "" {
-				loc, err2 := time.LoadLocation(atimezone)
-				if err2 != nil {
-					loc, err2 = locationFromZoneOffset(atimezone)
-					if err2 != nil {
-						complain("timezone lookup: %v", err2)
-						continue
-					}
-				}
-				repo.tzmap[aemail] = loc
+			repo.aliases[ContributorID{alias.fullname, alias.email}] = ContributorID{principal.fullname, principal.email}
+			if loc != nil {
+				repo.tzmap[alias.email] = loc
 			}
 		}
 	}
