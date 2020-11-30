@@ -27,8 +27,7 @@ SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES)
 		get test lint fmt clean install uninstall dist release refresh
 
 # Binaries need to be built before generated documentation parts can be made.
-# Must force options.adoc to be built earky so it will be available for inclusion.
-all: build options.adoc $(MANPAGES) $(HTMLFILES)
+all: build $(MANPAGES) $(HTMLFILES)
 
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
@@ -66,9 +65,6 @@ test-helpers:
 # Documentation
 #
 
-options.adoc: build
-	./reposurgeon "help options" | sed '/:/s//::/' >options.adoc
-
 # Note: to suppress the footers with timestamps being generated in HTML,
 # we use "-a nofooter".
 # To debug asciidoc problems, you may need to run "xmllint --nonet --noout --valid"
@@ -80,13 +76,13 @@ options.adoc: build
 .adoc.html:
 	asciidoctor -D. -a webfonts! $<
 
-# This is a list of help topics for which the help is in regular format.
+# This is a list of help topics for which the help is in regular format
+# and there is no additional material included in the long-form mnual only.
 # This means there's one line of BNF, a blank separator line, and one or
 # more blank-line-separated paragraphs of running text.
 TOPICS = \
 	append \
 	assign \
-	authors \
 	bench \
 	blob \
 	branch \
@@ -111,6 +107,7 @@ TOPICS = \
 	exit \
 	expunge \
 	filter \
+	functions \
 	gc \
 	gitify \
 	graft \
@@ -139,7 +136,6 @@ TOPICS = \
 	preserve \
 	print \
 	quit \
-	read \
 	readlimit \
 	rebuild \
 	references \
@@ -158,7 +154,6 @@ TOPICS = \
 	sizes \
 	sourcetype \
 	split \
-	squash \
 	stamp \
 	stats \
 	strip \
@@ -176,13 +171,18 @@ TOPICS = \
 	unmerge \
 	unpreserve \
 	version \
-	when \
+	when
+# These are in regular form, but the emtries in the
+# long-form manual have additional material.
+SHORTFORM = \
+	authors \
+	read \
+	squash \
 	write
 # These are all the non-regular topics
 EXCEPTIONS = \
 	add \
 	attribution \
-	functions \
 	lint \
 	options \
 	profile \
@@ -193,13 +193,14 @@ EXCEPTIONS = \
 
 # Most othe command descriptions in Repositpory editing are reposurgeon's embedded
 # help, lightly massaged into asciidoc format.
-repository-editing.html: surgeon/reposurgeon.go reposurgeon options.adoc repository-editing.adoc
-	rm -fr docinclude; mkdir docinclude
-	for topic in $(TOPICS); \
+repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
+	@rm -fr docinclude; mkdir docinclude
+	@for topic in $(TOPICS); \
 	do \
 	    ./reposurgeon "set asciidoc" "help $${topic}" >docinclude/$${topic}.adoc; \
 	done
-	asciidoctor -D. -a webfonts! repository-editing.adoc
+	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
+	@asciidoctor -D. -a webfonts! repository-editing.adoc
 
 # Audit for embedded-help entries not used as inclusions (column 1)
 # or inclusions for which there are no corresponding help topics (column 2).
@@ -232,7 +233,7 @@ fmt:
 # Cleaning
 #
 clean:
-	rm -f $(BINARIES) options.adoc surgeon/version.go
+	rm -f $(BINARIES) surgeon/version.go
 	rm -fr docinclude *~ *.1 *.html *.tar.xz MANIFEST *.md5
 	rm -fr .rs .rs* test/.rs test/.rs*
 	rm -f typescript test/typescript
