@@ -1,6 +1,3 @@
-reposurgeon: component "foo" to be deleted is missing
-reposurgeon: component "baz" to be deleted is missing
-reposurgeon: component "foo" to be deleted is missing
 #reposurgeon sourcetype svn
 blob
 mark :1

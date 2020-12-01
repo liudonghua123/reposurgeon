@@ -179,17 +179,17 @@ func (sp *StreamParser) splitSVNBranchPath(path string) (string, string) {
 	return "", path
 }
 
-// History is a type to manage a collection of PathMaps used as a history of file visibility.
+// History is a type to manage a collection of PathMapDirss used as a history of file visibility.
 type History struct {
-	visible     map[revidx]*PathMap
-	visibleHere *PathMap
+	visible     map[revidx]*PathMapDirs
+	visibleHere *PathMapDirs
 	revision    revidx
 }
 
 func newHistory() *History {
 	h := new(History)
-	h.visible = make(map[revidx]*PathMap) // Visibility maps by revision ID
-	h.visibleHere = newPathMap()          // Snapshot of visibility after current revision ops
+	h.visible = make(map[revidx]*PathMapDirs) // Visibility maps by revision ID
+	h.visibleHere = newPathMapDirs()          // Snapshot of visibility after current revision ops
 	return h
 }
 
@@ -227,7 +227,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 			//if logEnable(logFILEMAP) {logit("r%d-%d: deduced type for %s", node.revision, node.index, node)}
 			// Snapshot the deleted paths before
 			// removing them.
-			node.fileSet = newPathMap()
+			node.fileSet = newPathMapDirs()
 			node.fileSet.copyFrom(node.path, h.visibleHere, node.path, fmt.Sprintf("<deletion site at r%d-%d>", node.revision, node.index))
 			h.visibleHere.remove(node.path)
 			if logEnable(logFILEMAP) {
@@ -247,7 +247,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 		// Remember the copied files at their new position in a dedicated map
 		// so we can later expand the copy node into multiple file creations.
 		if node.isCopy() {
-			node.fileSet = newPathMap()
+			node.fileSet = newPathMapDirs()
 			node.fileSet.copyFrom(node.path, h.visible[node.fromRev], node.fromPath, fmt.Sprintf("<SVN:%d>", node.fromRev))
 		}
 		control.baton.twirl()
@@ -686,7 +686,7 @@ type NodeAction struct {
 	//fromHash    string
 	blob       *Blob
 	props      *OrderedMap
-	fileSet    *PathMap
+	fileSet    *PathMapDirs
 	blobmark   markidx
 	revision   revidx
 	fromRev    revidx
@@ -2685,13 +2685,13 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 	// an ignore-globals property in the wild, as this is normally
 	// set client-side-only by the SVN runtime configuration system.
 	type propertyFlow struct {
-		flowmap  map[int]*PathMap
+		flowmap  map[int]*PathMapDirs
 		propname string
 		global   bool
 	}
 	flows := []propertyFlow{{nil, "svn:ignore", false}, {nil, "svn:global-ignores", true}}
 	for i := range flows {
-		flows[i].flowmap = make(map[int]*PathMap)
+		flows[i].flowmap = make(map[int]*PathMapDirs)
 	}
 
 	baton.startProgress("SVN phase B: Conversion of svn:ignores",
@@ -2707,14 +2707,14 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 			continue
 		}
 		for j := range flows {
-			var currentIgnores *PathMap
+			var currentIgnores *PathMapDirs
 			if commit.hasParents() {
 				if parent, ok := commit.parents()[0].(*Commit); ok {
 					currentIgnores = flows[j].flowmap[sp.repo.eventToIndex(parent)]
 				}
 			}
 			if currentIgnores == nil {
-				currentIgnores = newPathMap()
+				currentIgnores = newPathMapDirs()
 			}
 			mybranch := sp.markToSVNBranch[commit.mark]
 			unchanged := true

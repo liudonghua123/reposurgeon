@@ -1,11 +1,5 @@
 reposurgeon: nonexistent source "tags" on pathmap copy from <deletion site at r7-1>
 reposurgeon: component "tags" to be deleted is missing
-reposurgeon: nonexistent source "test_lib" on pathmap copy from <SVN:9>
-reposurgeon: nonexistent source "test_lib" on pathmap copy from <SVN:9>
-reposurgeon: nonexistent source "test_lib" on pathmap copy from <deletion site at r11-2>
-reposurgeon: component "test_lib" to be deleted is missing
-reposurgeon: nonexistent source "test_lib" on pathmap copy from <deletion site at r12-2>
-reposurgeon: component "test_lib" to be deleted is missing
 #reposurgeon sourcetype svn
 blob
 mark :1
