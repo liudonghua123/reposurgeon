@@ -202,7 +202,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 		if node.isCopy() {
 			//assert node.fromRev < revision
 			h.visibleHere.copyFrom(node.path, h.visible[node.fromRev],
-				node.fromPath)
+				node.fromPath, fmt.Sprintf("<SVN:%d>", node.fromRev))
 			if logEnable(logFILEMAP) {
 				logit("r%d-%d: r%d~%s copied to %s", node.revision, node.index, node.fromRev, node.fromPath, node.path)
 			}
@@ -228,7 +228,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 			// Snapshot the deleted paths before
 			// removing them.
 			node.fileSet = newPathMap()
-			node.fileSet.copyFrom(node.path, h.visibleHere, node.path)
+			node.fileSet.copyFrom(node.path, h.visibleHere, node.path, fmt.Sprintf("<deletion site at r%d-%d>", node.revision, node.index))
 			h.visibleHere.remove(node.path)
 			if logEnable(logFILEMAP) {
 				logit("r%d-%d: %s deleted", node.revision, node.index, node.path)
@@ -248,7 +248,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 		// so we can later expand the copy node into multiple file creations.
 		if node.isCopy() {
 			node.fileSet = newPathMap()
-			node.fileSet.copyFrom(node.path, h.visible[node.fromRev], node.fromPath)
+			node.fileSet.copyFrom(node.path, h.visible[node.fromRev], node.fromPath, fmt.Sprintf("<SVN:%d>", node.fromRev))
 		}
 		control.baton.twirl()
 	}

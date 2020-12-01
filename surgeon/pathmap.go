@@ -27,7 +27,7 @@ type PathMap struct {
 	shared bool
 	// The following member is not used by PathMap itself, but is available to
 	// users and/or wrapping structures as auxiliary storage. It is not copied
-	// when snaphotting, and is thus attached to a single PathMap instance.
+	// when snapshotting, and is thus attached to a single PathMap instance.
 	info interface{}
 }
 
@@ -129,7 +129,7 @@ func (pm *PathMap) _createTree(path []string) *PathMap {
 // The directory will be shared with sourcePathMap unless sourcePath is empty,
 // in which case a snapshot of sourcePathMap is used so that sourcePathMap, a
 // toplevel PathMap, is not shared.
-func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePath string) {
+func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePath string, srcid string) {
 	parts := strings.Split(sourcePath, svnSep)
 	sourceDir, sourceName := parts[:len(parts)-1], parts[len(parts)-1]
 	// Walk along the "dirname" in sourcePath
@@ -139,7 +139,7 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 		if sourceParent, ok = sourceParent.dirs[component]; !ok {
 			// The source path does not exist, bail out
 			if logEnable(logWARN) {
-				logit("nonexistent source %q on pathmap copy", component)
+				logit("nonexistent source %q on pathmap copy from %s", component, srcid)
 			}
 			return
 		}
