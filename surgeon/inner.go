@@ -9015,7 +9015,7 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 				return
 			}
 		}
-		// Always append, even None, to stay in sync with updateList
+		// Always append, even nil, to stay in sync with updateList
 		events = append(events, event)
 	}
 	if errorCount > 0 {
