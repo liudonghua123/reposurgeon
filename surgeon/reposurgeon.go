@@ -2684,16 +2684,17 @@ standard input; the content is replaced with whatever the filter emits
 to standard output.
 
 With --regex, the remainder of the line is expected to be a Go
-regular expression substitution written as /from/to/ with 'from' and
-'to' being passed as arguments to the standard re.sub() function and
-that applied to modify the content. Actually, any non-space character
-will work as a delimiter in place of the /; this makes it easier to
-use / in patterns. Ordinarily only the first such substitution is
-performed; putting 'g' after the slash replaces globally, and a
-numeric literal gives the maximum number of substitutions to
-perform. Other flags available restrict substitution scope - 'c' for
-comment text only, 'C' for committer name only, 'a' for author names
-only.
+regular expression substitution written as /from/to/ with
+Go-style backslash escapes interpreted in 'to' as well as 'from'.
+Python-style back-references (\1, \1 etc.) rather than Go-style $1, $2... 
+are interpreted; this avoids a conflict with parameter substitution in
+script commands. Any non-space character will work as a delimiter in
+place of the /; this makes it easier to use / in patterns. Ordinarily
+only the first such substitution is performed; putting 'g' after the
+slash replaces globally, and a numeric literal gives the maximum number
+of substitutions to perform. Other flags available restrict substitution
+scope - 'c' for comment text only, 'C' for committer name only, 'a'
+for author names only.
 
 With --replace, the behavior is like --regexp but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
@@ -2713,11 +2714,17 @@ type filterCommand struct {
 // GoReplacer bridges from Python-style back-references (\1) to Go-style ($1).
 // This was originally a shim for testing during the port from Python.  It has
 // been kept because Go's use of $n for group matches conflicts with the
-// use of $n for script arguments in reposurgeon.
+// use of $n for script arguments in reposurgeon.  Also, we can do interpreation
+// of Go string escapes at a good point, *after* the Python-style backrefereences
+// have been translated.
 func GoReplacer(re *regexp.Regexp, fromString, toString string) string {
 	for i := 0; i < 10; i++ {
 		sdigit := fmt.Sprintf("%d", i)
 		toString = strings.Replace(toString, `\`+sdigit, `${`+sdigit+`}`, -1)
+		sub, e2 := stringEscape(toString)
+		if e2 == nil {
+			toString = sub
+		}
 	}
 	out := re.ReplaceAllString(fromString, toString)
 	return out
