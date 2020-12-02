@@ -2992,7 +2992,7 @@ func (commit *Commit) emailOut(modifiers orderedStringSet,
 	}
 	msg.setHeader("Check-Text", check)
 	msg.setPayload(commit.Comment)
-	if !strings.HasSuffix(commit.Comment, "\n") {
+	if commit.Comment != "" && !strings.HasSuffix(commit.Comment, "\n") {
 		croak("in commit %s, comment was not LF-terminated.",
 			commit.mark)
 	}
