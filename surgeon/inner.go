@@ -9029,12 +9029,12 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 		update := updateList[i]
 		check := strings.TrimSpace(update.getHeader("Check-Text"))
 		if check != "" && !strings.HasPrefix(strings.TrimSpace(event.getComment()), check) {
-			croak("check text mismatch at %s (input %d of %d), expected %q saw %q, bailing out", event.(*Commit).actionStamp(), i+1, len(updateList), check, event.getComment())
+			croak("check text mismatch at %s (input %d of %d), expected %q saw %q, bailing out", event.idMe(), i+1, len(updateList), check, event.getComment())
 			return
 		}
 		if emptyOnly {
 			if event.getComment() != update.getPayload() && !emptyComment(event.getComment()) {
-				croak("nonempty comment at %s (input %d of %d), bailing out", event.(*Commit).actionStamp(), i+1, len(updateList))
+				croak("nonempty comment at %s (input %d of %d), bailing out", event.idMe(), i+1, len(updateList))
 			}
 		}
 
