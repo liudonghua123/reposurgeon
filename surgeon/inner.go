@@ -2012,8 +2012,8 @@ func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 	}
 	msg.setHeader("Check-Text", check)
 	msg.setPayload(t.Comment)
-	if t.Comment != "" && !strings.HasSuffix(t.Comment, "\n") {
-		croak("in tag %s, comment was not LF-terminated.", t.name)
+	if t.Comment != "" && !strings.HasSuffix(t.Comment, "\n") && logEnable(logWARN) {
+		logit("in tag %s, comment was not LF-terminated.", t.name)
 	}
 	if filterRegexp != nil {
 		msg.filterHeaders(filterRegexp)
@@ -2992,9 +2992,8 @@ func (commit *Commit) emailOut(modifiers orderedStringSet,
 	}
 	msg.setHeader("Check-Text", check)
 	msg.setPayload(commit.Comment)
-	if commit.Comment != "" && !strings.HasSuffix(commit.Comment, "\n") {
-		croak("in commit %s, comment was not LF-terminated.",
-			commit.mark)
+	if commit.Comment != "" && !strings.HasSuffix(commit.Comment, "\n") && logEnable(logWARN) {
+		logit("in commit %s, comment was not LF-terminated.", commit.mark)
 	}
 
 	if filterRegexp != nil {
