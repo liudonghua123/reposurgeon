@@ -1,22 +1,27 @@
 #reposurgeon sourcetype svn
 blob
 mark :1
+data 41
+this third file should also be versioned
+
+blob
+mark :2
 data 30
 this file should be versioned
 
 blob
-mark :2
+mark :3
 data 32
 this file should not be ignored
 
 blob
-mark :3
+mark :4
 data 35
 this file should also be versioned
 
 commit refs/heads/master
 #legacy-id 1
-mark :4
+mark :5
 committer fred <fred> 10 +0000
 data 26
 Test svn:ignore property.
@@ -41,7 +46,12 @@ data 217
 # Simulated Subversion default ignores end here
 /*.foo
 
-M 100644 :1 keepme.txt
-M 100644 :2 subdir/keepme.foo
-M 100644 :3 subdir/keepme2.txt
+M 100644 :1 keepme.bar
+M 100644 :2 keepme.txt
+M 100644 inline subdir/.gitignore
+data 7
+/*.bar
+
+M 100644 :3 subdir/keepme.foo
+M 100644 :4 subdir/keepme2.txt
 

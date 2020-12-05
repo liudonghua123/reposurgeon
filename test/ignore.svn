@@ -44,6 +44,19 @@ V 6
 PROPS-END
 
 
+Node-path: trunk/keepme.bar
+Node-kind: file
+Node-action: add
+Text-content-md5: 1262e020783019c4614d834bd3803bbc
+Text-content-sha1: 38f12f8563ea1dc9ce2ad1a7ad767899e9e9c0b9
+Prop-content-length: 10
+Text-content-length: 41
+Content-length: 51
+
+PROPS-END
+this third file should also be versioned
+
+
 Node-path: trunk/keepme.txt
 Node-kind: file
 Node-action: add
@@ -60,8 +73,13 @@ this file should be versioned
 Node-path: trunk/subdir
 Node-kind: dir
 Node-action: add
-Prop-content-length: 10
-Content-length: 10
+Prop-content-length: 37
+Content-length: 37
+
+K 10
+svn:ignore
+V 6
+*.bar
 
 PROPS-END
 

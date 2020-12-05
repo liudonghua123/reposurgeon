@@ -32,6 +32,7 @@ svn add --quiet trunk
 
 echo "this file should be versioned" > trunk/keepme.txt
 echo "this file should also be versioned" > trunk/subdir/keepme2.txt
+echo "this third file should also be versioned" > trunk/keepme.bar
 echo "this file should be ignored" > trunk/ignoreme.foo
 if [ "$1" = "ignore" ]
 then
@@ -39,28 +40,34 @@ then
 else
     echo "this file should also be ignored" > trunk/subdir/ignoreme.foo
 fi
+echo "this third file should also be ignored" > trunk/subdir/ignoreme.bar
 
 #svn status
 # should include *.foo file:
 # A       trunk
 # ?       trunk/ignoreme.foo
+# ?       trunk/keepme.bar
 # ?       trunk/keepme.txt
 # A       trunk/subdir
 # ?       trunk/subdir/ignoreme.foo
+# ?       trunk/subdir/keepme.bar
 # ?       trunk/subdir/keepme2.txt
 
 svn propset --quiet "svn:$1" "*.foo" trunk
+svn propset --quiet "svn:$1" "*.bar" trunk/subdir
 
 #svn status
 # should _not_ list *.foo file:
 # A       trunk
+# ?       trunk/keepme.bar
 # ?       trunk/keepme.txt
 # A       trunk/subdir
 # ?       trunk/subdir/keepme2.txt
 
 # shellcheck disable=SC2035
 svn add --quiet * --force
-# should only add *.txt
+# should only add *.txt and toplevel *.bar
+# A         trunk/keepme.bar
 # A         trunk/keepme.txt
 # A         trunk/subdir/keepme2.txt
 
@@ -72,6 +79,7 @@ svn checkout --quiet "file://$(pwd)/test-repo-$$" test-checkout2-$$
 cd test-checkout2-$$ >/dev/null
 echo "ignored" > trunk/something.foo
 echo "ignored" > trunk/subdir/something.foo
+echo "ignored" > trunk/subdir/something.bar
 
 # svn status
 # should return empty
