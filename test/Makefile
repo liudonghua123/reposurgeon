@@ -139,7 +139,7 @@ fi-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 		2>&1 || exit $(STOPOUT); \
 	done
 
-fi-regress: multigen.svn ignore.svn global-ignores.svn
+fi-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn
 	@echo "=== Running general tests:"
 	@$(PARALLEL_MAKE) $(TESTLOADS:%=fi-regress-%)
 
@@ -150,6 +150,10 @@ ignore.svn: ignoregen.sh
 	sh ignoregen.sh ignore >ignore.svn
 global-ignores.svn: ignoregen.sh
 	sh ignoregen.sh global-ignores >global-ignores.svn
+ignore-copy.svn: ignoregen.sh
+	sh ignoregen.sh ignore copy >ignore-copy.svn
+global-ignores-copy.svn: ignoregen.sh
+	sh ignoregen.sh global-ignores copy >global-ignores-copy.svn
 tagdoublet.svn: tagdoubletgen.sh
 	sh tagdoubletgen.sh >tagdoublet.svn
 

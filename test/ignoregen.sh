@@ -11,7 +11,12 @@ set -e
 
 if [ "$1" != "ignore" ] && [ "$1" != "global-ignores" ]
 then
-    echo "$0: invalid argument"
+    echo "$0: invalid first argument, should be an ignore-type property"
+fi
+
+if [ -n "$2" ] && [ "$2" != "copy" ]
+then
+    echo "$0: invalid second argument, should be empty or 'copy'"
 fi
 
 command -v realpath >/dev/null 2>&1 ||
@@ -72,6 +77,14 @@ svn add --quiet * --force
 # A         trunk/subdir/keepme2.txt
 
 svn commit --quiet -m "Test svn:$1 property."
+
+if [ "$2" = "copy" ]
+then
+    mkdir branches
+    svn add --quiet branches
+    svn copy --quiet trunk branches/newbranch
+    svn commit --quiet -m "Test if a branch copy preserves the properties"
+fi
 
 # test that the property is stored in the repository by using a new clean checkout
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )

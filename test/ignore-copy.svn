@@ -1,0 +1,146 @@
+SVN-fs-dump-format-version: 2
+ ## svn:ignore property-setting example
+
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+1970-01-01T00:00:00.000000Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 123
+Content-length: 123
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:10.000000Z
+K 7
+svn:log
+V 25
+Test svn:ignore property.
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 37
+Content-length: 37
+
+K 10
+svn:ignore
+V 6
+*.foo
+
+PROPS-END
+
+
+Node-path: trunk/keepme.bar
+Node-kind: file
+Node-action: add
+Text-content-md5: 1262e020783019c4614d834bd3803bbc
+Text-content-sha1: 38f12f8563ea1dc9ce2ad1a7ad767899e9e9c0b9
+Prop-content-length: 10
+Text-content-length: 41
+Content-length: 51
+
+PROPS-END
+this third file should also be versioned
+
+
+Node-path: trunk/keepme.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: 46504d3e92e63872e91fb18dc87de79c
+Text-content-sha1: 9f11579d69326d862cf93eb840ac59750c439c40
+Prop-content-length: 10
+Text-content-length: 30
+Content-length: 40
+
+PROPS-END
+this file should be versioned
+
+
+Node-path: trunk/subdir
+Node-kind: dir
+Node-action: add
+Prop-content-length: 37
+Content-length: 37
+
+K 10
+svn:ignore
+V 6
+*.bar
+
+PROPS-END
+
+
+Node-path: trunk/subdir/keepme.foo
+Node-kind: file
+Node-action: add
+Text-content-md5: 31cd5853bf99e46eaacbbc502a80485f
+Text-content-sha1: 394cd10013d49569f6f7dc90a554c4e494863ebf
+Prop-content-length: 10
+Text-content-length: 32
+Content-length: 42
+
+PROPS-END
+this file should not be ignored
+
+
+Node-path: trunk/subdir/keepme2.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: 60119ba04daf94c03f155893d7af97eb
+Text-content-sha1: 52537fd4c9bf381408239afced56d4a700b75d2c
+Prop-content-length: 10
+Text-content-length: 35
+Content-length: 45
+
+PROPS-END
+this file should also be versioned
+
+
+Revision-number: 2
+Prop-content-length: 144
+Content-length: 144
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:20.000000Z
+K 7
+svn:log
+V 46
+Test if a branch copy preserves the properties
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: branches/newbranch
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 1
+Node-copyfrom-path: trunk
+
+
