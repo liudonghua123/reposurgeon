@@ -138,7 +138,7 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 		var ok bool
 		if sourceParent, ok = sourceParent.dirs[component]; !ok {
 			// The source path does not exist, bail out
-			if logEnable(logWARN) {
+			if srcid != "" && logEnable(logWARN) {
 				logit("nonexistent source %q on pathmap copy from %s", component, srcid)
 			}
 			return

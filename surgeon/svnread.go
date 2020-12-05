@@ -2632,6 +2632,87 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		return
 	}
 
+	// Replay the SVN history from the start, tracking changes to ignore
+	// properties.
+	type ignoreProp struct {
+		propname string
+		global   bool
+	}
+	ignoreProps := []ignoreProp{{"svn:ignore", false}, {"svn:global-ignores", true}}
+	// For each revision, flowmap will store a map from paths to lists of ignore
+	// values, in the same order as ignoreProps. Also remember every deletion as
+	// we will need to replay them as file operations.
+	flowmap := make(map[revidx]*PathMapDirs)
+	deleted := make(map[revidx][]*PathMapDirs)
+	changesignores := make(map[revidx]bool)
+	lastmap := newPathMapDirs()
+
+	for _, record := range sp.revisions {
+		revision := record.revision
+		unchanged := true // If true, lastmap is untainted and needs a snaphot
+		for _, node := range record.nodes {
+			if node.kind != sdDIR {
+				continue
+			}
+			path := trimSep(node.path)
+			if node.action == sdDELETE {
+				needsDelete := false
+				lastmap.iter(func(childPath string, _ interface{}) {
+					if strings.HasPrefix(childPath, path) {
+						needsDelete = true
+					}
+				})
+				if needsDelete {
+				if unchanged {
+					lastmap = lastmap.snapshot()
+					unchanged = false
+				}
+				deletion := newPathMapDirs()
+				deletion.copyFrom(path, lastmap, path, "")
+				deleted[revision] = append(deleted[revision], deletion)
+				lastmap.remove(path)
+				}
+			}
+			if node.isCopy() {
+				if unchanged {
+					lastmap = lastmap.snapshot()
+					unchanged = false
+				}
+				if from, ok := flowmap[node.fromRev]; ok {
+					lastmap.copyFrom(path, from, trimSep(node.fromPath), "")
+				}
+			}
+			values := make([]string, len(ignoreProps))
+			var old []string
+			if obj, ok := lastmap.get(path); ok {
+				old = obj.([]string)
+			} else {
+				old = make([]string, len(ignoreProps))
+			}
+			needsave := false
+			for i, prop := range ignoreProps {
+				if node.hasProperties() && node.props.has(prop.propname) {
+					values[i] = node.props.get(prop.propname)
+				}
+				if values[i] != old[i] {
+					needsave = true
+				}
+			}
+			if needsave {
+				if unchanged {
+					lastmap = lastmap.snapshot()
+					unchanged = false
+				}
+				lastmap.set(path, values)
+			}
+		}
+		flowmap[revision] = lastmap
+		changesignores[revision] = !unchanged
+	}
+
+	// Now that we have the ignore properties computed at every revision,
+	// we can create the corresponding .gitignore files.
+
 	isRoot := func(commit *Commit) bool {
 		branch := sp.markToSVNBranch[commit.mark]
 		for _, root := range sp.branchRoots[branch] {
@@ -2643,24 +2724,36 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 	}
 
 	var defaultIgnoreBlob *Blob
-	ignoreOp := func(nodepath string, explicit string, global bool) *FileOp {
+	ignoreOp := func(nodepath string, explicit []string) *FileOp {
 		var buf bytes.Buffer
-		if nodepath == ".gitignore" {
+		if nodepath == "" {
 			buf.WriteString(subversionDefaultIgnores)
+			nodepath = ".gitignore"
+		} else {
+			nodepath = trimSep(nodepath) + svnSep + ".gitignore"
 		}
-		for _, line := range strings.SplitAfter(explicit, control.lineSep) {
-			if line != "" {
-				if !global {
-					buf.WriteByte(svnSep[0])
+		hasExplicit := false
+		for i, block := range explicit {
+			if ignoreProps[i].global {
+				if block != "" {
+					buf.WriteString(block)
+					hasExplicit = true
 				}
-				buf.WriteString(line)
+			} else {
+				for _, line := range strings.SplitAfter(block, control.lineSep) {
+					if line != "" && line != control.lineSep {
+						buf.WriteByte(svnSep[0])
+						buf.WriteString(line)
+						hasExplicit = true
+					}
+				}
 			}
 		}
 		ignores := buf.Bytes()
 		op := newFileOp(sp.repo)
 		if len(ignores) == 0 {
 			op.construct(opD, nodepath)
-		} else if explicit != "" {
+		} else if hasExplicit {
 			op.construct(opM, "100644", "inline", nodepath)
 			op.inline = ignores
 		} else {
@@ -2678,106 +2771,54 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		return op
 	}
 
-	// We need to maintain separate tracking flows for the two
-	// different properties svn:ignore and svn:global-ignores.
-	// The state information for doing this lives in the following
-	// initializer. Note that it is highly unlikely we will encounter
-	// an ignore-globals property in the wild, as this is normally
-	// set client-side-only by the SVN runtime configuration system.
-	type propertyFlow struct {
-		flowmap  map[int]*PathMapDirs
-		propname string
-		global   bool
-	}
-	flows := []propertyFlow{{nil, "svn:ignore", false}, {nil, "svn:global-ignores", true}}
-	for i := range flows {
-		flows[i].flowmap = make(map[int]*PathMapDirs)
-	}
-
 	baton.startProgress("SVN phase B: Conversion of svn:ignores",
 		uint64(len(sp.repo.events)))
+	nilIgnore := []string{"", ""}
 	for index, event := range sp.repo.events {
+		// First get all relevant data: the commit and the known ignore properties
+		// present at the revisions corresponding to the commit and to its parent,
+		// if any. We also get the SVN branch of the commit, to filter ignores.
 		commit, ok := event.(*Commit)
 		if !ok {
 			continue
 		}
-		revision, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
-		record := sp.revision(intToRevidx(revision))
-		if record == nil {
+		rev, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
+		revision := intToRevidx(rev)
+		mybranch := sp.markToSVNBranch[commit.mark]
+		lenbranch := len(mybranch)
+		// Short-circuit the system if there was no ignore property change at this
+		// revision because we can inherit our first parent's .gitignore files. Do
+		// so only if there is actually a first parent, and no deleteall operation
+		// to start this commit as it would prevent any inheritance.
+		if commit.hasParents() && !changesignores[revision] &&
+				!(len(commit.fileops) > 0 && commit.fileops[0].op == deleteall) {
 			continue
 		}
-		for j := range flows {
-			var currentIgnores *PathMapDirs
-			if commit.hasParents() {
-				if parent, ok := commit.parents()[0].(*Commit); ok {
-					currentIgnores = flows[j].flowmap[sp.repo.eventToIndex(parent)]
+		// First generate .gitignore deletions
+		for _, deletion := range deleted[revision] {
+			deletion.iter(func(childPath string, _ interface{}) {
+				if strings.HasPrefix(childPath, mybranch) {
+					commit.fileops = append(commit.fileops, ignoreOp(childPath[lenbranch:], nilIgnore))
 				}
-			}
-			if currentIgnores == nil {
-				currentIgnores = newPathMapDirs()
-			}
-			mybranch := sp.markToSVNBranch[commit.mark]
-			unchanged := true
-			hasTopLevel := false
-			for _, node := range record.nodes {
-				if node.kind != sdDIR {
-					continue
+			})
+		}
+		// Then generate .gitignore modifications or additions
+		if currentIgnores, ok := flowmap[revision]; ok {
+			currentIgnores.iter(func(childPath string, ignore interface{}) {
+				if strings.HasPrefix(childPath, mybranch) {
+					commit.fileops = append(commit.fileops, ignoreOp(childPath[lenbranch:], ignore.([]string)))
 				}
-				path := filepath.Join(trimSep(node.path), ".gitignore")
-				branch := ""
-				branch, path = sp.splitSVNBranchPath(path)
-				if branch != mybranch {
-					continue
-				}
-				oldvalue := ""
-				if obj, ok := currentIgnores.get(path); ok {
-					oldvalue = obj.(string)
-				}
-				newvalue := ""
-				if node.hasProperties() && node.props.has(flows[j].propname) {
-					newvalue = node.props.get(flows[j].propname)
-				}
-				if node.action == sdDELETE {
-					_, dirpath := sp.splitSVNBranchPath(node.path)
-					// Also remove all subdirectory .gitignores
-					currentIgnores.iter(func(childPath string, _ interface{}) {
-						if strings.HasPrefix(childPath, dirpath) {
-							if unchanged {
-								currentIgnores = currentIgnores.snapshot()
-								unchanged = false
-							}
-							currentIgnores.remove(childPath)
-							commit.fileops = append(commit.fileops, ignoreOp(childPath, "", flows[j].global))
-						}
-					})
-				}
-				if oldvalue == newvalue {
-					continue
-				}
-				if unchanged {
-					currentIgnores = currentIgnores.snapshot()
-					unchanged = false
-				}
-				if newvalue == "" {
-					currentIgnores.remove(path)
-				} else {
-					currentIgnores.set(path, newvalue)
-				}
-				commit.fileops = append(commit.fileops, ignoreOp(path, newvalue, flows[j].global))
-				if path == ".gitignore" {
-					hasTopLevel = true
-				}
-			}
+			})
 			// If the commit misses a default root .gitignore, create it. Don't do
 			// that for non-branch roots since they inherit their toplevel one.
 			// Also avoid polluting tipdeletes.
-			if !flows[j].global && !hasTopLevel && isRoot(commit) &&
-				!(len(commit.fileops) == 1 &&
+			_, hasTopLevel := currentIgnores.get(mybranch)
+			if !hasTopLevel && isRoot(commit) &&
+					!(len(commit.fileops) == 1 &&
 					commit.fileops[0].op == deleteall &&
 					!commit.hasChildren()) {
-				commit.fileops = append(commit.fileops, ignoreOp(".gitignore", "", false))
+				commit.fileops = append(commit.fileops, ignoreOp("", nilIgnore))
 			}
-			flows[j].flowmap[index] = currentIgnores
 		}
 		commit.simplify()
 		baton.percentProgress(uint64(index) + 1)
