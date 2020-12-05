@@ -33,7 +33,12 @@ svn add --quiet trunk
 echo "this file should be versioned" > trunk/keepme.txt
 echo "this file should also be versioned" > trunk/subdir/keepme2.txt
 echo "this file should be ignored" > trunk/ignoreme.foo
-echo "this file should also be ignored" > trunk/subdir/ignoreme.foo
+if [ "$1" = "ignore" ]
+then
+    echo "this file should not be ignored" > trunk/subdir/keepme.foo
+else
+    echo "this file should also be ignored" > trunk/subdir/ignoreme.foo
+fi
 
 #svn status
 # should include *.foo file:
@@ -59,7 +64,7 @@ svn add --quiet * --force
 # A         trunk/keepme.txt
 # A         trunk/subdir/keepme2.txt
 
-svn commit --quiet -m "Test svn:global-ignores property."
+svn commit --quiet -m "Test svn:$1 property."
 
 # test that the property is stored in the repository by using a new clean checkout
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )

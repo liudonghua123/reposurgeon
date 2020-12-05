@@ -13,8 +13,8 @@ V 27
 PROPS-END
 
 Revision-number: 1
-Prop-content-length: 131
-Content-length: 131
+Prop-content-length: 123
+Content-length: 123
 
 K 10
 svn:author
@@ -26,8 +26,8 @@ V 27
 1970-01-01T00:00:10.000000Z
 K 7
 svn:log
-V 33
-Test svn:global-ignores property.
+V 25
+Test svn:ignore property.
 PROPS-END
 
 Node-path: trunk
@@ -66,17 +66,17 @@ Content-length: 10
 PROPS-END
 
 
-Node-path: trunk/subdir/ignoreme.foo
+Node-path: trunk/subdir/keepme.foo
 Node-kind: file
 Node-action: add
-Text-content-md5: 2115bd1ebd631c07196deda1baaa77e5
-Text-content-sha1: 95f3ba45e95d2a2384d9f8df0c676df95ac33a1a
+Text-content-md5: 31cd5853bf99e46eaacbbc502a80485f
+Text-content-sha1: 394cd10013d49569f6f7dc90a554c4e494863ebf
 Prop-content-length: 10
-Text-content-length: 33
-Content-length: 43
+Text-content-length: 32
+Content-length: 42
 
 PROPS-END
-this file should also be ignored
+this file should not be ignored
 
 
 Node-path: trunk/subdir/keepme2.txt
