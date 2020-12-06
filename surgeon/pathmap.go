@@ -139,7 +139,7 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 		if sourceParent, ok = sourceParent.dirs[component]; !ok {
 			// The source path does not exist, bail out
 			if srcid != "" && logEnable(logWARN) {
-				logit("nonexistent source %q on pathmap copy from %s", component, srcid)
+				logit("nonexistent source %q on pathmap copy from %s", sourcePath, srcid)
 			}
 			return
 		}
@@ -154,7 +154,7 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 			if !ok {
 				// The source path does not exist, bail out
 				if logEnable(logWARN) {
-					logit("missing segment %q on pathmap copy to empty target", sourceName)
+					logit("nonexistent source %q on pathmap copy from %s", sourcePath, srcid)
 				}
 				return
 			}
@@ -230,7 +230,7 @@ func (pm *PathMap) remove(path string) {
 		if !ok {
 			// A component in the path doesn't exist as a directory; bail out
 			if logEnable(logWARN) {
-				logit("component %q to be deleted is missing", component)
+				logit("path %q to be deleted is missing", path)
 			}
 			return
 		}
