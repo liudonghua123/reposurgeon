@@ -179,17 +179,17 @@ func (sp *StreamParser) splitSVNBranchPath(path string) (string, string) {
 	return "", path
 }
 
-// History is a type to manage a collection of PathMapDirss used as a history of file visibility.
+// History is a type to manage a collection of PathMaps used as a history of file visibility.
 type History struct {
-	visible     map[revidx]*PathMapDirs
-	visibleHere *PathMapDirs
+	visible     map[revidx]*PathMap
+	visibleHere *PathMap
 	revision    revidx
 }
 
 func newHistory() *History {
 	h := new(History)
-	h.visible = make(map[revidx]*PathMapDirs) // Visibility maps by revision ID
-	h.visibleHere = newPathMapDirs()          // Snapshot of visibility after current revision ops
+	h.visible = make(map[revidx]*PathMap) // Visibility maps by revision ID
+	h.visibleHere = newPathMap()          // Snapshot of visibility after current revision ops
 	return h
 }
 
@@ -227,7 +227,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 			//if logEnable(logFILEMAP) {logit("r%d-%d: deduced type for %s", node.revision, node.index, node)}
 			// Snapshot the deleted paths before
 			// removing them.
-			node.fileSet = newPathMapDirs()
+			node.fileSet = newPathMap()
 			node.fileSet.copyFrom(node.path, h.visibleHere, node.path, fmt.Sprintf("<deletion site at r%d-%d>", node.revision, node.index))
 			h.visibleHere.remove(node.path)
 			if logEnable(logFILEMAP) {
@@ -252,7 +252,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 		// Remember the copied files at their new position in a dedicated map
 		// so we can later expand the copy node into multiple file creations.
 		if node.isCopy() {
-			node.fileSet = newPathMapDirs()
+			node.fileSet = newPathMap()
 			node.fileSet.copyFrom(node.path, h.visible[node.fromRev], node.fromPath, fmt.Sprintf("<SVN:%d>", node.fromRev))
 		}
 		control.baton.twirl()
@@ -691,7 +691,7 @@ type NodeAction struct {
 	//fromHash    string
 	blob       *Blob
 	props      *OrderedMap
-	fileSet    *PathMapDirs
+	fileSet    *PathMap
 	blobmark   markidx
 	revision   revidx
 	fromRev    revidx
