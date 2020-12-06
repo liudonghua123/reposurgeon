@@ -2648,16 +2648,6 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 	}
 	ignoreProps := []ignoreProp{{"svn:ignore", false}, {"svn:global-ignores", true}}
 
-	isRoot := func(commit *Commit) bool {
-		branch := sp.markToSVNBranch[commit.mark]
-		for _, root := range sp.branchRoots[branch] {
-			if root == commit {
-				return true
-			}
-		}
-		return false
-	}
-
 	// An helper function to generate .gitignore files
 	var defaultIgnoreBlob *Blob
 	ignoreOp := func(nodepath string, explicit []string) *FileOp {
@@ -2804,11 +2794,9 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 				}
 			}
 		}
-		// If the commit misses a default root .gitignore, create it. Don't do
-		// that for non-branch roots since they inherit their toplevel one.
-		obj, _ := myIgnores.get(".gitignore")
-		hasTopLevel, _ := obj.(bool)
-		if !hasTopLevel && isRoot(commit) {
+		// If the commit misses a default root .gitignore, create it.
+		_, hasTopLevel := myIgnores.get(".gitignore")
+		if !hasTopLevel {
 			commit.fileops = append(commit.fileops, ignoreOp(".gitignore", nilIgnore))
 			myIgnores.set(".gitignore", true)
 		}

@@ -105,7 +105,6 @@ committer chungy <chungy> 1391603993 +0000
 data 44
 Explain what the expected result should be.
 from :6
-M 100644 :1 .gitignore
 M 100644 :7 README
 
 commit refs/heads/master
