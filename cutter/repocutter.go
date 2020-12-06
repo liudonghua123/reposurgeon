@@ -14,7 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1276,31 +1275,35 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 
 // Topologically reduce a dump, removing spans of plain file modifications.
 func reduce(source DumpfileSource) {
-	interesting := make([]int, 0)
-	interesting = append(interesting, 0)
+	maxRev := 0
+	interesting := make(map[int]bool)
+	interesting[0] = true
 	reducehook := func(header []byte, properties []byte, _ []byte) []byte {
 		if !(string(getHeader(header, "Node-kind")) == "file" && string(getHeader(header, "Node-action")) == "change") || len(properties) > 0 { //len([]nil == 0)
-			interesting = append(interesting, source.Revision-1, source.Revision, source.Revision+1)
+			interesting[source.Revision-1] = true
+			interesting[source.Revision] = true
+			interesting[source.Revision+1] = true
+			//fmt.Fprintf(os.Stderr, "Principal interest: %d %d %d\n", source.Revision-1, source.Revision, source.Revision+1)
 		}
 		copysource := getHeader(header, "Node-copyfrom-rev")
 		if copysource != nil {
 			n, err := strconv.Atoi(string(copysource))
 			if err == nil {
-				interesting = append(interesting, n-1, n, n+1)
+				interesting[n-1] = true
+				interesting[n] = true
+				interesting[n+1] = true
+				//fmt.Fprintf(os.Stderr, "Copy-derived interest: %d %d %d\n", n-1, n, n+1)
 			}
 		}
+		maxRev = source.Revision
 		return nil
 	}
 	source.Report(NewSubversionRange("0:HEAD"), reducehook, nil, false, true)
 	var selection string
-	sort.Ints(interesting[:])
-	prev := -1
-	for _, item := range interesting {
-		if item == prev {
-			continue
+	for i := 0; i <= maxRev; i++ {
+		if interesting[i] {
+			selection += fmt.Sprintf("%d,", i)
 		}
-		prev = item
-		selection += fmt.Sprint(item)
 	}
 	source.Lbs.Rewind()
 	// -1 is to trim off trailing comma
