@@ -912,7 +912,8 @@ created by git-svn users ad hoc and should be discarded; it is up to
 the human doing the conversion to look through them and rescue any
 ignore patterns that should be merged into the converted repository.
 This behavior can be reversed with the `--user-ignores` option, which
-simply passes through .gitignore files.
+will retain that information and merge it with the ignore patterns
+generated from svn:ignore and svn:global-ignores properties.
 
 [[recovering]]
 ==== Recovering from errors
@@ -2738,11 +2739,11 @@ settings.
 
 `--user-ignores`::
 By default reposurgeon filters in-tree _.gitignore_ files found in the
-history because they would clash with those generated from the
-`svn:ignore` and `svn:global-ignores` properties.  Using this option
-makes _.gitignore_ files be passed through. They will still be
-overridden by generated _.gitignore_ files so this option is often
-used along with `--no-automatic-ignores`.
+history because they probably come from git-svn users who checked-in
+their own _.gitignore_ files. Using this option makes reposurgeon
+keep the content of these files and merge them with
+the _.gitignore_ files generated from `svn:ignore` and `svn:global-ignores`
+properties, if any.
 
 `--use-uuid`::
 If the `--use-uuid` read option is set, the repository's
@@ -2752,7 +2753,10 @@ it, simply copying the username into the address field.
 
 `--no-automatic-ignores`::
 Do not generate _.gitignore_ files from `svn:ignore` and
-`svn:global-ignores` properties.
+`svn:global-ignores` properties. If `--user-ignores` is also used
+then only _.gitignore_ files that were present in the SVN tree will
+exist in the final repository. If `--user-ignores` is not used,
+no _.gitignore_ file at all will survive the conversion.
 
 `--preserve`::
 When a branch or tag was deleted in SVN, preserve the history up to
@@ -2866,7 +2870,9 @@ separately from native Subversion ignore properties and discarded with
 a warning. It is up to the user to merge the content of such files
 into the target repository by hand.  But this behavior is changed by
 the `--user-ignores` option which disables filtering of in-tree
-_.gitignore_ files, and the `--no-automatic-ignores` which discards
+_.gitignore_ files and instead merges them with _.gitignore_ files
+generated from Subversion properties. On the other hand, the
+`--no-automatic-ignores` option discards
 Subversion `svn:ignore` and `svn:global-ignores` properties without translation.
 
 Normally, _.cvsignore_ files left over from a Subversion repository's
@@ -2923,7 +2929,8 @@ user-created .gitignore ignored::
    properties will be translated into.  You'll need to make a policy
    decision about which set of ignores to use in the conversion, and
    possibly set the `--user-ignores` option on `read` to pass through
-   user-created _.gitignore_ files; in that case this
+   user-created _.gitignore_ files and possibly merge them with files
+   generated from Subversion ignore properties; in that case this
    warning will not be emitted.
 
 properties set::

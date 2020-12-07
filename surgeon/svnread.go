@@ -2647,27 +2647,35 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		global   bool
 	}
 	ignoreProps := []ignoreProp{{"svn:ignore", false}, {"svn:global-ignores", true}}
+	propCount := len(ignoreProps)
 
 	// An helper function to generate .gitignore files
 	var defaultIgnoreBlob *Blob
 	ignoreOp := func(nodepath string, explicit []string) *FileOp {
 		// explicit is a list of values in the same order as ignoreProps
+		// with an additional element for in-tree ignore content.
 		var buf bytes.Buffer
 		if nodepath == ".gitignore" {
 			buf.WriteString(subversionDefaultIgnores)
 		}
 		hasExplicit := false
 		for i, block := range explicit {
-			if ignoreProps[i].global {
+			if i >= propCount || ignoreProps[i].global {
 				if block != "" {
 					buf.WriteString(block)
-					hasExplicit = true
+					if !strings.HasSuffix(block, control.lineSep) {
+						buf.WriteString(control.lineSep)
+					}
+					hasExplicit = true 
 				}
 			} else {
 				for _, line := range strings.SplitAfter(block, control.lineSep) {
 					if line != "" && line != control.lineSep {
 						buf.WriteByte(svnSep[0])
 						buf.WriteString(line)
+						if !strings.HasSuffix(block, control.lineSep) {
+							buf.WriteString(control.lineSep)
+						}
 						hasExplicit = true
 					}
 				}
@@ -2695,9 +2703,19 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		return op
 	}
 
+	opContents := func(op *FileOp) string {
+		if op.ref == "inline" {
+			return string(op.inline)
+		}
+		if blob, ok := sp.repo.markToEvent(op.ref).(*Blob); ok {
+			return string(blob.getContent())
+		}
+		return ""
+	}
+
 	baton.startProgress("SVN phase B: Conversion of svn:ignores",
 		uint64(len(sp.repo.events)))
-	nilIgnore := []string{"", ""}
+	nilIgnore := make([]string, propCount + 1)
 	ownIgnores := make(map[int]*PathMap)
 	for index, event := range sp.repo.events {
 		// First get all relevant data: the commit, the SVN records of the
@@ -2707,10 +2725,9 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		if !ok {
 			continue
 		}
-		// Remember any pre-existing .gitignore file in the commit trees to avoid
-		// clobbering them, with essentially an ad-hoc poor man's manifest. These
-		// will be also used to track the .gitignore files we generated:
-		// no value = no .gitignore; false = in-tree gitignore; true = generated
+		// Track already seen ignore values from all possible sources:
+		// svn:ignore, svn:global-ignores, and in-tree .gitignore files.
+		// We remember those as the list we would pass to ignoreOp.
 		var myIgnores *PathMap
 		if commit.hasParents() && (len(commit.fileops) == 0 || commit.fileops[0].op != deleteall) {
 			myIgnores = ownIgnores[sp.repo.eventToIndex(commit.parents()[0])]
@@ -2725,19 +2742,38 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 			if !(op.Path == ".gitignore" || strings.HasSuffix(op.Path, svnSep + ".gitignore")) {
 				continue
 			}
+			var oldvalues []string
+			fileExisted := false
+			if obj, ok := myIgnores.get(op.Path); ok {
+				oldvalues = obj.([]string)
+				fileExisted = true
+			} else {
+				oldvalues = nilIgnore
+			}
+			fileExists := fileExisted
+			newvalues := make([]string, propCount + 1)
+			copy(newvalues, oldvalues)
 			if op.op == opD {
-				genobj, _ := myIgnores.get(op.Path)
-				generated, present := genobj.(bool)
-				if present {
-					if generated {
-						logit("Inconsistent in-tree delete of generated %s", op.Path)
-					}
+				newvalues[propCount] = ""
+				fileExists = false // removed by the operation
+			} else if op.op == opM {
+				newvalues[propCount] = opContents(op)
+			}
+			// Since there was a file operation modifying the .gitignore
+			// we have to overwrite the changes with an operation of our
+			// own. Just avoid creating an opD for a nonexistent file.
+			fileop := ignoreOp(op.Path, newvalues)
+			if fileop.op == opD {
+				if fileExisted {
 					myIgnores.remove(op.Path)
 				}
-			} else if op.op == opM {
-				// This will overwrite any generated status
-				myIgnores.set(op.Path, false)
+				if !fileExists {
+					continue
+				}
+			} else {
+				myIgnores.set(op.Path, newvalues)
 			}
+			commit.fileops = append(commit.fileops, fileop)
 		}
 		// Avoid polluting tipdeletes with ignore information
 		if len(commit.fileops) == 1 &&
@@ -2765,40 +2801,49 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 			if branch != mybranch {
 				continue
 			}
-			genobj, _ := myIgnores.get(path)
-			generated, present := genobj.(bool)
+			var oldvalues []string
+			fileExisted := false
+			if obj, ok := myIgnores.get(path); ok {
+				oldvalues = obj.([]string)
+				fileExisted = true
+			} else {
+				oldvalues = nilIgnore
+			}
+			newvalues := make([]string, propCount + 1)
+			copy(newvalues, oldvalues)
 			if node.action == sdDELETE {
 				// Handle the case of a directory deletion
-				if present && generated {
-					// Generate a D op for the .gitignore file (any in-tree
-					// .gitignore would have its D op already)
-					commit.fileops = append(commit.fileops, ignoreOp(path, nilIgnore))
-					myIgnores.remove(path)
+				for i := range ignoreProps {
+					newvalues[i] = ""
 				}
-			} else if !present || generated {
+			} else {
 				// Handle the case of ignore modifications
 				// Loop over ignore properties, fetching ignore content
-				gitignore := []string{"", ""}
 				for i, prop := range ignoreProps {
 					if node.hasProperties() && node.props.has(prop.propname) {
-						gitignore[i] = node.props.get(prop.propname)
+						newvalues[i] = node.props.get(prop.propname)
+					} else {
+						newvalues[i] = ""
 					}
 				}
-				fileop := ignoreOp(path, gitignore)
-				if fileop.op == opM {
-					commit.fileops = append(commit.fileops, fileop)
-					myIgnores.set(path, true) // generated
-				} else if present {
-					commit.fileops = append(commit.fileops, fileop)
-					myIgnores.remove(path)
-				}
 			}
+			fileop := ignoreOp(path, newvalues)
+			if fileop.op == opD {
+				if fileExisted {
+					myIgnores.remove(path)
+				} else {
+					continue
+				}
+			} else {
+				myIgnores.set(path, newvalues)
+			}
+			commit.fileops = append(commit.fileops, fileop)
 		}
 		// If the commit misses a default root .gitignore, create it.
 		_, hasTopLevel := myIgnores.get(".gitignore")
 		if !hasTopLevel {
 			commit.fileops = append(commit.fileops, ignoreOp(".gitignore", nilIgnore))
-			myIgnores.set(".gitignore", true)
+			myIgnores.set(".gitignore", nilIgnore)
 		}
 
 		commit.simplify()
