@@ -1311,7 +1311,9 @@ edit                   ;; edit all editable objects.
 
 @min([.gitignore]) remove .gitignore delete
                        ;; Remove the first .gitignore fileop in the
-                       ;; repo.
+                       ;; repo.  In a Subversion lift this contains
+                       ;; patterns corresponding to Subversion default
+                       ;; ignores.
 --------
 
 The regular expressions should be in

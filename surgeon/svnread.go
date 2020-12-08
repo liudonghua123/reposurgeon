@@ -1404,12 +1404,9 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				if strings.HasSuffix(node.path, ".cvsignore") && !options.Contains("--cvsignores") {
 					continue
 				}
-				// Ignore and complain about explicit .gitignores
-				// created, e.g, by git-svn.  In an ideal world we
-				// would merge these with svn:ignore properties. but
-				// this would be hairy and bug-prone. So we give
-				// the user a heads-up and expect these to be
-				// merged by hand.
+				// We may need to ignore and complain
+				// about explicit .gitignores created,
+				// e.g, by git-svn.
 				if strings.HasSuffix(node.path, ".gitignore") && !options.Contains("--user-ignores") {
 					if logEnable(logSHOUT) {
 						logit("r%d~%s: user-created .gitignore ignored.", node.revision, node.path)
@@ -1740,31 +1737,32 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	baton.endProgress()
 
 	/* Phase 6d: fixing the parent links to restore the namespace continuity.
-	* In this comment, a namespace is a branch, a tag or anything recognized
-	* by the branchify setting. The previous subphase stripped the namespace
-	* from the file paths and transferred it to the commit branch.  By doing
-	* so, it entangled the histories of files in different namespaces.  This
-	* phase is about getting the contents correctness back by separating the
-	* linear history into disconnected chains of commits, one per namespace.
-	* The deleteall operations comes from total deletion of namespaces which
-	* should cut the chain in two and disconnect the latter history from the
-	* history preceding the deleteall. Phase 6a and 6b ensure that deleteall
-	* operations always are the last of their commit.
-	*
-	* This is also a good time to fill an helper structure remembering which
-	* commit last happened on every namespace at every revision. That struct
-	* is a dictionary mapping namespaces to lists of commits where
-	*   sp.lastCommitOnBranchAt[namespace][rev_id]
-	* is a pointer to  the last commit  that happened  in the namespace at a
-	* revision id less than or equal to rev_id. If rev_id is past the end of
-	* the list, then no commit happened in the namespace *after* rev_id, and
-	* the wanted last commit is the last element of the list.
-	*
-	* This is used as an invariant to incrementally build the lists: when we
-	* encounter a new commit on a namespace, we complete the list by copying
-	* its last item enough times so that  previously implicit information is
-	* explicitly filled, then then fill list[rev_id] with the commit we just
-	* encountered. */
+	 * In this comment, a namespace is a branch, a tag or anything recognized
+	 * by the branchify setting. The previous subphase stripped the namespace
+	 * from the file paths and transferred it to the commit branch.  By doing
+	 * so, it entangled the histories of files in different namespaces.  This
+	 * phase is about getting the contents correctness back by separating the
+	 * linear history into disconnected chains of commits, one per namespace.
+	 * The deleteall operations comes from total deletion of namespaces which
+	 * should cut the chain in two and disconnect the latter history from the
+	 * history preceding the deleteall. Phase 6a and 6b ensure that deleteall
+	 * operations always are the last of their commit.
+	 *
+	 * This is also a good time to fill a helper structure remembering which
+	 * commit last happened on every namespace at every revision. That struct
+	 * is a dictionary mapping namespaces to lists of commits where
+	 *   sp.lastCommitOnBranchAt[namespace][rev_id]
+	 * is a pointer to  the last commit  that happened  in the namespace at a
+	 * revision id less than or equal to rev_id. If rev_id is past the end of
+	 * the list, then no commit happened in the namespace *after* rev_id, and
+	 * the wanted last commit is the last element of the list.
+	 *
+	 * This is used as an invariant to incrementally build the lists: when we
+	 * encounter a new commit on a namespace, we complete the list by copying
+	 * its last item enough times so that  previously implicit information is
+	 * explicitly filled, then then fill list[rev_id] with the commit we just
+	 * encountered.
+	 */
 	baton.startProgress("SVN phase 6c: fix content-changing parent links",
 		uint64(len(sp.repo.events)))
 	sp.lastCommitOnBranchAt = make(map[string][]*Commit)
@@ -2641,7 +2639,6 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 	// We simultaneously handle different ignore-type properties (svn:ignore and
 	// svn:global-ignores). Their content will be concatenated with built-in SVN
 	// ignore patterns to generate .gitignore files.
-	// TODO: also merge with the content of in-tree .gitignore files.
 	type ignoreProp struct {
 		propname string
 		global   bool
@@ -2670,7 +2667,7 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 					if !strings.HasSuffix(block, control.lineSep) {
 						buf.WriteString(control.lineSep)
 					}
-					hasExplicit = true 
+					hasExplicit = true
 				}
 			} else {
 				for _, line := range strings.SplitAfter(block, control.lineSep) {
@@ -2749,7 +2746,7 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		//               the .gitignore even if its path is still registered.
 		// `setter` is a function modifying the registered values.
 		applyIgnore := func(path string, alreadyDeleted bool, setter func(values *([]string))) {
-			newvalues := make([]string, propCount + 1)
+			newvalues := make([]string, propCount+1)
 			registered := false
 			if obj, ok := myIgnores.get(path); ok {
 				copy(newvalues, *obj.(*[]string))
@@ -2773,7 +2770,7 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 
 		// Loop over fileops, registering in-tree changes
 		for _, op := range commit.fileops {
-			if !(op.Path == ".gitignore" || strings.HasSuffix(op.Path, svnSep + ".gitignore")) {
+			if !(op.Path == ".gitignore" || strings.HasSuffix(op.Path, svnSep+".gitignore")) {
 				continue
 			}
 			if op.op == opD {
@@ -2788,8 +2785,8 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		}
 		// Avoid polluting tipdeletes with ignore information
 		if len(commit.fileops) == 1 &&
-				commit.fileops[0].op == deleteall &&
-				!commit.hasChildren() {
+			commit.fileops[0].op == deleteall &&
+			!commit.hasChildren() {
 			continue
 		}
 		revision, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
