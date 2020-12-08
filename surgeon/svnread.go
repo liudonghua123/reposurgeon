@@ -2662,6 +2662,10 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		for i, block := range *explicit {
 			if i >= propCount || ignoreProps[i].global {
 				if block != "" {
+					if i == propCount {
+						buf.WriteString("# In-tree .gitignore contents start here")
+						buf.WriteString(control.lineSep)
+					}
 					buf.WriteString(block)
 					if !strings.HasSuffix(block, control.lineSep) {
 						buf.WriteString(control.lineSep)
