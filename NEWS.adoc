@@ -6,6 +6,7 @@ Repository head::
      Much of "Repository Editing" is now generated from embedded help.
      repotool mirror can now use rsync for pulling repositories.
      Repair repocutter reduce logic and add a test for it.
+     New "branchlift" primitive for use after a --nobranch read.
 
 4.21: 2020-11-18::
      Fix for a bug that could scramble history in pathological tag-copy cases.

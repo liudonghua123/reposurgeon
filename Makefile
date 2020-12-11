@@ -87,6 +87,7 @@ TOPICS = \
 	blob \
 	branch \
 	branchify \
+	branchlist \
 	branchmap \
 	changelogs \
 	checkout \

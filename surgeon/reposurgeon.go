@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"os/user"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -3426,7 +3427,7 @@ func (rs *Reposurgeon) HelpRemove() {
 
 From a specified commit, remove a specified fileop. The syntax:
 
-The *op* must be one of (a) the keyword 'deletes', (b) a file path, (c)
+OP must be one of (a) the keyword 'deletes', (b) a file path, (c)
 a file path preceded by an op type set (some subset of the letters
 DMRCN), or (c) a 1-origin numeric index.  The 'deletes' keyword
 selects all D fileops in the commit; the others select one each.
@@ -5394,6 +5395,120 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	} else {
 		croak("unknown verb '%s' in reset command.", verb)
 	}
+	return false
+}
+
+// HelpBranchlift says "Shut up, golint!"
+func (rs *Reposurgeon) HelpBranchlift() {
+	rs.helpOutput(`
+branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
+
+Every commit on SOURCEBRANCH with fileops matching the PATHPREFIX is examined; if any
+such commits contains fileops *not* matching the PATH, the mismatch is logged
+and the command aborted.  Such commits need to be fixed up manually with
+a "split" command before this command cann be applied. 
+
+If there are no such errors, every matching commit is modified to have the
+branch label specified by NEWNAME. If NEWNAME is not specified, the basename
+of PATHPREFIX is used.  The PATHPREFIX is removed from the paths of all
+fileops in the commit.
+
+Backslash escapes are processed in all three names.
+`)
+}
+
+// DoBranchlift lifts a directory to become a branch
+func (rs *Reposurgeon) DoBranchlift(line string) bool {
+	if rs.chosen() == nil {
+		croak("no repo has been chosen.")
+		return false
+	}
+	repo := rs.chosen()
+
+	// We need a source branch
+	sourcebranch, line := popToken(line)
+	var err error
+	sourcebranch, err = stringEscape(sourcebranch)
+	if err != nil {
+		croak("while selecting branch: %v", err)
+		return false
+	}
+	if !strings.HasPrefix(sourcebranch, "refs/heads/") {
+		sourcebranch = "refs/heads/" + sourcebranch
+	}
+	if !repo.branchset().Contains(sourcebranch) {
+		croak("no such branch as %s", sourcebranch)
+		return false
+	}
+
+	// We need a path prefix
+	var pathprefix string
+	pathprefix, line = popToken(line)
+	if pathprefix == "" || pathprefix == "." || pathprefix == "/" {
+		croak("path prefix argument must be nonempty and not . or /.")
+		return false
+	}
+	if !strings.HasSuffix(pathprefix, "/") {
+		pathprefix += "/"
+	}
+
+	// We need a new branch name
+	var newname string
+	newname, line = popToken(line)
+	if pathprefix == "" {
+		newname = path.Base(pathprefix)
+		return false
+	}
+	if !strings.HasPrefix(newname, "refs/heads/") {
+		newname = "refs/heads/" + newname
+	}
+	if repo.branchset().Contains(newname) {
+		croak("there is already a branch named '%s'.", newname)
+		return false
+	}
+
+	// Ensure we will not branchify mixed commits
+	mixed := false
+	selection := make([]*Commit, 0)
+	for _, commit := range rs.chosen().commits(nil) {
+		if commit.Branch == sourcebranch {
+			goodcount := 0
+			badcount := 0
+			for _, trialpath := range commit.paths(nil) {
+				if strings.HasPrefix(trialpath, pathprefix) {
+					goodcount++
+				} else {
+					badcount++
+				}
+			}
+			if goodcount > 0 {
+				if badcount == 0 {
+					selection = append(selection, commit)
+				} else {
+					logit("%s has fileops that both match and don't match %s",
+						commit.idMe(), pathprefix)
+					mixed = true
+				}
+			}
+		}
+	}
+	if mixed {
+		croak("aborting branchlift due to mixed commits.")
+	}
+
+	// Actual implementation
+	for _, commit := range selection {
+		commit.Branch = newname
+		for _, op := range commit.operations() {
+			if strings.HasPrefix(op.Source, pathprefix) {
+				op.Source = op.Source[len(pathprefix):]
+			}
+			if strings.HasPrefix(op.Path, pathprefix) {
+				op.Path = op.Path[len(pathprefix):]
+			}
+		}
+	}
+
 	return false
 }
 

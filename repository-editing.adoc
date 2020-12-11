@@ -527,9 +527,10 @@ repo, such as many projects use for website content.
 
 In very unusual cases you may need to use the "--nobranch"
 option. However, this has the disadvantage that you'll have to do the
-branch surgery by hand at a later stage. Instead, you may be able to
-use the repocutter filter to transform the dump file into a version
-shaped right for a regular branch-sensitive lift.
+branch surgery by hand at a later stage (the command for this is
+"branchlift"). Instead, you may be able to use the repocutter filter
+to transform the dump file into a version shaped right for a regular
+branch-sensitive lift.
 
 To the author's knowledge, reposurgeon is the only conversion tool
 that handles multibranch Subversion repositories in full
@@ -2058,6 +2059,8 @@ include::docinclude/tag.adoc[]
 
 include::docinclude/reset.adoc[]
 
+include::docinclude/branchlift.adoc[]
+
 [[splitmerge]]
 === Repository splitting and merging
 
@@ -2807,8 +2810,8 @@ repository, branch analysis is skipped, and the repository is treated
 as though flat (left as a linear sequence of commits on
 `refs/heads/master`).  This may be useful if your repository
 configuration is highly unusual and you need to do your own branch
-surgery. Note that this option will disable partitioning of mixed
-commits.
+surgery, with e.g. the `branchlift` command. Note that this option
+will disable partitioning of mixed commits.
 
 * If '```trunk```' is eligible, it always becomes the master
 branch.
