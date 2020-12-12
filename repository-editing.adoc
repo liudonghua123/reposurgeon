@@ -126,8 +126,9 @@ tag /emptycommit/ delete
 
 # Often, your Subversion repository was a CVS repository in a past
 # life. CVS creates tags named with the suffix "-root" to mark branch
-# points, and cv2svn blindly copies them even though the Subversion
-# tools don't need that marker. This clutter can be tossed.
+# points for its internal housekeeping, and cv2svn blindly copied them
+# even though the Subversion tools don't need that marker. This
+# clutter can be tossed.
 tag /-root$/ delete
 
 # This command illustrates how to use msgin to modify the comment
