@@ -1,12 +1,14 @@
 = Repository Editing and Conversion With Reposurgeon =
 :doctype: book
 :author: Eric S. Raymond
+:docinfo: shared
 :toc: left
 :toclevels: 2
 :!webfonts:
 :sectlinks:
 :sectanchors:
 :sectnums:
+:dtanchors:
 
 // Note: This master is full of inclusions that are the output of
 // reposurgeon embedded-help commands.  It's done this way so that,

@@ -198,10 +198,10 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 	@rm -fr docinclude; mkdir docinclude
 	@for topic in $(TOPICS); \
 	do \
-	    ./reposurgeon "set asciidoc" "help $${topic}" >docinclude/$${topic}.adoc; \
+	    ./reposurgeon "set asciidoc" "help $${topic}" >"docinclude/$${topic}.adoc"; \
 	done
 	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
-	@asciidoctor -D. -a webfonts! repository-editing.adoc
+	@./repository-editing.rb
 
 # Audit for embedded-help entries not used as inclusions (column 1)
 # or inclusions for which there are no corresponding help topics (column 2).
