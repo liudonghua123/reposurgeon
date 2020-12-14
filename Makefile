@@ -198,7 +198,9 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 	@rm -fr docinclude; mkdir docinclude
 	@for topic in $(TOPICS); \
 	do \
-	    ./reposurgeon "set asciidoc" "help $${topic}" >"docinclude/$${topic}.adoc"; \
+	    # add an anchor to the first block in every import \
+	    echo "[[$${topic}_cmd,$${topic}]]" >>"docinclude/$${topic}.adoc"; \
+	    ./reposurgeon "set asciidoc" "help $${topic}" >>"docinclude/$${topic}.adoc"; \
 	done
 	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
 	@./repository-editing.rb

@@ -39,7 +39,7 @@ If you're doing something more unusual than a conversion, you'll
 probably have to read through the command reference until
 you discover the commands you need.
 
-Help is available within reposurgeon using the "help" command.
+Help is available within reposurgeon using the "<<help_cmd>>" command.
 Type "help" alone for a list of help topics.
 
 [[introduction]]
@@ -61,7 +61,7 @@ code needs to be removed from a repository for legal or policy reasons.
 Fully supported systems (those for which reposurgeon can both read and
 write repositories) include git, hg, bzr, darcs, bk, RCS, and SRC.
 For a complete list, with dependencies and technical notes, type
-"prefer" to the reposurgeon prompt.
+"<<prefer_cmd>>" to the reposurgeon prompt.
 
 Writing to the file-oriented systems RCS and SRC has some serious
 limitations because those systems cannot represent all the metadata in
@@ -69,9 +69,9 @@ a git-fast-export stream. They require rcs-fast-import as a back end;
 consult that tool's documentation for details and partial workarounds.
 
 Fossil repository files can be read in using the `--format=fossil`
-option of the '```read```' command and written out with the
-`--format=fossil` option of the '```write```' comment. Ignore patterns
-are not translated in either direction.
+option of the '```<<read_cmd>>```' command and written out with the
+`--format=fossil` option of the '```<<write_cmd>>```' comment. Ignore
+patterns are not translated in either direction.
 
 SVN and CVS are supported for read only, not write.  For CVS,
 reposurgeon must be run from within a repository directory (one with a
@@ -86,11 +86,10 @@ things you can do with it - like altering stored commit timestamps so
 they no longer match the commit sequence - that are likely to cause
 havoc after you're done.  Proceed with caution and check your work.
 
-Also note that, if your DVCS does the usual thing of making
-commit IDs a cryptographic hash of content and parent links, editing a
+Also note that, if your DVCS does the usual thing of making commit IDs
+a cryptographic hash of content and parent links, editing a
 publicly-accessible repository with this tool would be a bad idea. All
-of the surgical operations in reposurgeon will
-modify the hash chains.
+of the surgical operations in reposurgeon will modify the hash chains.
 
 Please also see the notes on system-specific issues under
 <<limitations>>.
@@ -335,11 +334,11 @@ and repotool) are on your $PATH.
 
 Create a scratch directory for your conversion work.
 
-Run "repotool initialize" in the scratch directory; it requires that
-you follow the initialize verb with a project name.  This will create
-a Makefile designed to sequence your conversion, and an empty lift
-script. Then set the variables near the top appropriately for your
-project.
+Run "<<repotool.adoc#,repotool initialize>>" in the scratch directory;
+it requires that you follow the initialize verb with a project name.
+This will create a Makefile designed to sequence your conversion, and
+an empty lift script. Then set the variables near the top
+appropriately for your project.
 
 This Makefile will help you avoid typing a lot of fiddly commands
 by hand, and ensure that later products of the conversion pipeline
@@ -533,12 +532,12 @@ standard trunk/tags/branches layout, it will do the right thing. It
 will also cope with adventitious branches in the root directory of the
 repo, such as many projects use for website content.
 
-In very unusual cases you may need to use the "--nobranch"
+In very unusual cases you may need to use the "<<read_cmd,--nobranch>>"
 option. However, this has the disadvantage that you'll have to do the
 branch surgery by hand at a later stage (the command for this is
-"branchlift"). Instead, you may be able to use the repocutter filter
-to transform the dump file into a version shaped right for a regular
-branch-sensitive lift.
+"<<branchlift_cmd>>"). Instead, you may be able to use the repocutter
+filter to transform the dump file into a version shaped right for a
+regular branch-sensitive lift.
 
 To the author's knowledge, reposurgeon is the only conversion tool
 that handles multibranch Subversion repositories in full
@@ -559,7 +558,7 @@ The tag problem arises because Subversion tags are really branches
 that you've conventionally agreed not to commit to after the initial
 branch copy (that's what the tags/ directory name conveys).  But
 Subversion doesn't enforce any prohibition against committing to
-the tag branch, and various odd things can happen if you do
+the tag branch, and various odd things can happen if you do.
 
 The reposurgeon analyzer tries to warn you about pathological cases,
 and reposurgeon gives you tools for coping with them.  Unfortunately,
@@ -666,16 +665,16 @@ serious bug in either reposurgeon or the front end it used, or you
 might just have a misassigned tag that can be manually fixed. Consult
 <<reporting-bugs>> for information on how to usefully report bugs.
 
-Use reposurgeon's '```lint```' command to find anomalies like detached
-branches that may need manual correction.
+Use reposurgeon's '```<<lint_cmd>>```' command to find anomalies like
+detached branches that may need manual correction.
 
-If you are converting from CVS, use reposurgeon's graph command to
-examine the conversion, looking (in particular) for misplaced tags or
-branch joins. Often these can be manually repaired with little
-effort. These flaws do 'not' necessarily imply bugs in cvs-fast-export
-or reposurgeon; they may simply indicate previously undetected
-malformations in the history. However, reporting them may help improve
-cvs-fast-export.
+If you are converting from CVS, use reposurgeon's
+'```<<graph_cmd>>```' command to examine the conversion, looking (in
+particular) for misplaced tags or branch joins. Often these can be
+manually repaired with little effort. These flaws do 'not' necessarily
+imply bugs in cvs-fast-export or reposurgeon; they may simply indicate
+previously undetected malformations in the history. However, reporting
+them may help improve cvs-fast-export.
 
 Warning: As of September 2016, stock CVS is known buggy in ways which
 may affect checking the correctness of conversions. For best results,
@@ -693,7 +692,7 @@ forms of cruft:
 Commit comments and attributions containing non-UTF8 data::
     You could have metadata in your repository in an encoding
     incompatible with UTF-8 (Latin-1 is the most common offender). You
-    will probably want to transcode the repo to UTF-8.
+    will probably want to <<transcode_cmd>> the repo to UTF-8.
 
 Subversion and CVS commit references::
     Often Subversion references will be in the form 'r' followed by a
@@ -770,7 +769,8 @@ lift script.
 
 4. Massage comments into summary-line-plus-continuation form.
 
-5. If the project used the GNU ChangeLog convention, run "changelogs".
+5. If the project used the GNU ChangeLog convention, run
+"<<changelogs_cmd>>".
 
 6. Remove empty and delete-only tip commits where appropriate.
 
@@ -797,45 +797,44 @@ stages. These normally take only a couple of hours even on very large
 repos with thousands of commits. An entire conversion is usually less
 than two days of work.
 
-You can use the `authors read` command to perform the
+You can use the `<<authors_cmd>> read` command to perform the
 author-ID mapping operation with reposurgeon.
 
 You can find empty commits as the =Z visibility set set and clean
-them up with the command `tagify`. Consult the
+them up with the command `<<tagify_cmd>>`. Consult the
 reposurgeon manual page for usage details.
 
-A good way to spot junk commits is to eyeball the picture of
-the commit DAG created by the reposurgeon 'graph' command
-- they tend to stand out visually as leaf nodes in odd places. Be
-aware that the graph command outputs DOT, the language interpreted by
-the http://www.graphviz.org/[graphviz] suite; you will
-need a DOT rendering program and an image viewer.
+A good way to spot junk commits is to eyeball the picture of the
+commit DAG created by the reposurgeon 'graph' command - they tend to
+stand out visually as leaf nodes in odd places. Be aware that the
+<<graph_cmd>> command outputs DOT, the language interpreted by the
+http://www.graphviz.org/[graphviz] suite; you will need a DOT
+rendering program and an image viewer.
 
-See the documentation of the `references` command, for
-details on how fix up Subversion and CVS changeset references in
-comments so they're still meaningful.
+See the documentation of the `<<references_cmd>>` command, for details
+on how fix up Subversion and CVS changeset references in comments so
+they're still meaningful.
 
-The command `=L edit` is good for fixing up multi-line comments.
+The command `=L <<edit_cmd>>` is good for fixing up multi-line comments.
 
-The reposurgeon command `inspect =H` will
-show you tip commits which may contain only deletes and
-deletealls.
+The reposurgeon command `<<inspect_cmd>> =H` will show you tip commits
+which may contain only deletes and deletealls.
 
-Tags can be inspected with `=T inspect`. Junk tags can be removed with
-the `delete` command. Tag comments can be modified with `edit`.
-Check that the creation date of tags matches what you see in the
-source repository; this is the easiest way to spot when one has been
-attached to the wrong commit, something that can be manually fixed by
-editing its "from" field.
+Tags can be inspected with `=T <<inspect_cmd>>`. Junk tags can be
+removed with the `<<delete_cmd>>` command. Tag comments can be
+modified with `<<edit_cmd>>`.  Check that the creation date of tags
+matches what you see in the source repository; this is the easiest way
+to spot when one has been attached to the wrong commit, something that
+can be manually fixed by editing its "from" field.
 
-The command `=I` will select all commits that don't decode to UTF-8
-in both the commit comment and attribution parts.  You eyeball those
-to figure out what the encoding is and apply the transcode command
-to fix things.
+The command `=I` will select all commits that don't decode to UTF-8 in
+both the commit comment and attribution parts.  You eyeball those to
+figure out what the encoding is and apply the `<<transcode_cmd>>`
+command to fix things.
 
-Reposurgeon has a `merge` command specifically for performing branch
-merges.  The `edit` command will also allow you to add a parent mark
-to a commit.
+Reposurgeon has a `<<merge_cmd>>` command specifically for performing
+branch merges.  The `<<edit_cmd>>` command will also allow you to add
+a parent mark to a commit.
 
 One minor feature you lose in moving from SCCS, CVS, Subversion, or
 BitKeeper to a DVCS is keyword expansion.  You should go through the last
@@ -868,11 +867,10 @@ into summary-plus-continuation form.
 EOF
 --------
 
-Experiments with reposurgeon suggest that `git
-import` doesn't try to pack or otherwise optimize for space when
-it populates a repo from a dump file; this produces large
-repositories.  Running `git repack` and `git gc
---aggressive` can slim them down quite a lot.
+Experiments with reposurgeon suggest that `git import` doesn't try to
+pack or otherwise optimize for space when it populates a repo from a
+dump file; this produces large repositories.  Running `git repack` and
+`git gc --aggressive` can slim them down quite a lot.
 
 [[conversion-comments]]
 ==== Conversion comments
@@ -900,10 +898,9 @@ a uniform VCS-independent syntax, and some comments edited into
 summary-plus-continuation form.]]
 ------------------------------------------------------------------
 
-You should also, as previously noted, leave a tag in the normal
-commit sequence noting the switchover.  You can do this with
-the `msgin --create` command; see the reposurgeon
-manual page for details and an example.
+You should also, as previously noted, leave a tag in the normal commit
+sequence noting the switchover.  You can do this with the
+`<<msgin_cmd>> --create` command.
 
 [[nonsurgical]]
 ==== Nonsurgical cleanup steps
@@ -1641,6 +1638,7 @@ probably read <<mercurial>> after this section.
 
 === Reading and writing repositories
 
+[[read_cmd,read]]
 read [ --format=fossil ] [ --no-implicit ] [ DIRECTORY | - | <INFILE ]::
     With a directory-name argument, this command attempts
     to read in the contents of a repository in any supported
@@ -1661,14 +1659,13 @@ on a commit is taken to be a legacy ID token pointing to the commit,
 and used for reference-lifting.
 +
 If the read location is a git repository and contains a
-_.git/cvsauthors_ file (such as is left in place
-by '```git cvsimport -A```') that file will be read in as
-if it had been given to the '```authors read```' command.
+_.git/cvsauthors_ file (such as is left in place by '```git cvsimport
+-A```') that file will be read in as if it had been given to the
+'```<<authors_cmd>> read```' command.
 +
-If the read location is a directory, and its repository
-subdirectory has a file named _legacy-map_, that file
-will be read as though passed to a '```legacy read```'
-command.
+If the read location is a directory, and its repository subdirectory
+has a file named _legacy-map_, that file will be read as though passed
+to a '```<<legacy_cmd>> read```' command.
 +
 If the read location is a file and the `--format=fossil` option
 is used, the file is interpreted as a Fossil repository.
@@ -1690,6 +1687,7 @@ later section, and apply only to Subversion repositories.
 +
 Note: this command does not take a selection set.
 
+[[write_cmd,write]]
 [ SELECTION ] write [ --legacy ] [ --format=fossil ] [ --noincremental ] [ --callout ] [ >OUTFILE | `-` ]::
    Dump selected events as a fast-import stream representing the
    edited repository; the default selection set is all events. Where to
@@ -1728,8 +1726,7 @@ dump.  When this happens and the `--callout` option was
 specified, the write code replaces the merge mark with a callout, the
 action stamp of the parent commit; otherwise the parent mark is
 omitted.  Importers will fail when reading a stream dump with callouts;
-it is intended to be used by the '```graft```'
-command.
+it is intended to be used by the '```<<graft_cmd>>```' command.
 +
 Specifying a write selection set with gaps in it is allowed
 but unlikely to lead to good results if it is loaded by an importer.
@@ -1738,7 +1735,7 @@ Property extensions will be be omitted from the output if the
 importer for the preferred repository type cannot digest them.
 +
 Note: to examine small groups of commits without the progress
-meter, use '```inspect```'.
+meter, use '```<<inspect_cmd>>```'.
 
 [[preferences]]
 === Repository type preference
@@ -1750,11 +1747,10 @@ include::docinclude/sourcetype.adoc[]
 [[rebuild]]
 === Rebuilds in place
 
-reposurgeon can rebuild an altered repository
-in place.  Untracked files are normally saved and restored when the
-contents of the new repository are checked out (but see the
-documentation of the '```preserve```' command for a
-caveat).
+reposurgeon can rebuild an altered repository in place.  Untracked
+files are normally saved and restored when the contents of the new
+repository are checked out (but see the documentation of the
+'```<<preserve_cmd>>```' command for a caveat).
 
 include::docinclude/rebuild.adoc[]
 
@@ -1901,11 +1897,12 @@ to support.
 [[deletion]]
 === Commit deletion
 
+[[squash_cmd,squash]]
 [ SELECTION ] squash [ POLICY... ]::
    Combine or delete commits in a selection set of events. The
    default selection set for this command is empty. Has no effect on
    events other than commits unless the `--delete` policy is selected;
-   see the '```delete```' command for discussion.
+   see the '```<<delete_cmd>>```' command for discussion.
 +
 Normally, when a commit is squashed, its file operation list
 (and any associated blob references) gets either prepended to the
@@ -1978,6 +1975,7 @@ include::docinclude/merge.adoc[]
 
 include::docinclude/unmerge.adoc[]
 
+[[reparent_cmd,reparent]]
 [ SELECTIONS ] reparent [ OPTIONS... ] [ POLICY ]::
    Changes the parent list of a commit.  Takes a selection set,
    zero or more option arguments, and an optional policy argument.
@@ -2042,6 +2040,7 @@ result.
 
 include::docinclude/split.adoc[]
 
+[[add_cmd,add]]
 { SELECTION } add { "D" PATH | "M" PERM MARK PATH | "R" SOURCE TARGET | "C" SOURCE TARGET }::
    To a selected commit, add a specified fileop.
 +
@@ -2091,6 +2090,7 @@ include::docinclude/setfield.adoc[]
 
 include::docinclude/edit.adoc[]
 
+[[attribution_cmd,attribution]]
 [ _selection_ ] `attribution` [ _attr-selection_ ] { `show` | `set` | `delete` | `prepend` | `append` } [ _args_ ]::
    Inspect, modify, add, and remove commit and tag attributions.
 +
@@ -2239,6 +2239,7 @@ associated with repository conversions from older systems.
 [[attributions]]
 === Attributions
 
+[[authors_cmd,authors]]
 [ SELECTION ] authors [ read | write ] [ <INFILE ] [ >OUTFILE ]::
    Apply or dump author-map information for the specified selection
    set, defaulting to all events.
@@ -2421,11 +2422,11 @@ repository files, and (3) the _.git/cvs-revisions_
 created by '```git cvsimport```'.
 
 The detailed sequence for lifting possible references is this: first,
-find possible CVS and Subversion references with the `references` or
-`=N` visibility set; then replace them with equivalent cookies; then run
-`references lift` to turn the cookies into action stamps (using the
-information in the legacy-reference map) without having to do the
-lookup by hand.
+find possible CVS and Subversion references with the
+`<<references_cmd>>` or `=N` visibility set; then replace them with
+equivalent cookies; then run `<<references_cmd>> lift` to turn the
+cookies into action stamps (using the information in the
+legacy-reference map) without having to do the lookup by hand.
 
 include::docinclude/references.adoc[]
 
@@ -2582,9 +2583,10 @@ script renames.script
 --------
 
 Mass-rename tags, replacing "sample" on the basename with
-"example". Illustrates a general technique of generating reposurgeon commands via
-shell that you then execute with the '```script```' command. Enabling this
-technique is the reason as many commands as possible support redirects.
+"example". Illustrates a general technique of generating reposurgeon
+commands via shell that you then execute with the
+'```<<script_cmd>>```' command. Enabling this technique is the reason
+as many commands as possible support redirects.
 
 [[housekeeping]]
 === Housekeeping
@@ -2627,6 +2629,7 @@ include::docinclude/readlimit.adoc[]
 
 include::docinclude/memory.adoc[]
 
+[[profile_cmd,profile]]
 `profile` [ `live` | `start` | `save` ] [ _args..._ ]::
     Profiling is enabled by default, but viewing the profile data
     requires either starting the HTTP server with '```profile live```', or
@@ -2737,7 +2740,7 @@ Note that the Subversion dump reader only supports versions 1 and
 This shouldn't be a problem with normal use of reposurgeon, which
 calls svnadmin dump in its default mode generating version 2.
 
-Certain optional modifiers on the `read` command change
+Certain optional modifiers on the `<<read_cmd>>` command change
 its behavior when reading Subversion repositories:
 
 `--nobranch`::
@@ -2785,8 +2788,8 @@ correctly, the branches themselves are almost never interesting.)
 `--cvsignores`::
 Suppress the normal deletion of _.cvsignore_ files.
 
-These modifiers can go anywhere in any order on the command
-line after the `read` verb. They must be whitespace-separated.
+These modifiers can go anywhere in any order on the command line after
+the `<<read_cmd>>` verb. They must be whitespace-separated.
 
 It is also possible to embed a magic comment in a Subversion
 stream file to set these options. Prefix a space-separated list of
@@ -2800,11 +2803,10 @@ will accept.
 Here are the rules used for mapping subdirectories in a
 Subversion repository to branches:
 
-* At any given time there is a set of eligible
-paths and path wildcards which declare potential branches.
-See the documentation of the `branchify` command
-for how to alter this set, which initially consists of
-{`trunk`, `+tags/*+`, `+branches/*+`, and `*`}.
+* At any given time there is a set of eligible paths and path
+wildcards which declare potential branches.  See the documentation of
+the `<<branchify_cmd>>` command for how to alter this set, which
+initially consists of {`trunk`, `+tags/*+`, `+branches/*+`, and `*`}.
 
 * A repository is considered "`__flat__`" if it has no
 directory that matches a path or path wildcard in the branchify set.
@@ -2818,24 +2820,26 @@ repository, branch analysis is skipped, and the repository is treated
 as though flat (left as a linear sequence of commits on
 `refs/heads/master`).  This may be useful if your repository
 configuration is highly unusual and you need to do your own branch
-surgery, with e.g. the `branchlift` command. Note that this option
-will disable partitioning of mixed commits.
+surgery, with e.g. the `<<branchlift_cmd>>` command. Note that this
+option will disable partitioning of mixed commits.
 
 * If '```trunk```' is eligible, it always becomes the master
 branch.
 
-* If an element of the branchify set ends with `+/*+`, it is considered
-a branch namespace: each immediate subdirectory of it is considered a
-potential branch, unless it itself appears in `branchify` as a namespace.
-If `*` is in the branchify set (which is true by default) all top-level
-directories are also considered potential branches (other than `/trunk`
-which is mapped to `master`, and `/tags` and `/branches` which are
-namespaces by default).
+* If an element of the branchify set ends with `+/*+`, it is
+considered a branch namespace: each immediate subdirectory of it is
+considered a potential branch, unless it itself appears in
+`<<branchify_cmd>>` as a namespace.  If `*` is in the branchify set
+(which is true by default) all top-level directories are also
+considered potential branches (other than `/trunk` which is mapped to
+`master`, and `/tags` and `/branches` which are namespaces by
+default).
 
 * Files in the top-level directory are assigned to a synthetic branch
-named '```root```'. If there is no "trunk" (or rather no master branch), then
-this synthetic '```root```' branch becomes the master branch. You can map
-another directory to master using `branchify` and `branchmap`.
+named '```root```'. If there is no "trunk" (or rather no master
+branch), then this synthetic '```root```' branch becomes the master
+branch. You can map another directory to master using
+`<<branchify_cmd>>` and `<<branchmap_cmd>>`.
 
 * Each potential branch is checked to see if it has commits on it
 after the initial creation or copy.  If there are such commits, or if the
@@ -2921,7 +2925,7 @@ sufficient to pacify git and other systems that require email
 addresses.  With the option `--use-uuid`, usernames are mapped in the
 `git-svn` style, with the repository's UUID used as a fake domain in the
 email address. Both forms can be remapped to real addresses using
-the `authors read` command.
+the `<<authors_cmd>> read` command.
 
 Reading a Subversion stream enables writing of the legacy map as
 'legacy-id' passthroughs when the repo is written to a stream
@@ -2933,27 +2937,25 @@ need to intervene and perform fixups by hand. Here are the less
 obvious messages it may emit:
 
 user-created .gitignore ignored::
-   This message means reposurgeon has
-   found a _.gitignore_ file in the Subversion
-   repository it is analyzing. This probably happened because somebody
-   was using `git-svn` as a live gateway, and created
-   ignores which may or may not be congruent with those in the generated
-   _.gitignore_ files that the Subversion ignore
-   properties will be translated into.  You'll need to make a policy
-   decision about which set of ignores to use in the conversion, and
-   possibly set the `--user-ignores` option on `read` to pass through
+   This message means reposurgeon has found a _.gitignore_ file in the
+   Subversion repository it is analyzing. This probably happened
+   because somebody was using `git-svn` as a live gateway, and created
+   ignores which may or may not be congruent with those in the
+   generated _.gitignore_ files that the Subversion ignore properties
+   will be translated into.  You'll need to make a policy decision
+   about which set of ignores to use in the conversion, and possibly
+   set the `--user-ignores` option on `<<read_cmd>>` to pass through
    user-created _.gitignore_ files and possibly merge them with files
    generated from Subversion ignore properties; in that case this
    warning will not be emitted.
 
 properties set::
-   reposurgeon has detected a setting of a
-   user-defined property, or the Subversion properties
-   `svn:externals`. These properties cannot be expressed in an import
-   stream; the user is notified in case this is a showstopper for the
-   conversion or some corrective action is required, but normally this
-   error can be ignored.  This warning is suppressed by the
-   `--ignore-properties` option.
+   reposurgeon has detected a setting of a user-defined property, or
+   the Subversion properties `svn:externals`. These properties cannot
+   be expressed in an import stream; the user is notified in case this
+   is a showstopper for the conversion or some corrective action is
+   required, but normally this error can be ignored.  This warning is
+   suppressed by the `--ignore-properties` option.
 
 Detected link from <__revision__> to <__revision__> might be dubious::
    When trying to detect parent links from multiple file copies like what
@@ -3030,9 +3032,10 @@ Of course we could have done the same thing with project2 and dropped
 project1.  Repeat this as many times as required to turn each partial
 into an autonomous git repository.
 
-While something like this could be done with repocutter sift
-commands, that would not correctly resolve Subversion copies across
-projects.  This reposurgeon procedure handles those correctly.
+While something like this could be done with
+<<repocutter.adoc#,repocutter>> sift commands, that would not
+correctly resolve Subversion copies across projects.  This reposurgeon
+procedure handles those correctly.
 
 [[CVS]]
 == Working with CVS
@@ -3059,8 +3062,8 @@ One issue to keep an eye on is whether the window defining "close in
 time" is wide enough.  If it's not, you may detect commit groups with
 the same committer and comment text that should have been merged into
 one changeset but were not.  You can either clean these up with the
-'```coalesce```' command in reposurgeon or run cvs-fast-export by hand
-with a larger `-w` option and read in the generated stream.
+'```<<coalesce_cmd>>```' command in reposurgeon or run cvs-fast-export
+by hand with a larger `-w` option and read in the generated stream.
 
 One step in cleaning up a CVS conversion that is unique to that
 system is deleting root tags - tags which have "-root" as a name
@@ -3091,7 +3094,7 @@ It is extremely unlikely that this is due to a bug in reposurgeon.
 Before filing an issue about it, there is a procedure you should try.
 It consists of bisecting on the parameter the Go language runtime
 uses to control the frequency of garbage collection.  You can set this
-using the environment variable GOGC or reposurgeon "gc" command.
+using the environment variable GOGC or reposurgeon "<<gc_cmd>>" command.
 
 GOGC defaults to 100, which instructs the runtime to garbage-collect
 when the heap size is 100% bigger than (i.e., twice) the size of the
@@ -3148,10 +3151,10 @@ likely:
 
 2. Use repobench to see if you can identify a revision that triggers
    the stall.  The procedure for this is to use it to step your
-   readlimit up from zero until you see the runtime spike.
+   <<readlimit_cmd>> up from zero until you see the runtime spike.
 
-3. As always, provide a stripped (and possibly obscured) dump of the
-   repository for testing.
+3. As always, provide a <<repocutter.adoc#,stripped>> (and possibly
+   <<repocutter.adoc#,obscured>>) dump of the repository for testing.
 
 [[reporting-bugs]]
 === How to report bugs
@@ -3168,12 +3171,13 @@ were operating on, or a pointer to where it can be pulled from.
 
 (c) A script containing the sequence of reposurgeon or repocutter commands that
 revealed the bug.  If you were exploring interactively, remember
-that the "history" command exists and can dump your command history
+that the "<<history_cmd>>" command exists and can dump your command history
 to a file.
 
 (d) If you were using the standard-workflow Makefile generated by
-"repotool initialize", mention that in your bug report.  If you
-modified the Makefile, include a copy with the bug report.
+"<<repotool.adoc#,repotool>> initialize", mention that in your bug
+report.  If you modified the Makefile, include a copy with the bug
+report.
 
 Please use the reposurgeon project's issue tracker and attach these
 files. It's helpful.
@@ -3197,7 +3201,7 @@ send. Also, a well-reduced dump can become a regression test to ensure
 the bug does not recur.
 
 How to make dumps in Git: cd to your git repository and capture the
-output of "repotool export".
+output of "<<repotool.adoc#,repotool>> export".
 
 How to make dumps in Subversion: cd to the toplevel directory of the
 repository master - not a checkout of it. You can tell you're
@@ -3208,10 +3212,10 @@ $ ls
 conf  db  format  hooks  locks  README.txt
 ----------------------------------------------------------------------
 
-Then run "repotool export", capturing the output.
+Then run "<<repotool.adoc#,repotool>> export", capturing the output.
 
 The commands you will use for test-case reduction are reposurgeon and,
-on Subversion dumps, repocutter.
+on Subversion dumps, <<repocutter.adoc#,repocutter>>.
 
 ==== Replace the content blobs in the dump with stubs
 
@@ -3226,8 +3230,8 @@ disclosed!  The command preserves structure and metadata but replaces
 each content blob with a unique magic cookie.
 
 If you don't want to disclose even the metadata, you can do a
-repocutter "obscure" pass after the strip. This will mask file paths
-and developer names.
+<<repocutter.adoc#,repocutter>> "obscure" pass after the strip. This
+will mask file paths and developer names.
 
 ==== Truncate the dump as much as possible
 
@@ -3236,17 +3240,18 @@ reproduces the bug.
 
 A reposurgeon error message will normally include a mark, event
 number, or (when reading a Subversion dump) a Subversion revision
-number.  Use a selection-set argument to reposurgeon's 'write'
-command, or the 'select' subcommand of repocutter, to pare down the
-dump so that it ends just after the error is triggered.  Again, check
-to ensure that the bug reproduces on the truncated dump.
+number.  Use a selection-set argument to reposurgeon's '<<write_cmd>>'
+command, or the 'select' subcommand of
+<<repocutter.adoc#,repocutter>>, to pare down the dump so that it ends
+just after the error is triggered.  Again, check to ensure that the
+bug reproduces on the truncated dump.
 
 If the error message doesn't tell you where the problem occurred, try
-a bisection process.  Use the --readlimit option of the read to ignore
-the last half of the events in the dump; check to see if the bug
-reproduces.  If it does, repeat; if it does not, throw out the last
-quarter, then the last eighth, and so forth.  Keep this up until you
-can no longer drop events without making the bug go away.
+a bisection process.  Use the --readlimit option of the '<<read_cmd>>'
+to ignore the last half of the events in the dump; check to see if the
+bug reproduces.  If it does, repeat; if it does not, throw out the
+last quarter, then the last eighth, and so forth.  Keep this up until
+you can no longer drop events without making the bug go away.
 
 Bisection is more effective than you might expect, because the kinds
 of repository malformations that trigger misbehavior from reposurgeon
@@ -3267,13 +3272,13 @@ not-boring parent or not-boring child.
 
 Try using the 'reduce' subcommand of repocutter to strip boring
 commits out of a Subversion dump. For a git dump, look at reposugeon's
-"strip --reduce" command.
+"<<strip_cmd>> --reduce" command.
 
 ==== Prune irrelevant branches
 
 Try to throw away branches that are not relevant to your problem.  The
-'expunge' operation on repocutter or the 'branch delete' command in
-reposurgeon may be helpful.
+'expunge' operation on repocutter or the '<<branch_cmd>> delete'
+command in reposurgeon may be helpful.
 
 This is the attempted simplification least unlikely to make your bug
 vanish, so check that carefully after each branch deletion.
@@ -3285,9 +3290,9 @@ repository content to a stream instead and importing the stream by
 hand.  If the latter does not fail, the target VCS's importer may be
 slightly buggy - but you have a workaround.
 
-(This has been observed under git 2.5.0 with the result of a unite
-operation on two repositories. The cause is unknown, as git dies
-suddenly enough to not leave a crash report.)
+(This has been observed under git 2.5.0 with the result of a
+'<<unite_cmd>>' operation on two repositories. The cause is unknown,
+as git dies suddenly enough to not leave a crash report.)
 
 === Benchmarking
 
@@ -3304,7 +3309,7 @@ allocated at each iteration. Supply arguments specifying the svn dump
 file to read and the readlimit values to use like this:
 
 ----
-    ./repobench your-dump-file.svn 1000 2000 20000
+./repobench your-dump-file.svn 1000 2000 20000
 ----
 
 This reads `your-dump-file.svn` 10 times, with the readlimit set first
@@ -3327,26 +3332,27 @@ users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
 In versions before 4.10, the "reduce" and "blob" options of the
-"strip" command were bare keywords. Also the options of the "ignores"
-command were bare keywords. There was a command to set the prompt
-string that has been retired.
+"<<strip_cmd>>" command were bare keywords. Also the options of the
+"<<ignores_cmd>>" command were bare keywords. There was a command to
+set the prompt string that has been retired.
 
-In versions before 4.8, the expunge command run on a repository named
-"foo" tried to keep deleted fileops in a new synthetic repository named
-"foo-expunges".  This feature has been replaced by the "~" negation
-operator on expunge selections.
+In versions before 4.8, the `<<expunge_cmd>>` command run on a
+repository named "foo" tried to keep deleted fileops in a new
+synthetic repository named "foo-expunges".  This feature has been
+replaced by the "~" negation operator on expunge selections.
 
-In versions before 4.1, the `index` command did not see blobs by default.
+In versions before 4.1, the `<<index_cmd>>` command did not see blobs
+by default.
 
-In versions before 4.0, `msgin` and `msgout` were named "mailbox_in"
-and "mailbox_out:"; `branchify` was "branchify_map". Previous
-versions used the Python variant of regular expressions; some of
-the more idiosyncratic features of these are not replicated in the
-Go implementation.
+In versions before 4.0, `<<msgin_cmd>>` and `<<msgout_cmd>>` were
+named "mailbox_in" and "mailbox_out:"; `<<branchify_cmd>>` was
+"branchify_map". Previous versions used the Python variant of regular
+expressions; some of the more idiosyncratic features of these are not
+replicated in the Go implementation.
 
-In versions before 3.23, '```prefer```' changed the
+In versions before 3.23, '```<<prefer_cmd>>```' changed the
 repository type as well as the preferred output format.
-Since then, do this with '```sourcetype```'.
+Since then, do this with '```<<sourcetype_cmd>>```'.
 
 In versions before 3.0, the general command syntax put the
 command verb first, then the selection set (if any) then modifiers
@@ -3360,29 +3366,32 @@ In versions before 3.0, path expressions only matched
 commits, not commits and the associated blobs as well. The names
 of the "a" and "c" flags were different.
 
-In reposurgeon versions before 3.0, the delete command had the
-semantics of squash; also, the policy flags did not require a '```--```'
-prefix. The '```--delete```' flag was named "obliterate".
+In reposurgeon versions before 3.0, the `<<delete_cmd>>` command had
+the semantics of `<<squash_cmd>>`; also, the policy flags did not
+require a '```--```' prefix. The '```--delete```' flag was named
+"obliterate".
 
-In reposurgeon versions before 3.0, `read` and
-`write` optionally took file arguments rather than requiring redirects
-(and the `write` command never wrote into directories). This was changed
-in order to allow these commands to have modifiers. These modifiers
-replaced several global options that no longer exist.
+In reposurgeon versions before 3.0, `<<read_cmd>>` and `<<write_cmd>>`
+optionally took file arguments rather than requiring redirects (and
+the `<<write_cmd>>` command never wrote into directories). This was
+changed in order to allow these commands to have modifiers. These
+modifiers replaced several global options that no longer exist.
 
-In reposurgeon versions before 3.0, the earliest factor in a `unite`
-command always kept its tag and branch names unaltered. The new rule
-for resolving name conflicts, giving priority to the latest factor,
-produces more natural behavior when uniting two repositories end to
-end; the master branch of the second (later) one keeps its name.
+In reposurgeon versions before 3.0, the earliest factor in a
+`<<unite_cmd>>` command always kept its tag and branch names
+unaltered. The new rule for resolving name conflicts, giving priority
+to the latest factor, produces more natural behavior when uniting two
+repositories end to end; the master branch of the second (later) one
+keeps its name.
 
-In reposurgeon versions before 3.0, the `tagify`
+In reposurgeon versions before 3.0, the `<<tagify_cmd>>`
 command expected policies as trailing arguments to alter its behavior. The new
 syntax uses similarly named options with leading dashes, that can appear
-anywhere after the `tagify` command.
+anywhere after the `<<tagify_cmd>>` command.
 
-In versions before 2.9. the syntax of `authors`, `legacy`, `list`, and
-what are now `msg{in|out}` was different (and `legacy` was
+In versions before 2.9. the syntax of `<<authors_cmd>>`,
+`<<legacy_cmd>>`, `<<list_cmd>>`, and what are now `<<msgin_cmd>>` and
+`<<msgout_cmd>>` was different (and `<<legacy_cmd>>` was named
 `fossils`). They took plain filename arguments rather than using
 redirect < and >.
 
@@ -3414,9 +3423,9 @@ fast-import stream signals reposurgeon that the remainder is an
 extension command to be interpreted by `reposurgeon`.
 
 One such extension command is implemented: '```sourcetype```', which
-behaves identically to the reposurgeon `sourcetype` command. An
-exporter for a version-control system named "frobozz" could, for
-example, say
+behaves identically to the reposurgeon `<<sourcetype_cmd>>`
+command. An exporter for a version-control system named "frobozz"
+could, for example, say
 
 --------
 #reposurgeon sourcetype frobozz
@@ -3575,8 +3584,8 @@ Eric Sunshine <sunshine@sunshineco.com>::
    Converted selection parser, which evaluated an expression while parsing it,
    to a compile/evaluate paradigm in which a selection expression can be
    compiled once and evaluated many times.
-   Added 'attribution' command.
-   Added 'reorder' command.
+   Added '<<attribution_cmd>>' command.
+   Added '<<reorder_cmd>>' command.
    Assist Python to Go port.
 
 Edward Cree <ec429@cantab.net>::
@@ -3588,10 +3597,11 @@ Ian Bruene <ianbruene@gmail.com>::
 
 Chris Lemmons <alficles@gmail.com>::
    Solved some problems with inline blobs, improved interoperability with
-   Mercurial, wrote the --prune option for graft.
+   Mercurial, wrote the --prune option for <<graft_cmd>>.
 
 Richard Hansen <rhansen@rhansen.org>::
-   Selections as ordered rather than compulsorily sorted sets. The generalized reparent command.
+   Selections as ordered rather than compulsorily sorted sets. The
+   generalized <<reparent_cmd>> command.
    Improvements in regression-test infrastructure.
 
 Peter Donis <peterdonis@alum.mit.edu>::

@@ -7122,7 +7122,7 @@ Follow with space and a command name to show help for the command.
 
 Without an argument, list help topics.
 
-"?" is a shortcut syninym for "help". 
+"?" is a shortcut synonym for "help". 
 `)
 }
 
