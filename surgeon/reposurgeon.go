@@ -7417,7 +7417,7 @@ temporary file, and that file fed to the command and afterwards
 deleted.  "EOF" may be replaced by any string. Backslashes have no
 special meaning while reading a here-document.
 
-Scripts may have comments.  Any line beginning with a "#" is
+Scripts may have comments.  Any line beginning with a "\#" is
 ignored. If a line has a trailing portion that begins with one or more
 whitespace characters followed by "#", that trailing portion is
 ignored.
