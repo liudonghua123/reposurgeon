@@ -1,3 +1,4 @@
+reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -39,7 +40,7 @@ mark :4
 data 81
 This is an exiguous file which should be stuffed in a root branch on conversion.
 
-commit refs/heads/root
+commit refs/heads/unbranched
 #legacy-id 3
 mark :5
 committer esr <esr> 1322776854 +0000

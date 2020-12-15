@@ -197,7 +197,7 @@ do
 	    # Skip the comparison if the revision is "out of namespaces"
 	    # because the Git side will only contain that outside part
 	    # while the SVN side will contain the whole repository
-	    if [ "${ref}" = "heads/root" ]
+	    if [ "${ref}" = "heads/unbranched" ]
 	    then
 		continue
 	    fi

@@ -1,3 +1,4 @@
+reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -25,7 +26,7 @@ mark :2
 data 46
 The quick brown fox jumped over the lazy dog.
 
-commit refs/heads/master
+commit refs/heads/unbranched
 #legacy-id 1
 mark :3
 committer esr <esr> 1383884810 +0000

@@ -7,6 +7,8 @@ Repository head::
      repotool mirror can now use rsync for pulling repositories.
      Repair repocutter reduce logic and add a test for it.
      New "branchlift" primitive for use after a --nobranch read.
+     In SVN lifts, user .gitignores can be merged with svn:ignore properties.
+     In SVN lifts, reduce overloading of the "-root" suffix.
 
 4.21: 2020-11-18::
      Fix for a bug that could scramble history in pathological tag-copy cases.

@@ -1,3 +1,4 @@
+reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
      6 2015-09-01T02:32:51Z     :5 b33c8e    <5> add more text
 #reposurgeon sourcetype svn
 blob

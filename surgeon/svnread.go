@@ -1880,6 +1880,11 @@ func svnProcessBranches(ctx context.Context, sp *StreamParser, options stringSet
 	sp.canonicalizedNames = make(map[string]string)
 	sp.seenRefs = newStringSet()
 	sp.markToSVNBranch = make(map[string]string)
+	// This is illegal because, as part of a a Unix file system
+	// pathname, it's not allowed to contain NULs.
+	const illegalSegment = "illegal-\000-illeagle"
+	illegalBranch := filepath.Join("refs", "heads", illegalSegment)
+	baseBranchnames := newStringSet()
 	walkEvents(sp.repo.events, func(i int, event Event) {
 		if commit, ok := event.(*Commit); ok {
 			commit.simplify()
@@ -1900,16 +1905,25 @@ func svnProcessBranches(ctx context.Context, sp *StreamParser, options stringSet
 				commit.setBranch(sp.cleanName(commit.Branch))
 				if commit.Branch == "" {
 					// File or directory is not under any recognizable branch.
-					// Shuffle it off to a root branch.
-					commit.setBranch(filepath.Join("refs", "heads", "root"))
+					// Shuffle it off to branch with an illegal name.
+					sp.maplock.Lock()
+					baseBranchnames.Add(illegalSegment)
+					sp.maplock.Unlock()
+					commit.setBranch(illegalBranch)
 				} else if commit.Branch == "trunk" {
 					commit.setBranch(filepath.Join("refs", "heads", "master"))
 				} else if strings.HasPrefix(commit.Branch, "tags/") {
 					commit.setBranch(filepath.Join("refs", commit.Branch))
 				} else if strings.HasPrefix(commit.Branch, "branches/") {
+					sp.maplock.Lock()
+					baseBranchnames.Add(commit.Branch[9:])
+					sp.maplock.Unlock()
 					commit.setBranch(filepath.Join("refs", "heads", commit.Branch[9:]))
 				} else {
 					// Uh oh
+					sp.maplock.Lock()
+					baseBranchnames.Add(commit.Branch)
+					sp.maplock.Unlock()
 					commit.setBranch(filepath.Join("refs", "heads", commit.Branch))
 					if logEnable(logEXTRACT) {
 						logit("nonstandard branch %s at %s", commit.Branch, commit.idMe())
@@ -1919,6 +1933,24 @@ func svnProcessBranches(ctx context.Context, sp *StreamParser, options stringSet
 		}
 		baton.percentProgress(uint64(i) + 1)
 	})
+
+	// Find a less barbarous name for the junk branch
+	if baseBranchnames.Contains(illegalSegment) {
+		unbranched := "unbranched"
+		for baseBranchnames.Contains(unbranched) {
+			unbranched += "-bis"
+		}
+		unbranched = filepath.Join("refs", "heads", unbranched)
+		if logEnable(logWARN) {
+			logit("histories of files in the root directory have been put on branch %s",
+				unbranched)
+		}
+		walkEvents(sp.repo.events, func(i int, event Event) {
+			if commit, ok := event.(*Commit); ok && commit.Branch == illegalBranch {
+				commit.Branch = unbranched
+			}
+		})
+	}
 
 	// If we were going to add an end reset per branch, this would
 	// be the place to do it.  Current versions of git (as of
@@ -1956,7 +1988,7 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 	// the refs/deleted/ namespace, with a suffix in case of clashes. A branch
 	// is considered deleted when we encounter a commit with a single deleteall
 	// fileop.
-	defer trace.StartRegion(ctx, "SVN Phase 8: disambiguate deleted refs.").End()
+	defer trace.StartRegion(ctx, "SVN PhaSe 8: disambiguate deleted refs.").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 8: disambiguate deleted refs.")
 	}

@@ -1,3 +1,4 @@
+reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -137,7 +138,7 @@ mark :18
 data 14
 or not to be.
 
-commit refs/heads/root
+commit refs/heads/unbranched
 #legacy-id 11
 mark :19
 committer Fred J. Foonly <foonly@foo.com> 3960 +0000

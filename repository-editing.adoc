@@ -2719,7 +2719,7 @@ unambiguous names in the `refs/deleted` namespace.
 
 Bad things can happen when a tag directory is created, copied
 from, deleted, then recreated from a different source directory. This
-is a place where the Subversion model of tags clashes badly with the
+is a place where the Subversion model of tags clashes destructively with the
 changeset-DAG model used by git and other DVCSes, especially if the
 same tag is recreated later!  The obvious thing to do when converting
 this sequence would be to just nuke the tag history from the
@@ -2727,10 +2727,10 @@ deletion back to its branch point, but that will cause problems if a
 copy operation was ever sourced in the deleted branch (and this does
 happen!).
 
-What reposurgeon does instead is preserve the most recent
-branch with any given name, so the view back from any branch tip in the
-repository has the correct content. This does however mean that
-reposurgeon discards the content of any branch having that same name.
+What reposurgeon does instead is preserve the most recent branch with
+any given name, so the view back from any branch tip in the repository
+has the correct content. This does however mean that reposurgeon
+discards the content of any previous branch having that same name.
 However, see the `--preserve` option of the `read` command.
 
 === Reading Subversion repositories
@@ -2754,7 +2754,7 @@ Suppress read-time warnings about discarded property
 settings.
 
 `--user-ignores`::
-By default reposurgeon filters in-tree _.gitignore_ files found in the
+By default reposurgeon tosses out in-tree _.gitignore_ files found in the
 history because they probably come from git-svn users who checked-in
 their own _.gitignore_ files. Using this option makes reposurgeon
 keep the content of these files and merge them with
@@ -2791,11 +2791,12 @@ Suppress the normal deletion of _.cvsignore_ files.
 These modifiers can go anywhere in any order on the command line after
 the `<<read_cmd>>` verb. They must be whitespace-separated.
 
-It is also possible to embed a magic comment in a Subversion
-stream file to set these options. Prefix a space-separated list of
-them with the magic comment '``` # reposurgeon-read-options:```'; the
-leading space is required. This may be useful when synthesizing test
-loads; in particular, a stream file that does not set up a standard
+It is also possible to embed a magic comment in a Subversion stream
+file to set these options (this is mainly useful in test
+loads). Prefix a space-separated list of them with the magic comment
+'``` # reposurgeon-read-options:```'; the leading space is
+required. This may be useful when synthesizing test loads; in
+particular, a stream file that does not set up a standard
 `trunk/branches/tags` directory layout can use this to perform a
 mapping of all commits onto the master branch that the git importer
 will accept.
@@ -2806,7 +2807,7 @@ Subversion repository to branches:
 * At any given time there is a set of eligible paths and path
 wildcards which declare potential branches.  See the documentation of
 the `<<branchify_cmd>>` command for how to alter this set, which
-initially consists of {`trunk`, `+tags/*+`, `+branches/*+`, and `*`}.
+initially consists of {`+trunk+`, `+tags/*+`, `+branches/*+`, and `*`}.
 
 * A repository is considered "`__flat__`" if it has no
 directory that matches a path or path wildcard in the branchify set.
@@ -2836,10 +2837,13 @@ considered potential branches (other than `/trunk` which is mapped to
 default).
 
 * Files in the top-level directory are assigned to a synthetic branch
-named '```root```'. If there is no "trunk" (or rather no master
+named '```unbranched```'. If there is no "trunk" (or rather no master
 branch), then this synthetic '```root```' branch becomes the master
 branch. You can map another directory to master using
-`<<branchify_cmd>>` and `<<branchmap_cmd>>`.
+`<<branchify_cmd>>` and `<<branchmap_cmd>>`. If the Subversion
+repository has a branch named '```unbranched```' the name
+'```unbranched-bis```' is used instead; actually, '```-bis```' is
+appended enough times to get to an unused branch name.
 
 * Each potential branch is checked to see if it has commits on it
 after the initial creation or copy.  If there are such commits, or if the

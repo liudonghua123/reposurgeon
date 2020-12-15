@@ -1,3 +1,4 @@
+reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -25,7 +26,7 @@ mark :2
 data 5
 foo!
 
-commit refs/heads/master
+commit refs/heads/unbranched
 #legacy-id 1
 mark :3
 committer rcochran <rcochran> 1516983860 +0000
@@ -39,7 +40,7 @@ mark :4
 data 8
 foobar!
 
-commit refs/heads/master
+commit refs/heads/unbranched
 #legacy-id 2
 mark :5
 committer Robert Cochran <robert-git@cochranmail.com> 1516984166 +0000

@@ -1,3 +1,4 @@
+reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -30,7 +31,7 @@ mark :3
 data 14
 file on trunk
 
-commit refs/heads/root
+commit refs/heads/unbranched
 #legacy-id 2.1
 mark :4
 committer jmyers <jmyers> 1576326834 +0000
