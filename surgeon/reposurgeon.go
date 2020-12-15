@@ -2414,6 +2414,29 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 		repo.delete(deletia, nil, control.baton)
 		respond("From %d to %d events.", oldlen, len(repo.events))
 	}
+
+	if striptypes.Contains("--obscure") {
+		seq := NewNameSequence()
+		pathMutator := func(s string) string {
+			if s == "" {
+				return ""
+			}
+			parts := strings.Split(filepath.ToSlash(s), "/")
+			for i := range parts {
+				parts[i] = seq.obscureString(parts[i])
+			}
+			return filepath.FromSlash(strings.Join(parts, "/"))
+		}
+		for _, event := range repo.events {
+			if commit, ok := event.(*Commit); ok {
+				for i := range commit.operations() {
+					commit.fileops[i].Path = pathMutator(commit.fileops[i].Path)
+					commit.fileops[i].Source = pathMutator(commit.fileops[i].Source)
+				}
+			}
+		}
+	}
+
 	return false
 }
 
