@@ -5426,10 +5426,10 @@ func (rs *Reposurgeon) HelpBranchlift() {
 	rs.helpOutput(`
 branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
 
-Every commit on SOURCEBRANCH with fileops matching the PATHPREFIX is examined; if any
-such commits contains fileops *not* matching the PATH, the mismatch is logged
-and the command aborted.  Such commits need to be fixed up manually with
-a "split" command before this command cann be applied. 
+Every commit on SOURCEBRANCH with fileops matching the PATHPREFIX is examined;
+if any such commits contains fileops *not* matching the PATH, the mismatch is
+logged and the command aborted.  Such commits need to be fixed up manually with
+a "split" command before this command can be applied successfully. 
 
 If there are no such errors, every matching commit is modified to have the
 branch label specified by NEWNAME. If NEWNAME is not specified, the basename
