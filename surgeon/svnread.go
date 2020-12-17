@@ -56,15 +56,14 @@ import (
 )
 
 type svnReader struct {
-	branchify  map[int][][]string     // Parsed svn_branchify setting
-	revisions  []RevisionRecord       // Phases 1 to A
-	revmap     map[revidx]revidx      // Phases 1 to A
-	backfrom   map[revidx]revidx      // Phases 1 to 5
-	streamview []*NodeAction          // Phases 1 to 2. All nodes in stream order
-	hashmap    map[string]*NodeAction // Phases 1 to 5
-	history    *History               // Phases 3 to 4.
-	// Filled in svnSplitResolve
-	markToSVNBranch map[string]string // Phases 6 to A
+	branchify       map[int][][]string     // Parsed svn_branchify setting
+	revisions       []RevisionRecord       // Phases 1 to A
+	revmap          map[revidx]revidx      // Phases 1 to A
+	backfrom        map[revidx]revidx      // Phases 1 to 5
+	streamview      []*NodeAction          // Phases 1 to 2. All nodes in stream order
+	hashmap         map[string]*NodeAction // Phases 1 to 5
+	history         *History               // Phases 3 to 4.
+	markToSVNBranch map[string]string      // Phases 8 to A
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
 	// Filled in svnSplitResolve
@@ -74,9 +73,9 @@ type svnReader struct {
 	// Filled in svnSplitResolve
 	branchRoots map[string][]*Commit // Phases 6 to C
 	maplock     sync.Mutex           // Phase 7
-	// Filled in svnProcessBranches
+	// Filled in svnGitifyBranches
 	canonicalizedNames map[string]string
-	// Filled in svnProcessBranches
+	// Filled in svnGitifyBranches
 	seenRefs stringSet
 }
 
@@ -929,12 +928,12 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	timeit("commits")
 	svnSplitResolve(ctx, sp, options, baton)
 	timeit("splits")
-	svnProcessBranches(ctx, sp, options, baton)
-	timeit("branches")
 	svnLinkFixups(ctx, sp, options, baton)
 	timeit("links")
 	svnProcessMergeinfos(ctx, sp, options, baton)
 	timeit("mergeinfo")
+	svnGitifyBranches(ctx, sp, options, baton)
+	timeit("branches")
 	svnProcessIgnores(ctx, sp, options, baton)
 	timeit("ignores")
 	svnDisambiguateRefs(ctx, sp, options, baton)
@@ -1851,115 +1850,6 @@ func (sp *StreamParser) cleanName(svnname string) string {
 	return newname
 }
 
-func svnProcessBranches(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase 7:
-	// Rewrite branch names from Subversion form to Git form.  The
-	// previous phase did the analysis into branch and filename
-	// because it had to; the first thing we have to do here is
-	// shuffle those strings into place.
-	//
-	// That does not yet put the branchnames in final form, however.
-	// To get there we need to perform any branch mappings the user
-	// requested, then massage the branchname into the reference form
-	// that Git wants.
-	//
-	// After this phase branchnames are immutable and almost define the
-	// topology, but parent marks have not yet been fixed up.
-	//
-	if options.Contains("--nobranch") {
-		if logEnable(logEXTRACT) {
-			logit("SVN Phase 7: branch renames (skipped due to --nobranch)")
-		}
-		return
-	}
-	defer trace.StartRegion(ctx, "SVN Phase 7: branch renames").End()
-	if logEnable(logEXTRACT) {
-		logit("SVN Phase 7: branch renames")
-	}
-	baton.startProgress("SVN phase 7: branch renames", uint64(len(sp.repo.events)))
-	sp.canonicalizedNames = make(map[string]string)
-	sp.seenRefs = newStringSet()
-	sp.markToSVNBranch = make(map[string]string)
-	// This is illegal because, as part of a a Unix file system
-	// pathname, it's not allowed to contain NULs.
-	const illegalSegment = "illegal-\000-illeagle"
-	illegalBranch := filepath.Join("refs", "heads", illegalSegment)
-	baseBranchnames := newStringSet()
-	walkEvents(sp.repo.events, func(i int, event Event) {
-		if commit, ok := event.(*Commit); ok {
-			commit.simplify()
-			sp.maplock.Lock()
-			sp.markToSVNBranch[commit.mark] = commit.Branch
-			sp.maplock.Unlock()
-			matched := false
-			for _, item := range control.branchMappings {
-				result := GoReplacer(item.match, commit.Branch+svnSep, item.replace)
-				if result != commit.Branch+svnSep {
-					matched = true
-					commit.setBranch(filepath.Join("refs", sp.cleanName(result)))
-					break
-				}
-				baton.twirl()
-			}
-			if !matched {
-				commit.setBranch(sp.cleanName(commit.Branch))
-				if commit.Branch == "" {
-					// File or directory is not under any recognizable branch.
-					// Shuffle it off to branch with an illegal name.
-					sp.maplock.Lock()
-					baseBranchnames.Add(illegalSegment)
-					sp.maplock.Unlock()
-					commit.setBranch(illegalBranch)
-				} else if commit.Branch == "trunk" {
-					commit.setBranch(filepath.Join("refs", "heads", "master"))
-				} else if strings.HasPrefix(commit.Branch, "tags/") {
-					commit.setBranch(filepath.Join("refs", commit.Branch))
-				} else if strings.HasPrefix(commit.Branch, "branches/") {
-					sp.maplock.Lock()
-					baseBranchnames.Add(commit.Branch[9:])
-					sp.maplock.Unlock()
-					commit.setBranch(filepath.Join("refs", "heads", commit.Branch[9:]))
-				} else {
-					// Uh oh
-					sp.maplock.Lock()
-					baseBranchnames.Add(commit.Branch)
-					sp.maplock.Unlock()
-					commit.setBranch(filepath.Join("refs", "heads", commit.Branch))
-					if logEnable(logEXTRACT) {
-						logit("nonstandard branch %s at %s", commit.Branch, commit.idMe())
-					}
-				}
-			}
-		}
-		baton.percentProgress(uint64(i) + 1)
-	})
-
-	// Find a less barbarous name for the junk branch
-	if baseBranchnames.Contains(illegalSegment) {
-		unbranched := "unbranched"
-		for baseBranchnames.Contains(unbranched) {
-			unbranched += "-bis"
-		}
-		unbranched = filepath.Join("refs", "heads", unbranched)
-		if logEnable(logWARN) {
-			logit("histories of files in the root directory have been put on branch %s",
-				unbranched)
-		}
-		walkEvents(sp.repo.events, func(i int, event Event) {
-			if commit, ok := event.(*Commit); ok && commit.Branch == illegalBranch {
-				commit.Branch = unbranched
-			}
-		})
-	}
-
-	// If we were going to add an end reset per branch, this would
-	// be the place to do it.  Current versions of git (as of
-	// 2.20.1) do not require this; they will automatically create
-	// tip references for each branch.
-
-	baton.endProgress()
-}
-
 // Return the last commit with legacyID in (0;maxrev] whose SVN branch is equal
 // to branch, or nil if not found.  It needs sp.lastCommitOnBranchAt to be
 // filled, so can only be used after phase 6c has run.
@@ -1975,7 +1865,7 @@ func lastRelevantCommit(sp *StreamParser, maxrev revidx, branch string) *Commit 
 }
 
 func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase 8:
+	// Phase 7:
 	// The branches we colored in during the last phase almost
 	// completely define the topology of the DAG, except for the
 	// location of their root points. At first sight computing the
@@ -2032,13 +1922,13 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	//
 	if options.Contains("--nobranch") {
 		if logEnable(logEXTRACT) {
-			logit("SVN Phase 9: find branch root parents (skipped due to --nobranch)")
+			logit("SVN Phase 7: find branch root parents (skipped due to --nobranch)")
 		}
 		return
 	}
 	defer trace.StartRegion(ctx, "SVN Phase 8: find branch root parents").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase 9: find branch root parents")
+		logit("SVN Phase 7: find branch root parents")
 	}
 	maxRev := sp.maxRev()
 	totalroots := 0
@@ -2193,16 +2083,25 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 }
 
 func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase 9:
+	// Phase 8:
 	// Turn Subversion mergeinfo properties to gitspace branch merges.  We're only trying
 	// to deal with the newer style of mergeinfo that has a trunk part, not the older style
 	// without one.
 	//
 	defer trace.StartRegion(ctx, "SVN Phase 9: mergeinfo processing").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase 9: mergeinfo processing")
+		logit("SVN Phase 8: mergeinfo processing")
 	}
-	baton.startProgress("SVN phase 9: mergeinfo processing", uint64(len(sp.revisions)))
+	baton.startProgress("SVN phase 8: mergeinfo processing", uint64(len(sp.revisions)))
+
+	sp.markToSVNBranch = make(map[string]string)
+	walkEvents(sp.repo.events, func(i int, event Event) {
+		if commit, ok := event.(*Commit); ok {
+			sp.maplock.Lock()
+			sp.markToSVNBranch[commit.mark] = commit.Branch
+			sp.maplock.Unlock()
+		}
+	})
 
 	type RevRange struct {
 		min int
@@ -2567,6 +2466,112 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 	baton.endProgress()
 
 	sp.lastCommitOnBranchAt = nil
+}
+
+func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
+	// Phase 9:
+	// Rewrite branch names from Subversion form to Git form.  The
+	// previous phase did the analysis into branch and filename
+	// because it had to; the first thing we have to do here is
+	// shuffle those strings into place.
+	//
+	// That does not yet put the branchnames in final form, however.
+	// To get there we need to perform any branch mappings the user
+	// requested, then massage the branchname into the reference form
+	// that Git wants.
+	//
+	// After this phase branchnames are immutable and almost define the
+	// topology, but parent marks have not yet been fixed up.
+	//
+	if options.Contains("--nobranch") {
+		if logEnable(logEXTRACT) {
+			logit("SVN Phase 9: branch renames (skipped due to --nobranch)")
+		}
+		return
+	}
+	defer trace.StartRegion(ctx, "SVN Phase 9: branch renames").End()
+	if logEnable(logEXTRACT) {
+		logit("SVN Phase 9: branch renames")
+	}
+	baton.startProgress("SVN phase 9: branch renames", uint64(len(sp.repo.events)))
+	sp.canonicalizedNames = make(map[string]string)
+	sp.seenRefs = newStringSet()
+	// This is illegal because, as part of a a Unix file system
+	// pathname, it's not allowed to contain NULs.
+	const illegalSegment = "illegal-\000-illeagle"
+	illegalBranch := filepath.Join("refs", "heads", illegalSegment)
+	baseBranchnames := newStringSet()
+
+	walkEvents(sp.repo.events, func(i int, event Event) {
+		if commit, ok := event.(*Commit); ok {
+			commit.simplify()
+			matched := false
+			for _, item := range control.branchMappings {
+				result := GoReplacer(item.match, commit.Branch+svnSep, item.replace)
+				if result != commit.Branch+svnSep {
+					matched = true
+					commit.setBranch(filepath.Join("refs", sp.cleanName(result)))
+					break
+				}
+				baton.twirl()
+			}
+			if !matched {
+				commit.setBranch(sp.cleanName(commit.Branch))
+				if commit.Branch == "" {
+					// File or directory is not under any recognizable branch.
+					// Shuffle it off to branch with an illegal name.
+					sp.maplock.Lock()
+					baseBranchnames.Add(illegalSegment)
+					sp.maplock.Unlock()
+					commit.setBranch(illegalBranch)
+				} else if commit.Branch == "trunk" {
+					commit.setBranch(filepath.Join("refs", "heads", "master"))
+				} else if strings.HasPrefix(commit.Branch, "tags/") {
+					commit.setBranch(filepath.Join("refs", commit.Branch))
+				} else if strings.HasPrefix(commit.Branch, "branches/") {
+					sp.maplock.Lock()
+					baseBranchnames.Add(commit.Branch[9:])
+					sp.maplock.Unlock()
+					commit.setBranch(filepath.Join("refs", "heads", commit.Branch[9:]))
+				} else {
+					// Uh oh
+					sp.maplock.Lock()
+					baseBranchnames.Add(commit.Branch)
+					sp.maplock.Unlock()
+					commit.setBranch(filepath.Join("refs", "heads", commit.Branch))
+					if logEnable(logEXTRACT) {
+						logit("nonstandard branch %s at %s", commit.Branch, commit.idMe())
+					}
+				}
+			}
+		}
+		baton.percentProgress(uint64(i) + 1)
+	})
+
+	// Find a less barbarous name for the junk branch
+	if baseBranchnames.Contains(illegalSegment) {
+		unbranched := "unbranched"
+		for baseBranchnames.Contains(unbranched) {
+			unbranched += "-bis"
+		}
+		unbranched = filepath.Join("refs", "heads", unbranched)
+		if logEnable(logWARN) {
+			logit("histories of files in the root directory have been put on branch %s",
+				unbranched)
+		}
+		walkEvents(sp.repo.events, func(i int, event Event) {
+			if commit, ok := event.(*Commit); ok && commit.Branch == illegalBranch {
+				commit.Branch = unbranched
+			}
+		})
+	}
+
+	// If we were going to add an end reset per branch, this would
+	// be the place to do it.  Current versions of git (as of
+	// 2.20.1) do not require this; they will automatically create
+	// tip references for each branch.
+
+	baton.endProgress()
 }
 
 func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
