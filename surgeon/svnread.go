@@ -57,18 +57,18 @@ import (
 
 type svnReader struct {
 	branchify  map[int][][]string     // Parsed svn_branchify setting
-	revisions  []RevisionRecord       // Phases 1 to B
-	revmap     map[revidx]revidx      // Phases 1 to B
+	revisions  []RevisionRecord       // Phases 1 to A
+	revmap     map[revidx]revidx      // Phases 1 to A
 	backfrom   map[revidx]revidx      // Phases 1 to 5
 	streamview []*NodeAction          // Phases 1 to 2. All nodes in stream order
 	hashmap    map[string]*NodeAction // Phases 1 to 5
 	history    *History               // Phases 3 to 4.
 	// Filled in svnSplitResolve
-	markToSVNBranch map[string]string // Phases 6 to B
+	markToSVNBranch map[string]string // Phases 6 to A
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
 	// Filled in svnSplitResolve
-	lastCommitOnBranchAt map[string][]*Commit // Phases 6 to A
+	lastCommitOnBranchAt map[string][]*Commit // Phases 6 to 9
 	// a map from SVN branch names to root commits (there can be several in case
 	// of branch deletions since the commit recreating the branch is also root)
 	// Filled in svnSplitResolve
@@ -931,14 +931,14 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	timeit("splits")
 	svnProcessBranches(ctx, sp, options, baton)
 	timeit("branches")
-	svnDisambiguateRefs(ctx, sp, options, baton)
-	timeit("disambiguate")
 	svnLinkFixups(ctx, sp, options, baton)
 	timeit("links")
 	svnProcessMergeinfos(ctx, sp, options, baton)
 	timeit("mergeinfo")
 	svnProcessIgnores(ctx, sp, options, baton)
 	timeit("ignores")
+	svnDisambiguateRefs(ctx, sp, options, baton)
+	timeit("disambiguate")
 	svnProcessJunk(ctx, sp, options, baton)
 	timeit("dejunk")
 	svnProcessRenumber(ctx, sp, options, baton)
@@ -1974,94 +1974,8 @@ func lastRelevantCommit(sp *StreamParser, maxrev revidx, branch string) *Commit 
 	return nil
 }
 
-func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase 8:
-	// Intervene to prevent lossage from tag/branch/trunk deletions.
-	//
-	// The Subversion data model is that a history is a sequence of surgical
-	// operations on a tree, and a tag is just another branch of the tree.
-	// Tag/branch deletions are a place where this clashes badly with the
-	// changeset-DAG model used by git and other DVCSes, especially if the same
-	// tag/branch is recreated later.
-	//
-	// To avoid losing history, when a tag or branch is deleted we can move it to
-	// the refs/deleted/ namespace, with a suffix in case of clashes. A branch
-	// is considered deleted when we encounter a commit with a single deleteall
-	// fileop.
-	defer trace.StartRegion(ctx, "SVN PhaSe 8: disambiguate deleted refs.").End()
-	if logEnable(logEXTRACT) {
-		logit("SVN Phase 8: disambiguate deleted refs.")
-	}
-	// First we build a map from branches to commits with that branch, to avoid
-	// an O(n^2) computation cost.
-	baton.startProgress("SVN phase 8a: precompute branch map.", uint64(len(sp.repo.events)))
-	branchToCommits := map[string][]*Commit{}
-	commitCount := 0
-	for idx, event := range sp.repo.events {
-		if commit, ok := event.(*Commit); ok {
-			branchToCommits[commit.Branch] = append(branchToCommits[commit.Branch], commit)
-			commitCount++
-		}
-		baton.percentProgress(uint64(idx) + 1)
-	}
-	baton.endProgress()
-	// Rename refs/heads/root to refs/heads/master if the latter doesn't exist
-	baton.startProgress("SVN phase 8b: rename branch 'root' to 'master' if there is none",
-		uint64(len(branchToCommits["refs/heads/root"])))
-	if _, hasMaster := branchToCommits["refs/heads/master"]; !hasMaster {
-		for i, commit := range branchToCommits["refs/heads/root"] {
-			commit.setBranch("refs/heads/master")
-			baton.percentProgress(uint64(i) + 1)
-		}
-		branchToCommits["refs/heads/master"] = branchToCommits["refs/heads/root"]
-		delete(branchToCommits, "refs/heads/root")
-	}
-	baton.endProgress()
-	// For each branch, iterate through commits with that branch, searching for
-	// deleteall-only commits that mean the branch is being deleted.
-	usedRefs := map[string]int{}
-	processed := 0
-	seen := 0
-	baton.startProgress("SVN phase 8c: disambiguate deleted refs.", uint64(commitCount))
-	for branch, commits := range branchToCommits {
-		lastFixed := -1
-		for i, commit := range commits {
-			ops := commit.operations()
-			if len(ops) > 0 && ops[len(ops)-1].op == deleteall {
-				// Fix the branch of all the previous commits whose branch has
-				// not yet been fixed.
-				if !strings.HasPrefix(branch, "refs/") {
-					croak("r%s (%s): Impossible branch %s",
-						commit.legacyID, commit.mark, branch)
-				}
-				newname := fmt.Sprintf("refs/deleted/r%s/%s", commit.legacyID, branch[len("refs/"):])
-				used := usedRefs[newname]
-				usedRefs[newname]++
-				if used > 0 {
-					newname += fmt.Sprintf("-%d", used)
-				}
-				for j := lastFixed + 1; j <= i; j++ {
-					commits[j].setBranch(newname)
-				}
-				lastFixed = i
-				if logEnable(logTAGFIX) {
-					logit("r%s (%s): deleted ref %s renamed to %s.",
-						commit.legacyID, commit.mark, branch, newname)
-				}
-				processed++
-			}
-			seen++
-			baton.percentProgress(uint64(seen) + 1)
-		}
-	}
-	if logEnable(logTAGFIX) {
-		logit("%d deleted refs were put away.", processed)
-	}
-	baton.endProgress()
-}
-
 func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase 9:
+	// Phase 8:
 	// The branches we colored in during the last phase almost
 	// completely define the topology of the DAG, except for the
 	// location of their root points. At first sight computing the
@@ -2122,7 +2036,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 		}
 		return
 	}
-	defer trace.StartRegion(ctx, "SVN Phase 9: find branch root parents").End()
+	defer trace.StartRegion(ctx, "SVN Phase 8: find branch root parents").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 9: find branch root parents")
 	}
@@ -2131,7 +2045,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	for _, roots := range sp.branchRoots {
 		totalroots += len(roots)
 	}
-	baton.startProgress("SVN phase 9: find branch root parents", uint64(totalroots))
+	baton.startProgress("SVN phase 8: find branch root parents", uint64(totalroots))
 	reparent := func(commit, parent *Commit) {
 		// Prepend a deleteall to avoid inheriting our new parent's content
 		ops := commit.operations()
@@ -2279,16 +2193,16 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 }
 
 func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase A:
+	// Phase 9:
 	// Turn Subversion mergeinfo properties to gitspace branch merges.  We're only trying
 	// to deal with the newer style of mergeinfo that has a trunk part, not the older style
 	// without one.
 	//
-	defer trace.StartRegion(ctx, "SVN Phase A: mergeinfo processing").End()
+	defer trace.StartRegion(ctx, "SVN Phase 9: mergeinfo processing").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase A: mergeinfo processing")
+		logit("SVN Phase 9: mergeinfo processing")
 	}
-	baton.startProgress("SVN phase A: mergeinfo processing", uint64(len(sp.revisions)))
+	baton.startProgress("SVN phase 9: mergeinfo processing", uint64(len(sp.revisions)))
 
 	type RevRange struct {
 		min int
@@ -2656,10 +2570,10 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 }
 
 func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase B: convert svn:ignore properties on directory nodes to .gitignore files
-	defer trace.StartRegion(ctx, "SVN Phase B: Conversion from svn:ignore to .gitignore").End()
+	// Phase A: convert svn:ignore properties on directory nodes to .gitignore files
+	defer trace.StartRegion(ctx, "SVN Phase A: Conversion from svn:ignore to .gitignore").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase B: Conversion from svn:ignore to .gitignore.")
+		logit("SVN Phase A: Conversion from svn:ignore to .gitignore.")
 	}
 	if options.Contains("--no-automatic-ignores") {
 		if logEnable(logEXTRACT) {
@@ -2736,7 +2650,7 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		return op
 	}
 
-	// An helper function to get string contents of in-tree .gitignore files
+	// A helper function to get string contents of in-tree .gitignore files
 	opContents := func(op *FileOp) string {
 		if op.ref == "inline" {
 			return string(op.inline)
@@ -2885,6 +2799,92 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 	sp.revisions = nil
 	sp.revmap = nil
 	sp.markToSVNBranch = nil
+}
+
+func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
+	// Phase B:
+	// Intervene to prevent lossage from tag/branch/trunk deletions.
+	//
+	// The Subversion data model is that a history is a sequence of surgical
+	// operations on a tree, and a tag is just another branch of the tree.
+	// Tag/branch deletions are a place where this clashes badly with the
+	// changeset-DAG model used by git and other DVCSes, especially if the same
+	// tag/branch is recreated later.
+	//
+	// To avoid losing history, when a tag or branch is deleted we can move it to
+	// the refs/deleted/ namespace, with a suffix in case of clashes. A branch
+	// is considered deleted when we encounter a commit with a single deleteall
+	// fileop.
+	defer trace.StartRegion(ctx, "SVN Phase B: disambiguate deleted refs.").End()
+	if logEnable(logEXTRACT) {
+		logit("SVN Phase B: disambiguate deleted refs.")
+	}
+	// First we build a map from branches to commits with that branch, to avoid
+	// an O(n^2) computation cost.
+	baton.startProgress("SVN phase 8a: precompute branch map.", uint64(len(sp.repo.events)))
+	branchToCommits := map[string][]*Commit{}
+	commitCount := 0
+	for idx, event := range sp.repo.events {
+		if commit, ok := event.(*Commit); ok {
+			branchToCommits[commit.Branch] = append(branchToCommits[commit.Branch], commit)
+			commitCount++
+		}
+		baton.percentProgress(uint64(idx) + 1)
+	}
+	baton.endProgress()
+	// Rename refs/heads/root to refs/heads/master if the latter doesn't exist
+	baton.startProgress("SVN phase 8b: rename branch 'root' to 'master' if there is none",
+		uint64(len(branchToCommits["refs/heads/root"])))
+	if _, hasMaster := branchToCommits["refs/heads/master"]; !hasMaster {
+		for i, commit := range branchToCommits["refs/heads/root"] {
+			commit.setBranch("refs/heads/master")
+			baton.percentProgress(uint64(i) + 1)
+		}
+		branchToCommits["refs/heads/master"] = branchToCommits["refs/heads/root"]
+		delete(branchToCommits, "refs/heads/root")
+	}
+	baton.endProgress()
+	// For each branch, iterate through commits with that branch, searching for
+	// deleteall-only commits that mean the branch is being deleted.
+	usedRefs := map[string]int{}
+	processed := 0
+	seen := 0
+	baton.startProgress("SVN phase 8c: disambiguate deleted refs.", uint64(commitCount))
+	for branch, commits := range branchToCommits {
+		lastFixed := -1
+		for i, commit := range commits {
+			ops := commit.operations()
+			if len(ops) > 0 && ops[len(ops)-1].op == deleteall {
+				// Fix the branch of all the previous commits whose branch has
+				// not yet been fixed.
+				if !strings.HasPrefix(branch, "refs/") {
+					croak("r%s (%s): Impossible branch %s",
+						commit.legacyID, commit.mark, branch)
+				}
+				newname := fmt.Sprintf("refs/deleted/r%s/%s", commit.legacyID, branch[len("refs/"):])
+				used := usedRefs[newname]
+				usedRefs[newname]++
+				if used > 0 {
+					newname += fmt.Sprintf("-%d", used)
+				}
+				for j := lastFixed + 1; j <= i; j++ {
+					commits[j].setBranch(newname)
+				}
+				lastFixed = i
+				if logEnable(logTAGFIX) {
+					logit("r%s (%s): deleted ref %s renamed to %s.",
+						commit.legacyID, commit.mark, branch, newname)
+				}
+				processed++
+			}
+			seen++
+			baton.percentProgress(uint64(seen) + 1)
+		}
+	}
+	if logEnable(logTAGFIX) {
+		logit("%d deleted refs were put away.", processed)
+	}
+	baton.endProgress()
 }
 
 func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
