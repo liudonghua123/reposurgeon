@@ -66,17 +66,11 @@ type svnReader struct {
 	markToSVNBranch map[string]string      // Phases 8 to A
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
-	// Filled in svnSplitResolve
 	lastCommitOnBranchAt map[string][]*Commit // Phases 6 to 9
 	// a map from SVN branch names to root commits (there can be several in case
 	// of branch deletions since the commit recreating the branch is also root)
-	// Filled in svnSplitResolve
 	branchRoots map[string][]*Commit // Phases 6 to C
-	maplock     sync.Mutex           // Phase 7
-	// Filled in svnGitifyBranches
-	canonicalizedNames map[string]string
-	// Filled in svnGitifyBranches
-	seenRefs stringSet
+	maplock     sync.Mutex
 }
 
 func (sp *svnReader) maxRev() revidx {
@@ -1808,48 +1802,6 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	baton.endProgress()
 }
 
-func (sp *StreamParser) cleanName(svnname string) string {
-	// Reference: https://git-scm.com/docs/git-check-ref-format
-	return svnname
-	if mapped, ok := sp.canonicalizedNames[svnname]; ok {
-		return mapped
-	}
-	newname := strings.ReplaceAll(svnname, "/.", "/")       // Rule 1
-	newname = strings.ReplaceAll(newname, ".lock", "-lock") // Rule 1
-	// We don't need to enforce rule 2 while the name is in Subversion form
-	newname = strings.ReplaceAll(newname, "..", "") // Rule 3
-	squashed := make([]rune, 0)
-	for _, c := range []rune(newname) {
-		if c == 0177 || c < 040 || c == '~' || c == '^' || c == ':' {
-			continue
-		}
-		squashed = append(squashed, c)
-	}
-	newname = string(squashed) // Rules 4 and 5
-	// Subversion enforces rule 6 for us
-	newname = strings.TrimRight(newname, ".")       // Rule 7
-	newname = strings.ReplaceAll(newname, "@{", "") // Rule 8
-	if newname == "@" {                             // Rule 9
-		newname = "atsign"
-	}
-	newname = strings.ReplaceAll(newname, `\`, "") // Rule 10
-	// Avoid collisions in the cleaned-up names
-	for {
-		if sp.seenRefs.Contains(newname) {
-			newname += "-bis"
-		}
-	}
-	// Looks OK, keep it.
-	sp.maplock.Lock()
-	sp.seenRefs.Add(newname)
-	sp.canonicalizedNames[svnname] = newname
-	sp.maplock.Unlock()
-	if logEnable(logWARN) {
-		logit("SVN branch/tag %q mapped to %q", svnname, newname)
-	}
-	return newname
-}
-
 // Return the last commit with legacyID in (0;maxrev] whose SVN branch is equal
 // to branch, or nil if not found.  It needs sp.lastCommitOnBranchAt to be
 // filled, so can only be used after phase 6c has run.
@@ -2494,13 +2446,55 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 		logit("SVN Phase 9: branch renames")
 	}
 	baton.startProgress("SVN phase 9: branch renames", uint64(len(sp.repo.events)))
-	sp.canonicalizedNames = make(map[string]string)
-	sp.seenRefs = newStringSet()
+	canonicalizedNames := make(map[string]string)
+	seenRefs := newStringSet()
 	// This is illegal because, as part of a a Unix file system
 	// pathname, it's not allowed to contain NULs.
 	const illegalSegment = "illegal-\000-illeagle"
 	illegalBranch := filepath.Join("refs", "heads", illegalSegment)
 	baseBranchnames := newStringSet()
+
+	cleanName := func(sp *StreamParser, svnname string) string {
+		// Reference: https://git-scm.com/docs/git-check-ref-format
+		return svnname
+		if mapped, ok := canonicalizedNames[svnname]; ok {
+			return mapped
+		}
+		newname := strings.ReplaceAll(svnname, "/.", "/")       // Rule 1
+		newname = strings.ReplaceAll(newname, ".lock", "-lock") // Rule 1
+		// We don't need to enforce rule 2 while the name is in Subversion form
+		newname = strings.ReplaceAll(newname, "..", "") // Rule 3
+		squashed := make([]rune, 0)
+		for _, c := range []rune(newname) {
+			if c == 0177 || c < 040 || c == '~' || c == '^' || c == ':' {
+				continue
+			}
+			squashed = append(squashed, c)
+		}
+		newname = string(squashed) // Rules 4 and 5
+		// Subversion enforces rule 6 for us
+		newname = strings.TrimRight(newname, ".")       // Rule 7
+		newname = strings.ReplaceAll(newname, "@{", "") // Rule 8
+		if newname == "@" {                             // Rule 9
+			newname = "atsign"
+		}
+		newname = strings.ReplaceAll(newname, `\`, "") // Rule 10
+		// Avoid collisions in the cleaned-up names
+		for {
+			if seenRefs.Contains(newname) {
+				newname += "-bis"
+			}
+		}
+		// Looks OK, keep it.
+		sp.maplock.Lock()
+		seenRefs.Add(newname)
+		canonicalizedNames[svnname] = newname
+		sp.maplock.Unlock()
+		if logEnable(logWARN) {
+			logit("SVN branch/tag %q mapped to %q", svnname, newname)
+		}
+		return newname
+	}
 
 	walkEvents(sp.repo.events, func(i int, event Event) {
 		if commit, ok := event.(*Commit); ok {
@@ -2510,13 +2504,13 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 				result := GoReplacer(item.match, commit.Branch+svnSep, item.replace)
 				if result != commit.Branch+svnSep {
 					matched = true
-					commit.setBranch(filepath.Join("refs", sp.cleanName(result)))
+					commit.setBranch(filepath.Join("refs", cleanName(sp, result)))
 					break
 				}
 				baton.twirl()
 			}
 			if !matched {
-				commit.setBranch(sp.cleanName(commit.Branch))
+				commit.setBranch(cleanName(sp, commit.Branch))
 				if commit.Branch == "" {
 					// File or directory is not under any recognizable branch.
 					// Shuffle it off to branch with an illegal name.
