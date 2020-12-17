@@ -2446,17 +2446,17 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 		logit("SVN Phase 9: branch renames")
 	}
 	baton.startProgress("SVN phase 9: branch renames", uint64(len(sp.repo.events)))
-	canonicalizedNames := make(map[string]string)
-	seenRefs := newStringSet()
 	// This is illegal because, as part of a a Unix file system
 	// pathname, it's not allowed to contain NULs.
 	const illegalSegment = "illegal-\000-illeagle"
 	illegalBranch := filepath.Join("refs", "heads", illegalSegment)
+
+	canonicalizedNames := make(map[string]string)
+	seenRefs := newStringSet()
 	baseBranchnames := newStringSet()
 
 	cleanName := func(sp *StreamParser, svnname string) string {
 		// Reference: https://git-scm.com/docs/git-check-ref-format
-		return svnname
 		if mapped, ok := canonicalizedNames[svnname]; ok {
 			return mapped
 		}
@@ -2480,23 +2480,21 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 		}
 		newname = strings.ReplaceAll(newname, `\`, "") // Rule 10
 		// Avoid collisions in the cleaned-up names
-		for {
-			if seenRefs.Contains(newname) {
+		if svnname != newname {
+			for seenRefs.Contains(newname) {
 				newname += "-bis"
 			}
 		}
-		// Looks OK, keep it.
-		sp.maplock.Lock()
+		//Looks OK, keep it.
 		seenRefs.Add(newname)
 		canonicalizedNames[svnname] = newname
-		sp.maplock.Unlock()
-		if logEnable(logWARN) {
-			logit("SVN branch/tag %q mapped to %q", svnname, newname)
+		if svnname != newname && logEnable(logWARN) {
+			logit("illegal branch/tag name %q mapped to %q", svnname, newname)
 		}
 		return newname
 	}
 
-	walkEvents(sp.repo.events, func(i int, event Event) {
+	for i, event := range sp.repo.events {
 		if commit, ok := event.(*Commit); ok {
 			commit.simplify()
 			matched := false
@@ -2514,24 +2512,18 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 				if commit.Branch == "" {
 					// File or directory is not under any recognizable branch.
 					// Shuffle it off to branch with an illegal name.
-					sp.maplock.Lock()
 					baseBranchnames.Add(illegalSegment)
-					sp.maplock.Unlock()
 					commit.setBranch(illegalBranch)
 				} else if commit.Branch == "trunk" {
 					commit.setBranch(filepath.Join("refs", "heads", "master"))
 				} else if strings.HasPrefix(commit.Branch, "tags/") {
 					commit.setBranch(filepath.Join("refs", commit.Branch))
 				} else if strings.HasPrefix(commit.Branch, "branches/") {
-					sp.maplock.Lock()
 					baseBranchnames.Add(commit.Branch[9:])
-					sp.maplock.Unlock()
 					commit.setBranch(filepath.Join("refs", "heads", commit.Branch[9:]))
 				} else {
 					// Uh oh
-					sp.maplock.Lock()
 					baseBranchnames.Add(commit.Branch)
-					sp.maplock.Unlock()
 					commit.setBranch(filepath.Join("refs", "heads", commit.Branch))
 					if logEnable(logEXTRACT) {
 						logit("nonstandard branch %s at %s", commit.Branch, commit.idMe())
@@ -2540,7 +2532,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 			}
 		}
 		baton.percentProgress(uint64(i) + 1)
-	})
+	}
 
 	// Find a less barbarous name for the junk branch
 	if baseBranchnames.Contains(illegalSegment) {
