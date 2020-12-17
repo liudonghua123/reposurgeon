@@ -3067,7 +3067,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 			if logEnable(logEXTRACT) {
 				logit("%s might be tag-eligible", commit.idMe())
 			}
-			if cvs2svnTagBranchRE.MatchString(commit.Comment) {
+			if cvs2svnTagBranchRE.MatchString(commit.Comment) && !options.Contains("--preserve") {
 				// Nothing to do, but we don't want to create an annotated tag
 				// because messages from cvs2svn are not useful.
 			} else if commit.hasParents() {
