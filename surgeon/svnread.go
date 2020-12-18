@@ -69,7 +69,7 @@ type svnReader struct {
 	lastCommitOnBranchAt map[string][]*Commit // Phases 6 to 9
 	// a map from SVN branch names to root commits (there can be several in case
 	// of branch deletions since the commit recreating the branch is also root)
-	branchRoots map[string][]*Commit // Phases 6 to C
+	branchRoots map[string][]*Commit // Phases 7 to C
 	maplock     sync.Mutex
 }
 
@@ -920,14 +920,40 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	timeit("expand")
 	svnGenerateCommits(ctx, sp, options, baton)
 	timeit("commits")
-	svnSplitResolve(ctx, sp, options, baton)
-	timeit("splits")
-	svnLinkFixups(ctx, sp, options, baton)
-	timeit("links")
+	if options.Contains("--nobranch") {
+		if logEnable(logEXTRACT) {
+			logit("SVN Phase 6: split resolution (skipped due to --nobranch)")
+		}
+	} else {
+		svnSplitResolve(ctx, sp, options, baton)
+		timeit("splits")
+	}
+	if options.Contains("--nobranch") {
+		// There is only one branch root: the very first commit
+		sp.branchRoots = make(map[string][]*Commit)
+		for _, event := range sp.repo.events {
+			if commit, ok := event.(*Commit); ok {
+				sp.branchRoots[""] = []*Commit{commit}
+				break
+			}
+		}
+		if logEnable(logEXTRACT) {
+			logit("SVN Phase 7: find branch root parents (skipped due to --nobranch)")
+		}
+	} else {
+		svnLinkFixups(ctx, sp, options, baton)
+		timeit("links")
+	}
 	svnProcessMergeinfos(ctx, sp, options, baton)
 	timeit("mergeinfo")
-	svnGitifyBranches(ctx, sp, options, baton)
-	timeit("branches")
+	if options.Contains("--nobranch") {
+		if logEnable(logEXTRACT) {
+			logit("SVN Phase 9: branch renames (skipped due to --nobranch)")
+		}
+	} else {
+		svnGitifyBranches(ctx, sp, options, baton)
+		timeit("branches")
+	}
 	svnProcessIgnores(ctx, sp, options, baton)
 	timeit("ignores")
 	svnDisambiguateRefs(ctx, sp, options, baton)
@@ -1276,7 +1302,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	//
 	// Interpretation of svn:executable is done in this phase.
 	// The commit branch is set here in case we want to dump a
-	// --nobranch analysis, but the from and merge fields are not.
+	// nobranch analysis, but the from and merge fields are not.
 	// That will happen in a later phase.
 	//
 	// Revisions with no nodes are skipped here. This guarantees
@@ -1575,7 +1601,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 
 		// No branching, therefore linear history.
 		// If we do branch analysis in a later phase
-		// (that is, unless --nobranch is on) we will
+		// (that is, unless nobranch is on) we will
 		// create a new set of parent links.
 		if lastcommit != nil {
 			commit.setParents([]CommitLike{lastcommit})
@@ -1627,20 +1653,6 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	// all its fileops on the same Subversion branch.  In addition,
 	// the Branch field of commits are set to the Subversion branch
 	// unless there was no fileop at all to devise a branch from.
-	if options.Contains("--nobranch") {
-		if logEnable(logEXTRACT) {
-			logit("SVN Phase 6: split resolution (skipped due to --nobranch)")
-		}
-		// There is only one branch root: the very first commit
-		sp.branchRoots = make(map[string][]*Commit)
-		for _, event := range sp.repo.events {
-			if commit, ok := event.(*Commit); ok {
-				sp.branchRoots[""] = []*Commit{commit}
-				break
-			}
-		}
-		return
-	}
 	defer trace.StartRegion(ctx, "SVN Phase 6: split resolution").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 6: split resolution")
@@ -1825,14 +1837,15 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// be the target of multiple copies from different revision
 	// and they can be a mix of directory and file copies.
 	//
-	// All of those copies need to be re-played to compute thee
+	// All of those copies need to be re-played to compute the
 	// content at each revision properly, but in computing branch
 	// links it's the location of the *last copy* to the root
 	// commit of each branch that we want.
 	//
-	// If there was only ever one Subversion directory copy life
-	// is easy - at every revision the copy point looks the same.
-	// Looking for the last copy will pick that up.
+	// If there was only ever one Subversion directory copy to any
+	// given target directory life is easy - at every revision
+	// the copy point looks the same.  Looking for the last copy
+	// will pick that up.
 	//
 	// The tricky cases are:
 	//
@@ -1872,12 +1885,6 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// These cases are rebarbative. Dealing with them is by far the
 	// most likely source of bugs in the analyzer.
 	//
-	if options.Contains("--nobranch") {
-		if logEnable(logEXTRACT) {
-			logit("SVN Phase 7: find branch root parents (skipped due to --nobranch)")
-		}
-		return
-	}
 	defer trace.StartRegion(ctx, "SVN Phase 8: find branch root parents").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 7: find branch root parents")
@@ -2435,12 +2442,6 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 	// After this phase branchnames are immutable and almost define the
 	// topology, but parent marks have not yet been fixed up.
 	//
-	if options.Contains("--nobranch") {
-		if logEnable(logEXTRACT) {
-			logit("SVN Phase 9: branch renames (skipped due to --nobranch)")
-		}
-		return
-	}
 	defer trace.StartRegion(ctx, "SVN Phase 9: branch renames").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 9: branch renames")
@@ -2943,7 +2944,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	//   with name "emptycommit-<revision>".
 	//
 	// * Commits at a branch tip that consist only of deleteall are also
-	//   tagified if --nobranch is on, because having a commit at the branch
+	//   tagified if nobranch is on, because having a commit at the branch
 	//   tip that removes all files is less than useful. Such commits should
 	//   almost all be pruned because they put their branch in the
 	//   /refs/deleted namespace, but they can be kept if they are part of
