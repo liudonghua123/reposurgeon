@@ -1080,7 +1080,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	//
 	// Note that the directory copy nodes are not removed, as they
 	// may carry properties we're going to need later - notably
-	// mergeinfo properties.  svn:ignore is handled here.
+	// mergeinfo properties.
 	//
 	// Having file visibility information pre-computed for all
 	// revisions almost forestalls having a revision-order
@@ -1090,16 +1090,11 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	// havoc will ensue. Thus, it can't be parallelized.
 	//
 	// This pass is almost entirely indifferent to Subversion
-	// branch structure.  One exceptions in what it does to
+	// branch structure.  The one exception is what it does to
 	// directory delete operations.  On a branch directory a
 	// Subversion delete becomes a Git deleteall; on a non-branch
 	// directory it is expanded to a set of file deletes for the
 	// contents of the directory.
-	//
-	// This pass also notices branch structure when it checks
-	// where it should create copies of the default .gitignore
-	// file.  We want this to happen at branch roots before
-	// the first fileop, and only at branch roots.
 	//
 	// The exit contract of this phase is that all file content
 	// modifications are expressed as file ops, every one of
