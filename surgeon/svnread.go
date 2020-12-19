@@ -2457,6 +2457,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 	canonicalizedNames := make(map[string]string)
 	seenRefs := newStringSet()
 	baseBranchnames := newStringSet()
+	var maplock sync.Mutex
 
 	cleanName := func(sp *StreamParser, svnname string) string {
 		// Reference: https://git-scm.com/docs/git-check-ref-format
@@ -2489,8 +2490,10 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 			}
 		}
 		//Looks OK, keep it.
+		maplock.Lock()
 		seenRefs.Add(newname)
 		canonicalizedNames[svnname] = newname
+		maplock.Unlock()
 		if svnname != newname && logEnable(logWARN) {
 			logit("illegal branch/tag name %q mapped to %q", svnname, newname)
 		}
@@ -2515,18 +2518,24 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 				if commit.Branch == "" {
 					// File or directory is not under any recognizable branch.
 					// Shuffle it off to branch with an illegal name.
+					maplock.Lock()
 					baseBranchnames.Add(illegalSegment)
+					maplock.Unlock()
 					commit.setBranch(illegalBranch)
 				} else if commit.Branch == "trunk" {
 					commit.setBranch(filepath.Join("refs", "heads", "master"))
 				} else if strings.HasPrefix(commit.Branch, "tags/") {
 					commit.setBranch(filepath.Join("refs", commit.Branch))
 				} else if strings.HasPrefix(commit.Branch, "branches/") {
+					maplock.Lock()
 					baseBranchnames.Add(commit.Branch[9:])
+					maplock.Unlock()
 					commit.setBranch(filepath.Join("refs", "heads", commit.Branch[9:]))
 				} else {
 					// Uh oh
+					maplock.Lock()
 					baseBranchnames.Add(commit.Branch)
+					maplock.Unlock()
 					commit.setBranch(filepath.Join("refs", "heads", commit.Branch))
 					if logEnable(logEXTRACT) {
 						logit("nonstandard branch %s at %s", commit.Branch, commit.idMe())
