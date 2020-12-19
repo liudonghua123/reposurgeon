@@ -174,3 +174,4 @@ merge 1.0.1 bugfixes into trunk, bumping the version to 1.4
 from :20
 M 100644 :21 VERSION
 
+done

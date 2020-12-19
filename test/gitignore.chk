@@ -153,3 +153,4 @@ Branch trunk to cool-feature
 This causes reposurgeon to replace the custom .gitignore with only the
 contents of svn:ignore.
 
+done

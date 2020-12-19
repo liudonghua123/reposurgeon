@@ -67,3 +67,4 @@ Modify the symlink.
 from :6
 M 120000 :7 symlink
 
+done

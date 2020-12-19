@@ -3115,7 +3115,7 @@ func svnProcessRenumber(ctx context.Context, sp *StreamParser, options stringSet
 		logit("SVN Phase D: renumber")
 	}
 	sp.repo.renumber(1, baton)
-	//sp.repo.events = append(sp.repo.events, newPassthrough(sp.repo, "done\n"))
+	sp.repo.events = append(sp.repo.events, newPassthrough(sp.repo, "done\n"))
 }
 
 // end

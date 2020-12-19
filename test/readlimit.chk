@@ -54,6 +54,7 @@ This revision exists to be a tag target.
 from :3
 M 100644 :4 README
 
+done
 # This should yield an EOF message.
 read <binary.svn
 reposurgeon: EOF before readlimit.
@@ -94,6 +95,7 @@ added binary file
 M 100644 :1 .gitignore
 M 100644 :2 baz
 
+done
 # This should not
 read <bs.fi
 reposurgeon: read limit 3 reached

@@ -61,3 +61,4 @@ Make dir2/file executable.
 from :5
 M 100755 :2 dir2/file
 
+done

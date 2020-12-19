@@ -46,3 +46,4 @@ Add symlink to *foo*
 from :3
 M 120000 :4 link_to_foo
 
+done

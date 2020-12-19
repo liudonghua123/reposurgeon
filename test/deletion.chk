@@ -57,3 +57,4 @@ The import stream representation of this commit should have a delete fileop.
 from :5
 D doomed
 
+done

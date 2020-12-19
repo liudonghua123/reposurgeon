@@ -53,3 +53,4 @@ Split commit: change on trunk, file not on a branch.
 M 100644 :1 .gitignore
 M 100644 :3 file-on-trunk
 
+done

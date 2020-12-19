@@ -57,3 +57,4 @@ Copy of sourcedir/sourcefile.txt to targetdir.
 from :5
 M 100755 :4 targetdir/sourcefile.txt
 
+done

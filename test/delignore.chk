@@ -104,3 +104,4 @@ Delete foo again; there should be a D .gitignore.
 from :8
 D foo/.gitignore
 
+done

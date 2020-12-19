@@ -66,3 +66,4 @@ Copy foo to zfoo.
 from :6
 M 100755 :2 zfoo
 
+done

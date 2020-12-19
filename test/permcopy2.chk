@@ -52,3 +52,4 @@ Copy dir1 to dir2.
 from :4
 M 100755 :2 dir2/file
 
+done
