@@ -56,6 +56,7 @@ import (
 )
 
 type svnReader struct {
+	maplock         sync.Mutex             // Lock modification of shared maps
 	branchify       map[int][][]string     // Parsed svn_branchify setting
 	revisions       []RevisionRecord       // Phases 1 to A
 	revmap          map[revidx]revidx      // Phases 1 to A
@@ -66,11 +67,10 @@ type svnReader struct {
 	markToSVNBranch map[string]string      // Phases 8 to A
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
-	lastCommitOnBranchAt map[string][]*Commit // Phases 6 to 9
+	lastCommitOnBranchAt map[string][]*Commit // Phases 6 to 8
 	// a map from SVN branch names to root commits (there can be several in case
 	// of branch deletions since the commit recreating the branch is also root)
 	branchRoots map[string][]*Commit // Phases 7 to C
-	maplock     sync.Mutex
 }
 
 func (sp *svnReader) maxRev() revidx {
@@ -1142,9 +1142,15 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 				if node.fromPath != "" {
 					node.fromPath += svnSep
 				}
-				// No special actions need to be taken when directories are added or changed, but see below for actions
-				// that are taken in all cases.  The reason we suppress expansion on a declared branch is that
-				// we are later going to turn this directory delete into a git deleteall for the branch.
+				// No special actions need to be taken
+				// when directories are added or
+				// changed, but see below for actions
+				// that are taken in all cases.  The
+				// reason we suppress expansion on a
+				// declared branch is that we are
+				// later going to turn this directory
+				// delete into a git deleteall for the
+				// branch.
 				if node.action == sdDELETE || node.action == sdREPLACE {
 					if !nobranch && sp.isDeclaredBranch(node.path) {
 						if logEnable(logEXTRACT) {
@@ -1680,9 +1686,9 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 			for j, fileop := range commit.fileops {
 				newbranch, commit.fileops[j].Path = sp.splitSVNBranchPath(fileop.Path)
 				if startclique || newbranch != oldbranch {
-					// A new clique is started:
-					//  * at the first op following the commit start or a deleteall
-					//  * when the branch changes (in a mixed commit)
+					// A new clique is started:
+					// * at the first op following the commit start or a deleteall
+					// * when the branch changes (in a mixed commit)
 					cliques = append([]clique{clique{j, newbranch}}, cliques...)
 					oldbranch = newbranch
 				}
@@ -1741,33 +1747,34 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	}
 	baton.endProgress()
 
-	/* Phase 6d: fixing the parent links to restore the namespace continuity.
-	 * In this comment, a namespace is a branch, a tag or anything recognized
-	 * by the branchify setting. The previous subphase stripped the namespace
-	 * from the file paths and transferred it to the commit branch.  By doing
-	 * so, it entangled the histories of files in different namespaces.  This
-	 * phase is about getting the contents correctness back by separating the
-	 * linear history into disconnected chains of commits, one per namespace.
-	 * The deleteall operations comes from total deletion of namespaces which
-	 * should cut the chain in two and disconnect the latter history from the
-	 * history preceding the deleteall. Phase 6a and 6b ensure that deleteall
-	 * operations always are the last of their commit.
-	 *
-	 * This is also a good time to fill a helper structure remembering which
-	 * commit last happened on every namespace at every revision. That struct
-	 * is a dictionary mapping namespaces to lists of commits where
-	 *   sp.lastCommitOnBranchAt[namespace][rev_id]
-	 * is a pointer to  the last commit  that happened  in the namespace at a
-	 * revision id less than or equal to rev_id. If rev_id is past the end of
-	 * the list, then no commit happened in the namespace *after* rev_id, and
-	 * the wanted last commit is the last element of the list.
-	 *
-	 * This is used as an invariant to incrementally build the lists: when we
-	 * encounter a new commit on a namespace, we complete the list by copying
-	 * its last item enough times so that  previously implicit information is
-	 * explicitly filled, then then fill list[rev_id] with the commit we just
-	 * encountered.
-	 */
+	// Phase 6d:
+	// Fixing the parent links to restore the namespace continuity.
+	// In this comment, a namespace is a branch, a tag or anything recognized
+	// by the branchify setting. The previous subphase stripped the namespace
+	// from the file paths and transferred it to the commit branch.  By doing
+	// so, it entangled the histories of files in different namespaces.  This
+	// phase is about getting the contents correctness back by separating the
+	// linear history into disconnected chains of commits, one per namespace.
+	// The deleteall operations comes from total deletion of namespaces which
+	// should cut the chain in two and disconnect the latter history from the
+	// history preceding the deleteall. Phase 6a and 6b ensure that deleteall
+	// operations always are the last of their commit.
+	//
+	// This is also a good time to fill a helper structure remembering which
+	// commit last happened on every namespace at every revision. That struct
+	// is a dictionary mapping namespaces to lists of commits where
+	//   sp.lastCommitOnBranchAt[namespace][rev_id]
+	// is a pointer to  the last commit  that happened  in the namespace at a
+	// revision id less than or equal to rev_id. If rev_id is past the end of
+	// the list, then no commit happened in the namespace *after* rev_id, and
+	// the wanted last commit is the last element of the list.
+	//
+	// This is used as an invariant to incrementally build the lists: when we
+	// encounter a new commit on a namespace, we complete the list by copying
+	// its last item enough times so that  previously implicit information is
+	// explicitly filled, then then fill list[rev_id] with the commit we just
+	// encountered.
+	//
 	baton.startProgress("SVN phase 6c: fix content-changing parent links",
 		uint64(len(sp.repo.events)))
 	sp.lastCommitOnBranchAt = make(map[string][]*Commit)
