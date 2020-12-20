@@ -464,12 +464,14 @@ other modern VCSes.
 
 ==== CVS
 
-If you are exporting from CVS, it may be a good idea to run some
-trial conversions with cvsconvert, a wrapper script shipped with
-cvs-fast-export.  This script runs a conversion direct to git;
-the advantage is that it can do a comparison of the repository
-histories and identify problems for you to fix in your lift
-script.
+If you are exporting from CVS, it may be a good idea to run some trial
+conversions with cvsconvert, a wrapper script shipped with
+cvs-fast-export.  This script runs a conversion direct to git; the
+advantage is that it can do a comparison of the repository histories
+and identify problems for you to fix in your lift script.  You
+probably don't want to use this for final conversion, though, as it
+does not clean up CVS junk tags, perform reference lifting, or
+Gitifying comments.
 
 A CVS repository normally consists of a set of module subdirectories
 and a CVSROOT directory containing metadata. If yours has more than
