@@ -1170,7 +1170,7 @@ func newDate(text string) (Date, error) {
 	// RFC1123Z - we use it in message-block headers
 	// GitLog - git log emits this format
 	for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.RFC1123Z, GitLogFormat, RFC1123ZNoComma} {
-		trial, err3 := time.Parse(layout, string(text))
+		trial, err3 := time.Parse(layout, text)
 		if err3 == nil {
 			// Could be Round() rather than Truncate() - it's this way
 			// for compatibility with the ancestral Python.
