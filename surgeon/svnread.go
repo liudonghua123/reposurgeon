@@ -1568,29 +1568,10 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 			if ri == 1 || len(record.nodes) == 0 {
 				continue
 			}
-			var foundbranch string
-			tooMany := false
-			for _, node := range record.nodes {
-				var branch string
-				if node.kind == sdDIR && sp.isDeclaredBranch(node.path) {
-					branch = node.path
-				} else {
-					branch, _ = sp.splitSVNBranchPath(node.path)
-				}
-				if branch != "" && foundbranch != "" && branch != foundbranch {
-					tooMany = true
-					break
-				}
-			}
-			if tooMany {
-				if logEnable(logEXTRACT) {
-					logit("pathological empty revision at <%d>, comment %q, skipping.",
-						ri, commit.Comment)
-				}
-				continue
-			}
-			// No fileops, just directory nodes in a single branch, pass it
-			// through.  Later we'll use this node path for branch assignment.
+			// No fileops, just directory nodes in the
+			// corresponding revision, pass it through.
+			// Later we'll use this node path for branch
+			// assignment.
 		}
 
 		// We're not trying to do branch structure yet.
@@ -1626,8 +1607,6 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 func branchOfEmptyCommit(sp *StreamParser, commit *Commit) string {
 	n, err := strconv.Atoi(commit.legacyID)
 	if err != nil {
-		// Has to be something weirder than a split commit going on - zero-op
-		// commits on multiple branches are filtered out before this.
 		panic(fmt.Errorf("Unexpectedly ill-formed legacy-id %s", commit.legacyID))
 	}
 	node := sp.revision(intToRevidx(n)).nodes[0]
