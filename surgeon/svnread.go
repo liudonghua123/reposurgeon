@@ -416,7 +416,7 @@ func appendRevisionRecords(slice []RevisionRecord, data ...RevisionRecord) []Rev
 }
 
 func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet, baton *Baton, filesize int64) {
-	defer trace.StartRegion(ctx, "SVN phase 1: read dump file").End()
+	defer trace.StartRegion(ctx, "SVN phase 1: read stream").End()
 	sp.revisions = make([]RevisionRecord, 0)
 	sp.revmap = make(map[revidx]revidx)
 	sp.backfrom = make(map[revidx]revidx)
@@ -782,7 +782,7 @@ func (action NodeAction) hasDeleteTag() bool {
 // probably fail.
 type RevisionRecord struct {
 	log      string
-	date     string
+	date     time.Time
 	author   string
 	nodes    []*NodeAction
 	props    OrderedMap
@@ -799,7 +799,11 @@ func newRevisionRecord(nodes []*NodeAction, props OrderedMap, revision revidx) *
 	props.delete("svn:log")
 	rr.author = props.get("svn:author")
 	props.delete("svn:author")
-	rr.date = props.get("svn:date")
+	t, e := time.Parse(time.RFC3339Nano, props.get("svn:date"))
+	if e != nil {
+		panic(throw("parse", "ill-formed date in dump stream at r%d", rr.revision))
+	}
+	rr.date = t
 	props.delete("svn:date")
 	rr.props = props
 	return rr
@@ -980,7 +984,7 @@ func svnFilterProperties(ctx context.Context, sp *StreamParser, options stringSe
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 2: filter properties")
 	}
-	baton.startProgress("SVN phase 2: filter properties", uint64(len(sp.streamview)))
+	baton.startProgress("SVN Phase 2: filter properties", uint64(len(sp.streamview)))
 	for si, node := range sp.streamview {
 		// Handle per-path properties.
 		if node.hasProperties() {
@@ -1318,6 +1322,20 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	}
 	baton.startProgress("SVN phase 5: build commits", uint64(len(sp.revisions)))
 
+	// Normally we want to round Subversion timestamps down.  But
+	// if two adjacent times round down to the same second, and
+	// the later time would round up to the next second, do it.
+	// This is crude but it solves a large subset of collisions
+	// while guaranteeing that no timestamp is ever shifted to a
+	// non-adjacent second mark.
+	quantizeTime := func(revisions []RevisionRecord, ri int) time.Time {
+		floor := func(i int) time.Time { return revisions[i].date.Truncate(1 * time.Second) }
+		if ri > 0 && floor(ri-1) == floor(ri) {
+			revisions[ri].date.Add(500 * time.Millisecond)
+		}
+		return floor(ri)
+	}
+
 	var lastcommit *Commit
 	for ri, record := range sp.revisions {
 		// Zero revision is almost never interesting - no operations, no
@@ -1334,10 +1352,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 		}
 
 		commit := newCommit(sp.repo)
-		ad := record.date
-		if ad == "" {
-			sp.error("missing required date field")
-		}
+		ad := rfc3339(quantizeTime(sp.revisions, ri))
 		var au string
 		if record.author != "" {
 			au = record.author

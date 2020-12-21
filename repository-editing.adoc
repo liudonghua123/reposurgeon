@@ -2864,7 +2864,7 @@ data entered by users; when reposurgeon can detect that a
 branch-creation comment was automatically generated (as often
 happens in cvs2svn conversions) the commit will simply be discarded
 so as not to create clutter that has to be manually removed by the
-operator.
+operator. (That discard action is prevented by the --preserve option.)
 
 Otherwise, each commit that only creates or deletes directories
 (in particular, copy commits for tags and branches, and commits that
@@ -2928,7 +2928,12 @@ commits get turned into annotated tags, the translated tags will retain
 information about setting changes.
 
 The sub-second resolution on Subversion commit dates is discarded;
-Git wants integer timestamps only.
+Git wants integer timestamps only. Normally Subversion timestamps are
+rounded down, but when two adjacent timestamps have the same seconds
+part and the later one is in the top half-second of the interval,
+the later one is rounded up instead.  This does much to reduce
+collisions while guaranteeing that no timestamp is ever shifted
+to a non-adjacent second mark.
 
 Because fast-import format cannot represent an empty directory,
 empty directories in Subversion repositories will be lost in

@@ -1166,10 +1166,9 @@ func newDate(text string) (Date, error) {
 
 	}
 	// RFC3339 - because it's the presentation format I prefer
-	// RFC3339Nano - so we parse Subversion dates with fractional seconds
 	// RFC1123Z - we use it in message-block headers
 	// GitLog - git log emits this format
-	for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.RFC1123Z, GitLogFormat, RFC1123ZNoComma} {
+	for _, layout := range []string{time.RFC3339, time.RFC1123Z, GitLogFormat, RFC1123ZNoComma} {
 		trial, err3 := time.Parse(layout, text)
 		if err3 == nil {
 			// Could be Round() rather than Truncate() - it's this way
@@ -5905,7 +5904,7 @@ func (repo *Repository) checkUniqueness(chatty bool, logHook func(string)) {
 	// serialized.
 	commits := repo.commits(nil)
 	for _, event := range commits {
-		when := event.when().String()
+		when := rfc3339(event.when())
 		if _, recorded := timecheck[when]; recorded {
 			if _, ok := timeCollisions[when]; !ok {
 				timeCollisions[when] = []Event{}
@@ -5926,8 +5925,8 @@ func (repo *Repository) checkUniqueness(chatty bool, logHook func(string)) {
 		for k := range timeCollisions {
 			reps = append(reps, k)
 		}
-		logHook("These timestamps have multiple commits: " +
-			strings.Join(reps, " "))
+		logHook(fmt.Sprintf("These %d timestamps have multiple commits: %s",
+			len(reps), strings.Join(reps, " ")))
 	}
 	stampCollisions := newOrderedStringSet()
 	for _, clique := range timeCollisions {
@@ -5939,8 +5938,7 @@ func (repo *Repository) checkUniqueness(chatty bool, logHook func(string)) {
 			}
 			stamp, ok := stampcheck[commit.actionStamp()]
 			if ok {
-				stampCollisions.Add(stamp)
-				//stampCollisions.Add(commit.mark)
+				stampCollisions.Add(fmt.Sprintf("%s = %s", stamp, commit.idMe()))
 			}
 			stampcheck[stamp] = commit.mark
 		}
