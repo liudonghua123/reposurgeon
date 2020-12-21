@@ -4129,6 +4129,44 @@ func (commit Commit) String() string {
 	return bld.String()
 }
 
+func (commit Commit) commonDirectory() string {
+	// Adapted from https://github.com/jpillora/longestcommon/blob/master/lc.go
+	// Short-circuit empty list
+	if len(commit.fileops) == 0 {
+		return ""
+	}
+	prefix := path.Dir(commit.fileops[0].Path) + "/"
+	// Short-circuit single-element list
+	if len(commit.fileops) == 1 {
+		return prefix
+	}
+	// Compare first to rest
+	for _, fileop := range commit.fileops[1:] {
+		prefixl := len(prefix)
+		strl := len(fileop.Path)
+		// Short-circuit empty strings
+		if prefixl == 0 || strl == 0 {
+			return ""
+		}
+		// Maximum possible length
+		maxl := prefixl
+		if strl < maxl {
+			maxl = strl
+		}
+		// Prefix, iterate left to right
+		for i := 0; i < maxl; i++ {
+			if prefix[i] != fileop.Path[i] {
+				prefix = prefix[:i]
+				break
+			}
+		}
+	}
+	if strings.Contains(prefix, "/") {
+		prefix = prefix[:strings.LastIndex(prefix, "/")+1]
+	}
+	return prefix
+}
+
 //Passthrough represents a passthrough line.
 type Passthrough struct {
 	repo     *Repository

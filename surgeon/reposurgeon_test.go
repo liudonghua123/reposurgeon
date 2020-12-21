@@ -1060,6 +1060,28 @@ Example commit for unit testing, modified.
 	}
 }
 
+func TestCommonDirectory(t *testing.T) {
+	repo := newRepository("fubar")
+	defer repo.cleanup()
+	addop := func(commit *Commit, line string) {
+		commit.appendOperation(newFileOp(repo).parse(line))
+	}
+	commit1 := newCommit(repo)
+	addop(commit1, "M 100644 :1 foo/rat")
+	addop(commit1, "M 100644 :2 foo/bat")
+	addop(commit1, "M 100644 :3 foo/mung/bletch")
+	assertEqual(t, commit1.commonDirectory(), "foo/")
+	commit2 := newCommit(repo)
+	addop(commit2, "M 100644 :1 argle/bargle")
+	addop(commit2, "M 100644 :2 mumble/frotz")
+	assertEqual(t, commit2.commonDirectory(), "")
+	commit3 := newCommit(repo)
+	addop(commit3, "M 100644 :1 foo/bar/rat")
+	addop(commit3, "M 100644 :2 foo/bar/bat")
+	addop(commit2, "M 100644 :3 foo/bar/mung/bletch")
+	assertEqual(t, commit3.commonDirectory(), "foo/bar/")
+}
+
 func TestParentChildMethods(t *testing.T) {
 	repo := newRepository("fubar")
 	defer repo.cleanup()
