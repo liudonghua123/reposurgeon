@@ -11,6 +11,7 @@ Repository head::
      In SVN lifts, reduce overloading of the "-root" suffix.
      Add --obscure option to reposurgeon strip command, like repocutter.
      --preserve prevents automatic deletion of cv2svn branch creation tags.
+     repocutter see dumps property settings
 
 4.21: 2020-11-18::
      Fix for a bug that could scramble history in pathological tag-copy cases.

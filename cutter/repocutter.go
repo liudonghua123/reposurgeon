@@ -470,6 +470,21 @@ func (props *Properties) Stringer() string {
 	return b.String()
 }
 
+// String - use for visualization, need not round-trip
+func (props *Properties) String() string {
+	if props == nil || len(props.propkeys) == 0 {
+		return ""
+	}
+	txt := ""
+	for _, k := range props.propkeys {
+		txt += fmt.Sprintf("%s = %q; ", k, props.properties[k])
+	}
+	for _, k := range props.propdelkeys {
+		txt += fmt.Sprintf("delete %s; ", k)
+	}
+	return txt[:len(txt)-1]
+}
+
 // Contains - does a Properties object contain a specified key?
 func (props *Properties) Contains(key string) bool {
 	_, ok := props.properties[key]
@@ -1552,6 +1567,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 
 // Strip out ops defined by a revision selection and a path regexp.
 func see(source DumpfileSource, selection SubversionRange) {
+	props := ""
 	seenode := func(header []byte, _, _ []byte) []byte {
 		if debug {
 			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
@@ -1573,9 +1589,21 @@ func see(source DumpfileSource, selection SubversionRange) {
 		}
 		leader := fmt.Sprintf("%d-%d", source.Revision, source.Index)
 		fmt.Printf("%-5s %-8s %s\n", leader, action, path)
+		if props != "" {
+			fmt.Printf("%-5s %-8s %s\n", leader, "propset", props)
+		}
+		props = ""
 		return nil
 	}
-	source.Report(selection, seenode, nil, false, true)
+	seeprops := func(properties *Properties) {
+		for _, skippable := range []string{"svn:log", "svn:date", "svn:author"} {
+			if _, ok := properties.properties[skippable]; ok {
+				return
+			}
+		}
+		props = properties.String()
+	}
+	source.Report(selection, seenode, seeprops, false, true)
 }
 
 // Mutate log entries.

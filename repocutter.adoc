@@ -125,7 +125,8 @@ repository operation, reporting the revision, operation type, file
 path, and the copy source (if any).  Directory paths are distinguished
 by a trailing slash.  The 'copy' operation is really an 'add' with a
 directory source and target; the display name is changed to make them
-easier to see.
+easier to see. Additionally, any property settings on a node are
+dumped immediately after it.
 
 select::
 The 'select' subcommand selects a range and permits
