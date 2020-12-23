@@ -12,6 +12,7 @@ Repository head::
      Add --obscure option to reposurgeon strip command, like repocutter.
      --preserve prevents automatic deletion of cv2svn branch creation tags.
      repocutter see dumps property settings
+     Many improvements to the documentation, including improved cross-references.
 
 4.21: 2020-11-18::
      Fix for a bug that could scramble history in pathological tag-copy cases.

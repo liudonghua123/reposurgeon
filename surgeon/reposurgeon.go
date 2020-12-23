@@ -426,6 +426,15 @@ func (rs *Reposurgeon) helpOutput(help string) {
 	}
 }
 
+// helpOutputMisc prints help messages that are not about a single command
+func (rs *Reposurgeon) helpOutputMisc(help string) {
+	if help[0] == '\n' {
+		help = help[1:]
+	}
+	// Dump as plain text
+	control.baton.printLogString(help)
+}
+
 func (rs *Reposurgeon) inScript() bool {
 	return len(rs.callstack) > 0
 }
@@ -2537,9 +2546,10 @@ repository metadata. Takes a selection set; members of the set other
 than commits, annotated tags, and passthroughs are ignored (that is,
 presently, blobs and resets).
 
-May have an option --filter, followed by = and a /-enclosed regular expression.
-If this is given, only headers with names matching it are emitted.  In this
-control the name of the header includes its trailing colon.
+May have an option --filter, followed by = and a /-enclosed regular
+expression.  If this is given, only headers with names matching it are
+emitted.  In this control the name of the header includes its trailing
+colon. See "help regex" for information on the regex syntax.
 
 Blobs may be included in the output with the option --blobs.
 `)
@@ -2707,18 +2717,19 @@ shell command. Each blob or comment is presented to the filter on
 standard input; the content is replaced with whatever the filter emits
 to standard output.
 
-With --regex, the remainder of the line is expected to be a Go
-regular expression substitution written as /from/to/ with
-Go-style backslash escapes interpreted in 'to' as well as 'from'.
-Python-style back-references (\1, \1 etc.) rather than Go-style $1, $2... 
-are interpreted; this avoids a conflict with parameter substitution in
+With --regex, the remainder of the line is expected to be a Go regular
+expression substitution written as /from/to/ with Go-style backslash
+escapes interpreted in 'to' as well as 'from'.  Python-style
+back-references (\1, \1 etc.) rather than Go-style $1, $2...  are
+interpreted; this avoids a conflict with parameter substitution in
 script commands. Any non-space character will work as a delimiter in
 place of the /; this makes it easier to use / in patterns. Ordinarily
 only the first such substitution is performed; putting 'g' after the
-slash replaces globally, and a numeric literal gives the maximum number
-of substitutions to perform. Other flags available restrict substitution
-scope - 'c' for comment text only, 'C' for committer name only, 'a'
-for author names only.
+slash replaces globally, and a numeric literal gives the maximum
+number of substitutions to perform. Other flags available restrict
+substitution scope - 'c' for comment text only, 'C' for committer name
+only, 'a' for author names only. See "help regex" for more information
+about regular expressions.
 
 With --replace, the behavior is like --regexp but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
@@ -3891,7 +3902,8 @@ paths or regular expressions matching paths (regexps must
 be marked by being surrounded with //).  Shell-like interpretation of
 string quotes and backslashes is performed when parsing this command
 line; in particular, a preceding backslash may be used to embed a literal
-/ character.
+/ character. See "help regex" for more information about regular
+expressions.
 
 Exceptionally, the first argument may be the token "~" which chooses
 all file paths other than those selected by the remaining arguments to
@@ -4251,10 +4263,11 @@ func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
 path {SOURCE} rename [--force] {TARGET}
 
-Rename a path in every fileop of every selected commit.  The
-default selection set is all commits. The first argument is interpreted as a
-Go regular expression to match against paths; the second may contain Go
-back-reference syntax.
+Rename a path in every fileop of every selected commit.  The default
+selection set is all commits. The first argument is interpreted as a
+Go regular expression to match against paths; the second may contain
+Go back-reference syntax. See "help regex" for more information about
+regular expressions.
 
 Ordinarily, if the target path already exists in the fileops, or is visible
 in the ancestry of the commit, this command throws an error.  With the
@@ -4414,7 +4427,8 @@ expression.  For each commit in the selection set, print the mapping
 of all paths in that commit tree to the corresponding blob marks,
 mirroring what files would be created in a checkout of the commit. If
 a regular expression is given, only print "path -> mark" lines for
-paths matching it.
+paths matching it. See "help regex" for more information about regular
+expressions.
 `)
 }
 
@@ -4884,7 +4898,7 @@ For a delete, the name may optionally be a regular expression wrapped in //;
 if so, all objects of the specified type with names matching the regexp are
 deleted.  This is useful for mass deletion of branches.  Such deletions can be
 restricted by a selection set in the normal way.  No third argument is
-required.
+required. See "help regex" for more information about regular expressions.
 `)
 }
 
@@ -5694,7 +5708,8 @@ for authors, and '=T' for taggers.
 
 Finally, /regex/ will attempt to match the Go regular expression regex
 against an attribution name and email address; '/n' limits the match to only
-the name, and '/e' to only the email address.
+the name, and '/e' to only the email address. See "help regex" for more
+information about regular expressions.
 
 With the exception of 'show', all actions require an explicit event selection
 upon which to operate.
@@ -6381,7 +6396,8 @@ the right kind of branch type.
 
 While the syntax template above uses slashes, any first character will
 be used as a delimiter (and you will need to use a different one in the
-common case that the paths contain slashes).
+common case that the paths contain slashes). See "help regex" for more
+information about regular expressions.
 
 You must give this command *before* the Subversion repository read it
 is supposed to affect! It does not affect any other repository type.
@@ -6812,7 +6828,8 @@ Mine ChangeLog files for authorship data.
 Takes a selection set.  If no set is specified, process all changelogs.
 An optional following argument is a delimited regular expression to
 match the basename of files that should be treated as changelogs; the
-default is "/^ChangeLog$/".
+default is "/^ChangeLog$/". See "help regex" for more information
+about regular expressions.
 
 This command assumes that changelogs are in the format used by FSF projects:
 entry header lines begin with YYYY-MM-DD and are followed by a
@@ -7151,7 +7168,7 @@ Without an argument, list help topics.
 
 // HelpSelection says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSelection() {
-	rs.helpOutput(`
+	rs.helpOutputMisc(`
 A quick example-centered reference for selection-set syntax.
 
 First, these ways of constructing singleton sets:
@@ -7222,7 +7239,7 @@ precedence than & | but lower than ?.
 
 // HelpSyntax says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSyntax() {
-	rs.helpOutput(`
+	rs.helpOutputMisc(`
 Each command description begins with a syntax summary.  Mandatory parts are
 in {}, optional in [], and ... says the element just before it may be repeated.
 Parts in ALL-CAPS are expected to be filled in by the user.
@@ -7246,9 +7263,7 @@ remaining arguments are available to the command logic.
 
 // HelpFunctions says "Shut up, golint!"
 func (rs *Reposurgeon) HelpFunctions() {
-	rs.helpOutput(`
-function calls:
-
+	rs.helpOutputMisc(`
 The selection-expression language has named special functions.  The syntax
 for a named function is "@" followed by a function name,
 followed by an argument in parentheses. Presently the following
@@ -7266,6 +7281,26 @@ functions are defined:
 | @suc() | events after the argument set
 | @srt() | sort the argument set by event number.
 |===================================================================
+`)
+}
+
+// HelpRegex prints out the help for regexes
+func (rs *Reposurgeon) HelpRegex() {
+	rs.helpOutputMisc(`
+The regular expressions should be in
+https://github.com/google/re2/wiki/Syntax[Golang's] format, with one
+exception. Due to a conflict with the use of $ for arguments in the
+script command, we retain Python's use of backslashes as a leader for
+references to group matches. Any non-space character will work as a
+delimiter in place of the /; this makes it easier to use / in
+patterns.
+
+Regular expressions are not anchored.  Use ^ and $ to anchor them
+to the beginning or end of the search space, when appropriate.
+
+Some commands support regular expression flags, and some even add
+additional flags over the standard set. The documentation for each
+individual command will include these details.
 `)
 }
 

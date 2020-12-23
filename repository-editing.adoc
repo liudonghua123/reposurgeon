@@ -78,13 +78,14 @@ reposurgeon must be run from within a repository directory (one with a
 CVSROOT subdirectory), not a checkout. Each module becomes a
 subdirectory in the reposurgeon representation of the change history.
 
-Note that reposurgeon is a sharp enough tool to cut you.  It takes
-care not to ever write a repository in an actually inconsistent state,
-and will terminate with an error message rather than proceed when its
-internal data structures are confused.  However, there are lots of
-things you can do with it - like altering stored commit timestamps so
-they no longer match the commit sequence - that are likely to cause
-havoc after you're done.  Proceed with caution and check your work.
+Note that reposurgeon is a sharp enough tool to cut you.  It never
+modifies a repository in place, and it takes care not to ever write a
+repository in an actually inconsistent state, and will terminate with
+an error message rather than proceed when its internal data structures
+are confused.  However, there are lots of things you can do with it -
+like altering stored commit timestamps so they no longer match the
+commit sequence - that are likely to cause havoc after you're done.
+Proceed with caution and check your work.
 
 Also note that, if your DVCS does the usual thing of making commit IDs
 a cryptographic hash of content and parent links, editing a
@@ -1324,14 +1325,10 @@ edit                   ;; edit all editable objects.
                        ;; ignores.
 --------
 
-The regular expressions should be in
-https://github.com/google/re2/wiki/Syntax[Golang's] format, with one
-exception. Due to a conflict with the use of $ for arguments in the
-script command, we retain Python's use of backslashes as a leader for
-references to group matches.
+[[regular_expressions]]
+=== Regular Expressions
 
-Regular expressions are not anchored.  Use ^ and $ to anchor them
-to the beginning or end of the search space, when appropriate.
+include::docinclude/regex.adoc[]
 
 [[selections]]
 === Selection syntax
@@ -1423,7 +1420,7 @@ empty line after the first
 | T | tags                            |
 | R | resets                          |
 | P | passthroughs                    | All event types simply passed through,
-including comments, `progress`commands,
+including comments, `progress` commands,
 and `checkpoint` commands
 | N | Legacy IDs                      | Any comment matching a cookie
 (legacy-ID) format.
@@ -1439,7 +1436,7 @@ references::
 | tag name      | annotated tag with that name
 | branch name   | the branch tip commit
 | legacy ID     | commit with that legacy ID
-| assigned name | name equated to a selection by assign
+| assigned name | name equated to a selection by <<assign_cmd>>
 |===================================================================
 +
 Note that if an annotated tag and a branch have the same name foo,
@@ -2177,7 +2174,7 @@ include::docinclude/gitify.adoc[]
 
 include::docinclude/filter.adoc[]
 
-[[oaths]]
+[[paths]]
 === Path modifications
 
 include::docinclude/path.adoc[]

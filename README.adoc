@@ -28,7 +28,8 @@ reposurgeon.
 
 This distribution supports a generic conversion workflow using these
 tools, and includes a long-form manual "Repository Editing and
-Conversion With Reposurgeon" that describes how to use it.
+Conversion With Reposurgeon" (in the file repository-editing.html)
+that describes how to use it.
 
 The file `reposurgeon-git-aliases` can be appended to your `~/.gitconfig` to
 support working directly with action stamps in git.
