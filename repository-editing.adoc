@@ -98,13 +98,19 @@ Please also see the notes on system-specific issues under
 [[quickstart]]
 == Quick start
 
-As a motivating example, here are commands to do a Subversion-to-Git
-lift on a repository named _project_ just under the current directory:
+As a motivating example, commands follow to do a Subversion-to-Git
+lift on a repository named _project_ just under the current directory.
+Note that these are given as though typed to the interactive command
+prompt, which is not shown.
 
 --------
 # Load the project into main memory
 # Warning: this command is slow because Subversion is slow.
 read project
+
+# Check for and report glitches such as timestamp collisions,
+# ill-formed committer/author IDs, multiple roots, etc.
+lint
 
 # Map Subversion usernames to Git-style user IDs.  In a real
 # conversion you'd probably have a lot more of these and you'd
@@ -183,6 +189,22 @@ rebuild project-git
 Typically you'd have these commands in a script that you evolved by
 experimenting until you got a conversion that suited your tastes and
 needs.
+
+To learn more about reposurgeon, keep reading or type "help" at
+the reposurgeon command prompt.
+
+Reposurgeon can be passed commands on its invocation line but the
+syntax may be a little surprising if you're used to classic Unix
+switch convebtions.  Each string in the command line argument is
+passed to the interpreter as a command, in order; thus, you could
+ewplicate the first two action of the previous script with this:
+
+--------------------------
+$ reposurgeon "read project" lint
+--------------------------
+
+The quotes are required so the read command and its argument will be
+presented to the command interpreter as a single string.
 
 [[conversion]]
 == A Guide to Repository Conversion
