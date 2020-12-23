@@ -12,11 +12,12 @@ experimental=""
 serial=""
 mode=diffing
 log=""
-while getopts bhl:osx opt
+while getopts bhl:nosx opt
 do
     case $opt in
 	b) mode=build;; 
 	l) log="log $OPTARG" ;;
+	n) mode=errs;;
 	o) mode=view;;
 	s) serial="set serial";;
 	x) experimental="set experimental";;
@@ -31,6 +32,8 @@ With -b. regenerate the corresponding check file
 With -h, display this option summary.
 
 With -l, set log bits (only with -o)
+
+With -n, pass out stderr but consume stdout.
 
 With -o, dump the test output rather than diffing against the checkfile
 
@@ -71,6 +74,7 @@ do
     case $mode in
     build) ${REPOSURGEON:-reposurgeon} "set serial" "$experimental" "script ${tst}" >"${chk}" 2>&1 ;;
     view)  ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "script ${tst}" 2>&1 ;;
+    errs)  ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst}" >/dev/null ;;
     *)     ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst}" 2>&1 | diff -u "${chk}" - ;;
     esac
 done
