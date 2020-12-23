@@ -4345,10 +4345,11 @@ Without a modifier, list all paths touched by fileops in
 the selection set (which defaults to the entire repo). This
 variant does > redirection.
 
-With the 'sub' modifier, take a second argument that is a directory
-name and prepend it to every path. With the 'sup' modifier, strip
-any directory argument from the start of the path if it appears there;
-with no argument, strip the first directory component from every path.
+With the 'sub' modifier, take a second argument that is a
+directory name and prepend it to every path. With the 'sup'
+modifier, strip either the first directory component from every
+path, or if a directory argument is supplied strip only that
+directory component from the beginning of every path.
 `)
 }
 
