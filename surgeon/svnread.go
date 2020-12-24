@@ -924,6 +924,11 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	timeit("expand")
 	svnGenerateCommits(ctx, sp, options, baton)
 	timeit("commits")
+
+	// Some intermediate storage can now be dropped
+	sp.backfrom = nil
+	sp.hashmap = nil
+
 	if options.Contains("--nobranch") {
 		if logEnable(logEXTRACT) {
 			logit("SVN Phase 6: split resolution (skipped due to --nobranch)")
@@ -960,6 +965,12 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	}
 	svnProcessIgnores(ctx, sp, options, baton)
 	timeit("ignores")
+
+	// We can finally toss out the revision storage here
+	sp.revisions = nil
+	sp.revmap = nil
+	sp.markToSVNBranch = nil
+
 	svnDisambiguateRefs(ctx, sp, options, baton)
 	timeit("disambiguate")
 	svnProcessJunk(ctx, sp, options, baton)
@@ -1613,10 +1624,6 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 		baton.percentProgress(uint64(ri))
 	}
 	baton.endProgress()
-
-	// Some intermediate storage can now be dropped
-	sp.backfrom = nil
-	sp.hashmap = nil
 }
 
 func branchOfEmptyCommit(sp *StreamParser, commit *Commit) string {
@@ -2791,11 +2798,6 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 	}
 
 	baton.endProgress()
-
-	// We can finally toss out the revision storage here
-	sp.revisions = nil
-	sp.revmap = nil
-	sp.markToSVNBranch = nil
 }
 
 func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
