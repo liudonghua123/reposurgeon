@@ -2599,15 +2599,10 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 	propCount := len(ignoreProps)
 
 	// An helper function to generate .gitignore files
-	var defaultIgnoreBlob *Blob
 	ignoreOp := func(nodepath string, explicit *[]string) *FileOp {
 		// explicit is a list of values in the same order as ignoreProps
 		// with an additional element for in-tree ignore content.
 		var buf bytes.Buffer
-		if nodepath == ".gitignore" {
-			buf.WriteString(subversionDefaultIgnores)
-		}
-		hasExplicit := false
 		for i, block := range *explicit {
 			if i >= propCount || ignoreProps[i].global {
 				if block != "" {
@@ -2619,7 +2614,6 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 					if !strings.HasSuffix(block, control.lineSep) {
 						buf.WriteString(control.lineSep)
 					}
-					hasExplicit = true
 				}
 			} else {
 				for _, line := range strings.SplitAfter(block, control.lineSep) {
@@ -2629,7 +2623,6 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 						if !strings.HasSuffix(block, control.lineSep) {
 							buf.WriteString(control.lineSep)
 						}
-						hasExplicit = true
 					}
 				}
 			}
@@ -2638,20 +2631,9 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 		op := newFileOp(sp.repo)
 		if len(ignores) == 0 {
 			op.construct(opD, nodepath)
-		} else if hasExplicit {
+		} else {
 			op.construct(opM, "100644", "inline", nodepath)
 			op.inline = ignores
-		} else {
-			if defaultIgnoreBlob == nil {
-				defaultIgnoreBlob = newBlob(sp.repo)
-				defaultIgnoreBlob.setContent(
-					[]byte(subversionDefaultIgnores), noOffset)
-				defaultIgnoreBlob.setMark(sp.repo.newmark())
-				// Append the blob instead of prepending it as that
-				// would confuse the iteration over events.
-				sp.repo.addEvent(defaultIgnoreBlob)
-			}
-			op.construct(opM, "100644", defaultIgnoreBlob.getMark(), nodepath)
 		}
 		return op
 	}
@@ -2780,23 +2762,9 @@ func svnProcessIgnores(ctx context.Context, sp *StreamParser, options stringSet,
 				})
 			}
 		}
-		// If the commit misses a default root .gitignore, create it.
-		_, hasTopLevel := myIgnores.get(".gitignore")
-		if !hasTopLevel {
-			applyIgnore(".gitignore", false, func(_ *[]string) {})
-		}
 
 		commit.simplify()
 		baton.percentProgress(uint64(index) + 1)
-	}
-
-	if defaultIgnoreBlob != nil {
-		// Insert the ignore blob at the front
-		sp.repo.insertEvent(defaultIgnoreBlob, len(sp.repo.frontEvents()),
-			"inserting default ignore")
-		// And remove it at the end
-		sp.repo.events = sp.repo.events[:len(sp.repo.events)-1]
-		sp.repo.invalidateMarkToIndex()
 	}
 
 	baton.endProgress()
@@ -2889,16 +2857,65 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 }
 
 func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Canonicalize all commits except all-deletes
+	// Canonicalize all commits except all-deletes, and add built-in SVN ignore patterns
+
 	baton.startProgress("SVN phase C0: canonicalize commits", uint64(len(sp.repo.events)))
+	var defaultIgnoreBlob *Blob
+	doIgnores := !options.Contains("--no-automatic-ignores")
+	defaultIgnores := []byte(subversionDefaultIgnores)
 	sp.repo.walkManifests(func(index int, commit *Commit, _ int, _ *Commit) {
 		if commit.manifest().isEmpty() && !commit.hasChildren() {
 			// This is a tipdelete; skip it.
 			return
 		}
+		// Check if the commit misses the built-in SVN ignore patterns
+		elt, _ := commit.manifest().get(".gitignore")
+		var presentIgnores []byte
+		if op, ok := elt.(*FileOp); ok {
+			if op.ref == "inline" {
+				presentIgnores = op.inline
+			}
+			if blob, ok := sp.repo.markToEvent(op.ref).(*Blob); ok {
+				presentIgnores = blob.getContent()
+			}
+		}
+		if doIgnores && presentIgnores == nil {
+			// Create a .gitignore file with built-in SVN ignore patterns
+			if defaultIgnoreBlob == nil {
+				defaultIgnoreBlob = newBlob(sp.repo)
+				defaultIgnoreBlob.setContent(defaultIgnores, noOffset)
+				defaultIgnoreBlob.setMark(sp.repo.newmark())
+				// Append the blob instead of prepending it as that
+				// would confuse the iteration over events.
+				sp.repo.addEvent(defaultIgnoreBlob)
+			}
+			op := newFileOp(sp.repo)
+			op.construct(opM, "100644", defaultIgnoreBlob.getMark(), ".gitignore")
+			commit.appendOperation(op)
+		} else if doIgnores && !bytes.HasPrefix(presentIgnores, defaultIgnores) {
+			// Prepend built-in SVN ignore patterns
+			var buf bytes.Buffer
+			buf.Write(defaultIgnores)
+			buf.Write(presentIgnores)
+			op := newFileOp(sp.repo)
+			op.construct(opM, "100644", "inline", ".gitignore")
+			op.inline = buf.Bytes()
+			commit.appendOperation(op)
+		}
+		// Canonicalize the commit
 		commit.canonicalize()
 		baton.percentProgress(uint64(index) + 1)
 	})
+
+		if defaultIgnoreBlob != nil {
+		// Insert the ignore blob at the front
+		sp.repo.insertEvent(defaultIgnoreBlob, len(sp.repo.frontEvents()),
+			"inserting default ignore")
+		// And remove it at the end
+		sp.repo.events = sp.repo.events[:len(sp.repo.events)-1]
+		sp.repo.invalidateMarkToIndex()
+	}
+
 	baton.endProgress()
 }
 
