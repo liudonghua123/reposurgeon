@@ -4272,6 +4272,11 @@ regular expressions.
 Ordinarily, if the target path already exists in the fileops, or is visible
 in the ancestry of the commit, this command throws an error.  With the
 --force option, these checks are skipped.
+
+Example:
+
+    # move all content into docs/ subdir
+	path ".+" rename "docs/\0"
 `)
 }
 
