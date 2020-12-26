@@ -2720,7 +2720,7 @@ to standard output.
 With --regex, the remainder of the line is expected to be a Go regular
 expression substitution written as /from/to/ with Go-style backslash
 escapes interpreted in 'to' as well as 'from'.  Python-style
-back-references (\1, \1 etc.) rather than Go-style $1, $2...  are
+backreferences (\1, \2 etc.) rather than Go-style $1, $2...  are
 interpreted; this avoids a conflict with parameter substitution in
 script commands. Any non-space character will work as a delimiter in
 place of the /; this makes it easier to use / in patterns. Ordinarily
@@ -2746,7 +2746,7 @@ type filterCommand struct {
 	attributes orderedStringSet
 }
 
-// GoReplacer bridges from Python-style back-references (\1) to Go-style ($1).
+// GoReplacer bridges from Python-style backreferences (\1) to Go-style ($1).
 // This was originally a shim for testing during the port from Python.  It has
 // been kept because Go's use of $n for group matches conflicts with the
 // use of $n for script arguments in reposurgeon.  Also, we can do interpreation
@@ -4266,7 +4266,7 @@ path {SOURCE} rename [--force] {TARGET}
 Rename a path in every fileop of every selected commit.  The default
 selection set is all commits. The first argument is interpreted as a
 Go regular expression to match against paths; the second may contain
-Go back-reference syntax. See "help regex" for more information about
+backreference syntax (\1 etc.). See "help regex" for more information about
 regular expressions.
 
 Ordinarily, if the target path already exists in the fileops, or is visible
