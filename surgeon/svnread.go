@@ -973,6 +973,8 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 
 	svnDisambiguateRefs(ctx, sp, options, baton)
 	timeit("disambiguate")
+	svnCanonicalize(ctx, sp, options, baton)
+	timeit("canonicalize")
 	svnProcessJunk(ctx, sp, options, baton)
 	timeit("dejunk")
 	svnProcessRenumber(ctx, sp, options, baton)
@@ -2886,6 +2888,20 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 	baton.endProgress()
 }
 
+func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
+	// Canonicalize all commits except all-deletes
+	baton.startProgress("SVN phase C0: canonicalize commits", uint64(len(sp.repo.events)))
+	sp.repo.walkManifests(func(index int, commit *Commit, _ int, _ *Commit) {
+		if commit.manifest().isEmpty() && !commit.hasChildren() {
+			// This is a tipdelete; skip it.
+			return
+		}
+		commit.canonicalize()
+		baton.percentProgress(uint64(index) + 1)
+	})
+	baton.endProgress()
+}
+
 func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
 	// Phase C:
 	// Tagify, or entirely discard, Subversion commits that didn't correspond to a file
@@ -2918,23 +2934,6 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 			},
 			control.baton)
 	}
-	baton.endProgress()
-	// Canonicalize all commits except all-deletes
-	baton.startProgress("SVN phase C2: canonicalize commits", uint64(len(sp.repo.events)))
-	sp.repo.walkManifests(func(index int, commit *Commit, _ int, _ *Commit) {
-		baton.percentProgress(uint64(index) + 1)
-		origbranch := commit.Branch
-		if branch, ok := origBranches.Load(commit.mark); ok {
-			origbranch = branch.(string)
-		}
-		tip, _ := sp.repo.markToEvent(branchtips[origbranch]).(*Commit)
-		if commit == tip && len(tip.operations()) == 1 &&
-			tip.operations()[0].op == deleteall {
-			// Do not canonicalize tipdeletes
-			return
-		}
-		commit.canonicalize()
-	})
 	baton.endProgress()
 	// Now we need to tagify all other commits without fileops, because they
 	// don't fit well in a git model. In most cases we create an annotated tag
