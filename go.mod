@@ -20,7 +20,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/termie/go-shutil v0.0.0-20140729215957-bcacb06fecae
 	gitlab.com/esr/fqme v0.1.0
-	gitlab.com/ianbruene/kommandant v0.6.0
+	gitlab.com/ianbruene/kommandant v0.6.1
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	golang.org/x/arch v0.0.0-20200312215426-ff8b605520f4 // indirect
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad

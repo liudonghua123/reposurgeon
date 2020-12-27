@@ -156,8 +156,10 @@ github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 gitlab.com/esr/fqme v0.1.0 h1:buru+78YdLpRCv3dsBIhb67FiXly2hxxvbn1oXRfPhA=
 gitlab.com/esr/fqme v0.1.0/go.mod h1:CWPP//rPQsOzy/Bhx7QbhRhcsxSUDwDlhU7YWoKdP9A=
-gitlab.com/ianbruene/kommandant v0.6.0 h1:apF+UBR5+td7637ocJx5b4KyywzIf4FxcZXh32sUnaI=
-gitlab.com/ianbruene/kommandant v0.6.0/go.mod h1:XvPLgyyjaSOsVeQU1CWYiLn46r2SUf+40YBatkybZj0=
+gitlab.com/ianbruene/kommandant v0.5.3 h1:fhrphxZD02fRdtjMoQ2wPmSdBbuwmcahWZNs37gUBds=
+gitlab.com/ianbruene/kommandant v0.5.3/go.mod h1:XvPLgyyjaSOsVeQU1CWYiLn46r2SUf+40YBatkybZj0=
+gitlab.com/ianbruene/kommandant v0.6.1 h1:Nz3Qwb1Q4oHaa4NUEZMkE0SWxx4H/vYML7zSOc4VUz0=
+gitlab.com/ianbruene/kommandant v0.6.1/go.mod h1:XvPLgyyjaSOsVeQU1CWYiLn46r2SUf+40YBatkybZj0=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.starlark.net v0.0.0-20190702223751-32f345186213 h1:lkYv5AKwvvduv5XWP6szk/bvvgO6aDeUujhZQXIFTes=
 go.starlark.net v0.0.0-20190702223751-32f345186213/go.mod h1:c1/X6cHgvdXj6pUlmWKMkuqRnW4K8x2vwt6JAaaircg=
