@@ -4797,7 +4797,13 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 	rate := func(count int) string {
 		if baton != nil {
 			elapsed := time.Since(baton.progress.start)
-			return fmt.Sprintf("%dK/s", int(float64(elapsed)/float64(count*1000)))
+			ratek := int(float64(elapsed) / float64(count*1000))
+			if ratek > 10e6 {
+				// Can sometimes happen on small repos.
+				// Say nothing rather than emittying a silly number.
+				return ""
+			}
+			fmt.Sprintf("%dK/s", ratek)
 		}
 		return ""
 	}
