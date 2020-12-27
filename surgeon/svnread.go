@@ -64,7 +64,6 @@ type svnReader struct {
 	streamview      []*NodeAction // All nodes in stream order
 	hashmap         map[string]*NodeAction
 	history         *History
-	markToSVNBranch map[string]string
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
 	lastCommitOnBranchAt map[string][]*Commit
@@ -967,7 +966,6 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	// We can finally toss out the revision storage here
 	sp.revisions = nil
 	sp.revmap = nil
-	sp.markToSVNBranch = nil
 
 	svnDisambiguateRefs(ctx, sp, options, baton)
 	timeit("disambiguate")
@@ -2181,15 +2179,6 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 	}
 	baton.startProgress("SVN phase 8: mergeinfo processing", uint64(len(sp.revisions)))
 
-	sp.markToSVNBranch = make(map[string]string)
-	walkEvents(sp.repo.events, func(i int, event Event) {
-		if commit, ok := event.(*Commit); ok {
-			sp.maplock.Lock()
-			sp.markToSVNBranch[commit.mark] = commit.Branch
-			sp.maplock.Unlock()
-		}
-	})
-
 	type RevRange struct {
 		min int
 		max int
@@ -2257,7 +2246,7 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 	}
 	forkIndices := func(commit *Commit) map[string][]int {
 		// Compute all fork points from a root to the branch
-		branch := sp.markToSVNBranch[commit.mark]
+		branch := commit.Branch
 		result := make(map[string][]int)
 		index := sp.repo.eventToIndex(commit)
 		for commit != nil {
@@ -2276,7 +2265,7 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 			if fork == nil {
 				break // We didn't fork from anything
 			}
-			branch = sp.markToSVNBranch[fork.mark]
+			branch = fork.Branch
 			if branch == "" {
 				break
 			}
