@@ -56,21 +56,21 @@ import (
 )
 
 type svnReader struct {
-	maplock         sync.Mutex             // Lock modification of shared maps
-	branchify       map[int][][]string     // Parsed svn_branchify setting
-	revisions       []RevisionRecord       // Phases 1 to A
-	revmap          map[revidx]revidx      // Phases 1 to A
-	backfrom        map[revidx]revidx      // Phases 1 to 5
-	streamview      []*NodeAction          // Phases 1 to 2. All nodes in stream order
-	hashmap         map[string]*NodeAction // Phases 1 to 5
-	history         *History               // Phases 3 to 4.
-	markToSVNBranch map[string]string      // Phases 8 to A
+	maplock         sync.Mutex         // Lock modification of shared maps
+	branchify       map[int][][]string // Parsed svn_branchify setting
+	revisions       []RevisionRecord
+	revmap          map[revidx]revidx
+	backfrom        map[revidx]revidx
+	streamview      []*NodeAction // All nodes in stream order
+	hashmap         map[string]*NodeAction
+	history         *History
+	markToSVNBranch map[string]string
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
-	lastCommitOnBranchAt map[string][]*Commit // Phases 6 to 8
+	lastCommitOnBranchAt map[string][]*Commit
 	// a map from SVN branch names to root commits (there can be several in case
 	// of branch deletions since the commit recreating the branch is also root)
-	branchRoots map[string][]*Commit // Phases 7 to C
+	branchRoots map[string][]*Commit
 }
 
 func (sp *svnReader) maxRev() revidx {
@@ -1559,7 +1559,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				// We may need to ignore and complain
 				// about explicit .gitignores created,
 				// e.g, by git-svn.
-				isGitIgnore := (node.path == ".gitignore" || strings.HasSuffix(node.path, svnSep + ".gitignore"))
+				isGitIgnore := (node.path == ".gitignore" || strings.HasSuffix(node.path, svnSep+".gitignore"))
 				if isGitIgnore {
 					if !options.Contains("--user-ignores") {
 						if logEnable(logSHOUT) {
@@ -1796,7 +1796,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	splits := make([]splitRequest, 0)
 	var reqlock sync.Mutex
 
-	baton.startProgress("SVN phase 6a: split detection", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN Phase 6a: split detection", uint64(len(sp.repo.events)))
 	walkEvents(sp.repo.events, func(i int, event Event) {
 		if commit, ok := event.(*Commit); ok {
 			var oldbranch, newbranch string
@@ -1835,7 +1835,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	})
 	baton.endProgress()
 
-	baton.startProgress("SVN phase 6b: split resolution", uint64(len(splits)))
+	baton.startProgress("SVN Phase 6b: split resolution", uint64(len(splits)))
 	// Can't parallelize this. That's OK, should be an unusual case.
 	// The previous parallel loop generated splits in random order.
 	// Sort them back to front so that when we process them we never have to
@@ -1868,7 +1868,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	}
 	baton.endProgress()
 
-	// Phase 6d:
+	// Phase 6c:
 	// Fixing the parent links to restore the namespace continuity.
 	// In this comment, a namespace is a branch, a tag or anything recognized
 	// by the branchify setting. The previous subphase stripped the namespace
@@ -1896,7 +1896,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	// explicitly filled, then then fill list[rev_id] with the commit we just
 	// encountered.
 	//
-	baton.startProgress("SVN phase 6c: fix content-changing parent links",
+	baton.startProgress("SVN Phase 6c: fix content-changing parent links",
 		uint64(len(sp.repo.events)))
 	sp.lastCommitOnBranchAt = make(map[string][]*Commit)
 	sp.branchRoots = make(map[string][]*Commit)
@@ -2699,7 +2699,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 }
 
 func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase B:
+	// Phase A:
 	// Intervene to prevent lossage from tag/branch/trunk deletions.
 	//
 	// The Subversion data model is that a history is a sequence of surgical
@@ -2712,7 +2712,7 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 	// the refs/deleted/ namespace, with a suffix in case of clashes. A branch
 	// is considered deleted when we encounter a commit with a single deleteall
 	// fileop.
-	defer trace.StartRegion(ctx, "SVN Phase B: disambiguate deleted refs.").End()
+	defer trace.StartRegion(ctx, "SVN Phase A: disambiguate deleted refs.").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase B: disambiguate deleted refs.")
 	}
@@ -2785,8 +2785,9 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 }
 
 func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
+	// Phase B:
 	// Canonicalize all commits except all-deletes, and add built-in SVN ignore patterns
-
+	defer trace.StartRegion(ctx, "SVN Phase B: canonicalize commits.").End()
 	baton.startProgress("SVN phase C0: canonicalize commits", uint64(len(sp.repo.events)))
 	var defaultIgnoreBlob *Blob
 	doIgnores := !options.Contains("--no-automatic-ignores")
@@ -2835,7 +2836,7 @@ func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, b
 		baton.percentProgress(uint64(index) + 1)
 	})
 
-		if defaultIgnoreBlob != nil {
+	if defaultIgnoreBlob != nil {
 		// Insert the ignore blob at the front
 		sp.repo.insertEvent(defaultIgnoreBlob, len(sp.repo.frontEvents()),
 			"inserting default ignore")
