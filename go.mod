@@ -23,9 +23,10 @@ require (
 	gitlab.com/ianbruene/kommandant v0.6.0
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	golang.org/x/arch v0.0.0-20200312215426-ff8b605520f4 // indirect
-	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
-	golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9 // indirect
-	golang.org/x/text v0.3.2
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	golang.org/x/sys v0.0.0-20201223074533-0d417f636930 // indirect
+	golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf // indirect
+	golang.org/x/text v0.3.4
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
 
