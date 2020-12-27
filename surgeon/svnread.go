@@ -931,12 +931,8 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	if options.Contains("--nobranch") {
 		if logEnable(logEXTRACT) {
 			logit("SVN Phase 6: split resolution (skipped due to --nobranch)")
+			logit("SVN Phase 7: find branch root parents (skipped due to --nobranch)")
 		}
-	} else {
-		svnSplitResolve(ctx, sp, options, baton)
-		timeit("splits")
-	}
-	if options.Contains("--nobranch") {
 		// There is only one branch root: the very first commit
 		sp.branchRoots = make(map[string][]*Commit)
 		for _, event := range sp.repo.events {
@@ -945,15 +941,20 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 				break
 			}
 		}
-		if logEnable(logEXTRACT) {
-			logit("SVN Phase 7: find branch root parents (skipped due to --nobranch)")
-		}
 	} else {
+		svnSplitResolve(ctx, sp, options, baton)
+		timeit("splits")
 		svnLinkFixups(ctx, sp, options, baton)
 		timeit("links")
 	}
+
 	svnProcessMergeinfos(ctx, sp, options, baton)
 	timeit("mergeinfo")
+
+	// We can finally toss out the revision storage here
+	sp.revisions = nil
+	sp.revmap = nil
+
 	if options.Contains("--nobranch") {
 		if logEnable(logEXTRACT) {
 			logit("SVN Phase 9: branch renames (skipped due to --nobranch)")
@@ -962,10 +963,6 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 		svnGitifyBranches(ctx, sp, options, baton)
 		timeit("branches")
 	}
-
-	// We can finally toss out the revision storage here
-	sp.revisions = nil
-	sp.revmap = nil
 
 	svnDisambiguateRefs(ctx, sp, options, baton)
 	timeit("disambiguate")
@@ -2777,7 +2774,7 @@ func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, b
 	// Phase B:
 	// Canonicalize all commits except all-deletes, and add built-in SVN ignore patterns
 	defer trace.StartRegion(ctx, "SVN Phase B: canonicalize commits.").End()
-	baton.startProgress("SVN phase C0: canonicalize commits", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN phase B: canonicalize commits", uint64(len(sp.repo.events)))
 	var defaultIgnoreBlob *Blob
 	doIgnores := !options.Contains("--no-automatic-ignores")
 	defaultIgnores := []byte(subversionDefaultIgnores)
