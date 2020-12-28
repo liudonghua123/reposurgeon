@@ -4054,12 +4054,16 @@ duplicates will get priority over older ones). After all grafts, marks
 will be renumbered.
 
 The name of the new repo will be the names of all parts concatenated,
-separated by '+'. It will have no source directory or preferred system
-type.
+separated by '+'. It will have no source directory; if all factors 
+have the same type it will be inehrited, otherwise no type will be set.
 
 With the option --prune, at each join generate D ops for every
 file that doesn't have a modify operation in the root commit of the
 branch being grafted on.
+
+Note that the union repo will not have a single master branch.
+You must rename one of its branches before the result can be fed to git
+without throwing a "fatal: You are on a branch yet to be born" error.
 `)
 }
 

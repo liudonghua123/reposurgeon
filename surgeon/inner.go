@@ -8226,7 +8226,7 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 	}
 	if len(repo.preserveSet) > 0 {
 		preserveMe := repo.preserveSet
-		if repo.vcs.authormap != "" {
+		if repo.vcs != nil && repo.vcs.authormap != "" {
 			preserveMe = append(preserveMe, repo.vcs.authormap)
 		}
 		if logEnable(logSHUFFLE) {
@@ -9689,6 +9689,14 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	for _, factor := range factors {
 		union.absorb(factor)
 		rl.removeByName(factor.name)
+	}
+	// If all the factors have the same repository type,
+	// keep it.  Otherwise set no repository type.
+	union.vcs = factors[0].vcs
+	for _, factor := range factors {
+		if factor.vcs != union.vcs {
+			union.vcs = nil
+		}
 	}
 	//dumpEvents := func(repo *Repository) []string {
 	//	var out []string
