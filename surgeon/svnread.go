@@ -56,14 +56,14 @@ import (
 )
 
 type svnReader struct {
-	maplock         sync.Mutex         // Lock modification of shared maps
-	branchify       map[int][][]string // Parsed svn_branchify setting
-	revisions       []RevisionRecord
-	revmap          map[revidx]revidx
-	backfrom        map[revidx]revidx
-	streamview      []*NodeAction // All nodes in stream order
-	hashmap         map[string]*NodeAction
-	history         *History
+	maplock    sync.Mutex         // Lock modification of shared maps
+	branchify  map[int][][]string // Parsed svn_branchify setting
+	revisions  []RevisionRecord
+	revmap     map[revidx]revidx
+	backfrom   map[revidx]revidx
+	streamview []*NodeAction // All nodes in stream order
+	hashmap    map[string]*NodeAction
+	history    *History
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
 	lastCommitOnBranchAt map[string][]*Commit
@@ -930,8 +930,7 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 
 	if options.Contains("--nobranch") {
 		if logEnable(logEXTRACT) {
-			logit("SVN Phase 6: split resolution (skipped due to --nobranch)")
-			logit("SVN Phase 7: find branch root parents (skipped due to --nobranch)")
+			logit("SVN Phases 6-8: skipped due to --nobranch")
 		}
 		// There is only one branch root: the very first commit
 		sp.branchRoots = make(map[string][]*Commit)
@@ -946,10 +945,9 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 		timeit("splits")
 		svnLinkFixups(ctx, sp, options, baton)
 		timeit("links")
+		svnProcessMergeinfos(ctx, sp, options, baton)
+		timeit("mergeinfo")
 	}
-
-	svnProcessMergeinfos(ctx, sp, options, baton)
-	timeit("mergeinfo")
 
 	// We can finally toss out the revision storage here
 	sp.revisions = nil
