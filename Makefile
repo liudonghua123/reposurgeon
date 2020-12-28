@@ -190,7 +190,6 @@ EXCEPTIONS = \
 	profile \
 	reparent \
 	selection \
-	split \
 	syntax
 
 # Most othe command descriptions in Repositpory editing are reposurgeon's embedded

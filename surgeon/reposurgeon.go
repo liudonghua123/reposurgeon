@@ -3956,9 +3956,7 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 //FIXME: Odd syntax
 func (rs *Reposurgeon) HelpSplit() {
 	rs.helpOutput(`
-[SELECTION] split at {M}
-
-[SELECTION] split by {PREFIX}
+[SELECTION] split [ at {M} | by {PREFIX} ]
 
 Split a specified commit in two, the opposite of squash.
 
@@ -4095,7 +4093,7 @@ func (rs *Reposurgeon) DoUnite(line string) bool {
 // HelpGraft says "Shut up, golint!"
 func (rs *Reposurgeon) HelpGraft() {
 	rs.helpOutput(`
-[SELECTION] graft [--prune] REPO-NAME
+[SELECTION] graft [--prune] {REPO-NAME}
 
 For when unite doesn't give you enough control. This command may have
 either of two forms, selected by the size of the selection set.  The
