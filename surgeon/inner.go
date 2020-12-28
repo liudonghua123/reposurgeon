@@ -5073,7 +5073,7 @@ func (repo *Repository) eventToIndex(obj Event) int {
 	panic(fmt.Sprintf("Internal error: object %q not matched in repository %s", fmt.Sprintf("%v", obj), repo.name))
 }
 
-// MarkSettable is an imterface declaring that an event has a mutable mark
+// MarkSettable is an interface declaring that an event has a mutable mark
 type MarkSettable interface {
 	setMark(string)
 }

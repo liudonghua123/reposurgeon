@@ -2207,11 +2207,11 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 // HelpWrite says "Shut up, golint!"
 func (rs *Reposurgeon) HelpWrite() {
 	rs.helpOutput(`
-[SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout]  [>OUTFILE|-]
+[SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout]  [>OUTFILE|-|DIRECTORY]
 
 Dump a fast-import stream representing selected events to standard
 output (if second argument is empty or '-') or via > redirect to a file.
-Alternatively, if there ia no redirect and the argument names a
+Alternatively, if there is no redirect and the argument names a
 directory the repository is rebuilt into that directory, with any
 selection set argument being ignored; if that target directory is
 nonempty its contents are backed up to a save directory.

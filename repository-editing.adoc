@@ -1709,7 +1709,7 @@ later section, and apply only to Subversion repositories.
 Note: this command does not take a selection set.
 
 [[write_cmd,write]]
-[ SELECTION ] write [ --legacy ] [ --format=fossil ] [ --noincremental ] [ --callout ] [ >OUTFILE | `-` ]::
+[ SELECTION ] write [ --legacy ] [ --format=fossil ] [ --noincremental] [ --callout ] [ >OUTFILE | `-` | DIR]::
    Dump selected events as a fast-import stream representing the
    edited repository; the default selection set is all events. Where to
    dump to is standard output if there is no argument or the argument is
