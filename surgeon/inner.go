@@ -9659,10 +9659,8 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	sort.Slice(factors, func(i, j int) bool {
 		return factors[i].earliest().Before(factors[j].earliest())
 	})
-	roots := make([]*Commit, 0)
 	uname := ""
 	for _, x := range factors {
-		roots = append(roots, x.earliestCommit())
 		uname += "+" + x.name
 	}
 	union := newRepository(uname[1:])
@@ -9682,7 +9680,7 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	sort.SliceStable(factors, func(i, j int) bool {
 		return factorOrder(i, j)
 	})
-	roots = make([]*Commit, 0)
+	roots := make([]*Commit, 0)
 	for _, x := range factors {
 		roots = append(roots, x.earliestCommit())
 	}
