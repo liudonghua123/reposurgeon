@@ -12,9 +12,9 @@ repomapper - update and manipulate contributor maps
 == DESCRIPTION ==
 
 Older, centralized version-control systems such as CVS and
-SVN centralize a repository on one host and identify users by their
+SVN carry a repository on one host and identify users by their
 account names on that host.  Distributed version-control systems such
-as git and Mercurial identify users by a netwide-unique ID consisting
+as Git and Mercurial identify users by a netwide-unique ID consisting
 of a name-among-humans followed by an email address.
 
 When moving a repository from a centralized to a distributed
