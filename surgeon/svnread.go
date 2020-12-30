@@ -284,7 +284,6 @@ const sdADD = 1
 const sdDELETE = 2
 const sdCHANGE = 3
 const sdREPLACE = 4
-const sdNUKE = 5 // Not part of the Subversion data model
 
 // If these don't match the constants above, havoc will ensue
 var actionValues = [][]byte{[]byte("none"), []byte("add"), []byte("delete"), []byte("change"), []byte("replace"), []byte("nuke")}
@@ -717,6 +716,10 @@ func (action NodeAction) hasProperties() bool {
 }
 
 func (action NodeAction) isCopy() bool {
+	return action.fromPath != "" && action.fromRev > 0
+}
+
+func (action NodeAction) possibleBranchDelete() bool {
 	return action.fromPath != ""
 }
 
@@ -1094,15 +1097,8 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	// revisions almost forestalls having a revision-order
 	// dependency, but not quite. Consider a tag create, followed
 	// by a tag delete, followed by a recreate with the same name.
-	// Those must be replaiyed in the order they were committed ur
+	// Those must be replayed in the order they were committed or
 	// havoc will ensue. Thus, it can't be parallelized.
-	//
-	// This pass is almost entirely indifferent to Subversion
-	// branch structure.  The one exception is what it does to
-	// directory delete operations.  On a branch directory a
-	// Subversion delete becomes a Git deleteall; on a non-branch
-	// directory it is expanded to a set of file deletes for the
-	// contents of the directory.
 	//
 	// The exit contract of this phase is that all file content
 	// modifications are expressed as file ops, every one of
@@ -1118,7 +1114,6 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	}
 
 	baton.startProgress("SVN phase 4a: directory copy expansion", uint64(len(sp.revisions)))
-	nobranch := options.Contains("--nobranch")
 	count := 0
 	for ri, record := range sp.revisions {
 		expandedNodes := make([]*NodeAction, 0)
@@ -1145,40 +1140,25 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 				if node.fromPath != "" {
 					node.fromPath += svnSep
 				}
-				// No special actions need to be taken
-				// when directories are added or
-				// changed, but see below for actions
-				// that are taken in all cases.  The
-				// reason we suppress expansion on a
-				// declared branch is that we are
-				// later going to turn this directory
-				// delete into a git deleteall for the
-				// branch.
 				if node.action == sdDELETE || node.action == sdREPLACE {
-					if !nobranch && sp.isDeclaredBranch(node.path) {
-						if logEnable(logEXTRACT) {
-							logit("r%d-%d~%s: declaring as sdNUKE", node.revision, node.index, node.path)
-						}
-						node.action = sdNUKE
-					} else {
-						// A delete or replace with no from set
-						// can occur if the directory is empty.
-						// We can just ignore that case. Otherwise...
-						if node.fileSet != nil {
-							node.fileSet.iter(func(child string, obj interface{}) {
-								deleted := obj.(*NodeAction)
-								if logEnable(logEXTRACT) {
-									logit("r%d-%d~%s: deleting %s",
-										node.revision, node.index, node.path, child)
-								}
-								newnode := new(NodeAction)
-								newnode.path = child
-								newnode.revision = node.revision
-								newnode.action = sdDELETE
-								newnode.kind = deleted.kind
-								appendExpanded(newnode)
-							})
-						}
+					// A delete or replace with no from set
+					// can occur if the directory is empty.
+					// We can just ignore that case. Otherwise...
+					if node.fileSet != nil {
+						node.fileSet.iter(func(child string, obj interface{}) {
+							deleted := obj.(*NodeAction)
+							if logEnable(logEXTRACT) {
+								logit("r%d-%d~%s: deleting %s",
+									node.revision, node.index, node.path, child)
+							}
+							newnode := new(NodeAction)
+							newnode.path = child
+							newnode.revision = node.revision
+							newnode.action = sdDELETE
+							newnode.kind = deleted.kind
+							newnode.fromPath = node.path // See possibleBranchDelete
+							appendExpanded(newnode)
+						})
 					}
 				}
 				// Handle directory copies.
@@ -1498,27 +1478,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				}
 			}
 			var ancestor *NodeAction
-			if node.action == sdNUKE {
-				if logEnable(logEXTRACT) {
-					logit("r%d: deleteall %s", record.revision, node.path)
-				}
-				// Generate a deleteall operation, but with a path, contrary to
-				// the git-fast-import specification. This is so that the pass
-				// splitting the commits and setting the branch from the paths
-				// will be able to attach this deleteall to the correct branch
-				// then remove the spec-violating path.
-				fileop := newFileOp(sp.repo)
-				fileop.construct(deleteall)
-				fileop.Path = node.path
-				commit.appendOperation(fileop)
-				// Also track the .gitignore deletions
-				dirpath := trimSep(node.path) + svnSep
-				for path := range gitIgnores {
-					if strings.HasPrefix(path, dirpath) {
-						delete(gitIgnores, path)
-					}
-				}
-			} else if node.kind == sdDIR && !options.Contains("--no-automatic-ignores") {
+			if node.kind == sdDIR && !options.Contains("--no-automatic-ignores") {
 				// Handle svn:ignore and svn:global-ignores changes
 				path := filepath.Join(trimSep(node.path), ".gitignore")
 				if node.action == sdDELETE {
@@ -1579,6 +1539,14 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						fileop.construct(opD, node.path)
 						if logEnable(logEXTRACT) {
 							logit("%s turns off TRIVIAL", fileop)
+						}
+						// This is slightly dodgy. We never generate C or R ops to translate
+						// Subversion nodes, so if this file deletion was part of a potential
+						// branch delete steal the Source member to mark it that way. Later
+						// we'll use these to turn deletion cliques into deletealls when
+						// that is appropriate.
+						if node.possibleBranchDelete() {
+							fileop.Source = node.fromPath
 						}
 						commit.appendOperation(fileop)
 					}
@@ -1792,6 +1760,26 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	baton.startProgress("SVN Phase 6a: split detection", uint64(len(sp.repo.events)))
 	walkEvents(sp.repo.events, func(i int, event Event) {
 		if commit, ok := event.(*Commit); ok {
+			// Before separating cliques, detect branch-deletion cliques and turn them
+			// into deletealls.
+			for i := 0; i < len(commit.fileops); i++ {
+				// Skip past every op that isn't the start of a directory deletion clique
+				if commit.fileops[i].op != opD || commit.fileops[i].Source == "" {
+					continue
+				}
+				// Not interested in deletion cliques unless they're branchy
+				if !sp.isDeclaredBranch(commit.fileops[i].Source) {
+					continue
+				}
+				// Replace the first deletion with a deleteall.
+				commit.fileops[i].op = deleteall
+				commit.fileops[i].Path = commit.fileops[i].Source
+				// Remove the rest of the deletion operations
+				for i+1 < len(commit.fileops) && commit.fileops[i+1].op == opD && commit.fileops[i+1].Source == commit.fileops[i].Source {
+					commit.fileops = append(commit.fileops[:i+1], commit.fileops[i+2:]...)
+				}
+			}
+			// Now the clique detection.
 			var oldbranch, newbranch string
 			cliques := make([]clique, 0)
 			startclique := true // Always add the first clique
