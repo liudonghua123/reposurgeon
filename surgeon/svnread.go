@@ -931,6 +931,8 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	sp.backfrom = nil
 	sp.hashmap = nil
 
+	// There are no assumptions about branch strructure before this point.
+
 	if options.Contains("--nobranch") {
 		if logEnable(logEXTRACT) {
 			logit("SVN Phases 6-8: skipped due to --nobranch")
@@ -958,15 +960,15 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 
 	if options.Contains("--nobranch") {
 		if logEnable(logEXTRACT) {
-			logit("SVN Phase 9: branch renames (skipped due to --nobranch)")
+			logit("SVN Phases 9-A: skipped due to --nobranch")
 		}
 	} else {
 		svnGitifyBranches(ctx, sp, options, baton)
 		timeit("branches")
+		svnDisambiguateRefs(ctx, sp, options, baton)
+		timeit("disambiguate")
 	}
 
-	svnDisambiguateRefs(ctx, sp, options, baton)
-	timeit("disambiguate")
 	svnCanonicalize(ctx, sp, options, baton)
 	timeit("canonicalize")
 	svnProcessJunk(ctx, sp, options, baton)
