@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+    The branchify and branchmap commands have neen replaced by read options.
+
 4.22: 2020-12-28::
      Properly handle yet another bizarre Subversion tag-rename case.
      Massage any Subversion branch name to be legal as a git reference.

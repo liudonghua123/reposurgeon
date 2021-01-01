@@ -1,10 +1,7 @@
 ## Test correct ordering of mixed-branch splits
 # We expect the trunk/foo_B.txt commit to be on the App_B branch and the foo_C.txt commit to be on the trunk branch.
 # The branch deletes at the bottom of the test might not even be necessary.
-
-branchify App_C/trunk App_C/branches/* App_C/tags/* *
-branchmap :App_C/trunk:heads/trunk: :App_C/branches:heads: :App_C/tags:tags:
-read <<EOF
+read --branchify=App_C/trunk:App_C/branches/*:App_C/tags/*:* --branchmap=@App_C/trunk@heads/trunk@ --branchmap=@App_C/branches@heads@ --branchmap=@App_C/tags@tags@ <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: a1fc4a5c-d7b3-44ed-8848-8ca818df3276

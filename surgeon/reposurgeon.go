@@ -55,22 +55,12 @@ type Control struct {
 	signals    chan os.Signal
 	logmutex   sync.Mutex
 	// The abort flag
-	abortScript    bool
-	abortLock      sync.Mutex
-	listOptions    map[string]orderedStringSet
-	branchMappings []branchMapping
-	profileNames   map[string]string
-	startTime      time.Time
-	baton          *Baton
-}
-
-type branchMapping struct {
-	match   *regexp.Regexp
-	replace string
-}
-
-func (b branchMapping) String() string {
-	return fmt.Sprintf("{match=%s, replace=%s}", b.match, b.replace)
+	abortScript  bool
+	abortLock    sync.Mutex
+	listOptions  map[string]orderedStringSet
+	profileNames map[string]string
+	startTime    time.Time
+	baton        *Baton
 }
 
 func (ctx *Control) isInteractive() bool {
@@ -374,7 +364,6 @@ func newReposurgeon() *Reposurgeon {
 	for _, option := range optionFlags {
 		control.listOptions[option[0]] = newOrderedStringSet()
 	}
-	control.listOptions["svn_branchify"] = orderedStringSet{"trunk", "tags/*", "branches/*", "*"}
 	return rs
 }
 
@@ -2124,7 +2113,7 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 		return false
 	}
 	parse := rs.newLineParse(line, []string{"stdin"})
-	// Don't do parse.Closem() here - you'll nuke the seaakstream that
+	// Don't do parse.Closem() here - you'll nuke the seekstream that
 	// we use to get content out of dump streams.
 	var repo *Repository
 	if parse.redirected {
@@ -2202,6 +2191,55 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 		rs.DoChoose("")
 	}
 	return false
+}
+
+// HelpBranchify says "Shut up, golint!"
+func (rs *Reposurgeon) HelpBranchify() {
+	rs.helpOutput(`
+--branchify=DIRECTORY[:DIRECTORY]...
+
+Specify a semicolon-separated list of directories to be treated as 
+potential branches (to become tags if there are no modifications
+after the creation copies) when analyzing a Subversion repo. This
+p[tion is ignored when reading with the --nobranch option.  It
+defaults to the 'standard layout' set of directories, plus any
+unrecognized directories in the repository root.
+
+An asterisk at the end of a path in the set means 'all immediate
+subdirectories of this path, unless they are part of another (longer)
+path in the branchify set'.
+`)
+}
+
+// HelpBranchmap says "Shut up, golint!"
+func (rs *Reposurgeon) HelpBranchmap() {
+	rs.helpOutput(`
+--branchmap=@REGEXP@BRANCH@
+
+Specify a regular-expressions/branchname pair used for mapping Subversion 
+branch directories detected by branchify to gitspace branches. More than one
+of these options may be specified; if none of the expressions matches, the
+default behavior applies. The default maps a Subversion branch to its 
+basename, except for trunk and '*' which are mapped to master and root.
+
+While the syntax template above uses at-signs, any first character will
+be used as a delimiter an expected to bound the ends of the regexp and
+subsitutions. 
+
+For each potentiial branch name read from the Subversion repository,
+this command will attempt to match the name against each REGEXP in the
+map. If it finds a match, it rewrites the branch name to the associated
+BRANCH. It stops after it has either found a match, or there are no more 
+regexps left in the map. 
+
+BRANCH can use references to matches for parenthesized parts of the REGEXP.
+See "help regexp" for more information about regular expressions and
+references
+
+The prefix "refs/" is automatically supplied to the resulting branchname,
+but not the "heads/" or "tags/" part that distinguishes the branch type.
+You must supply one of these yourself.
+`)
 }
 
 // HelpWrite says "Shut up, golint!"
@@ -6316,152 +6354,6 @@ func (rs *Reposurgeon) DoDiff(line string) bool {
 			}
 			return false
 		}
-	}
-	return false
-}
-
-//
-// Setting paths to branchify
-//
-
-// HelpBranchify says "Shut up, golint!"
-func (rs *Reposurgeon) HelpBranchify() {
-	rs.helpOutput(`
-branchify [DIRECTORY...]
-
-Specify the list of directories to be treated as potential branches (to
-become tags if there are no modifications after the creation copies)
-when analyzing a Subversion repo. This list is ignored when reading
-with the --nobranch option.  It defaults to the 'standard layout'
-set of directories, plus any unrecognized directories in the
-repository root.
-
-String quotes and backslash escapes are interpreted when 
-parsing the command line.
-
-With no arguments, displays the current branchification set.
-
-An asterisk at the end of a path in the set means 'all immediate
-subdirectories of this path, unless they are part of another (longer)
-path in the branchify set'.
-
-Note that the branchify set is a property of the reposurgeon interpreter, not
-of any individual repository, and will persist across Subversion
-dumpfile reads. This may lead to unexpected results if you forget
-to re-set it.
-`)
-}
-
-// DoBranchify is the command handler for the "brancify" command.
-func (rs *Reposurgeon) DoBranchify(line string) bool {
-	if rs.selection != nil {
-		croak("branchify does not take a selection set")
-		return false
-	}
-	if strings.TrimSpace(line) != "" {
-		fields, err := shlex.Split(line, true)
-		if err != nil {
-			croak("malformed branchify command")
-			return false
-		}
-		control.listOptions["svn_branchify"] = fields
-	}
-	respond("branchify " + strings.Join(control.listOptions["svn_branchify"], " "))
-	return false
-}
-
-//
-// Setting branch name rewriting
-//
-
-// HelpBranchmap says "Shut up, golint!"
-func (rs *Reposurgeon) HelpBranchmap() {
-	rs.helpOutput(`
-branchmap [:REGEXP:BRANCH:|reset]
-
-Specify a list of regular-expressions/branchname used for mapping Subversion 
-branch directories detected by branchify to gitspace branches. If none
-of the expressions match, the default behavior applies. The default maps
-a Subversion branch to its basename, except for trunk and '*' which are
-mapped to master and root.
-
-With no arguments the current regexp replacement pairs are shown. Passing
-'reset' will clear the mapping.
-
-While the syntax template above uses colons, any first character will
-be used as a delimiter an expected to bound the end of the regexp. 
-
-String quotes and backslash escapes are *not* interpreted when parsing
-the command line, this would clash with the use of backslashes as
-substitution-part references. If you need to include a non-printing
-character in a regexp, use its C-style escape, e.g. \s for space;
-those are interpretreted vy the regular-expression compiler.
-
-For each potentiial branch name read from the Subversion repository,
-this command will attempt to match the name against each REGEXP in the
-map. If it finds a match, it rewrites the branch name to the associated
-BRANCH. It stops after it has either found a match, or there are no more 
-regexps left in the map. 
-
-BRANCH can use references to matches for parenthesized parts of the REGEXP.
-See "help regexpp" for more information about regular expressions and
-references
-
-The prefix "refs/" is automatically supplied to the resulting branchname,
-but not the "heads/" or "tags/" part that distinguishes the branch type.
-You must supply one of these yourself
-
-
-
-You must give this command *before* the Subversion repository read it
-is supposed to affect! It does not affect any other repository type.
-
-Note that the branchmap set is a property of the reposurgeon interpreter,
-not of any individual repository, and will persist across Subversion
-dumpfile reads. This may lead to unexpected results if you forget
-to re-set it.
-`)
-}
-
-// DoBranchmap is the command handler for the "branchmap" command.
-func (rs *Reposurgeon) DoBranchmap(line string) bool {
-	if rs.selection != nil {
-		croak("branchmap does not take a selection set")
-		return false
-	}
-
-	line = strings.TrimSpace(line)
-	if line == "reset" {
-		control.branchMappings = nil
-	} else if line != "" {
-		control.branchMappings = make([]branchMapping, 0)
-		for _, pattern := range strings.Fields(line) {
-			separator := pattern[0]
-			if separator != pattern[len(pattern)-1] {
-				croak("Regexp '%s' did not end with separator character", pattern)
-				return false
-			}
-			stuff := strings.SplitN(pattern[1:len(pattern)-1], string(separator), 2)
-			match, replace := stuff[0], stuff[1]
-			if replace == "" || match == "" {
-				croak("Regexp '%s' has an empty search or replace part", pattern)
-				return false
-			}
-			re, err := regexp.Compile(match)
-			if err != nil {
-				croak("Regexp '%s' is ill-formed", pattern)
-				return false
-			}
-			control.branchMappings = append(control.branchMappings, branchMapping{re, replace})
-		}
-	}
-	if len(control.branchMappings) != 0 {
-		respond("branchmap, regexp -> branch name:")
-		for _, pair := range control.branchMappings {
-			respond("\t" + pair.match.String() + " -> " + pair.replace)
-		}
-	} else {
-		croak("branchmap is empty.")
 	}
 	return false
 }

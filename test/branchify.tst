@@ -1,6 +1,5 @@
-## Test branchify command
-branchify nontrunk nontrunkbranch
-read <branchify.svn
+## Test branchify option
+read --branchify=nontrunk:nontrunkbranch <branchify.svn
 prefer git
 write -
 

@@ -55,15 +55,21 @@ import (
 	"unsafe" // Actually safe - only uses Sizeof
 )
 
+type branchMapping struct {
+	match   *regexp.Regexp
+	replace string
+}
+
 type svnReader struct {
-	maplock    sync.Mutex         // Lock modification of shared maps
-	branchify  map[int][][]string // Parsed svn_branchify setting
-	revisions  []RevisionRecord
-	revmap     map[revidx]revidx
-	backfrom   map[revidx]revidx
-	streamview []*NodeAction // All nodes in stream order
-	hashmap    map[string]*NodeAction
-	history    *History
+	maplock        sync.Mutex         // Lock modification of shared maps
+	branchify      map[int][][]string // Parsed branchification setting
+	branchMappings []branchMapping
+	revisions      []RevisionRecord
+	revmap         map[revidx]revidx
+	backfrom       map[revidx]revidx
+	streamview     []*NodeAction // All nodes in stream order
+	hashmap        map[string]*NodeAction
+	history        *History
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
 	lastCommitOnBranchAt map[string][]*Commit
@@ -838,14 +844,50 @@ func nodePermissions(node NodeAction) string {
 	return "100644"
 }
 
-func (sp *StreamParser) initBranchify() {
+func (sp *StreamParser) initBranchify(options stringSet) bool {
 	// Parse branchify to speed up things later
 	sp.branchify = make(map[int][][]string)
-	for _, trial := range control.listOptions["svn_branchify"] {
-		split := strings.Split(trial, svnSep)
-		l := len(split)
-		sp.branchify[l] = append(sp.branchify[l], split)
+	sp.branchMappings = make([]branchMapping, 0)
+	explicit := false
+	for option := range options.Iterate() {
+		if strings.HasPrefix(option, "--branchify=") {
+			explicit = true
+		}
 	}
+	if !explicit {
+		options.Add("--branchify=trunk:tags/*:branches/*:*")
+	}
+	for option := range options.Iterate() {
+		if strings.HasPrefix(option, "--branchify=") {
+			optval := strings.Split(option[12:], ":")
+			for _, trial := range optval {
+				split := strings.Split(trial, svnSep)
+				l := len(split)
+				sp.branchify[l] = append(sp.branchify[l], split)
+			}
+		} else if strings.HasPrefix(option, "--branchmap=") {
+			pattern := option[12:]
+			separator := pattern[0]
+			if separator != pattern[len(pattern)-1] {
+				croak("Regexp '%s' did not end with separator character", pattern)
+				return false
+			}
+			stuff := strings.SplitN(pattern[1:len(pattern)-1], string(separator), 2)
+			match, replace := stuff[0], stuff[1]
+			if replace == "" || match == "" {
+				croak("Regexp '%s' has an empty search or replace part", pattern)
+				return false
+			}
+			re, err := regexp.Compile(match)
+			if err != nil {
+				croak("Regexp '%s' is ill-formed", pattern)
+				return false
+			}
+			sp.branchMappings = append(sp.branchMappings, branchMapping{re, replace})
+
+		}
+	}
+	return true
 }
 
 func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton *Baton) {
@@ -914,7 +956,9 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 		}
 	}
 
-	sp.initBranchify()
+	if !sp.initBranchify(options) {
+		return
+	}
 
 	sp.repo.addEvent(newPassthrough(sp.repo, "#reposurgeon sourcetype svn\n"))
 
@@ -2604,7 +2648,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 		if commit, ok := event.(*Commit); ok {
 			commit.simplify()
 			matched := false
-			for _, item := range control.branchMappings {
+			for _, item := range sp.branchMappings {
 				result := GoReplacer(item.match, commit.Branch+svnSep, item.replace)
 				if result != commit.Branch+svnSep {
 					matched = true

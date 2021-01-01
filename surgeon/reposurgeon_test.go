@@ -15,6 +15,11 @@ import (
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	control.init()
+	os.Exit(m.Run())
+}
+
 func assertBool(t *testing.T, see bool, expect bool) {
 	t.Helper()
 	if see != expect {
@@ -1873,10 +1878,10 @@ func TestDeclaredBranch(t *testing.T) {
 		path             string
 		isDeclaredBranch bool
 	}
-	var branchsets = []orderedStringSet{
-		orderedStringSet{"trunk", "tags/*", "branches/*"},
-		orderedStringSet{"trunk", "tags/*", "branches/*", "*"},
-		orderedStringSet{"trunk", "tags/*/*", "branches/*"},
+	var branchifyOptions = []string{
+		"--branchify=trunk:tags/*:branches/*",
+		"--branchify=trunk:tags/*:branches/*:*",
+		"--branchify=trunk:tags/*/*:branches/*",
 	}
 	var testcases = [][]testcase{
 		{
@@ -1919,16 +1924,13 @@ func TestDeclaredBranch(t *testing.T) {
 			{"", false},
 		},
 	}
-	control.listOptions = make(map[string]orderedStringSet)
-	for idx, branchset := range branchsets {
-		branchset := branchset
+	for idx, branchifyOption := range branchifyOptions {
 		t.Run(fmt.Sprint(idx), func(t *testing.T) {
 			for idx, test := range testcases[idx] {
 				test := test
 				t.Run(fmt.Sprint(idx), func(t *testing.T) {
-					control.listOptions["svn_branchify"] = branchset
 					sp := new(StreamParser)
-					sp.initBranchify()
+					sp.initBranchify(newStringSet(branchifyOption))
 					assertBool(t, sp.isDeclaredBranch(test.path), test.isDeclaredBranch)
 				})
 			}
@@ -1937,10 +1939,8 @@ func TestDeclaredBranch(t *testing.T) {
 }
 
 func TestBranchSplit(t *testing.T) {
-	control.listOptions = make(map[string]orderedStringSet)
-	control.listOptions["svn_branchify"] = orderedStringSet{"trunk", "tags/*", "branches/*", "*"}
 	sp := new(StreamParser)
-	sp.initBranchify()
+	sp.initBranchify(nullStringSet)
 	type splitTestEntry struct {
 		raw    string
 		branch string
@@ -2069,8 +2069,6 @@ data 13
 TAG o123-o123
 
 `
-	control.init()
-
 	type testcase struct {
 		safety      bool
 		shouldAbort bool   // expect script abort
