@@ -2539,7 +2539,7 @@ func (rs *Reposurgeon) DoRebuild(line string) bool {
 // HelpMsgout says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgout() {
 	rs.helpOutput(`
-[SELECTION] msgout [--filter=/regexp/] [--blobs]
+[SELECTION] msgout [--filter=/REGEXP/] [--blobs]
 
 Emit a file of messages in RFC822 format representing the contents of
 repository metadata. Takes a selection set; members of the set other
@@ -2549,7 +2549,7 @@ presently, blobs and resets).
 May have an option --filter, followed by = and a /-enclosed regular
 expression.  If this is given, only headers with names matching it are
 emitted.  In this control the name of the header includes its trailing
-colon. See "help regex" for information on the regex syntax.
+colon. See "help regexpp" for information on the regexp syntax.
 
 Blobs may be included in the output with the option --blobs.
 `)
@@ -2728,7 +2728,7 @@ only the first such substitution is performed; putting 'g' after the
 slash replaces globally, and a numeric literal gives the maximum
 number of substitutions to perform. Other flags available restrict
 substitution scope - 'c' for comment text only, 'C' for committer name
-only, 'a' for author names only. See "help regex" for more information
+only, 'a' for author names only. See "help regexp" for more information
 about regular expressions.
 
 With --replace, the behavior is like --regexp but the expressions are
@@ -3902,7 +3902,7 @@ paths or regular expressions matching paths (regexps must
 be marked by being surrounded with //).  Shell-like interpretation of
 string quotes and backslashes is performed when parsing this command
 line; in particular, a preceding backslash may be used to embed a literal
-/ character. See "help regex" for more information about regular
+/ character. See "help regexp" for more information about regular
 expressions.
 
 Exceptionally, the first argument may be the token "~" which chooses
@@ -4263,12 +4263,12 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 // FIXME: Odd syntax
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
-path {SOURCE} rename [--force] {TARGET}
+path {REGEXP} rename [--force] {TARGET}
 
 Rename a path in every fileop of every selected commit.  The default
 selection set is all commits. The first argument is interpreted as a
 Go regular expression to match against paths; the second may contain
-backreference syntax (\1 etc.). See "help regex" for more information about
+backreference syntax (\1 etc.). See "help regexp" for more information about
 regular expressions.
 
 Ordinarily, if the target path already exists in the fileops, or is visible
@@ -4435,7 +4435,7 @@ expression.  For each commit in the selection set, print the mapping
 of all paths in that commit tree to the corresponding blob marks,
 mirroring what files would be created in a checkout of the commit. If
 a regular expression is given, only print "path -> mark" lines for
-paths matching it. See "help regex" for more information about regular
+paths matching it. See "help regexp" for more information about regular
 expressions.
 `)
 }
@@ -4891,7 +4891,7 @@ func (rs *Reposurgeon) DoReorder(lineIn string) bool {
 // HelpBranch says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
-branch { BRANCH-NAME | /PATTERN/ } { rename | delete } [ ARG ]
+branch { BRANCH-NAME | /REGEXP/ } { rename | delete } [ ARG ]
 
 Rename or delete a branch (and any associated resets).  First argument
 must be an existing branch name; second argument must one of the verbs
@@ -4906,7 +4906,7 @@ For a delete, the name may optionally be a regular expression wrapped in //;
 if so, all objects of the specified type with names matching the regexp are
 deleted.  This is useful for mass deletion of branches.  Such deletions can be
 restricted by a selection set in the normal way.  No third argument is
-required. See "help regex" for more information about regular expressions.
+required. See "help regexp" for more information about regular expressions.
 `)
 }
 
@@ -5716,7 +5716,7 @@ for authors, and '=T' for taggers.
 
 Finally, /regex/ will attempt to match the Go regular expression regex
 against an attribution name and email address; '/n' limits the match to only
-the name, and '/e' to only the email address. See "help regex" for more
+the name, and '/e' to only the email address. See "help regexp" for more
 information about regular expressions.
 
 With the exception of 'show', all actions require an explicit event selection
@@ -6377,35 +6377,41 @@ func (rs *Reposurgeon) DoBranchify(line string) bool {
 // HelpBranchmap says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranchmap() {
 	rs.helpOutput(`
-branchmap /REGEX/BRANCH/...
+branchmap [:REGEXP:BRANCH:|reset]
 
-Specify the list of regular expressions used for mapping the SVN branches
-that are detected by branchify. If none of the expressions match, the
-default behavior applies. This maps a branch to the name of the last
-directory, except for trunkand '*' which are mapped to master and root.
+Specify a list of regular-expressions/branchname used for mapping Subversion 
+branch directories detected by branchify to gitspace branches. If none
+of the expressions match, the default behavior applies. The default maps
+a Subversion branch to its basename, except for trunk and '*' which are
+mapped to master and root.
 
-With no arguments the current regex replacement pairs are shown. Passing
+With no arguments the current regexp replacement pairs are shown. Passing
 'reset' will clear the mapping.
+
+While the syntax template above uses colons, any first character will
+be used as a delimiter an expected to bound the end of the regexp. 
 
 String quotes and backslash escapes are *not* interpreted when parsing
 the command line, this would clash with the use of backslashes as
 substitution-part references. If you need to include a non-printing
-character in a regexp, use its C-style escape, e.g. \s for space.
+character in a regexp, use its C-style escape, e.g. \s for space;
+those are interpretreted vy the regular-expression compiler.
 
-For each branch name read from the Subversion repository, this command
-will attempt to match the name against each _regex_ in the map. If it
-finds a match, it rewrites the branch name to the associated _branch_. It
-stops after it has either found a match, or there are no more regexes
-left in the map. The branch name can use Go backreferences.
+For each potentiial branch name read from the Subversion repository,
+this command will attempt to match the name against each REGEXP in the
+map. If it finds a match, it rewrites the branch name to the associated
+BRANCH. It stops after it has either found a match, or there are no more 
+regexps left in the map. 
 
-Note that the regular expressions are appended to 'refs/' without
-either the needed 'heads/' or 'tags/'. This allows for choosing
-the right kind of branch type.
+BRANCH can use references to matches for parenthesized parts of the REGEXP.
+See "help regexpp" for more information about regular expressions and
+references
 
-While the syntax template above uses slashes, any first character will
-be used as a delimiter (and you will need to use a different one in the
-common case that the paths contain slashes). See "help regex" for more
-information about regular expressions.
+The prefix "refs/" is automatically supplied to the resulting branchname,
+but not the "heads/" or "tags/" part that distinguishes the branch type.
+You must supply one of these yourself
+
+
 
 You must give this command *before* the Subversion repository read it
 is supposed to affect! It does not affect any other repository type.
@@ -6429,28 +6435,28 @@ func (rs *Reposurgeon) DoBranchmap(line string) bool {
 		control.branchMappings = nil
 	} else if line != "" {
 		control.branchMappings = make([]branchMapping, 0)
-		for _, regex := range strings.Fields(line) {
-			separator := regex[0]
-			if separator != regex[len(regex)-1] {
-				croak("Regex '%s' did not end with separator character", regex)
+		for _, pattern := range strings.Fields(line) {
+			separator := pattern[0]
+			if separator != pattern[len(pattern)-1] {
+				croak("Regexp '%s' did not end with separator character", pattern)
 				return false
 			}
-			stuff := strings.SplitN(regex[1:len(regex)-1], string(separator), 2)
+			stuff := strings.SplitN(pattern[1:len(pattern)-1], string(separator), 2)
 			match, replace := stuff[0], stuff[1]
 			if replace == "" || match == "" {
-				croak("Regex '%s' has an empty search or replace part", regex)
+				croak("Regexp '%s' has an empty search or replace part", pattern)
 				return false
 			}
 			re, err := regexp.Compile(match)
 			if err != nil {
-				croak("Regex '%s' is ill-formed", regex)
+				croak("Regexp '%s' is ill-formed", pattern)
 				return false
 			}
 			control.branchMappings = append(control.branchMappings, branchMapping{re, replace})
 		}
 	}
 	if len(control.branchMappings) != 0 {
-		respond("branchmap, regex -> branch name:")
+		respond("branchmap, regexp -> branch name:")
 		for _, pair := range control.branchMappings {
 			respond("\t" + pair.match.String() + " -> " + pair.replace)
 		}
@@ -6836,7 +6842,7 @@ Mine ChangeLog files for authorship data.
 Takes a selection set.  If no set is specified, process all changelogs.
 An optional following argument is a delimited regular expression to
 match the basename of files that should be treated as changelogs; the
-default is "/^ChangeLog$/". See "help regex" for more information
+default is "/^ChangeLog$/". See "help regexp" for more information
 about regular expressions.
 
 This command assumes that changelogs are in the format used by FSF projects:
@@ -7292,16 +7298,18 @@ functions are defined:
 `)
 }
 
-// HelpRegex prints out the help for regexes
-func (rs *Reposurgeon) HelpRegex() {
+// HelpRegexp says "Shut up, golint!"
+func (rs *Reposurgeon) HelpRegexp() {
 	rs.helpOutputMisc(`
-The regular expressions should be in
-https://github.com/google/re2/wiki/Syntax[Golang's] format, with one
-exception. Due to a conflict with the use of $ for arguments in the
-script command, we retain Python's use of backslashes as a leader for
-references to group matches. Any non-space character will work as a
-delimiter in place of the /; this makes it easier to use / in
-patterns.
+The regular expressions used in event selections and various commands
+(attribution, branchmap, expunge, filter, msgout, path) are those of
+the Go language, with one exception. Due to a conflict with the use
+of $ for arguments in the "script" command, we retain Python's use of
+backslashes as a leader for references to group matches.
+
+Command syntax examples are usually given as /REGEXP/, but any non-space
+character will work as a delimiter in place of the /; this makes it
+easier to use an actual / in patterns.
 
 Regular expressions are not anchored.  Use ^ and $ to anchor them
 to the beginning or end of the search space, when appropriate.
