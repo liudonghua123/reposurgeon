@@ -210,8 +210,8 @@ presented to the command interpreter as a single string.
 == A Guide to Repository Conversion
 
 One of the main uses for reposurgeon is converting repositories
-between different version-control systems. In the year 2020,
-this usually means converting from something else to Git.
+between different version-control systems. Since around 2015
+has almost always meant converting from something else to Git.
 
 This section is a guide to up-converting your repository, and adopting
 practices that will reduce process friction to a minimum.  It is meant
@@ -544,7 +544,7 @@ repository malformation or a bug in cvs-fast-export (or possibly
 both). Any such situation should be reported as a bug.
 
 Conversion bugs are disproportionately likely to occur on older
-branches or tags made with CVS version vefore before CVS got commit
+branches or tags made with CVS version before before CVS got commit
 IDs in 2006 (version 2.12). Often the most efficient remedy is simply
 to delete junk branches and tags; reposurgeon(1) makes this easy to
 do.
