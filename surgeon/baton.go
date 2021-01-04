@@ -98,9 +98,9 @@ const progressInterval = 1 * time.Second     // Rate-limit progress messages
 func newBaton(interactive bool, logFunc func(string)) *Baton {
 	me := new(Baton)
 	me.start = time.Now()
-	tiColZero := getTerminfoString("hpa", "0")
-	tiClrEol := getTerminfoString("el")
-	tiScrollForward := getTerminfoString("ind")
+	tiColZero := getTerminfoBytes("hpa", "0")
+	tiClrEol := getTerminfoBytes("el")
+	tiScrollForward := getTerminfoBytes("ind")
 	me.channel = make(chan Message)
 	me.progressEnabled = interactive
 	me.logFunc = logFunc
@@ -416,7 +416,7 @@ func _copyb(s []byte) []byte {
 	return temp
 }
 
-func getTerminfoString(cap string, params ...string) []byte {
+func getTerminfoBytes(cap string, params ...string) []byte {
 	reader, _, err := readFromProcess("tput " + cap + " " + strings.Join(params, " "))
 	if err != nil {
 		return nil

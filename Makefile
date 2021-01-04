@@ -81,7 +81,9 @@ test-helpers:
 # This means there's one line of BNF, a blank separator line, and one or
 # more blank-line-separated paragraphs of running text.
 TOPICS = \
+	add \
 	append \
+	authors \
 	assign \
 	bench \
 	blob \
@@ -177,13 +179,11 @@ TOPICS = \
 # These are in regular form, but the emtries in the
 # long-form manual have additional material.
 SHORTFORM = \
-	authors \
 	read \
 	squash \
 	write
 # These are all the non-regular topics
 EXCEPTIONS = \
-	add \
 	attribution \
 	lint \
 	options \

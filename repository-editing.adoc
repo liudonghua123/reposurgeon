@@ -2061,16 +2061,7 @@ result.
 
 include::docinclude/split.adoc[]
 
-[[add_cmd,add]]
-{ SELECTION } add { "D" PATH | "M" PERM MARK PATH | "R" SOURCE TARGET | "C" SOURCE TARGET }::
-   To a selected commit, add a specified fileop.
-+
-For a *D* operation to be valid there must be an *M* operation for
-the path in the commit's ancestry.  For an *M* operation to be valid,
-the '`__perm__`' part must be a token ending with `755` or `644`, and the
-'`__mark__`' must refer to a blob that precedes the commit location.  For
-an *R* or *C* operation to be valid, there must be an *M* operation for
-the source in the commit's ancestry.
+include::docinclude/add.adoc[]
 
 include::docinclude/remove.adoc[]
 
@@ -2260,59 +2251,7 @@ associated with repository conversions from older systems.
 [[attributions]]
 === Attributions
 
-[[authors_cmd,authors]]
-[ SELECTION ] authors [ read | write ] [ <INFILE ] [ >OUTFILE ]::
-   Apply or dump author-map information for the specified selection
-   set, defaulting to all events.
-+
-Lifts from CVS and Subversion may have only usernames local to
-the repository host in committer and author IDs. DVCSes want email
-addresses (net-wide identifiers) and complete names. To supply the map
-from one to the other, an authors file is expected to consist of
-lines each beginning with a local user ID, followed by a '```=```' (possibly
-surrounded by whitespace) followed by a full name and email address,
-optionally followed by a timezone offset field.  Thus:
-+
---------
-fred = Fred J. Foonly <foonly@foo.com> America/New_York
---------
-+
-An authors file may also contain lines of this form
-+
---------
-+ Fred J. Foonly <foonly@foobar.com> America/Los_Angeles
---------
-+
-These are interpreted as aliases for the last preceding '```=```'
-entry that may appear in ChangeLog files. When such an alias is
-matched on a ChangeLog attribution line, the author attribution
-for the commit is mapped to the basename, but the timezone is used
-as is.  This accommodates people with past addresses (possibly at
-different locations) unifying such aliases in metadata so searches
-and statistical aggregation will work better.
-+
-An authors file may have comment lines beginning with '```#```'; these
-are ignored.
-+
-When an authors file is applied, email addresses in committer and author
-metadata for which the local ID matches between `<` and `@` are replaced
-according to the mapping (this handles git-svn lifts). Alternatively,
-if the local ID is the entire address, this is also considered a match
-(this handles what git-cvsimport and cvs2git do). If a timezone was
-specified in the map entry, that person's author and committer dates
-are mapped to it.
-+
-With the '```read```' modifier, or no modifier, apply author mapping
-data (from standard input or a `<`-redirected file).  May be useful
-if you are editing a repo or dump created by
-`cvs2git` or by `git-svn` invoked without `-A`.
-+
-With the '```write```' modifier, write a mapping file that could be
-interpreted by '```authors read```', with entries for each
-unique committer, author, and tagger (to standard output or a
-`>`-redirected mapping file). This may be helpful as a start on
-building an authors file, though each part to the right of an equals
-sign will need editing.
+include::docinclude/authors.adoc[]
 
 [[ignore]]
 === Ignore patterns

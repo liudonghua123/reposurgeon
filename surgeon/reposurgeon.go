@@ -3377,13 +3377,7 @@ func (rs *Reposurgeon) DoCoalesce(line string) bool {
 // HelpAdd says "Shut up, golint!"
 func (rs *Reposurgeon) HelpAdd() {
 	rs.helpOutput(`
-{SELECTION} add M {PERM} {MARK} {PATH}
-
-{SELECTION} add D {PATH}
-
-{SELECTION} add R {SOURCE} {TARGET}
-
-{SELECTION} add C {SOURCE} {TARGET}
+{ SELECTION } add { "D" {PATH} | "M" {PERM} {MARK} {PATH} | "R" {SOURCE} {TARGET} | "C" {SOURCE} {TARGET} }
 
 From a specified commit, add a specified fileop.
 
@@ -3393,7 +3387,6 @@ part must be a token ending with 755 or 644 and the 'mark' must
 refer to a blob that precedes the commit location.  For an R or C
 operation to be valid, there must be an M operation for the source
 in the commit's ancestry.
-
 `)
 }
 
@@ -5971,7 +5964,28 @@ the repository host in committer and author IDs. DVCSes want email
 addresses (net-wide identifiers) and complete names. To supply the map
 from one to the other, an authors file is expected to consist of
 lines each beginning with a local user ID, followed by a '=' (possibly
-surrounded by whitespace) followed by a full name and email address.
+surrounded by whitespace) followed by a full name and email address. Thus:
+
+--------
+fred = Fred J. Foonly <foonly@foo.com> America/New_York
+--------
+
+An authors file may also contain lines of this form
+
+--------
++ Fred J. Foonly <foonly@foobar.com> America/Los_Angeles
+--------
+
+These are interpreted as aliases for the last preceding =
+entry that may appear in ChangeLog files. When such an alias is
+matched on a ChangeLog attribution line, the author attribution
+for the commit is mapped to the basename, but the timezone is used
+as is.  This accommodates people with past addresses (possibly at
+different locations) unifying such aliases in metadata so searches
+and statistical aggregation will work better.
+
+An authors file may have comment lines beginning with #; these
+are ignored.
 
 When an authors file is applied, email addresses in committer and author
 metdata for which the local ID matches between &lt; and @ are replaced
