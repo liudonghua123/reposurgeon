@@ -410,7 +410,20 @@ func (rs *Reposurgeon) helpOutput(help string) {
 			}
 		}
 	} else if terminal.IsTerminal(0) {
-		// Assume ANSI/VT100
+		pager := os.Getenv("PAGER")
+		if pager != "" {
+			tp, cls, err := writeToProcess(pager)
+			if err != nil {
+				os.Stderr.WriteString("Your $PAGER value seems bogus.\n")
+			} else {
+				tp.Write([]byte(help))
+				tp.Close()
+				cls.Wait()
+				return
+			}
+		}
+		// Fallback: assume ANSI/VT100.  Works OK inside Emacs,
+		// where the video changes work and upLine does nothing.
 		// Getting terminfo is not worth the effort here,
 		// as the worst outcome of getting this wrong
 		// is a minor visual glitch.
