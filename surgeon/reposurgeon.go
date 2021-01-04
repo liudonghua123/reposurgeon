@@ -409,9 +409,35 @@ func (rs *Reposurgeon) helpOutput(help string) {
 				os.Stdout.WriteString(line + "\n")
 			}
 		}
+	} else if terminal.IsTerminal(0) {
+		// Assume ANSI/VT100
+		// Getting terminfo is not worth the effort here,
+		// as the worst outcome of getting this wrong
+		// is a minor visual glitch.
+		const reverseVideo = "\033[7m"
+		const normalVideo = "\033[0m"
+		const upLine = "\033[F"
+		_, height, err := terminal.GetSize(0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		lines := strings.Split(help, "\n")
+		for len(lines) > height-1 {
+			for i := 0; i < height-1; i++ {
+				os.Stdout.WriteString(lines[0] + "\n")
+				lines = lines[1:]
+			}
+			os.Stdout.WriteString(reverseVideo + "-- Press Enter for more--" + normalVideo)
+			fmt.Scanln()
+			os.Stdout.WriteString(upLine)
+		}
+		for len(lines) > 0 {
+			os.Stdout.WriteString(lines[0] + "\n")
+			lines = lines[1:]
+		}
 	} else {
 		// Dump as plain text
-		control.baton.printLogString(help)
+		os.Stdout.WriteString(help)
 	}
 }
 

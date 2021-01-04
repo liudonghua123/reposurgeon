@@ -2,6 +2,7 @@
 
 Repository head::
     The branchify and branchmap commands have neen replaced by read options.
+    Help output directed to a tty gets a primitive pager.
 
 4.22: 2020-12-28::
      Properly handle yet another bizarre Subversion tag-rename case.
