@@ -1350,7 +1350,7 @@ edit                   ;; edit all editable objects.
 [[regular_expressions]]
 === Regular Expressions
 
-include::docinclude/regex.adoc[]
+include::docinclude/regexp.adoc[]
 
 [[selections]]
 === Selection syntax
@@ -1542,7 +1542,7 @@ regular expression. This is necessarily a subset of commits selected without the
 '```a```'
 flag because it also selects commits with no related paths (e.g. empty commits,
 deletealls and commits with empty trees). If you want to avoid those, you can
-use e.g. '```[/regex/] & [/regex/a]```'.
+use e.g. '```[/regexp/] & [/regexp/a]```'.
 +
 The flags '```D```', '```M```', '```R```', '```C```', '```N```' restrict match
 checking to the corresponding fileop types.  Note that this means an '```a```'
@@ -2115,8 +2115,8 @@ set operations '```|```' union, '```&```' intersection, and '```~```' negation,
 and function calls `@min()`, `@max()`, `@amp()`, `@pre()`, `@suc()`, `@srt()`.
 Attributions can also be selected by visibility set '```=C```' for committers,
 '```=A```' for authors, and '```=T```' for taggers.
-Finally, '`/_regex_/`' will attempt to match the regular
-expression _regex_ against an attribution name and email
+Finally, '`/_regexp_/`' will attempt to match the regular
+expression _regexp_ against an attribution name and email
 address; '```/n```' limits the match to only the name, and '```/e```' to only
 the email address.
 +

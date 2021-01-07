@@ -201,7 +201,7 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 		# add an anchor to the first block in every import \
 		echo "[[$${topic}_cmd,$${topic}]]" >>"docinclude/$${topic}.adoc"; \
 		./reposurgeon "set asciidoc" "help $${topic}" | \
-			sed -e 's/help regex/<<regular_expressions,help regex>>/g' >>"docinclude/$${topic}.adoc"; \
+			sed -e 's/help regexp/<<regular_expressions,help regexp>>/g' >>"docinclude/$${topic}.adoc"; \
 	done
 	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
 	@./repository-editing.rb
