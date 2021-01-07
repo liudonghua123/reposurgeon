@@ -56,7 +56,7 @@ current-golang:
 	go version
 
 helpers:
-	sudo apt-get install asciidoc cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync
+	sudo apt-get install asciidoctor cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync
 
 test-helpers: 
 	sudo apt install golint shellcheck

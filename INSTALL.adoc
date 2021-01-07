@@ -3,9 +3,8 @@
 == Quick recipe for systems using apt ==
 
 ---------------------------------------------------------------------
-make prereqs                            # Install prequisites
-make                                    # Build it
-make check                              # Run the tests
+make fullinstall              # Install prequisites and build
+make check                    # Run the tests
 ---------------------------------------------------------------------
 
 For higher performance, follow this with:
@@ -17,6 +16,12 @@ make clean
 make
 make check
 ---------------------------------------------------------------------
+
+As of 2021-01-7, the PPA for Ubuntu does not have a 20.10 "groovy"
+repo. Latest supported Ubuntu version is 20.04 "focal". Workaround:
+changing lines in
+/etc/apt/sources.list.d/longsleep-ubuntu-golang-backports-groovy.list
+to "focal" lets you install Go 1.15.6 (Ubuntu delivers Go 1.14
 
 == Prerequisites ==
 
