@@ -142,7 +142,7 @@ TOPICS = \
 	readlimit \
 	rebuild \
 	references \
-	regex \
+	regexp \
 	remove \
 	rename \
 	renumber \
