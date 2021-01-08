@@ -1588,7 +1588,7 @@ data 0
 
 	// Test appending a done marker
 	assertIntEqual(t, len(repo.events), 11)
-	repo.addEvent(newPassthrough(repo, "done"))
+	repo.addEvent(newPassthrough(repo, "done\n"))
 	assertIntEqual(t, len(repo.events), 12)
 
 	// Test appending passthrough to make sure it's inserted before "done"
@@ -1598,7 +1598,7 @@ data 0
 		passthrough, ok := event.(*Passthrough)
 		return ok && passthrough.text == payload
 	}
-	assertBool(t, isPassthrough(repo.events[12], "done"), true)
+	assertBool(t, isPassthrough(repo.events[12], "done\n"), true)
 	assertBool(t, isPassthrough(repo.events[11], "boogabooga"), true)
 
 	assertEqual(t, repo.earliestCommit().Comment, "First revision.\n")

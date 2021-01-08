@@ -6147,7 +6147,7 @@ func (repo *Repository) insertEvent(event Event, where int, legend string) {
 func (repo *Repository) addEvent(event Event) {
 	isDone := func(event Event) bool {
 		passthrough, ok := event.(*Passthrough)
-		return ok && passthrough.text == "done"
+		return ok && passthrough.text == "done\n"
 	}
 	if len(repo.events) > 0 && isDone(repo.events[len(repo.events)-1]) {
 		repo.events = append(repo.events, repo.events[len(repo.events)-1])
@@ -7564,6 +7564,14 @@ func (repo *Repository) absorb(other *Repository) {
 			other.events = other.events[1:]
 		} else {
 			break
+		}
+	}
+	// Trailing "done" if any, has to go
+	if len(repo.events) > 0 {
+		end := repo.events[len(repo.events)-1]
+		passthrough, ok := end.(*Passthrough)
+		if ok && passthrough.text == "done\n" {
+			repo.events = repo.events[:len(repo.events)-1]
 		}
 	}
 	// Merge in the non-feature events and blobs
