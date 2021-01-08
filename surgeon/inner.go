@@ -4800,10 +4800,10 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 			ratek := int(float64(elapsed) / float64(count*1000))
 			if ratek > 10e6 {
 				// Can sometimes happen on small repos.
-				// Say nothing rather than emittying a silly number.
+				// Say nothing rather than emitting a silly number.
 				return ""
 			}
-			fmt.Sprintf("%dK/s", ratek)
+			fmt.Sprintf(" (%dK/s)", ratek)
 		}
 		return ""
 	}
@@ -4815,21 +4815,21 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 		// Beginning of Subversion dump parsing
 		sp.parseSubversion(ctx, &options, baton, filesize)
 		// End of Subversion dump parsing
-		if control.flagOptions["progress"] {
-			fmt.Fprintf(baton, "%d svn revisions (%s)",
-				sp.repo.legacyCount, rate(sp.repo.legacyCount*1000))
+		if control.flagOptions["progress"] && baton.progressEnabled {
+			baton.printLogString(fmt.Sprintf("%d svn revisions%s",
+				sp.repo.legacyCount, rate(sp.repo.legacyCount*1000)))
 		}
 	} else {
 		sp.pushback(line)
 		sp.parseFastImport(options, baton, filesize)
 		sp.timeMark("parsing")
-		if control.flagOptions["progress"] {
+		if control.flagOptions["progress"] && baton.progressEnabled {
 			if sp.repo.stronghint {
-				fmt.Fprintf(baton, "%d %s events (%s)",
-					len(sp.repo.events), sp.repo.vcs.name, rate(len(sp.repo.events)))
+				baton.printLogString(fmt.Sprintf("%d %s events%s",
+					len(sp.repo.events), sp.repo.vcs.name, rate(len(sp.repo.events))))
 			} else {
-				fmt.Fprintf(baton, "%d events (%s)",
-					len(sp.repo.events), rate(len(sp.repo.events)))
+				baton.printLogString(fmt.Sprintf("%d events%s",
+					len(sp.repo.events), rate(len(sp.repo.events))))
 			}
 		}
 	}
