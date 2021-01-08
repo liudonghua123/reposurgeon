@@ -1,8 +1,9 @@
 = reposurgeon project news =
 
 Repository head::
-    The branchify and branchmap commands have neen replaced by read options.
-    Help output directed to a tty gets a primitive pager.
+     The branchify and branchmap commands have been replaced by read options.
+     Help directed to a tty goes though $PAGER when long enugh to need it.
+     Minor bugs related to the "done" end marker have been fixed.
 
 4.22: 2020-12-28::
      Properly handle yet another bizarre Subversion tag-rename case.

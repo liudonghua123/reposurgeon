@@ -1094,7 +1094,7 @@ Corresponding subcommands are these:
 
 	    go tool pprof -http=":8080" http://localhost:1234/debug/pprof/<subject>
 
-    profile start {SUBJECT} FILENAME
+    profile start {SUBJECT} {FILENAME}
 
 	Starts the named profiler, and tells it to save to the named
 	file, which will be overwritten. Currently only the cpu and
@@ -7121,7 +7121,10 @@ Follow with space and a command name to show help for the command.
 
 Without an argument, list help topics.
 
-"?" is a shortcut synonym for "help". 
+"?" is a shortcut synonym for "help".
+
+If required, and $PAGER is set, help items long enough to need it
+will be fed to that pager for display.
 `)
 }
 
