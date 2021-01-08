@@ -7530,8 +7530,8 @@ func (repo *Repository) uniquify(color string, persist map[string]string) map[st
 	}
 	// If we don't make all parent links explicit,
 	// a later absorb may run into trouble.
-	var commit *Commit = nil
-	var lastcommit *Commit = nil
+	var commit *Commit
+	var lastcommit *Commit
 	for _, event := range repo.events {
 		switch event.(type) {
 		case *Commit:
