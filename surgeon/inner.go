@@ -4072,6 +4072,9 @@ func (commit *Commit) Save(w io.Writer) {
 		comment += fmt.Sprintf("Legacy-ID: %s\n", commit.legacyID)
 	}
 	fmt.Fprintf(w, "data %d\n%s", len(comment), comment)
+	if len(comment) > 0 && comment[len(comment)-1] != '\n' {
+		w.Write([]byte{'\n'})
+	}
 	if commit.repo.exportStyle().Contains("nl-after-comment") {
 		w.Write([]byte{'\n'})
 	}
@@ -7525,6 +7528,20 @@ func (repo *Repository) uniquify(color string, persist map[string]string) map[st
 			tag.committish = makemark(tag.committish, "tag", "committish")
 		}
 	}
+	// If we don't make all parent links explicit,
+	// a later absorb may run into trouble.
+	var commit *Commit = nil
+	var lastcommit *Commit = nil
+	for _, event := range repo.events {
+		switch event.(type) {
+		case *Commit:
+			commit = event.(*Commit)
+			if len(commit.parents()) == 0 && lastcommit != nil {
+				commit.addParentCommit(lastcommit)
+			}
+			lastcommit = commit
+		}
+	}
 	repo.invalidateObjectMap()
 	return persist
 }
@@ -7533,6 +7550,8 @@ func (repo *Repository) uniquify(color string, persist map[string]string) map[st
 // Only vcstype, sourcedir, and basedir are not copied here
 // Marks and tag/branch names must have been uniquified first,
 // otherwise name collisions could occur in the merged repo.
+// Note: This does not perform topological merging, new
+// branch joins have to be added explicitly.
 func (repo *Repository) absorb(other *Repository) {
 	repo.preserveSet = repo.preserveSet.Union(other.preserveSet)
 	// Strip feature events off the front, they have to stay in front.
