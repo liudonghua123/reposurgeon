@@ -49,6 +49,8 @@ fullinstall: stable-golang helpers test-helpers
 stable-golang:
 	sudo apt install golang
 
+# This may improve performance, if the backports repostotory
+# has been updated to a version more recemnt than your distro's.
 current-golang:
 	sudo add-apt-repository ppa:longsleep/golang-backports
 	sudo apt update
