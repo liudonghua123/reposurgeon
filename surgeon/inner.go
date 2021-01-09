@@ -7528,20 +7528,6 @@ func (repo *Repository) uniquify(color string, persist map[string]string) map[st
 			tag.committish = makemark(tag.committish, "tag", "committish")
 		}
 	}
-	// If we don't make all parent links explicit,
-	// a later absorb may run into trouble.
-	var commit *Commit
-	var lastcommit *Commit
-	for _, event := range repo.events {
-		switch event.(type) {
-		case *Commit:
-			commit = event.(*Commit)
-			if len(commit.parents()) == 0 && lastcommit != nil {
-				commit.addParentCommit(lastcommit)
-			}
-			lastcommit = commit
-		}
-	}
 	repo.invalidateObjectMap()
 	return persist
 }
