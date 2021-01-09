@@ -106,7 +106,7 @@ type terminfo struct {
 var ti terminfo
 
 func init() {
-	if terminal.IsTerminal(0) {
+	if terminal.IsTerminal(1) {
 		ti.ColZero = getTerminfoBytes("hpa", "0")
 		ti.ClrEol = getTerminfoBytes("el")
 		ti.ScrollForward = getTerminfoBytes("ind")

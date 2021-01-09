@@ -409,7 +409,7 @@ func (rs *Reposurgeon) helpOutput(help string) {
 				os.Stdout.WriteString(line + "\n")
 			}
 		}
-	} else if terminal.IsTerminal(0) {
+	} else if terminal.IsTerminal(1) {
 		pager := os.Getenv("PAGER")
 		if pager != "" {
 			tp, cls, err := writeToProcess(pager)
