@@ -422,14 +422,6 @@ func (rs *Reposurgeon) helpOutput(help string) {
 				return
 			}
 		}
-		// Fallback: assume ANSI/VT100.  Works OK inside Emacs,
-		// where the video changes work and upLine does nothing.
-		// Getting terminfo is not worth the effort here,
-		// as the worst outcome of getting this wrong
-		// is a minor visual glitch.
-		const reverseVideo = "\033[7m"
-		const normalVideo = "\033[0m"
-		const upLine = "\033[F"
 		_, height, err := terminal.GetSize(0)
 		if err != nil {
 			log.Fatal(err)
@@ -440,9 +432,10 @@ func (rs *Reposurgeon) helpOutput(help string) {
 				os.Stdout.WriteString(lines[0] + "\n")
 				lines = lines[1:]
 			}
-			os.Stdout.WriteString(reverseVideo + "-- Press Enter for more--" + normalVideo)
+			os.Stdout.WriteString(string(ti.Rev) + "-- Press Enter for more--" + string(ti.Sgr0))
 			fmt.Scanln()
-			os.Stdout.WriteString(upLine)
+			os.Stdout.Write(ti.Cuu1)
+			os.Stdout.Write(ti.ClrEol)
 		}
 		for len(lines) > 0 {
 			os.Stdout.WriteString(lines[0] + "\n")
