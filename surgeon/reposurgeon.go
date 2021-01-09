@@ -7029,15 +7029,14 @@ func (rs *Reposurgeon) DoVersion(line string) bool {
 	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if line == "" {
+		// This is a technically wrong way of enumerting the list and will need to
+		// change if we ever have visible extractors not correspoinding to an
+		// entry in the base VCS table.
 		supported := make([]string, 0)
 		for _, v := range vcstypes {
 			supported = append(supported, v.name)
 		}
-		for _, x := range importers {
-			if x.visible {
-				supported = append(supported, x.name)
-			}
-		}
+		sort.Strings(supported)
 		parse.respond("reposurgeon " + version + " supporting " + strings.Join(supported, " "))
 	} else {
 		vmajor, _ := splitRuneFirst(version, '.')
