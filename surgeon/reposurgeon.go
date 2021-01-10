@@ -2258,7 +2258,7 @@ While the syntax template above uses at-signs, any first character will
 be used as a delimiter an expected to bound the ends of the regexp and
 subsitutions. 
 
-For each potentiial branch name read from the Subversion repository,
+For each potential branch name read from the Subversion repository,
 this command will attempt to match the name against each REGEXP in the
 map. If it finds a match, it rewrites the branch name to the associated
 BRANCH. It stops after it has either found a match, or there are no more 

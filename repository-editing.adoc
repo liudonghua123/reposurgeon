@@ -2764,9 +2764,9 @@ include::docinclude/branchmap.adoc[]
 These modifiers can go anywhere in any order on the command line after
 the `<<read_cmd>>` verb. They must be whitespace-separated.
 
-As stacking up read options can resilt in a very long read invocation
-line, it;'s useful to know that \ is sccepted as a comtinuation
-chracter.  Thus, you can do something like this, which is an actual
+As stacking up read options can result in a very long read invocation
+line, it's useful to know that backslash is accepted as a continuation
+character.  Thus, you can do something like this, which is an actual
 line from reposurgeon's test suite:
 
 ----
