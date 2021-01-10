@@ -1,4 +1,4 @@
-// reposurgeon is an editor/converter for version-control histories.
+// Reposurgeon is an editor/converter for version-control histories.
 //
 // This file incliudes the program main and defines the syntax for the DSL.
 //
@@ -4957,19 +4957,20 @@ func (rs *Reposurgeon) HelpBranch() {
 branch { BRANCH-NAME | /REGEXP/ } { rename | delete } [ ARG ]
 
 Rename or delete a branch (and any associated resets).  First argument
-must be an existing branch name; second argument must one of the verbs
-'rename' or 'delete'.
+must be an existing branch name or a regular expression matching branch names;
+second argument must one of the verbs 'rename' or 'delete'.
 
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
-contain a / the prefix "heads/: is prepended.  If it does not begin with
+contain a / the prefix "heads/" is prepended.  If it does not begin with
 "refs/", then "refs/" is prepended.
 
-For a delete, the name may optionally be a regular expression wrapped in //;
-if so, all objects of the specified type with names matching the regexp are
-deleted.  This is useful for mass deletion of branches.  Such deletions can be
-restricted by a selection set in the normal way.  No third argument is
-required. See "help regexp" for more information about regular expressions.
+If the first argument is a regular expression wrapped in // all
+branches with names matching the regexp are renamed or deleted, and ARG
+may contain pattern references to be expanded.  
+
+Deletions or renames can be restricted by a selection set in the normal way,
+but use this capability with care as it can easily produce a broken topology.
 `)
 }
 
@@ -4988,9 +4989,8 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		return false
 	}
 	repo := rs.chosen()
-	branchname, line := popToken(line)
+	sourcepattern, line := popToken(line)
 	var err error
-	branchname, err = stringEscape(branchname)
 	if err != nil {
 		croak("while selecting branch: %v", err)
 		return false
@@ -4998,34 +4998,58 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 	var verb string
 	verb, line = popToken(line)
 	if verb == "rename" {
-		if !strings.Contains(branchname, "/") {
-			branchname = "refs/heads/" + branchname
-		}
-		if !repo.branchset().Contains(branchname) {
-			croak("no such branch as %s", branchname)
-			return false
-		}
 		var newname string
 		newname, line = popToken(line)
 		if newname == "" {
 			croak("new branch name must be nonempty.")
 			return false
 		}
-		if !strings.Contains(newname, "/") {
-			newname = "refs/heads/" + newname
+		removeBranchPrefix := func(branch string) string {
+			if strings.HasPrefix(branch, "refs/heads/") {
+				branch = branch[11:]
+			}
+			return branch
 		}
-		if repo.branchset().Contains(newname) {
-			croak("there is already a branch named '%s'.", newname)
+		addBranchPrefix := func(branch string) string {
+			return "refs/heads/" + branch
+		}
+		newname = removeBranchPrefix(newname)
+		isRe := sourcepattern[0] == '/'
+		if isRe {
+			sourcepattern = sourcepattern[1 : len(sourcepattern)-1]
+		}
+		sourcepattern = removeBranchPrefix(sourcepattern)
+		if !isRe {
+			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
+		}
+		sourceRE, err := regexp.Compile(sourcepattern)
+		if err != nil {
+			croak(err.Error())
 			return false
 		}
-		for _, event := range repo.events {
-			if commit, ok := event.(*Commit); ok {
-				if commit.Branch == branchname {
-					commit.setBranch(newname)
-				}
-			} else if reset, ok := event.(*Reset); ok {
-				if reset.ref == branchname {
-					reset.ref = newname
+		for _, branch := range repo.branchset() {
+			if !strings.HasPrefix(branch, "refs/heads/") {
+				croak("Ill-formed branch name %s", branch)
+				return false
+			}
+			branch := removeBranchPrefix(branch)
+			if !sourceRE.MatchString(branch) {
+				continue
+			}
+			newname = GoReplacer(sourceRE, branch, newname)
+			if repo.branchset().Contains(addBranchPrefix(newname)) {
+				croak("there is already a branch named 'refs/heads/%s'.", newname)
+				return false
+			}
+			for _, event := range repo.events {
+				if commit, ok := event.(*Commit); ok {
+					if commit.Branch == addBranchPrefix(branch) {
+						commit.setBranch(addBranchPrefix(newname))
+					}
+				} else if reset, ok := event.(*Reset); ok {
+					if reset.ref == addBranchPrefix(branch) {
+						reset.ref = addBranchPrefix(newname)
+					}
 				}
 			}
 		}
@@ -5035,9 +5059,9 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			selection = repo.all()
 		}
 		var shouldDelete func(string) bool
-		if branchname[0] == '/' && branchname[len(branchname)-1] == '/' {
+		if sourcepattern[0] == '/' && sourcepattern[len(sourcepattern)-1] == '/' {
 			// Regexp - can refer to a list of branchs matched
-			branchre, err := regexp.Compile(branchname[1 : len(branchname)-1])
+			branchre, err := regexp.Compile(sourcepattern[1 : len(sourcepattern)-1])
 			if err != nil {
 				croak("in branch command: %v", err)
 				return false
@@ -5046,9 +5070,9 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 				return branchNameMatches(branch, branchre)
 			}
 		} else {
-			theref := "refs/heads/" + branchname
+			theref := "refs/heads/" + sourcepattern
 			if !repo.branchset().Contains(theref) {
-				croak("no such branch as %s", branchname)
+				croak("no such branch as %s", sourcepattern)
 				return false
 			}
 			shouldDelete = func(branch string) bool {

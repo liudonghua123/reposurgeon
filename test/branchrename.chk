@@ -90,8 +90,8 @@ A branch created for illustrative purposes.
 
 [[Tag from directory creation or copy commit at Subversion r3]]
 
-reset refs/heads/samplebranch2
-commit refs/heads/samplebranch2
+reset refs/heads/fuddlesample
+commit refs/heads/fuddlesample
 mark :12
 committer esr <esr> 1324127616 +0000
 data 78
@@ -99,7 +99,7 @@ This is an example of a deleteall that should have influence on the manifest.
 from :10
 deleteall
 
-commit refs/heads/samplebranch2
+commit refs/heads/fuddlesample
 mark :13
 committer esr <esr> 1322691357 +0000
 data 40

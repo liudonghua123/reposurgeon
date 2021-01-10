@@ -1,8 +1,9 @@
 = reposurgeon project news =
 
 Repository head::
+     Branch remame can take a regexp and do substitutions on the new name(s).
      The branchify and branchmap commands have been replaced by read options.
-     Help directed to a tty goes though $PAGER when long enugh to need it.
+     Help directed to a tty goes though $PAGER when long enough to need it.
      Minor bugs related to the "done" end marker have been fixed.
 
 4.22: 2020-12-28::
