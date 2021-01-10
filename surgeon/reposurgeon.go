@@ -4962,8 +4962,8 @@ second argument must one of the verbs 'rename' or 'delete'.
 
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
-contain a / the prefix "heads/" is prepended.  If it does not begin with
-"refs/", then "refs/" is prepended.
+begin with "refs/", then "refs/" is prepended; you should supply "heads/"
+or "tags/" yourself.
 
 If the first argument is a regular expression wrapped in // all
 branches with names matching the regexp are renamed or deleted, and ARG
@@ -5005,13 +5005,13 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return false
 		}
 		removeBranchPrefix := func(branch string) string {
-			if strings.HasPrefix(branch, "refs/heads/") {
-				branch = branch[11:]
+			if strings.HasPrefix(branch, "refs/") {
+				branch = branch[5:]
 			}
 			return branch
 		}
 		addBranchPrefix := func(branch string) string {
-			return "refs/heads/" + branch
+			return "refs/" + branch
 		}
 		newname = removeBranchPrefix(newname)
 		isRe := sourcepattern[0] == '/'
@@ -5036,19 +5036,19 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			if !sourceRE.MatchString(branch) {
 				continue
 			}
-			newname = GoReplacer(sourceRE, branch, newname)
-			if repo.branchset().Contains(addBranchPrefix(newname)) {
-				croak("there is already a branch named 'refs/heads/%s'.", newname)
+			subst := GoReplacer(sourceRE, branch, newname)
+			if repo.branchset().Contains(addBranchPrefix(subst)) {
+				croak("there is already a branch named 'refs/heads/%s'.", subst)
 				return false
 			}
 			for _, event := range repo.events {
 				if commit, ok := event.(*Commit); ok {
 					if commit.Branch == addBranchPrefix(branch) {
-						commit.setBranch(addBranchPrefix(newname))
+						commit.setBranch(addBranchPrefix(subst))
 					}
 				} else if reset, ok := event.(*Reset); ok {
 					if reset.ref == addBranchPrefix(branch) {
-						reset.ref = addBranchPrefix(newname)
+						reset.ref = addBranchPrefix(subst)
 					}
 				}
 			}

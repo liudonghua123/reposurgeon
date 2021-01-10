@@ -1,5 +1,5 @@
 ## Test the rename branch command
 read <deleteall.fi
-branch samplebranch rename jabberwocky
-branch /(.*)branch2/ rename fuddle\1
+branch heads/samplebranch rename heads/jabberwocky
+branch /heads.(.*)branch2/ rename heads/fuddle\1
 write -
