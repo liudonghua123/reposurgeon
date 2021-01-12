@@ -15,7 +15,7 @@ done
 trap 'rm -fr test-repo test-checkout' EXIT HUP INT QUIT TERM 
 
 svnaction () {
-    # This version on svnaction does filenames or directories 
+    # This version of svnaction does filenames or directories 
     case $1 in
 	*/)
 	    directory=$1

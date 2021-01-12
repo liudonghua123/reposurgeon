@@ -5588,7 +5588,7 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	var newname string
 	newname, line = popToken(line)
 	if pathprefix == "" {
-		newname = path.Base(pathprefix)
+		newname = path.Base(pathprefix[:len(pathprefix)-1])
 		return false
 	}
 	if !strings.HasPrefix(newname, "refs/heads/") {
@@ -5599,11 +5599,14 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 		return false
 	}
 
-	// Ensure we will not branchify mixed commits
-	mixed := false
-	selection := make([]*Commit, 0)
+	var sourceroot *Commit
+	var liftroot *Commit
+	splitcount := 0
 	for _, commit := range rs.chosen().commits(nil) {
 		if commit.Branch == sourcebranch {
+			if sourceroot == nil {
+				sourceroot = commit
+			}
 			goodcount := 0
 			badcount := 0
 			for _, trialpath := range commit.paths(nil) {
@@ -5615,29 +5618,71 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 			}
 			if goodcount > 0 {
 				if badcount == 0 {
-					selection = append(selection, commit)
+					// Simple case - all nonempty Source and Path values have the prefix
+					commit.Branch = newname
+					for _, op := range commit.operations() {
+						if strings.HasPrefix(op.Source, pathprefix) {
+							op.Source = op.Source[len(pathprefix):]
+						}
+						if strings.HasPrefix(op.Path, pathprefix) {
+							op.Path = op.Path[len(pathprefix):]
+						}
+					}
+					if liftroot == nil {
+						liftroot = commit
+					}
 				} else {
-					logit("%s has fileops that both match and don't match %s",
-						commit.idMe(), pathprefix)
-					mixed = true
+					// Complex case - commit needs to be split because some
+					// paths have the prefix but others don't.
+					idx := commit.index()
+					err := repo.splitCommitByPrefix(idx, pathprefix)
+					if err != nil {
+						croak("branchlift internal error %q - repo may be garbled!", err)
+						return false
+					}
+					liftFrag := repo.events[idx+1].(*Commit)
+					liftFrag.Branch = newname
+					for _, op := range liftFrag.operations() {
+						if strings.HasPrefix(op.Source, pathprefix) {
+							op.Source = op.Source[len(pathprefix):]
+						}
+						if strings.HasPrefix(op.Path, pathprefix) {
+							op.Path = op.Path[len(pathprefix):]
+						}
+					}
+					if liftroot == nil {
+						liftroot = liftFrag
+					}
+					splitcount++
 				}
 			}
 		}
 	}
-	if mixed {
-		croak("aborting branchlift due to mixed commits.")
+	if splitcount > 0 {
+		respond("%d commits were split while lifting %s", splitcount, pathprefix)
 	}
 
-	// Actual implementation
-	for _, commit := range selection {
-		commit.Branch = newname
-		for _, op := range commit.operations() {
-			if strings.HasPrefix(op.Source, pathprefix) {
-				op.Source = op.Source[len(pathprefix):]
-			}
-			if strings.HasPrefix(op.Path, pathprefix) {
-				op.Path = op.Path[len(pathprefix):]
-			}
+	// Now we need to fix up ancestry links.
+	var sourceparents []CommitLike
+	var liftparents []CommitLike
+	if sourceroot.hasParents() {
+		sourceparents = sourceroot.parents()
+	} else {
+		sourceparents = make([]CommitLike, 0)
+	}
+	if liftroot.hasParents() {
+		liftparents = liftroot.parents()
+	} else {
+		liftparents = make([]CommitLike, 0)
+	}
+	for _, commit := range rs.chosen().commits(nil) {
+		if commit.Branch == sourcebranch {
+			// FIXME: Someday, preserve merge links on the source branch.
+			commit.setParents(sourceparents)
+			sourceparents = commit.parents()
+		} else if commit.Branch == newname {
+			commit.setParents(liftparents)
+			liftparents = commit.parents()
 		}
 	}
 

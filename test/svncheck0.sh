@@ -15,7 +15,7 @@ done
 trap 'rm -fr test-repo test-checkout' EXIT HUP INT QUIT TERM 
 
 svnaction () {
-    # This version on svnaction does filenames only 
+    # This version of svnaction does filenames only 
     filename=$1
     content=$2
     comment=$3
