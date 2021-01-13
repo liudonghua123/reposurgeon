@@ -547,7 +547,7 @@ func writeToProcess(command string) (io.WriteCloser, *exec.Cmd, error) {
 		return nil, nil, err
 	}
 	if logEnable(logCOMMANDS) {
-		croak("%s: writing to '%s'\n",
+		logit("%s: writing to '%s'\n",
 			rfc3339(time.Now()), command)
 	}
 	err = cmd.Start()
