@@ -54,13 +54,13 @@ data 8
 foo
 bar
 
-reset refs/heads/master
 commit refs/heads/master
 #legacy-id 4
 mark :7
 committer fred <fred> 40 +0000
 data 27
 nonbranch1/README: add bar
+from :3
 M 100644 :6 nonbranch1/README
 
 blob
@@ -76,13 +76,13 @@ data 11
 liquid
 sky
 
-reset refs/heads/master
 commit refs/heads/master
 #legacy-id 5
 mark :10
 committer fred <fred> 50 +0000
 data 49
 nonbranch1/README: add end & nonbranch2: add sky
+from :7
 M 100644 :8 nonbranch1/README
 
 commit refs/heads/foo
@@ -91,7 +91,7 @@ mark :13
 committer fred <fred> 50 +0000
 data 49
 nonbranch1/README: add end & nonbranch2: add sky
-from :3
+from :5
 M 100644 :9 DRINKME
 
 blob
@@ -105,7 +105,7 @@ mark :12
 committer fred <fred> 60 +0000
 data 29
 append to nonbranch2/DRINKME
-from :3
+from :13
 M 100644 :11 DRINKME
 
 done

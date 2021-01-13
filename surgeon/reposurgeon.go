@@ -5630,6 +5630,7 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 					if liftroot == nil {
 						liftroot = commit
 					}
+					//fmt.Printf("XXX This commit is lifted: %s", commit)
 				} else {
 					// Complex case - commit needs to be split because some
 					// paths have the prefix but others don't.
@@ -5653,6 +5654,8 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 						liftroot = liftFrag
 					}
 					splitcount++
+					//fmt.Printf("XXX Fragment 1 stays: %s", commit)
+					//fmt.Printf("XXX Fragment 2 is lifted: %s", liftFrag)
 				}
 			}
 		}
@@ -5676,12 +5679,15 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	}
 	for _, commit := range rs.chosen().commits(nil) {
 		if commit.Branch == sourcebranch {
-			// FIXME: Someday, preserve merge links on the source branch.
+			// Preserve merge links on the source branch.
+			if len(commit.parents()) > 1 {
+				sourceparents = append(sourceparents, commit.parents()[1:]...)
+			}
 			commit.setParents(sourceparents)
-			sourceparents = commit.parents()
+			sourceparents = []CommitLike{commit}
 		} else if commit.Branch == newname {
 			commit.setParents(liftparents)
-			liftparents = commit.parents()
+			liftparents = []CommitLike{commit}
 		}
 	}
 
