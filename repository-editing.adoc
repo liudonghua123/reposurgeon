@@ -195,9 +195,9 @@ the reposurgeon command prompt.
 
 Reposurgeon can be passed commands on its invocation line but the
 syntax may be a little surprising if you're used to classic Unix
-switch convebtions.  Each string in the command line argument is
+switch conventions.  Each string in the command line argument is
 passed to the interpreter as a command, in order; thus, you could
-ewplicate the first two action of the previous script with this:
+replicate the first two actions of the previous script with this:
 
 --------------------------
 $ reposurgeon "read project" lint
@@ -3046,12 +3046,10 @@ This will turn two subdirectories into branches named "release-1.0"
 and "release-2.0", then pops "trunk" off all the paths where it occurs
 (leaving those commits on the master branch).
 
-This method has the disadvantages that (1) you have to enumerate all
-branches, (2) there is no authomatic tag processing, and (3) there
-is no authomatic processing of what would correspond to split-branch
-commits; branchlift will fail with a message rather than try to
-produce one.  Still, it may be useful on repositories that consist
-of one big file tree not conforming to a standard layout.
+This method has the disadvantages that you have to enumerate all
+branches you want to lift. Still, it may be useful on repositories
+that consist of one big unbranched file tree not conforming to a
+standard layout.
 
 [[CVS]]
 == Working with CVS
@@ -3968,10 +3966,11 @@ migration.  Depending on this service is not recommended.
 [appendix]
 == A tour of the codebase
 
-Reposurgeon is intended to be hackable to support for special-purpose or
-custom operations, though it's even better if you can come up with a new
-surgical primitive general enough to ship with the stock version.  For
-either case, here's a guide to the architecture.
+Reposurgeon is intended to be hackable to add support for
+special-purpose or custom operations, though it's even better if you
+can come up with a new surgical primitive general enough to ship with
+the stock version.  For either case, here's a guide to the
+architecture.
 
 === inner.go
 
@@ -3980,7 +3979,7 @@ import streams.  In between these two operations the repo state lives
 in a fairly simple object, Repository. The main part of Repository is
 just a list of objects implementing the Event interface - Commits,
 Blobs, Tags, Resets, and Passthroughs.  These are straightforward
-representations of the command types in an import stream, with
+representations of the command types in a Git import stream, with
 Passthrough as a way of losslessly conveying lines the parser does not
 recognize.
 
@@ -4047,7 +4046,7 @@ stream.
 
 The reason it's an exception is that Subversion has its own
 serialization format, and the total complexity of embedding
-support for those strams was estimated to be lower than that
+support for those streams was estimated to be lower than that
 if writing a a completely separate front end.
 
 === Style notes

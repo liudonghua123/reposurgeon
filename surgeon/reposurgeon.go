@@ -1350,18 +1350,12 @@ func (rs *Reposurgeon) DoCount(lineIn string) bool {
 // HelpList says "Shut up, golint!"
 func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
-[SELECTION] lint [>OUTFILE]
+[SELECTION] list [>OUTFILE]
 
 Display commits in a human-friendly format; the first column is raw
 event numbers, the second a timestamp in local time. If the repository
 has legacy IDs, they will be displayed in the third column. The
 leading portion of the comment follows.
-
-Options to issue only partial reports are supported; "lint --options"
-or "lint -?" lists them.
-
-The options and output format of this command are unstable; they may
-change without notice as more sanity checks are added.
 `)
 }
 
@@ -1575,7 +1569,11 @@ well-formed as DVCS IDs, (6) multiple child links with identical
 branch labels descending from the same commit, (7) time and
 action-stamp collisions.
 
-Give it the -? option for a list of available options.
+Options to issue only partial reports are supported; "lint --options"
+or "lint -?" lists them.
+
+The options and output format of this command are unstable; they may
+change without notice as more sanity checks are added.
 `)
 }
 
