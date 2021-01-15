@@ -2792,7 +2792,7 @@ Subversion repository to branches:
 
 * At any given time there is a set of eligible paths and path
 wildcards which declare potential branches.  See the documentation of
-the `<<branchify>>` read option for how to alter this set, which
+the `<<branchify_opt>>` read option for how to alter this set, which
 initially consists of {`+trunk+`, `+tags/*+`, `+branches/*+`, and `*`}.
 
 * A repository is considered "`__flat__`" if it has no
@@ -2826,7 +2826,7 @@ default).
 named '```unbranched```'. If there is no "trunk", then this synthetic
 '```unbranched```' branch becomes the master branch. You can map
 another directory to master using the read options `<<branchify_opt>>`
-and `<<branchmap_cmd>>`. If the Subversion repository has a branch
+and `<<branchmap_opt>>`. If the Subversion repository has a branch
 named '```unbranched```' the name '```unbranched-bis```' is used
 instead; actually, '```-bis```' is appended enough times to get to an
 unused branch name.
@@ -3344,9 +3344,9 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
-In versions 4.22 and rearlier, the "--branchify"
-and "--branchmap" read options were separate commands that needed
-to be inoked before the read and set hidden global context.
+In versions 4.22 and earlier, the "--branchify" and "--branchmap" read
+options were separate commands that needed to be invoked before the
+read and set hidden global context.
 
 In versions before 4.10, the "reduce" and "blob" options of the
 "<<strip_cmd>>" command were bare keywords. Also the options of the

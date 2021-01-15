@@ -2230,10 +2230,10 @@ func (rs *Reposurgeon) HelpBranchify() {
 	rs.helpOutput(`
 --branchify=DIRECTORY[:DIRECTORY]...
 
-Specify a semicolon-separated list of directories to be treated as 
+Specify a semicolon-separated list of directories to be treated as
 potential branches (to become tags if there are no modifications
 after the creation copies) when analyzing a Subversion repo. This
-p[tion is ignored when reading with the --nobranch option.  It
+option is ignored when reading with the --nobranch option.  It
 defaults to the 'standard layout' set of directories, plus any
 unrecognized directories in the repository root.
 
@@ -2248,21 +2248,21 @@ func (rs *Reposurgeon) HelpBranchmap() {
 	rs.helpOutput(`
 --branchmap=@REGEXP@BRANCH@
 
-Specify a regular-expressions/branchname pair used for mapping Subversion 
+Specify a regular-expressions/branchname pair used for mapping Subversion
 branch directories detected by branchify to gitspace branches. More than one
 of these options may be specified; if none of the expressions matches, the
-default behavior applies. The default maps a Subversion branch to its 
+default behavior applies. The default maps a Subversion branch to its
 basename, except for trunk and '*' which are mapped to master and root.
 
 While the syntax template above uses at-signs, any first character will
-be used as a delimiter an expected to bound the ends of the regexp and
-subsitutions. 
+be used as a delimiter and is expected to bound the ends of the regexp and
+subsitutions.
 
 For each potential branch name read from the Subversion repository,
 this command will attempt to match the name against each REGEXP in the
 map. If it finds a match, it rewrites the branch name to the associated
-BRANCH. It stops after it has either found a match, or there are no more 
-regexps left in the map. 
+BRANCH. It stops after it has either found a match, or there are no more
+regexps left in the map.
 
 BRANCH can use references to matches for parenthesized parts of the REGEXP.
 See "help regexp" for more information about regular expressions and
