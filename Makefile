@@ -90,9 +90,7 @@ TOPICS = \
 	bench \
 	blob \
 	branch \
-	branchify \
 	branchlift \
-	branchmap \
 	changelogs \
 	checkout \
 	choose \
@@ -178,6 +176,9 @@ TOPICS = \
 	unpreserve \
 	version \
 	when
+READ_OPTION_TOPICS = \
+	branchify \
+	branchmap
 # These are in regular form, but the emtries in the
 # long-form manual have additional material.
 SHORTFORM = \
@@ -198,12 +199,22 @@ EXCEPTIONS = \
 # help, lightly massaged into asciidoc format.
 repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
 	@rm -fr docinclude; mkdir docinclude
-	@for topic in $(TOPICS); \
+	@get_help() { \
+		./reposurgeon "set asciidoc" "help $${1}" | \
+			sed -e 's/help regexp/<<regular_expressions,help regexp>>/g' \
+			    -e 's/help read/<<read_cmd,help read>>/g' \
+			    -e 's/help branchify/<<branchify_opt,help branchify>>/g' \
+			    -e 's/help branchmap/<<branchmap_opt,help branchmap>>/g'; \
+	}; \
+	for topic in $(TOPICS); \
 	do \
-		# add an anchor to the first block in every import \
 		echo "[[$${topic}_cmd,$${topic}]]" >>"docinclude/$${topic}.adoc"; \
-		./reposurgeon "set asciidoc" "help $${topic}" | \
-			sed -e 's/help regexp/<<regular_expressions,help regexp>>/g' >>"docinclude/$${topic}.adoc"; \
+		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
+	done; \
+	for topic in $(READ_OPTION_TOPICS); \
+	do \
+		echo "[[$${topic}_opt,--$${topic}]]" >>"docinclude/$${topic}.adoc"; \
+		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
 	done
 	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
 	@./repository-editing.rb

@@ -1703,8 +1703,9 @@ enable round-tripping of some streams on which it would fail (note
 however that `git fast-export` generates explicit '```from```' links). This
 option will mainly be useful for testing and debugging.
 +
-Additional options to this command and not listed here are given in a
-later section, and apply only to Subversion repositories.
+Additional options to this command and not listed here are given in
+<<Reading Subversion repositories>>, as they apply only to Subversion
+repositories.
 +
 Note: this command does not take a selection set.
 
@@ -2755,10 +2756,10 @@ The following options to the read command control the branchify set
 and how branch and tag names are to be rewritten as they are read from
 the Subversion repository.
 
-[[branchify_opt]]
+[[branchify_opt,--branchify=]]
 include::docinclude/branchify.adoc[]
 
-[[branchmap_opt]]
+[[branchmap_opt,--branchmap=]]
 include::docinclude/branchmap.adoc[]
 
 These modifiers can go anywhere in any order on the command line after
@@ -2816,7 +2817,7 @@ branch.
 * If an element of the branchify set ends with `+/*+`, it is
 considered a branch namespace: each immediate subdirectory of it is
 considered a potential branch, unless it itself appears in
-`<<branchify>>` as a namespace.  If `*` is in the branchify set
+`<<branchify_opt>>` as a namespace.  If `*` is in the branchify set
 (which is true by default) all top-level directories are also
 considered potential branches (other than `/trunk` which is mapped to
 `master`, and `/tags` and `/branches` which are namespaces by
@@ -3344,7 +3345,7 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
-In versions 4.22 and earlier, the "--branchify" and "--branchmap" read
+In versions 4.22 and earlier, the "<<branchify_opt>>" and "<<branchmap_opt>>" read
 options were separate commands that needed to be invoked before the
 read and set hidden global context.
 

@@ -2134,7 +2134,7 @@ Subversion dump from standard input (this will be useful in filters
 constructed with command-line arguments).
 
 Various options and special features of this command are described in
-the long-form manual.
+the long-form manual. See "help branchify" and "help branchmap" in particular.
 `)
 }
 
@@ -2240,6 +2240,8 @@ unrecognized directories in the repository root.
 An asterisk at the end of a path in the set means 'all immediate
 subdirectories of this path, unless they are part of another (longer)
 path in the branchify set'.
+
+See "help read" for other options to the read command.
 `)
 }
 
@@ -2271,6 +2273,8 @@ references
 The prefix "refs/" is automatically supplied to the resulting branchname,
 but not the "heads/" or "tags/" part that distinguishes the branch type.
 You must supply one of these yourself.
+
+See "help read" for other options to the read command.
 `)
 }
 
