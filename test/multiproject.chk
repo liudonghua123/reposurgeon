@@ -96,7 +96,7 @@ tagger Fred J. Foonly <foonly@foo.com> 2880 +0000
 data 21
 First directory copy
 
-reset refs/branches/stable
+reset refs/heads/stable
 #legacy-id 8
 from :7
 

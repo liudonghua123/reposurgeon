@@ -4,7 +4,7 @@ read <multigen.svn \
     --branchify=project1/trunk:project1/branches/*:project1/tags:* \
     --branchmap=@project1/trunk@heads/master@ \
     --branchmap=@project1/tags@tags@ \
-    --branchmap=@project1/branches@branches@
+    --branchmap=@project1/branches/(.*)@heads/\1@
 branch project2 delete
 prefer git
 write -
