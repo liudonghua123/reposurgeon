@@ -3004,16 +3004,18 @@ subdirectories, project1 and project2.  One pattern for dissecting out
 project1 looks like this:
 
 --------
-branchify project1/trunk project1/branches/* project1/tags/* *
-branchmap :project1/trunk:heads/master: :project1/tags:refs/tags: :project1/branches:refs/heads:
-read <multiproject.svn
+read <multiproject.svn \
+  --branchify=project1/trunk:project1/branches/*:project1/tags/*:*
+  --branchmap=:project1/trunk:heads/master:
+  --branchmap=:project1/tags:refs/tags:
+  --branchmap=:project1/branches:refs/heads:
 branch project2 delete
 --------
 
-The first command branchifies every directory underneath project1 for
+The first option branchifies every directory underneath project1 for
 which that's required, with project2 left as its own branch from top
-level. The second command sets up a transform of these branches into a
-standard layout.
+level. The following options set up a transform of these branches into
+a standard layout.
 
 These transformations are performed when the actual read of the
 repository happens.  Following that, the unneeded project2 branch can
