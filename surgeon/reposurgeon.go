@@ -184,6 +184,7 @@ type LineParse struct {
 	redirected   bool
 	options      orderedStringSet
 	closem       []io.Closer
+	//proc         *exec.Cmd
 }
 
 func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSet) *LineParse {
@@ -261,6 +262,25 @@ func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSe
 		lp.line = lp.line[:match[2*0+0]] + lp.line[match[2*0+1]:]
 		lp.redirected = true
 	}
+	// FIXME: Output pipe support doesn't work yet.
+	// Can't support this on any command theat takes a regexp,
+	// as it collides with regexp alternation.
+	//pipeIndex := strings.Index(lp.line, "|")
+	//if pipeIndex != -1 {
+	//	if !caps["stdout"] {
+	//		panic(throw("command", "no support for | redirection"))
+	//	}
+	//	cmd := strings.TrimSpace(lp.line[pipeIndex+1:])
+	//	lp.proc = exec.Command(cmd)
+	//	var err error
+	//	lp.stdout, err = lp.proc.StdinPipe()
+	//	if err != nil {
+	//		panic(throw("command", fmt.Sprintf("can't pipe to %q, error %v", cmd, err)))
+	//	}
+	//	lp.closem = append(lp.closem, lp.stdout)
+	//	lp.proc.Start()
+	//	lp.redirected = true
+	//}
 	// Options
 	for true {
 		match := regexp.MustCompile("--([^ ]+)").FindStringSubmatchIndex(lp.line)
@@ -327,6 +347,9 @@ func (lp *LineParse) Closem() {
 			f.Close()
 		}
 	}
+	//if lp.proc != nil {
+	//	lp.proc.Wait()
+	//}
 }
 
 // respond is to be used for console messages that shouldn't be logged
@@ -893,7 +916,7 @@ func (rs *Reposurgeon) DoUnassign(line string) bool {
 // HelpNames says "Shut up, golint!"
 func (rs *Reposurgeon) HelpNames() {
 	rs.helpOutput(`
-names [?>OUTFILE]
+names [>OUTFILE]
 
 List all known symbolic names of branches and tags. 
 Tells you what things are legal within angle brackets and
