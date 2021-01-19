@@ -240,6 +240,10 @@ between the data models of different version-control systems. For
 detailed discussion of the technical flaws in many common converters,
 see Appendix A.
 
+In particular: reposurgeon is the only conversion tool that handles
+multibranch Subversion repositories in full generality. It can even
+correctly translate Subversion commits that alter multiple branches.
+
 But even automated converters that are relatively good at bridging
 data-model differences tend to produce crude, jackleg, unidiomatic
 conversions that make the seam between the pre-conversion and
@@ -487,6 +491,10 @@ other modern VCSes.
 
 ==== CVS
 
+Rreposurgeon can read CVS repositories.  You must have a copy of the
+repositoroy maeter directory, and run reporsugeon pointed at hat
+director or one of uts submodules; a checkout directory won't do.
+
 If you are exporting from CVS, it may be a good idea to run some trial
 conversions with cvsconvert, a wrapper script shipped with
 cvs-fast-export.  This script runs a conversion direct to git; the
@@ -494,78 +502,42 @@ advantage is that it can do a comparison of the repository histories
 and identify problems for you to fix in your lift script.  You
 probably don't want to use this for final conversion, though, as it
 does not clean up CVS junk tags, perform reference lifting, or
-Gitifying comments.
+Gitify comments.
 
-For more detailed discussion of CVS conversion and toubleshooting see
+For more detailed discussion of CVS conversion and troubleshooting see
 <<CVS>>.
 
 ==== Subversion
 
-Normally reposurgeon will do branch analysis for you.
-On most Subversion repositories, and in particular anything with a
-standard trunk/tags/branches layout, it will do the right thing. It
-will also cope with adventitious branches in the root directory of the
-repo, such as many projects use for website content.
-
-In very unusual cases you may need to use the "<<read_cmd,--nobranch>>"
-option. However, this has the disadvantage that you'll have to do the
-branch surgery by hand at a later stage (the command for this is
-"<<branchlift_cmd>>"). Instead, you may be able to use the repocutter
-filter to transform the dump file into a version shaped right for a
-regular branch-sensitive lift.
-
-To the author's knowledge, reposurgeon is the only conversion tool
-that handles multibranch Subversion repositories in full
-generality. It can even correctly translate Subversion commits that
-alter multiple branches.
-
-Performance tip: reposurgeon should analyze Subversion repositories at
-the rate of over 400K commits per minute, but that rate can fall off
-greatly on very large repositories.
+reposurgeon can read Subversion dumpfiles or repositories. If you want
+it to read a repository, you must run it within the top-level
+directory of the repository itself, *not* in a checkout directory made
+from the repository.
 
 Unlike CVS, Subversion repositories have real changesets, and the work
 in them can effectively always be mapped to equivalent DVCS commits.
 The parent-child relationships among commits will also translate
-cleanly.  There is, however, a minor problem around tags, and a
-significant problem around merges.
+cleanly.
 
-The tag problem arises because Subversion tags are really branches
-that you've conventionally agreed not to commit to after the initial
-branch copy (that's what the tags/ directory name conveys).  But
-Subversion doesn't enforce any prohibition against committing to
-the tag branch, and various odd things can happen if you do.
+Normally reposurgeon will do branch analysis for you.  On most
+Subversion repositories, and in particular anything with a standard
+trunk/tags/branches layout, it will do the right thing. It will also
+cope with adventitious branches in the root directory of the repo,
+such as many projects use for website content.
 
-The reposurgeon analyzer tries to warn you about pathological cases,
-and reposurgeon gives you tools for coping with them.  Unfortunately,
-the warnings are (unavoidably) cryptic unless you understand
-Subversion internals in detail.
+There is, however, a minor problem around tags, and a slightly
+more significant problem around Subversion merges. Also, some
+Subversion repositories are multi-project with a nonstandard
+directory layout. 
 
-In a DVCS, a merge normally coalesces two entire branches.  Subversion
-has something close to this in newer versions; it's called a "sync
-merge" working on directories (and is expressed as an svn:mergeinfo
-property of the target directory that names the source).  A sync merge
-of a branch directory into another branch directory behaves like a
-DVCS merge; reposurgeon picks these up and translates them for you.
-
-The older, more basic Subversion merge is per file and is expressed by
-per-file svn:mergeinfo properties.  These correspond to what in
-DVCS-land are called "cherry-picks", which just replay a commit from a
-source branch onto a target branch but do *not* create cross-branch
-links.
-
-Sometimes Subversion developers use collections of per-file mergeinfo
-properties to express partial branch merges.  This does not map to
-the DVCS model at all well, and trying to promote these to full-branch
-merges by hand is actually dangerous.  An excellent essay,
-http://web.archive.org/web/20170104093332/https://plus.google.com/100357083629018071519/posts/jG7CN9R1SsZ[Partial git merges -- just say no.]
-explores the problem in depth.
-
-The bottom line is that reposurgeon warns about per-file svn:mergeinfo
-properties _and then discards them_ for good reasons.  If you feel an
-urge to hand-edit in a branch merge based on these, do so with care
-and check your work.
+For more detailed discussion of Subversion conversion and
+troubleshooting see <<subversion>>.  For discussion of handling
+multiproject repositories, see <<multiproject>>.
 
 ==== Other VCSes
+
+Mercurial: reposurgeon can read a Mercurial repository using
+either of two methods.  See <<mercurial>> for details.
 
 SCCS: Use http://www.catb.org/esr/sccs2rcs/[sccs2rcs]
 to get to RCS, then follow the directions for RCS. There is a script
@@ -576,12 +548,6 @@ RCS: reposurgeon will read an RCS collection.  It uses
 http://www.catb.org/~esr/cvs-fast-export[cvs-fast-export],
 which despite its name does not actually require CVS metadata other than
 the RCS master files that store the content.
-
-Mercurial: reposurgeon will read a Mercurial repository. It uses
-https://github.com/kilork/hg-git-fast-import[hg-git-fast-import] as an
-importer. Note that this conversion is not very well tested yet; you
-may want to run conversions with both the importer and the hg
-extractor harness and compare them.
 
 Fossil: reposurgeon will read a Fossil repository file. It uses the
 native Fossil exporter, which is pretty good but doesn't export ignore
@@ -693,7 +659,7 @@ Tags from Subversion no-fileop commits::
     just in case something about the metadata is interesting.
 
 Tags from CVS -root commits::
-    Branch root markers aee made by CVS for internal purposes. These
+    Branch root markers are made by CVS for internal purposes. These
     often persist through up-conversions to SVN.  "tag /-root$/
     delete" will clean those up; this is not done automatically
     because implicit magic that deletes data generally turns out
@@ -2552,7 +2518,6 @@ include::docinclude/exit.adoc[]
 
 include::docinclude/bench.adoc[]
 
-
 [[mercurial]]
 == Working with Mercurial
 There is a built-in extractor class to perform extractions from
@@ -2593,24 +2558,20 @@ surgical primitives after reading the history into reposurgeon.
 [[subversion]]
 == Working with Subversion
 
-reposurgeon can read Subversion dumpfiles or repositories. If you want
-it to read a repository, you must run it within the top-level
-directory of the repository itself, *not* in a checkout directory made
-from the repository.
-
-The transaction model of Subversion is nothing like that of the
-DVCSes (distributed version-control systems) that followed it. Two of the more
-obvious differences are around tags and branches.
+The transaction model of Subversion is nothing like that of the DVCSes
+(distributed version-control systems) that followed it. Two of the
+more obvious differences are around tags and branches. These
+differences occasuinally lead to conversion problems.
 
 A Subversion tag isn't an annotation attached to a commit. The
 Subversion data model is that a history is a sequence of surgical
 operations on a tree; there are no annotation tags as such, a tag is
-just another branch of the tree.  Accordingly a Subversion tag is a copy
-of the state of an entire branch at a particular revision. This can be
-losslessly translated to an annotation only if no additional commits
-are added to the tag branch after the copy. But nothing prevents this!
-reposurgeon tries to do the right thing,
-creating a DVCS-style annotated tag when it can and otherwise preserving the
+just another branch of the tree.  Accordingly a Subversion tag is a
+copy of the state of an entire branch at a particular revision. This
+can be losslessly translated to an annotation only if no additional
+commits are added to the tag branch after the copy. But nothing
+prevents this!  reposurgeon tries to do the right thing, creating a
+DVCS-style annotated tag when it can and otherwise preserving the
 changes as commits, using a lightweight tag to point at the tip.
 
 There is a subtler problem around branches themselves. In a
@@ -2628,14 +2589,14 @@ only the commits that are also part of other branches' histories, but
 you can tell it to preserve the branches instead and give them
 unambiguous names in the `refs/deleted` namespace.
 
-Bad things can happen when a tag directory is created, copied
-from, deleted, then recreated from a different source directory. This
-is a place where the Subversion model of tags clashes destructively with the
-changeset-DAG model used by git and other DVCSes, especially if the
-same tag is recreated later!  The obvious thing to do when converting
-this sequence would be to just nuke the tag history from the
-deletion back to its branch point, but that will cause problems if a
-copy operation was ever sourced in the deleted branch (and this does
+Bad things can happen when a tag directory is created, copied from,
+deleted, then recreated from a different source directory. This is a
+place where the Subversion model of tags clashes destructively with
+the changeset-DAG model used by git and other DVCSes, especially if
+the same tag is recreated later!  The obvious thing to do when
+converting this sequence would be to just nuke the tag history from
+the deletion back to its branch point, but that will cause problems if
+a copy operation was ever sourced in the deleted branch (and this does
 happen!).
 
 What reposurgeon does instead is preserve the most recent branch with
@@ -2643,6 +2604,54 @@ any given name, so the view back from any branch tip in the repository
 has the correct content. This does however mean that reposurgeon
 discards the content of any previous branch having that same name.
 However, see the `--preserve` option of the `read` command.
+
+In very unusual cases you may need to use the "<<read_cmd,--nobranch>>"
+option. However, this has the disadvantage that you'll have to do the
+branch surgery by hand at a later stage (the command for this is
+"<<branchlift_cmd>>"). Instead, you may be able to use the repocutter
+filter to transform the dump file into a version shaped right for a
+regular branch-sensitive lift.
+
+The reposurgeon analyzer tries to warn you about pathological cases,
+and reposurgeon gives you tools for coping with them.  Unfortunately,
+the warnings are (unavoidably) cryptic unless you understand
+Subversion internals in detail.
+
+The's another problem around Subversion merges. In a DVCS, a merge
+normally coalesces two entire branches.  Subversion has something
+close to this in newer versions; it's called a "sync merge" working on
+directories (and is expressed as an svn:mergeinfo property of the
+target directory that names the source).  A sync merge of a branch
+directory into another branch directory behaves like a DVCS merge;
+reposurgeon picks these up and translates them for you.
+
+The older, more basic Subversion merge is per file and is expressed by
+per-file svn:mergeinfo properties.  These correspond to what in
+DVCS-land are called "cherry-picks", which just replay a commit from a
+source branch onto a target branch but do *not* create cross-branch
+links.
+
+Sometimes Subversion developers use collections of per-file mergeinfo
+properties to express partial branch merges.  This does not map to
+the DVCS model at all well, and trying to promote these to full-branch
+merges by hand is actually dangerous.  An excellent essay,
+http://web.archive.org/web/20170104093332/https://plus.google.com/100357083629018071519/posts/jG7CN9R1SsZ[Partial git merges -- just say no.]
+explores the problem in depth.
+
+The bottom line is that reposurgeon warns about per-file svn:mergeinfo
+properties _and then discards them_ for good reasons.  If you feel an
+urge to hand-edit in a branch merge based on these, do so with care
+and check your work.
+
+Three minor issues to watch for:
+
+1. Superfluous root tags.
+
+2. Fossil Subversion revision numbers.
+
+3. File content mismatches due to $-keyword expansion.
+
+More details follow.
 
 === Reading Subversion repositories
 
@@ -3033,7 +3042,7 @@ and reposurgeon, warn you of problems and help you recover.
 
 Here are the kinds of conversion glitches to watch for:
 
-1. Failure to coalesce runs of comments with identical atttribution
+1. Failure to coalesce runs of comments with identical attribution
 and comment text.
 
 2. Superfluous root tags.
