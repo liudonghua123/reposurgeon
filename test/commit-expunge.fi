@@ -8,8 +8,8 @@ mark :2
 data 11
 Blob at :2
 
-reset HEAD
-commit HEAD
+reset refs/heads/master
+commit refs/heads/master
 mark :3
 author Eric S. Raymond <esr@thyrsus.com> 1324910393 +0000
 committer Eric S. Raymond <esr@thyrsus.com> 1324910393 +0000
@@ -23,7 +23,7 @@ mark :4
 data 11
 Blob at :4
 
-commit HEAD
+commit refs/heads/master
 mark :5
 author Eric S. Raymond <esr@thyrsus.com> 1352732083 -0600
 committer Eric S. Raymond <esr@thyrsus.com> 1352732100 -0600
@@ -36,8 +36,8 @@ commit refs/tags/foobar
 mark :6
 author Eric S. Raymond <esr@thyrsus.com> 1352732153 -0600
 committer Eric S. Raymond <esr@thyrsus.com> 1352732153 -0600
-data 34
-Remove rroneously committed file.
+data 35
+Remove erroneously committed file.
 from :5
 D packed/home/esr/WWW/nut-conversion/unpacked/1/nut.box
 

@@ -3971,16 +3971,13 @@ func (rs *Reposurgeon) DoDivide(_line string) bool {
 // HelpExpunge says "Shut up, golint!"
 func (rs *Reposurgeon) HelpExpunge() {
 	rs.helpOutput(`
-[SELECTION] expunge [~] [/PATTERN/...]
+[SELECTION] expunge [~] [PATH-PATTERN...]
 
 Expunge files from the selected portion of the repo history; the
 default is the entire history.  The arguments to this command may be
-paths or regular expressions matching paths (regexps must
-be marked by being surrounded with //).  Shell-like interpretation of
-string quotes and backslashes is performed when parsing this command
-line; in particular, a preceding backslash may be used to embed a literal
-/ character. See "help regexp" for more information about regular
-expressions.
+paths or regular expressions matching paths. Regexps must be marked
+by being surrounded by matching delimiter other than a double quote,
+and maty not contain literal whitespace; use \s or \t if you need to. 
 
 Exceptionally, the first argument may be the token "~" which chooses
 all file paths other than those selected by the remaining arguments to
@@ -4006,6 +4003,14 @@ removal set.
 `)
 }
 
+func pathPattern(in string) (out string, re bool) {
+	isRe := in[0] == in[len(in)-1] && in[0:1] != `"` && unicode.IsPunct(rune(in[0]))
+	if isRe {
+		in = in[1 : len(in)-1]
+	}
+	return in, isRe
+}
+
 // DoExpunge expunges files from the chosen repository.
 func (rs *Reposurgeon) DoExpunge(line string) bool {
 	if rs.chosen() == nil {
@@ -4017,12 +4022,30 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 		selection = rs.chosen().all()
 
 	}
-	fields, err := shlex.Split(line, true)
-	if err != nil {
-		croak("malformed expunge command")
-		return false
+	fields := strings.Fields(line)
+	digest := func(toklist []string) (*regexp.Regexp, bool) {
+		digested := make([]string, 0)
+		notagify := false
+		for _, s := range toklist {
+			s, isRe := pathPattern(s)
+			if isRe {
+				digested = append(digested, "(?:"+s+")")
+			} else if s == "--notagify" {
+				notagify = true
+			} else {
+				digested = append(digested, "^"+regexp.QuoteMeta(s)+"$")
+			}
+		}
+		return regexp.MustCompile(strings.Join(digested, "|")), notagify
 	}
-	err = rs.chosen().expunge(selection, fields, control.baton)
+
+	// First argument parsing - there might be a reparse later
+	delete := fields[0] != "~"
+	if !delete {
+		fields = fields[1:]
+	}
+	expunge, notagify := digest(fields)
+	err := rs.chosen().expunge(selection, expunge, delete, notagify, control.baton)
 	if err != nil {
 		respond(err.Error())
 	}
@@ -4968,7 +4991,7 @@ func (rs *Reposurgeon) DoReorder(lineIn string) bool {
 // HelpBranch says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
-branch { BRANCH-NAME | /REGEXP/ } { rename | delete } [ ARG ]
+branch { PATH-PATTERN } { rename | delete } [ ARG ]
 
 Rename or delete a branch (and any associated resets).  First argument
 must be an existing branch name or a regular expression matching branch names;
@@ -4979,9 +5002,11 @@ valid branch name (but not the name of an existing branch).  If it does not
 begin with "refs/", then "refs/" is prepended; you should supply "heads/"
 or "tags/" yourself.
 
-If the first argument is a regular expression wrapped in // all
+If the first argument is a regular expression (that is, begun and ended by
+the same delimiter character, unless tje delimiter is a double quote) all
 branches with names matching the regexp are renamed or deleted, and ARG
-may contain pattern references to be expanded.  
+may contain pattern references to be expanded.  Regexps in this context
+may not contain literal whitespace; usde \s or \t if you need to.
 
 Deletions or renames can be restricted by a selection set in the normal way,
 but use this capability with care as it can easily produce a broken topology.
@@ -5028,10 +5053,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return "refs/" + branch
 		}
 		newname = removeBranchPrefix(newname)
-		isRe := sourcepattern[0] == '/'
-		if isRe {
-			sourcepattern = sourcepattern[1 : len(sourcepattern)-1]
-		}
+		sourcepattern, isRe := pathPattern(sourcepattern)
 		sourcepattern = removeBranchPrefix(sourcepattern)
 		if !isRe {
 			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"

@@ -3,6 +3,7 @@
 Repository head::
      Retire the read --cvsignores option; best to use an expunge instead.
      Subversion proerties discarded during read are logged, not shouted.
+     In branch rename and expunge, be more flexible about RE delimiters.
 
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).

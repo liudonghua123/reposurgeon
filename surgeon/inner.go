@@ -6873,29 +6873,7 @@ func (repo *Repository) gcBlobs() {
 //
 
 // Expunge a set of files from the commits in the selection set.
-func (repo *Repository) expunge(selection orderedIntSet, matchers []string, baton *Baton) error {
-	digest := func(toklist []string) (*regexp.Regexp, bool) {
-		digested := make([]string, 0)
-		notagify := false
-		for _, s := range toklist {
-			if strings.HasPrefix(s, "/") && strings.HasSuffix(s, "/") {
-				digested = append(digested, "(?:"+s[1:len(s)-1]+")")
-			} else if s == "--notagify" {
-				notagify = true
-			} else {
-				digested = append(digested, "^"+regexp.QuoteMeta(s)+"$")
-			}
-		}
-		return regexp.MustCompile(strings.Join(digested, "|")), notagify
-	}
-
-	// First argument parsing - there might be a reparse later
-	delete := matchers[0] != "~"
-	if !delete {
-		matchers = matchers[1:]
-	}
-	expunge, notagify := digest(matchers)
-
+func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp, delete bool, notagify bool, baton *Baton) error {
 	// First pass: compute fileop deletions
 	alterations := make([][]int, 0)
 	for _, ei := range selection {
@@ -6912,30 +6890,27 @@ func (repo *Repository) expunge(selection orderedIntSet, matchers []string, bato
 						deletia = append(deletia, i)
 					}
 				} else if fileop.op == opR || fileop.op == opC {
+					// FIXME: This code needs tests
 					sourcedelete := expunge.MatchString(fileop.Source) == delete
 					targetdelete := expunge.MatchString(fileop.Path) == delete
 					if sourcedelete {
 						deletia = append(deletia, i)
-						//if logEnable(logSHOUT) {logit("following %s of %s to %s", fileop.op, fileop.Source, fileop.Path)}
 						if fileop.op == opR {
+							oldmatchers := strings.Split(expunge.String(), "|")
 							newmatchers := make([]string, 0)
-							for _, m := range matchers {
-								if m != "^"+fileop.Source+"$" {
+							for _, m := range oldmatchers {
+								if m != "^"+regexp.QuoteMeta(fileop.Source)+"$" {
 									newmatchers = append(newmatchers, m)
 								}
 							}
-							matchers = newmatchers
+							expunge = regexp.MustCompile(strings.Join(newmatchers, "|"))
 						}
-						matchers = append(matchers, "^"+fileop.Path+"$")
-						expunge, notagify = digest(matchers)
 					} else if targetdelete {
 						if fileop.op == opR {
 							fileop.op = opD
 						} else if fileop.op == opC {
 							deletia = append(deletia, i)
 						}
-						matchers = append(matchers, "^"+fileop.Path+"$")
-						expunge, notagify = digest(matchers)
 					}
 				}
 			}

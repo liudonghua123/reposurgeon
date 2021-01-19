@@ -3,8 +3,8 @@ mark :1
 data 11
 Blob at :1
 
-reset HEAD
-commit HEAD
+reset refs/heads/master
+commit refs/heads/master
 mark :3
 author Eric S. Raymond <esr@thyrsus.com> 1324910393 +0000
 committer Eric S. Raymond <esr@thyrsus.com> 1324910393 +0000
@@ -17,7 +17,7 @@ mark :4
 data 11
 Blob at :4
 
-commit HEAD
+commit refs/heads/master
 mark :5
 author Eric S. Raymond <esr@thyrsus.com> 1352732083 -0600
 committer Eric S. Raymond <esr@thyrsus.com> 1352732100 -0600
@@ -43,6 +43,6 @@ M 100755 :7 gitpacker
 tag emptycommit-mark6
 from :5
 tagger Eric S. Raymond <esr@thyrsus.com> 1352732153 -0600
-data 34
-Remove rroneously committed file.
+data 35
+Remove erroneously committed file.
 
