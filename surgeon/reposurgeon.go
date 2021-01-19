@@ -262,10 +262,14 @@ func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSe
 		lp.line = lp.line[:match[2*0+0]] + lp.line[match[2*0+1]:]
 		lp.redirected = true
 	}
-	// Can't support this on any command theat takes a regexp,
-	// as it collides with regexp alternation.
+	// This collides with regexp alternation.  We require a whitespace character
+	// after the pipe bar and that it be either at BOL or have a preceding whitespace,
+	// which is a partial prevention.  This code looks a little weird because the command
+	// verb and fi=llowing whitespace have already been popped off when lp.line gets here,
+	// so the pipe bar can in fact be at index zero.
 	pipeIndex := strings.Index(lp.line, "|")
-	if pipeIndex != -1 {
+	isspace := func(b byte) bool { return unicode.IsSpace(rune(b)) }
+	if pipeIndex != -1 && len(lp.line) > 2 && (pipeIndex == 0 || isspace(lp.line[pipeIndex-1])) && isspace(lp.line[pipeIndex+1]) {
 		if !caps["stdout"] {
 			panic(throw("command", "no support for | redirection"))
 		}
