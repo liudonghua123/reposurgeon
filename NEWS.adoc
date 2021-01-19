@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Retire the read --cvsignores option; bestr to use an epunge instead.
+
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).
      The branchify and branchmap commands have been replaced by read options.

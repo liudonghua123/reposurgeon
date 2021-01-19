@@ -1588,6 +1588,7 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 --roots         -r     report on multiple roots
 --attributions  -a     report on anomalies in usernames and attributions
 --uniqueness    -u     report on collisions among action stamps
+--cvsignores    -i     report if .cvsignore files are present
 --options       -?     list available options
 `[1:])
 		return false
@@ -1609,6 +1610,7 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 	emptyaddr := newOrderedStringSet()
 	emptyname := newOrderedStringSet()
 	badaddress := newOrderedStringSet()
+	cvsignores := 0
 	rs.chosen().walkEvents(selection, func(idx int, event Event) {
 		commit, iscommit := event.(*Commit)
 		if !iscommit {
@@ -1671,6 +1673,13 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 
 			}
 		}
+		if parse.options.Contains("--deletealls") || parse.options.Contains("-d") {
+			for _, op := range commit.operations() {
+				if strings.HasSuffix(op.Path, ".cvsignore") {
+					cvsignores++
+				}
+			}
+		}
 	})
 	// This check isn't done by default because these are common in Subverrsion repos
 	// and do not necessarily indicate a problem.
@@ -1714,6 +1723,9 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 		rs.chosen().checkUniqueness(true, func(s string) {
 			fmt.Fprint(parse.stdout, "reposurgeon: "+s+control.lineSep)
 		})
+	}
+	if cvsignores > 0 {
+		fmt.Fprintf(parse.stdout, "%d .cvsignore operations found.\n", cvsignores)
 	}
 	return false
 }

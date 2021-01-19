@@ -137,6 +137,9 @@ gitify
 tag emptycommit-23 noteworthy
 tag /emptycommit/ delete
 
+# Delete remnant _.cvsignore_ files from a past life as CVS.
+expunge /.cvsignore$/ 
+
 # Often, your Subversion repository was a CVS repository in a past
 # life. CVS creates tags named with the suffix "-root" to mark branch
 # points for its internal housekeeping, and cv2svn blindly copied them
@@ -2707,9 +2710,6 @@ experience with large old repositories that may have hundreds or even
 thousands of dead branches. While it is important that content copies
 from dead branches be resolved correctly, the branches themselves are
 almost never interesting.)
-
---cvsignores::
-Suppress the normal deletion of _.cvsignore_ files.
 
 The following options to the read command control the branchify set
 and how branch and tag names are to be rewritten as they are read from
