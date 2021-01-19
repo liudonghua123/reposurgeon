@@ -1,7 +1,8 @@
 = reposurgeon project news =
 
 Repository head::
-     Retire the read --cvsignores option; bestr to use an epunge instead.
+     Retire the read --cvsignores option; best to use an expunge instead.
+     Subversion proerties discarded during read are logged, not shouted.
 
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).

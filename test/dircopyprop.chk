@@ -1,9 +1,3 @@
-reposurgeon: r2#1~testdir/foo properties set:
-reposurgeon: 	someprop = "Test property."
-reposurgeon: r3#1~testdir/foo properties set:
-reposurgeon: 	someprop = "Test property modified.\n"
-reposurgeon: r4#2~testdir2/foo properties set:
-reposurgeon: 	someprop = "Test property modified again with directory copy.\n"
 #reposurgeon sourcetype svn
 blob
 mark :1

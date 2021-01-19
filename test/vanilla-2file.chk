@@ -1,5 +1,3 @@
-reposurgeon: r5#1~trunk/file1 properties set:
-reposurgeon: 	foo = "bar"
 #reposurgeon sourcetype svn
 blob
 mark :1

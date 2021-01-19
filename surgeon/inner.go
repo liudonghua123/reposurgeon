@@ -647,41 +647,43 @@ func init() {
  */
 
 const (
-	logSHOUT    uint = 1 << iota // Errors and urgent messages
-	logWARN                      // Exceptional condition, probably not bug
-	logBATON                     // Log progress-meter messages, normally only visible for short intervals
-	logTAGFIX                    // Log tag fixups
-	logTOPOLOGY                  // Log repo-extractor logic (coarse-grained)
-	logEXTRACT                   // Log repo-extractor logic (fine-grained)
-	logFILEMAP                   // Log building of filemaps (warning: very verbose!)
-	logANCESTRY                  // Log ancestry computation
-	logDELETE                    // Log canonicalization after deletes
-	logIGNORES                   // Log ignore generation
-	logSVNPARSE                  // Lower-level Subversion parsing details
-	logEMAILIN                   // Log round-tripping through msg{out|in}
-	logSHUFFLE                   // Log file and directory handling
-	logCOMMANDS                  // Show commands as they are executed
-	logUNITE                     // Log mark assignments in merging
-	logLEXER                     // Log selection-language parsing
+	logSHOUT      uint = 1 << iota // Errors and urgent messages
+	logWARN                        // Exceptional condition, probably not bug
+	logBATON                       // Log progress-meter messages, normally only visible for short intervals
+	logTAGFIX                      // Log tag fixups
+	logTOPOLOGY                    // Log repo-extractor logic (coarse-grained)
+	logPROPERTIES                  // Log ignored properties
+	logEXTRACT                     // Log repo-extractor logic (fine-grained)
+	logFILEMAP                     // Log building of filemaps (warning: very verbose!)
+	logANCESTRY                    // Log ancestry computation
+	logDELETE                      // Log canonicalization after deletes
+	logIGNORES                     // Log ignore generation
+	logSVNPARSE                    // Lower-level Subversion parsing details
+	logEMAILIN                     // Log round-tripping through msg{out|in}
+	logSHUFFLE                     // Log file and directory handling
+	logCOMMANDS                    // Show commands as they are executed
+	logUNITE                       // Log mark assignments in merging
+	logLEXER                       // Log selection-language parsing
 )
 
 var logtags = map[string]uint{
-	"shout":    logSHOUT,
-	"baton":    logBATON,
-	"warn":     logWARN,
-	"tagfix":   logTAGFIX,
-	"topology": logTOPOLOGY,
-	"extract":  logEXTRACT,
-	"filemap":  logFILEMAP,
-	"ancestry": logANCESTRY,
-	"delete":   logDELETE,
-	"ignores":  logIGNORES,
-	"svnparse": logSVNPARSE,
-	"emailin":  logEMAILIN,
-	"shuffle":  logSHUFFLE,
-	"commands": logCOMMANDS,
-	"unite":    logUNITE,
-	"lexer":    logLEXER,
+	"shout":      logSHOUT,
+	"baton":      logBATON,
+	"warn":       logWARN,
+	"tagfix":     logTAGFIX,
+	"topology":   logTOPOLOGY,
+	"properties": logPROPERTIES,
+	"extract":    logEXTRACT,
+	"filemap":    logFILEMAP,
+	"ancestry":   logANCESTRY,
+	"delete":     logDELETE,
+	"ignores":    logIGNORES,
+	"svnparse":   logSVNPARSE,
+	"emailin":    logEMAILIN,
+	"shuffle":    logSHUFFLE,
+	"commands":   logCOMMANDS,
+	"unite":      logUNITE,
+	"lexer":      logLEXER,
 }
 var optionFlags = [...][2]string{
 	{"asciidoc",

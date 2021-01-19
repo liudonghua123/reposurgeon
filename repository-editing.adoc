@@ -2673,10 +2673,6 @@ subdirectories.  No directory deletions are translated to branch
 deletions, since no directories are seen as branches in the first
 place.
 
---ignore-properties::
-Suppress read-time warnings about discarded property
-settings.
-
 --user-ignores::
 By default reposurgeon tosses out in-tree _.gitignore_ files found in the
 history because they probably come from git-svn users who checked-in

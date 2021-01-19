@@ -1,5 +1,3 @@
-reposurgeon: r5#1~trunk/README properties set:
-reposurgeon: 	foo = "bar"
 --- README (svn-checkout)
 +++ README (git)
 @@ -1,6 +1,2 @@

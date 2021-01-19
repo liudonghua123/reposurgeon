@@ -1065,23 +1065,17 @@ func svnFilterProperties(ctx context.Context, sp *StreamParser, options stringSe
 					node.props.delete(prop)
 				}
 			}
-			if !options.Contains("--ignore-properties") {
-				// It would be good to emit messages
-				// when a nonempty property set on a
-				// path is entirely cleared.
-				// Unfortunately, the Subversion dumper
-				// spams empty property sets, emitting
-				// them lots of places they're not
-				// necessary.
-				if len(tossThese) > 0 {
-					if logEnable(logSHOUT) {
-						logit("r%d#%d~%s properties set:", node.revision, node.index, node.path)
-					}
-					for _, pair := range tossThese {
-						if logEnable(logSHOUT) {
-							logit("\t%s = %q", pair[0], pair[1])
-						}
-					}
+			// It would be good to emit messages
+			// when a nonempty property set on a
+			// path is entirely cleared.
+			// Unfortunately, the Subversion dumper
+			// spams empty property sets, emitting
+			// them lots of places they're not
+			// necessary.
+			if len(tossThese) > 0 && logEnable(logPROPERTIES) {
+				logit("r%d#%d~%s properties set:", node.revision, node.index, node.path)
+				for _, pair := range tossThese {
+					logit("\t%s = %q", pair[0], pair[1])
 				}
 			}
 		}

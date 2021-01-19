@@ -1,0 +1,6 @@
+ r2#1~testdir/foo properties set:
+ 	someprop = "Test property."
+ r3#1~testdir/foo properties set:
+ 	someprop = "Test property modified.\n"
+ r4#2~testdir2/foo properties set:
+ 	someprop = "Test property modified again with directory copy.\n"
