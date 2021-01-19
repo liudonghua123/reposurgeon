@@ -7388,9 +7388,11 @@ the Go language, with one exception. Due to a conflict with the use
 of $ for arguments in the "script" command, we retain Python's use of
 backslashes as a leader for references to group matches.
 
-Command syntax examples are usually given as /REGEXP/, but any non-space
-character will work as a delimiter in place of the /; this makes it
-easier to use an actual / in patterns.
+Command syntax examples are usually given as /REGEXP/, but any punctuation
+character other than double quote will work as a delimiter in place of
+the /; this makes it easier to use an actual / in patterns.  Matched
+double quote delimiters mean the literal should be interpreeted as plain
+text, suppressing interpretation of regexp special characters.
 
 Regular expressions are not anchored.  Use ^ and $ to anchor them
 to the beginning or end of the search space, when appropriate.
