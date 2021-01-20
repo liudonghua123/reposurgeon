@@ -2580,7 +2580,15 @@ Because graph supports output redirection, you may find a script like
 this useful:
 
 ----
-graph | dot -Tpng | display -
+#! /bin/sh
+dot -Tpng | display -
+----
+
+If you mane this "dotviewer" and put it in  your $PATH,
+you can visualize the structure of your repository this way.
+
+----
+graph | dotviewer
 ----
 
 You can substitute in your own preferred image viewer, of course.
