@@ -265,7 +265,7 @@ func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSe
 	// This collides with regexp alternation.  We require a whitespace character
 	// after the pipe bar and that it be either at BOL or have a preceding whitespace,
 	// which is a partial prevention.  This code looks a little weird because the command
-	// verb and fpllowing whitespace have already been popped off when lp.line gets here,
+	// verb and following whitespace have already been popped off when lp.line gets here,
 	// so the pipe bar can in fact be at index zero.
 	pipeIndex := strings.Index(lp.line, "|")
 	isspace := func(b byte) bool { return unicode.IsSpace(rune(b)) }
@@ -2576,11 +2576,11 @@ used by the graphviz tool suite.  This can be fed as input to the main
 graphviz rendering program dot(1), which will yield a viewable
 image.
 
-You may find a script like this useful:
+Because graph supports output redirection, you may find a script like
+this useful:
 
 ----
-graph $1 >/tmp/foo$$
-shell dot </tmp/foo$$ -Tpng | display -; rm /tmp/foo$$
+graph | dot -Tpng | display -
 ----
 
 You can substitute in your own preferred image viewer, of course.

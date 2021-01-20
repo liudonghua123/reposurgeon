@@ -1188,10 +1188,15 @@ own change tracking.
 In the remainder of this document, individual commands are described
 by hanging paragraphs led by the command syntax in a simple dialect of
 BNF.  Metavariables and substitutable text are capitalized, []
-surrounds optional arguments, and {} surrounds mandatory ones.  An
-optional argument prefixed by "<" indicates that the command accepts
-input redirection; an optional argument prefixed by ">" indicates that
-the command accepts output redirection.
+surrounds optional arguments, and {} surrounds mandatory ones.
+
+An optional argument prefixed by "<" indicates that the command
+accepts input redirection; an optional argument prefixed by ">"
+indicates that the command accepts output redirection.
+
+Commands that support output redirection can also be followed by a
+pipe bar and a normal Unix command.  For example, "list | more"
+directs the output of a list command to more(1).
 
 Help is always available.
 
