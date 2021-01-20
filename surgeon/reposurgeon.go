@@ -265,7 +265,7 @@ func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSe
 	// This collides with regexp alternation.  We require a whitespace character
 	// after the pipe bar and that it be either at BOL or have a preceding whitespace,
 	// which is a partial prevention.  This code looks a little weird because the command
-	// verb and fi=llowing whitespace have already been popped off when lp.line gets here,
+	// verb and fpllowing whitespace have already been popped off when lp.line gets here,
 	// so the pipe bar can in fact be at index zero.
 	pipeIndex := strings.Index(lp.line, "|")
 	isspace := func(b byte) bool { return unicode.IsSpace(rune(b)) }
@@ -274,7 +274,9 @@ func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSe
 			panic(throw("command", "no support for | redirection"))
 		}
 		cmd := strings.TrimSpace(lp.line[pipeIndex+1:])
-		lp.proc = exec.Command(cmd)
+		fields := strings.Fields(cmd)
+		lp.proc = exec.Command(fields[0])
+		lp.proc.Args = append(lp.proc.Args, fields[1:]...)
 		var err error
 		lp.stdout, err = lp.proc.StdinPipe()
 		if err != nil {
