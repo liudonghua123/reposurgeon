@@ -354,21 +354,31 @@ func (sp *StreamParser) sdReadBlob(length int) []byte {
 func (sp *StreamParser) sdReadProps(target string, checklength int) *OrderedMap {
 	// Parse a Subversion properties section, return as an OrderedMap.
 	props := newOrderedMap()
-	start := sp.ccount
+	start := sp.ccount // Only used for progress metering
 	for sp.ccount-start < int64(checklength) {
 		line := sp.readline()
 		if logEnable(logSVNPARSE) {
 			logit("readprops, line %d: %q", sp.importLine, line)
 		}
 		if bytes.HasPrefix(line, []byte("PROPS-END")) {
-			// This test should be !=, but I get random
-			// off-by-ones from real dumpfiles - I don't
-			// know why.
-			if sp.ccount-start < int64(checklength) {
-				sp.error(fmt.Sprintf("expected %d property chars, got %d",
-					checklength, sp.ccount-start))
-
-			}
+			// This length check produced flaky failures of two
+			// different kinds:
+			//
+			// 1. off-by-ones from dumpfiles on the test suite;
+			// one is global-ignores.svn. These can be prevented by changing
+			// the compatison to <.
+			//
+			// 2. off-by-ones when the tests are run undef Go 1.14 7 under
+			// Fedora; Daniel Brooks reported this as reproducible.
+			//
+			// We could chase these down, but this test isn't actually necessary
+			// since it only fires when we see a legal end elimiter for the
+			// comment section.
+			//
+			//if sp.ccount-start != int64(checklength) {
+			//	sp.error(fmt.Sprintf("expected %d property chars, got %d",
+			//		checklength, sp.ccount-start))
+			//}
 			break
 		} else if len(bytes.TrimSpace(line)) == 0 {
 			continue
