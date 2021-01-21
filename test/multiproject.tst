@@ -1,10 +1,9 @@
 ## Test dissection of multiproject repo
 set testmode
 read <multigen.svn \
-    --branchify=project1/trunk:project1/branches/*:project1/tags:* \
-    --branchmap=@project1/trunk@heads/master@ \
-    --branchmap=@project1/tags@tags@ \
-    --branchmap=@project1/branches/(.*)@heads/\1@
+    --branchify=project1/trunk:project1/branches/*:project1/tags:*
+branch heads/project1/trunk rename heads/master
+branch :heads/project1/branches/(.*): rename heads/\1
 branch project2 delete
 prefer git
 write -

@@ -34,11 +34,15 @@ import project state
 M 100644 :1 .gitignore
 M 100644 :2 file
 
-tag 2.5.1
+tag 2.5.1-root
 #legacy-id 3
 from :3
 tagger iay <iay> 1436022529 +0000
 data 14
 tag a version
+
+reset refs/heads/2.5.1
+#legacy-id 3
+from :3
 
 done

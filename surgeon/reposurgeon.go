@@ -5126,6 +5126,12 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 					if reset.ref == addBranchPrefix(branch) {
 						reset.ref = addBranchPrefix(subst)
 					}
+				} else if tag, ok := event.(*Tag); ok {
+					// Special weird hack to map Subversion root tags.
+					behead := func(s string) string { return s[len("heads/"):] }
+					if tag.tagname == behead(removeBranchPrefix(branch))+"-root" {
+						tag.tagname = behead(subst) + "-root"
+					}
 				}
 			}
 		}

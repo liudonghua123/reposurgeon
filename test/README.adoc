@@ -72,7 +72,7 @@ compare-all function.
 
 === fi-to-fi ===
 
-==ilds a git repo from a fast-import stream on stdin, or streams an
+Builds a git repo from a fast-import stream on stdin, or streams an
 existing repo to stdout.
 
 === hg-to-fi ===
@@ -111,7 +111,7 @@ its git conversion at all tags and branches.
 === delver ===
 
 Run delve, the Golang symbolic debugger, on reposurgeon. The wrapper
-is required to work around the problem that a p[rogram running under
+is required to work around the problem that a program running under
 an ordinary delver instance loses access to stdin.
 
 == The tests ==
@@ -256,6 +256,11 @@ Before the simplification of permission calculation:
 After conversion the tag named '1.0' referred to the first commit with
 the first tagging message 'Release 1.0', rather than the second commit
 with the second tagging message 'Fixed release 1.0'.
+
+== The nesting.svn test case ==
+
+FIXME: Generation of the extra reset is harmless but may reveal a
+minor problem in the SVN reader, or possibly the squash code.
 
 == A note about nut.svn ==
 
