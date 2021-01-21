@@ -2671,10 +2671,11 @@ repository metadata. Takes a selection set; members of the set other
 than commits, annotated tags, and passthroughs are ignored (that is,
 presently, blobs and resets).
 
-May have an option --filter, followed by = and a /-enclosed regular
+May have an option --filter, followed by delimited regular
 expression.  If this is given, only headers with names matching it are
 emitted.  In this control the name of the header includes its trailing
-colon. See "help regexpp" for information on the regexp syntax.
+colon.  The value of the option must be a delimitee regular expression.
+See "help regexp" for information on the regexp syntax.
 
 Blobs may be included in the output with the option --blobs.
 `)
@@ -2688,9 +2689,9 @@ func (rs *Reposurgeon) DoMsgout(lineIn string) bool {
 	var filterRegexp *regexp.Regexp
 	s, present := parse.OptVal("--filter")
 	if present {
-		if len(s) >= 2 && strings.HasPrefix(s, "/") && strings.HasSuffix(s, "/") {
+		payload, ok := delimitedRegexp(s)
+		if ok {
 			var err error
-			payload := s[1 : len(s)-1]
 			filterRegexp, err = regexp.Compile(payload)
 			if err != nil {
 				croak("malformed filter option %q in msgout\n", payload)
@@ -4016,9 +4017,7 @@ func (rs *Reposurgeon) HelpExpunge() {
 
 Expunge files from the selected portion of the repo history; the
 default is the entire history.  The arguments to this command may be
-paths or regular expressions matching paths. Regexps must be marked
-by being surrounded by matching delimiter other than a double quote,
-and maty not contain literal whitespace; use \s or \t if you need to. 
+paths or delimited regular expressions matching paths.
 
 Exceptionally, the first argument may be the token "~" which chooses
 all file paths other than those selected by the remaining arguments to
@@ -4044,7 +4043,7 @@ removal set.
 `)
 }
 
-func pathPattern(in string) (out string, re bool) {
+func delimitedRegexp(in string) (out string, re bool) {
 	isRe := in[0] == in[len(in)-1] && in[0:1] != `"` && unicode.IsPunct(rune(in[0]))
 	if isRe {
 		in = in[1 : len(in)-1]
@@ -4068,7 +4067,7 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 		digested := make([]string, 0)
 		notagify := false
 		for _, s := range toklist {
-			s, isRe := pathPattern(s)
+			s, isRe := delimitedRegexp(s)
 			if isRe {
 				digested = append(digested, "(?:"+s+")")
 			} else if s == "--notagify" {
@@ -5094,7 +5093,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return "refs/" + branch
 		}
 		newname = removeBranchPrefix(newname)
-		sourcepattern, isRe := pathPattern(sourcepattern)
+		sourcepattern, isRe := delimitedRegexp(sourcepattern)
 		sourcepattern = removeBranchPrefix(sourcepattern)
 		if !isRe {
 			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
@@ -7402,7 +7401,11 @@ Command syntax examples are usually given as /REGEXP/, but any punctuation
 character other than double quote will work as a delimiter in place of
 the /; this makes it easier to use an actual / in patterns.  Matched
 double quote delimiters mean the literal should be interpreeted as plain
-text, suppressing interpretation of regexp special characters.
+text, suppressing interpretation of regexp special characters and requiring
+an abchored, entire match.
+
+Delimited regular expressions following the command verb. and may not
+contain literal whitespace; use \s or \t if you need to.
 
 Regular expressions are not anchored.  Use ^ and $ to anchor them
 to the beginning or end of the search space, when appropriate.
