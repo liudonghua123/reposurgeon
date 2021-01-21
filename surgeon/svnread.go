@@ -439,7 +439,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 	trackSymlinks := newOrderedStringSet()
 	propertyStash := make(map[string]*OrderedMap)
 
-	baton.startProgress("SVN Phase 1: read dump file", uint64(filesize))
+	baton.startProgress("SVN1: reading stream", uint64(filesize))
 	var revcount revidx
 	for {
 		line := sp.readline()
@@ -1047,7 +1047,7 @@ func svnFilterProperties(ctx context.Context, sp *StreamParser, options stringSe
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 2: filter properties")
 	}
-	baton.startProgress("SVN Phase 2: filter properties", uint64(len(sp.streamview)))
+	baton.startProgress("SVN2: filter properties", uint64(len(sp.streamview)))
 	for si, node := range sp.streamview {
 		// Handle per-path properties.
 		if node.hasProperties() {
@@ -1122,7 +1122,7 @@ func svnBuildFilemaps(ctx context.Context, sp *StreamParser, options stringSet, 
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 3: build filemaps")
 	}
-	baton.startProgress("SVN Phase 3: build filemaps", uint64(len(sp.revisions)))
+	baton.startProgress("SVN3: build filemaps", uint64(len(sp.revisions)))
 	sp.history = newHistory()
 	for ri, record := range sp.revisions {
 		sp.history.apply(record.revision, record.nodes)
@@ -1162,8 +1162,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 4: directory copy expansion")
 	}
-
-	baton.startProgress("SVN Phase 4a: directory copy expansion", uint64(len(sp.revisions)))
+	baton.startProgress("SVN4a: copy expansion", uint64(len(sp.revisions)))
 	count := 0
 	for ri, record := range sp.revisions {
 		expandedNodes := make([]*NodeAction, 0)
@@ -1290,7 +1289,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 		return lookback
 	}
 
-	baton.startProgress("SVN Phase 4b: ancestry computations", uint64(len(sp.revisions)))
+	baton.startProgress("SVN4b: ancestry computation", uint64(len(sp.revisions)))
 	for ri := range sp.revisions {
 		// Compute ancestry links for all file nodes
 		revisionPathHash := make(map[string]*NodeAction)
@@ -1354,7 +1353,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 5: build commits")
 	}
-	baton.startProgress("SVN Phase 5: build commits", uint64(len(sp.revisions)))
+	baton.startProgress("SVN5: build commits", uint64(len(sp.revisions)))
 
 	// Normally we want to round Subversion timestamps down.  But
 	// if two adjacent times round down to the same second, and
@@ -1802,7 +1801,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	splits := make([]splitRequest, 0)
 	var reqlock sync.Mutex
 
-	baton.startProgress("SVN Phase 6a: split detection", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN6a: split detection", uint64(len(sp.repo.events)))
 	walkEvents(sp.repo.events, func(i int, event Event) {
 		if commit, ok := event.(*Commit); ok {
 			// Before separating cliques, detect branch-deletion cliques and turn them
@@ -1861,7 +1860,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	})
 	baton.endProgress()
 
-	baton.startProgress("SVN Phase 6b: split resolution", uint64(len(splits)))
+	baton.startProgress("SVN6b: split resolution", uint64(len(splits)))
 	// Can't parallelize this. That's OK, should be an unusual case.
 	// The previous parallel loop generated splits in random order.
 	// Sort them back to front so that when we process them we never have to
@@ -1922,7 +1921,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	// explicitly filled, then then fill list[rev_id] with the commit we just
 	// encountered.
 	//
-	baton.startProgress("SVN Phase 6c: fix content-changing parent links",
+	baton.startProgress("SVN6c: fix parent links",
 		uint64(len(sp.repo.events)))
 	sp.lastCommitOnBranchAt = make(map[string][]*Commit)
 	sp.branchRoots = make(map[string][]*Commit)
@@ -2039,16 +2038,16 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// These cases are rebarbative. Dealing with them is by far the
 	// most likely source of bugs in the analyzer.
 	//
-	defer trace.StartRegion(ctx, "SVN Phase 8: find branch root parents").End()
+	defer trace.StartRegion(ctx, "SVN Phase 8: find branch ancestors").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase 7: find branch root parents")
+		logit("SVN Phase 7: find branch ancestors")
 	}
 	maxRev := sp.maxRev()
 	totalroots := 0
 	for _, roots := range sp.branchRoots {
 		totalroots += len(roots)
 	}
-	baton.startProgress("SVN Phase 8: find branch root parents", uint64(totalroots))
+	baton.startProgress("SVN7: find branch ancestors", uint64(totalroots))
 	reparent := func(commit, parent *Commit) {
 		// Prepend a deleteall to avoid inheriting our new parent's content
 		ops := commit.operations()
@@ -2201,11 +2200,11 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 	// to deal with the newer style of mergeinfo that has a trunk part, not the older style
 	// without one.
 	//
-	defer trace.StartRegion(ctx, "SVN Phase 9: mergeinfo processing").End()
+	defer trace.StartRegion(ctx, "SVN Phase 8: mergeinfo processing").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 8: mergeinfo processing")
 	}
-	baton.startProgress("SVN Phase 8: mergeinfo processing", uint64(len(sp.revisions)))
+	baton.startProgress("SVN8: mergeinfos", uint64(len(sp.revisions)))
 
 	type RevRange struct {
 		min int
@@ -2591,7 +2590,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 9: branch renames")
 	}
-	baton.startProgress("SVN Phase 9: branch renames", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN9: branch renames", uint64(len(sp.repo.events)))
 	// This is illegal because, as part of a a Unix file system
 	// pathname, it's not allowed to contain NULs.
 	const illegalSegment = "illegal-\000-illeagle"
@@ -2716,7 +2715,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 }
 
 func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase A:
+	// Phase 10:
 	// Intervene to prevent lossage from tag/branch/trunk deletions.
 	//
 	// The Subversion data model is that a history is a sequence of surgical
@@ -2729,13 +2728,13 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 	// the refs/deleted/ namespace, with a suffix in case of clashes. A branch
 	// is considered deleted when we encounter a commit with a single deleteall
 	// fileop.
-	defer trace.StartRegion(ctx, "SVN Phase A: disambiguate deleted refs.").End()
+	defer trace.StartRegion(ctx, "SVN Phase 10: disambiguate deleted refs.").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase B: disambiguate deleted refs.")
+		logit("SVN10: disambiguate deleted refs.")
 	}
 	// First we build a map from branches to commits with that branch, to avoid
 	// an O(n^2) computation cost.
-	baton.startProgress("SVN Phase 8a: precompute branch map.", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN10a: precompute branch map.", uint64(len(sp.repo.events)))
 	branchToCommits := map[string][]*Commit{}
 	commitCount := 0
 	for idx, event := range sp.repo.events {
@@ -2747,7 +2746,7 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 	}
 	baton.endProgress()
 	// Rename refs/heads/root to refs/heads/master if the latter doesn't exist
-	baton.startProgress("SVN Phase 8b: rename branch 'root' to 'master' if there is none",
+	baton.startProgress("SVN10b: conditionally rename 'root'",
 		uint64(len(branchToCommits["refs/heads/root"])))
 	if _, hasMaster := branchToCommits["refs/heads/master"]; !hasMaster {
 		for i, commit := range branchToCommits["refs/heads/root"] {
@@ -2763,7 +2762,7 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 	usedRefs := map[string]int{}
 	processed := 0
 	seen := 0
-	baton.startProgress("SVN Phase 8c: disambiguate deleted refs.", uint64(commitCount))
+	baton.startProgress("SVN10c: disambiguate deleted refs.", uint64(commitCount))
 	for branch, commits := range branchToCommits {
 		lastFixed := -1
 		for i, commit := range commits {
@@ -2802,10 +2801,10 @@ func svnDisambiguateRefs(ctx context.Context, sp *StreamParser, options stringSe
 }
 
 func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase B:
+	// Phase 11:
 	// Canonicalize all commits except all-deletes, and add built-in SVN ignore patterns
-	defer trace.StartRegion(ctx, "SVN Phase B: canonicalize commits.").End()
-	baton.startProgress("SVN Phase B: canonicalize commits", uint64(len(sp.repo.events)))
+	defer trace.StartRegion(ctx, "SVN Phase 11: canonicalize commits.").End()
+	baton.startProgress("SVN11: canonicalize commits", uint64(len(sp.repo.events)))
 	var defaultIgnoreBlob *Blob
 	doIgnores := !options.Contains("--no-automatic-ignores")
 	defaultIgnores := []byte(subversionDefaultIgnores)
@@ -2866,17 +2865,17 @@ func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, b
 }
 
 func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase C:
+	// Phase 12:
 	// Tagify, or entirely discard, Subversion commits that didn't correspond to a file
 	// alteration.
 	//
-	defer trace.StartRegion(ctx, "SVN Phase C: de-junking").End()
+	defer trace.StartRegion(ctx, "SVN Phase 12: de-junking").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase C: de-junking")
+		logit("SVN Phase 12: de-junking")
 	}
 	// If asked to, purge commits on deleted refs, but remember the original
 	// branch for tagification purposes.
-	baton.startProgress("SVN Phase C1: purge deleted refs", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN12a: purge deleted refs", uint64(len(sp.repo.events)))
 	// compute a map from original branches to their tip
 	branchtips := sp.repo.branchmap()
 	// Parallelize, and use a concurrent-map implometation that has per-bucket locking,
@@ -3017,7 +3016,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	deletia := make([]int, 0)
 	// Do not parallelize, it will cause tags to be created in a nondeterministic order.
 	// There is probably not much to be gained here, anyway.
-	baton.startProgress("SVN Phase C2: tagify empty commits", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN12b: tagify empty commits", uint64(len(sp.repo.events)))
 	for index := range sp.repo.events {
 		//if logEnable(logEXTRACT) {logit("looking at %s", sp.repo.events[index].idMe())}
 		commit, ok := sp.repo.events[index].(*Commit)
@@ -3070,11 +3069,11 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 }
 
 func svnProcessRenumber(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
-	// Phase D:
+	// Phase 13:
 	// Renumber all commits and add an end event.
-	defer trace.StartRegion(ctx, "SVN Phase D: renumber").End()
+	defer trace.StartRegion(ctx, "SVN13: renumber").End()
 	if logEnable(logEXTRACT) {
-		logit("SVN Phase D: renumber")
+		logit("SVN Phase 13: renumber")
 	}
 	sp.repo.renumber(1, baton)
 	sp.repo.events = append(sp.repo.events, newPassthrough(sp.repo, "done\n"))
