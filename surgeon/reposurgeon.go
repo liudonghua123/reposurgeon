@@ -949,7 +949,7 @@ func (rs *Reposurgeon) DoNames(line string) bool {
 	}
 	for _, event := range rs.chosen().events {
 		if tag, ok := event.(*Tag); ok {
-			fmt.Fprintf(parse.stdout, "tag    %s\n", tag.name)
+			fmt.Fprintf(parse.stdout, "tag    %s\n", tag.tagname)
 
 		}
 	}
@@ -1021,7 +1021,7 @@ func (rs *Reposurgeon) DoIndex(lineIn string) bool {
 			}
 			fmt.Fprintf(parse.stdout, "%6d commit %6s    %s\n", eventid+1, mark, e.Branch)
 		case *Tag:
-			fmt.Fprintf(parse.stdout, "%6d tag    %6s    %4s\n", eventid+1, e.committish, e.name)
+			fmt.Fprintf(parse.stdout, "%6d tag    %6s    %4s\n", eventid+1, e.committish, e.tagname)
 		case *Reset:
 			committish := e.committish
 			if committish == "" {
@@ -1564,7 +1564,7 @@ func (rs *Reposurgeon) DoSizes(line string) bool {
 		} else if tag, ok := repo.events[i].(*Tag); ok {
 			commit := repo.markToEvent(tag.committish).(*Commit)
 			if commit == nil {
-				croak("internal error: target of tag %s is nil", tag.name)
+				croak("internal error: target of tag %s is nil", tag.tagname)
 				continue
 			}
 			if _, ok := sizes[commit.Branch]; !ok {
@@ -5320,7 +5320,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	}
 	for _, idx := range selection {
 		event := repo.events[idx]
-		if tag, ok := event.(*Tag); ok && refMatches(tag.name) {
+		if tag, ok := event.(*Tag); ok && refMatches(tag.getPseudobranch()) {
 			tags = append(tags, tag)
 		} else if reset, ok := event.(*Reset); ok && refMatches(reset.ref) {
 			resets = append(resets, reset)
@@ -5378,7 +5378,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		}
 		if len(tags) == 1 {
 			for _, event := range repo.events {
-				if tag, ok := event.(*Tag); ok && tag != tags[0] && tag.name == tags[0].name {
+				if tag, ok := event.(*Tag); ok && tag != tags[0] && tag.tagname == tags[0].tagname {
 					croak("tag name collision, not renaming.")
 					return false
 				}

@@ -1879,7 +1879,7 @@ func (b *Blob) emailIn(msg *MessageBlock, fill bool) bool {
 // Tag describes a a gitspace annotated tag object
 type Tag struct {
 	repo       *Repository
-	name       string
+	tagname    string
 	committish string
 	tagger     *Attribution
 	Comment    string
@@ -1892,9 +1892,9 @@ func newTag(repo *Repository,
 	tagger *Attribution, comment string) *Tag {
 	t := new(Tag)
 	if strings.HasPrefix(name, "refs/tags/") {
-		t.name = name
+		t.tagname = name[10:]
 	} else {
-		t.name = "refs/tags/" + name
+		t.tagname = name
 	}
 	t.tagger = tagger
 	t.Comment = comment
@@ -1902,15 +1902,15 @@ func newTag(repo *Repository,
 	return t
 }
 
-func (t *Tag) getHumanName() string {
-	if t.name == "" {
+func (t *Tag) getPseudobranch() string {
+	if t.tagname == "" {
 		return ""
 	}
-	return t.name[10:]
+	return "refs/tags/" + t.tagname
 }
 
 func (t *Tag) setHumanName(n string) {
-	t.name = "refs/tags/" + n
+	t.tagname = n
 }
 
 func (t Tag) getDelFlag() bool {
@@ -1969,7 +1969,7 @@ func (t *Tag) idMe() string {
 	if t.legacyID != "" {
 		suffix = "=<" + t.legacyID + ">"
 	}
-	return fmt.Sprintf("tag@%s%s (%s)", t.committish, suffix, t.name)
+	return fmt.Sprintf("tag@%s%s (%s)", t.committish, suffix, t.tagname)
 }
 
 // actionStamp controls how a tag stamp is made
@@ -1991,7 +1991,7 @@ func (t *Tag) showlegacy() string {
 
 // tags enables DoTags() to report tags.
 func (t *Tag) tags(modifiers orderedStringSet, eventnum int, _cols int) string {
-	return fmt.Sprintf("%6d\ttag\t%s", eventnum+1, t.name)
+	return fmt.Sprintf("%6d\ttag\t%s", eventnum+1, t.tagname)
 }
 
 // emailOut enables DoMsgout() to report tag metadata
@@ -1999,7 +1999,7 @@ func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 	filterRegexp *regexp.Regexp) string {
 	msg, _ := newMessageBlock(nil)
 	msg.setHeader("Event-Number", fmt.Sprintf("%d", eventnum+1))
-	msg.setHeader("Tag-Name", t.getHumanName())
+	msg.setHeader("Tag-Name", t.tagname)
 	msg.setHeader("Target-Mark", t.committish)
 	if t.tagger != nil {
 		t.tagger.emailOut(modifiers, msg, "Tagger")
@@ -2014,7 +2014,7 @@ func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 	msg.setHeader("Check-Text", check)
 	msg.setPayload(t.Comment)
 	if t.Comment != "" && !strings.HasSuffix(t.Comment, "\n") && logEnable(logWARN) {
-		logit("in tag %s, comment was not LF-terminated.", t.name)
+		logit("in tag %s, comment was not LF-terminated.", t.tagname)
 	}
 	if filterRegexp != nil {
 		msg.filterHeaders(filterRegexp)
@@ -2026,13 +2026,13 @@ func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 func (t *Tag) emailIn(msg *MessageBlock, fill bool) bool {
 	tagname := msg.getHeader("Tag-Name")
 	if tagname == "" {
-		panic(throw("msgbox", "update to tag %s is malformed", t.name))
+		panic(throw("msgbox", "update to tag %s is malformed", t.tagname))
 	}
 	modified := false
-	if t.getHumanName() != tagname {
+	if t.tagname != tagname {
 		if logEnable(logEMAILIN) {
 			logit("in tag %s, Tag-Name is modified %q -> %q",
-				msg.getHeader("Event-Number"), t.name, tagname)
+				msg.getHeader("Event-Number"), t.tagname, tagname)
 		}
 		t.setHumanName(tagname)
 		modified = true
@@ -2104,7 +2104,7 @@ func (t *Tag) decodable() bool {
 	valid := func(s string) bool {
 		return utf8.Valid([]byte(s))
 	}
-	return valid(t.name) && valid(t.tagger.fullname) && valid(t.tagger.email) && valid(t.Comment)
+	return valid(t.tagname) && valid(t.tagger.fullname) && valid(t.tagger.email) && valid(t.Comment)
 }
 
 // branchname returns the full branch reference corresponding to a tag.
@@ -2131,7 +2131,7 @@ func (t *Tag) stamp(_modifiers orderedStringSet, _eventnum int, cols int) string
 
 // Save this tag in import-stream format without constructing a string
 func (t *Tag) Save(w io.Writer) {
-	fmt.Fprintf(w, "tag %s\n", t.getHumanName())
+	fmt.Fprintf(w, "tag %s\n", t.tagname)
 	if t.legacyID != "" {
 		fmt.Fprintf(w, "#legacy-id %s\n", t.legacyID)
 	}
@@ -5299,7 +5299,7 @@ func (repo *Repository) _buildNamecache() {
 			//addOrAppend(i, commit.gitHash().hexify())
 			//addOrAppend(i, commit.gitHash().short())
 		case *Tag:
-			repo._namecache[event.(*Tag).getHumanName()] = []int{i}
+			repo._namecache[event.(*Tag).tagname] = []int{i}
 		case *Reset:
 			repo._namecache["reset@"+filepath.Base(event.(*Reset).ref)] = []int{i}
 		}
@@ -6744,7 +6744,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 					switch object := e.(type) {
 					case *Tag:
 						// object is already cast to Tag
-						if commit.Branch == object.name {
+						if commit.Branch == object.getPseudobranch() {
 							needReset = false
 						}
 						object.remember(repo, newTarget.getMark())
@@ -7501,7 +7501,7 @@ func (repo *Repository) uniquify(color string, persist map[string]string) map[st
 			reset.committish = makemark(reset.committish, "tag", "committish")
 		case *Tag:
 			tag := event.(*Tag)
-			tag.name = makename(tag.name, "tag", "name", true)
+			tag.tagname = makename(tag.tagname, "tag", "name", true)
 			tag.committish = makemark(tag.committish, "tag", "committish")
 		}
 	}
@@ -8889,8 +8889,8 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 	}
 	for _, event := range repo.events {
 		if tag, ok := event.(*Tag); ok {
-			if tag.name != "" {
-				nameMap[tag.name] = tag
+			if tag.tagname != "" {
+				nameMap[tag.tagname] = tag
 			}
 			if tag.tagger != nil {
 				stamp := tag.tagger.actionStamp()
@@ -9026,9 +9026,9 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			attrib, _ := newAttribution("")
 			blank.tagger = attrib
 			blank.emailIn(message, false)
-			event = nameMap[blank.name]
+			event = nameMap[blank.tagname]
 			if event == nil {
-				croak("no tag matches name %s", blank.name)
+				croak("no tag matches name %s", blank.tagname)
 				errorCount++
 			}
 		} else {
@@ -9118,9 +9118,9 @@ func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
 		}
 		if tag, ok := event.(*Tag); ok {
 			fmt.Fprintf(output, "\t\"%s\" -> \"%s\" [style=dotted];\n",
-				tag.name, tag.committish[1:])
+				tag.tagname, tag.committish[1:])
 			fmt.Fprintf(output, "\t{rank=same; \"%s\"; \"%s\"}\n",
-				tag.name, tag.committish[1:])
+				tag.tagname, tag.committish[1:])
 		}
 	}
 	for _, ei := range selection {
@@ -9154,7 +9154,7 @@ func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
 				firstLine = firstLine[:graphCaptionLength]
 			}
 			summary := html.EscapeString(firstLine)
-			fmt.Fprintf(output, "\t\"%s\" [label=<<table cellspacing=\"0\" border=\"0\" cellborder=\"0\"><tr><td><font color=\"blue\">%s</font></td><td>%s</td></tr></table>>];\n", tag.name, tag.name, summary)
+			fmt.Fprintf(output, "\t\"%s\" [label=<<table cellspacing=\"0\" border=\"0\" cellborder=\"0\"><tr><td><font color=\"blue\">%s</font></td><td>%s</td></tr></table>>];\n", tag.tagname, tag.tagname, summary)
 		}
 	}
 	fmt.Fprint(output, "}\n")
