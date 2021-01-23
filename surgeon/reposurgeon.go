@@ -3550,10 +3550,6 @@ selects all D fileops in the commit; the others select one each.
 If the to clause is present, the removed op is appended to the
 commit specified by the following singleton selection set.  This option
 cannot be combined with 'deletes'.
-
-Note that this command does not attempt to scavenge blobs even if the
-deleted fileop might be the only reference to them. This behavior may
-change in a future release.
 `)
 }
 
@@ -3637,7 +3633,13 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 		event.fileops = append(ops[:ind], ops[ind+1:]...)
 		if target == -1 {
 			if removed.op == opM {
-				repo.markToEvent(removed.ref).(*Blob).removeOperation(removed)
+				blob := repo.markToEvent(removed.ref).(*Blob)
+				blob.removeOperation(removed)
+				if len(blob.opset) == 0 {
+					i := repo.markToIndex(removed.ref)
+					repo.events = append(repo.events[:i], repo.events[i+1:]...)
+				}
+				repo.declareSequenceMutation("scavenging blob")
 			}
 		} else {
 			present := target >= 0 && target < len(repo.events)
@@ -3660,7 +3662,6 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 				repo.events = append(repo.events[:i], repo.events[i+1:]...)
 				repo.insertEvent(blob, target, "blob move")
 			}
-			// FIXME: Scavenge blobs left with no references
 		}
 	}
 	return false

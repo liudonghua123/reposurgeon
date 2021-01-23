@@ -250,8 +250,6 @@ lint:
 fmt:
 	gofmt -w .
 
-fixme:
-	@find . -type f -exec grep -n FIXME {} /dev/null \; | grep -v "[.]git"
 #
 # Cleaning
 #
@@ -302,6 +300,10 @@ version:
 
 check: lint build test
 	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
+
+fixme:
+	@find . -type f -exec grep -n FIXME {} /dev/null \; | grep -v "[.]git"
+
 #
 # Continuous integration.  More specifics are in the ci/ directory
 #
