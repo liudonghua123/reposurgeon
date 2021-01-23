@@ -302,7 +302,11 @@ check: lint build test
 	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
 
 fixme:
-	@find . -type f -exec grep -n FIXME {} /dev/null \; | grep -v "[.]git"
+	@if command -v rg; then \
+		rg FIXME; \
+	else \
+		find . -type f -exec grep -n FIXME {} /dev/null \; | grep -v "[.]git"; \
+	fi
 
 #
 # Continuous integration.  More specifics are in the ci/ directory
