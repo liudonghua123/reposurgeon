@@ -197,7 +197,7 @@ M 100644 :8 theory.txt
 
 blob
 mark :10
-original-oid bd0060fd878be4744cd0ba04ca2aa0d03fb309cf
+original-oid 9b2317f7a66413e9c274b0941b68cdd0ef17d7fd
 data 2339
 #!/usr/bin/env python
 #
@@ -242,13 +242,13 @@ class GenericRepo:
             elif line.startswith("options"):
                 continue     # Might need real code here someday
             elif line.startswith("blob"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("tag"):
-                continue     # FIXME
+                continue     # fixme
             else:
                 raise RepoSurgeonException("unexpected line in import stream")
 
@@ -266,7 +266,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :11
-original-oid bab06351a2344174b480cadd41f1113b3dd933aa
+original-oid 767e509128991bd921d6551db90958eaaee346be
 author Eric S. Raymond <esr@thyrsus.com> 1287919107 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1287919107 -0400
 data 31
@@ -276,7 +276,7 @@ M 100755 :10 rs
 
 blob
 mark :12
-original-oid 8b6f5ea5d1c4706c2269137b695e2491d4397284
+original-oid b341efdc82b09bb2658a7d3655d31e9fff2aa230
 data 4234
 #!/usr/bin/env python
 #
@@ -356,7 +356,7 @@ class GenericRepo:
             elif line.startswith("data"):
                 error("unexpected data object")
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
                 tagname = line[4:].strip()
                 nextline = fp.readline()
@@ -391,7 +391,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :13
-original-oid 29f5f77c358733853b9ed062c4ddc7daa545e1d1
+original-oid 231b85913691ac1be0db18b97c6426f54b8b532a
 author Eric S. Raymond <esr@thyrsus.com> 1287925789 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1287925789 -0400
 data 47
@@ -626,7 +626,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :15
-original-oid beefc0b2d82d34c89e1093e63efb25f5c0b7f6a3
+original-oid e522bbcf6c14335a91c9467ea3f0b8cd65fc3402
 author Eric S. Raymond <esr@thyrsus.com> 1287956274 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1287956274 -0400
 data 30
@@ -872,7 +872,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :17
-original-oid 3bbbcbd4cbf810888d18b6feec0527885b0c4c2b
+original-oid 8455e2119153cc769cac6d9bdcc1a0c7f466daea
 author Eric S. Raymond <esr@thyrsus.com> 1287991809 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1287991809 -0400
 data 36
@@ -1152,7 +1152,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :19
-original-oid b05bbefe48c25969e5d33ddab9c00b6a92aef16c
+original-oid f5722d174c4d18cfbc5a3e82de8b73ab943189a3
 author Eric S. Raymond <esr@thyrsus.com> 1287995066 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1287995066 -0400
 data 31
@@ -1432,7 +1432,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :21
-original-oid 7061b12e77a7cb2a85ae20a93ed23155043af608
+original-oid e301afb18976deaa153a9b222104f5fa94ea8f53
 author Eric S. Raymond <esr@thyrsus.com> 1288009568 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288009568 -0400
 data 26
@@ -1478,7 +1478,7 @@ that the dumps do not capture git lightweight tags.
 
 commit refs/tags/lightweight-sample
 mark :23
-original-oid 531f6a25a7304b744289aa1fcc2ac53b58ad37eb
+original-oid 473a7bd00749444502057a21e7efbc3231f889b0
 author Eric S. Raymond <esr@thyrsus.com> 1288009592 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288009592 -0400
 data 27
@@ -1827,7 +1827,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :25
-original-oid 6c0ee9e9e9bea3d40101bd2940f9d20d4fa36399
+original-oid 63b8e11926962a5b1c929f5afe6e6b590a3e9c71
 author Eric S. Raymond <esr@thyrsus.com> 1288031844 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288031844 -0400
 data 38
@@ -2226,7 +2226,7 @@ fixed by this change), or (c) empty directories.
 
 commit refs/tags/lightweight-sample
 mark :28
-original-oid e463ad0b332c085d7ccd4b905166d3c3ad1e8477
+original-oid c684bbb39467531b5a151714c8a199f0989df814
 author Eric S. Raymond <esr@thyrsus.com> 1288032988 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288032988 -0400
 data 22
@@ -2237,7 +2237,7 @@ M 100644 :27 theory.txt
 
 blob
 mark :29
-original-oid bba17e7c44ee8df3b83fa3d8f43939598f0b9a92
+original-oid 6e7044391e6b3ba34af7bd2ee545aadcd47c6774
 data 12893
 #!/usr/bin/env python
 #
@@ -2274,7 +2274,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -2584,7 +2584,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :30
-original-oid 4b5e7a743df5417e0de6cbfeb019b0099edd3e24
+original-oid 26b4dee63f4b34ff86154accad9b4571e2461ff0
 author Eric S. Raymond <esr@thyrsus.com> 1288033905 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288033905 -0400
 data 32
@@ -2594,7 +2594,7 @@ M 100755 :29 rs
 
 blob
 mark :31
-original-oid 36ac0dec2cb08a19d1876d7818daccf54a91eda5
+original-oid d31a115070ad323a888fcfa01866184d32aeaa05
 data 13693
 #!/usr/bin/env python
 #
@@ -2631,7 +2631,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -2962,7 +2962,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :32
-original-oid b629b38523fb8c11a3e27cee35104f869af2eba4
+original-oid 1f3a9e75db0e0a49e91910b1e1713f4ce1d9b917
 author Eric S. Raymond <esr@thyrsus.com> 1288035346 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288035346 -0400
 data 43
@@ -2972,7 +2972,7 @@ M 100755 :31 rs
 
 blob
 mark :33
-original-oid 657f34f4e3fdce639bf870eb65419996e3581b72
+original-oid 935b277e9c338b875c5684d12e4e3885d4b6d8fe
 data 14364
 #!/usr/bin/env python
 #
@@ -3009,7 +3009,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -3354,7 +3354,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :34
-original-oid 62d35e0421c2e4edeffd01911abee19c62498817
+original-oid 4b480d4da8480cd3e5e4a2a83c828d8c47423100
 author Eric S. Raymond <esr@thyrsus.com> 1288049092 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288049092 -0400
 data 30
@@ -3364,7 +3364,7 @@ M 100755 :33 rs
 
 blob
 mark :35
-original-oid 86e71181874a6ed90c52edef3559dec8f4c23a80
+original-oid 8ee0925ad0c75dbed979707034ea939e81d130e4
 data 14865
 #!/usr/bin/env python
 #
@@ -3401,7 +3401,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -3692,7 +3692,7 @@ def write_repo(repo, target):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -3761,7 +3761,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :36
-original-oid 1de32e17432ae5d811285ea57bdd1a8d06364063
+original-oid e89ac17559b74dfb97d7a49c87eab4173a0bc47a
 author Eric S. Raymond <esr@thyrsus.com> 1288057381 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288057381 -0400
 data 40
@@ -3771,7 +3771,7 @@ M 100755 :35 rs
 
 blob
 mark :37
-original-oid 8825966f50ae91c60a36b7b60afc03a9b4619ac0
+original-oid ed9903aa8a60ce24c64885bc269e1f8804ce2c40
 data 15019
 #!/usr/bin/env python
 #
@@ -3808,7 +3808,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -4100,7 +4100,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -4170,7 +4170,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :38
-original-oid f52211c2dfe28d975dae449f52cee26de4f8d335
+original-oid 2db28f80bdad013206e57a3dc96c206d0701f56c
 author Eric S. Raymond <esr@thyrsus.com> 1288058277 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288058277 -0400
 data 53
@@ -4180,7 +4180,7 @@ M 100755 :37 rs
 
 blob
 mark :39
-original-oid 5bbfe4ad071bd6df763afc86d4cd1d26a7acb770
+original-oid 349c5e993c0d54e247ab73567e89623c2e33ba65
 data 15203
 #!/usr/bin/env python
 #
@@ -4217,7 +4217,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -4512,7 +4512,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -4582,7 +4582,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :40
-original-oid fc1f7520d4b8d5eed82492c196e350b02c57635a
+original-oid 61c7fc815853dfee38e6ab24610246692e61967b
 author Eric S. Raymond <esr@thyrsus.com> 1288068011 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288068011 -0400
 data 53
@@ -4592,7 +4592,7 @@ M 100755 :39 rs
 
 blob
 mark :41
-original-oid 70c93779ca6860e39a061da3182f746623505fb4
+original-oid dcc4fb500d51bc9c0b6d029ac34d16fe3a857bad
 data 15448
 #!/usr/bin/env python
 #
@@ -4629,7 +4629,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -4928,7 +4928,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -4998,7 +4998,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :42
-original-oid 1fb40e38dd6ec242668cb94471063d873f9ca7b2
+original-oid 665038bcd81cf4fb2d7858cc1b9eb461458b5be0
 author Eric S. Raymond <esr@thyrsus.com> 1288069444 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288069444 -0400
 data 62
@@ -5008,7 +5008,7 @@ M 100755 :41 rs
 
 blob
 mark :43
-original-oid 1323ffc3dd66e1e2607c4e478af84f4bae7c59b5
+original-oid 1b5a121500571dbab5676ec76f252194ce35ab3e
 data 15549
 #!/usr/bin/env python
 #
@@ -5045,7 +5045,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -5356,7 +5356,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -5426,7 +5426,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :44
-original-oid 596d9f63dacaf804eef09e1abf1fd9c35df9b9ef
+original-oid 99de6c96fd4eac3cc12befdb9944c0b636179ea3
 author Eric S. Raymond <esr@thyrsus.com> 1288082031 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288082031 -0400
 data 40
@@ -5452,7 +5452,7 @@ and type 'make'.
 
 blob
 mark :46
-original-oid 1540a1d0b433608a18cb4bc914de1d8b0c977c35
+original-oid c40c96589e87e5355605a72038e010fb7260584d
 data 15565
 #!/usr/bin/env python
 #
@@ -5489,7 +5489,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -5800,7 +5800,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -5888,7 +5888,7 @@ roundtrip:
 
 blob
 mark :48
-original-oid 5313c64ee1ac8d4d6f0f8d92ea04fd6acefec714
+original-oid 50d4f572f9c38f991de0cffa3067d6a5f1feb178
 data 183504
 blob
 mark :1
@@ -6123,13 +6123,13 @@ class GenericRepo:
             elif line.startswith("options"):
                 continue     # Might need real code here someday
             elif line.startswith("blob"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("tag"):
-                continue     # FIXME
+                continue     # fixme
             else:
                 raise RepoSurgeonException("unexpected line in import stream")
 
@@ -6235,7 +6235,7 @@ class GenericRepo:
             elif line.startswith("data"):
                 error("unexpected data object")
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
                 tagname = line[4:].strip()
                 nextline = fp.readline()
@@ -8136,7 +8136,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -8491,7 +8491,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -8867,7 +8867,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -9257,7 +9257,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -9548,7 +9548,7 @@ def write_repo(repo, target):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -9662,7 +9662,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -9954,7 +9954,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -10069,7 +10069,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -10364,7 +10364,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -10479,7 +10479,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -10778,7 +10778,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -10864,7 +10864,7 @@ from :42
 
 commit refs/tags/lightweight-sample
 mark :49
-original-oid 91fc97c6bab012880e02f0811023b565fd54c50f
+original-oid f8e0c07b5a13d30747a178b734a732e22bdea39e
 author Eric S. Raymond <esr@thyrsus.com> 1288083745 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288083745 -0400
 data 36
@@ -10925,7 +10925,7 @@ fixed by this change), or (c) empty directories.
 
 commit refs/tags/lightweight-sample
 mark :51
-original-oid 604abbb5489adfcf8cd62a7d61d8b67d6f4a4b41
+original-oid 81b781f534f71a49f8035cd8cf950dae46a6e932
 author Eric S. Raymond <esr@thyrsus.com> 1288083882 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288083882 -0400
 data 53
@@ -10935,7 +10935,7 @@ M 100644 :50 theory.txt
 
 blob
 mark :52
-original-oid 136d653651b46d56e3d1008084b3a679144f3b7f
+original-oid be62e91e1356b02717c555d173dfee65570c3a4d
 data 15686
 #!/usr/bin/env python
 #
@@ -10972,7 +10972,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -11281,7 +11281,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -11352,7 +11352,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :53
-original-oid e675556ea1cceb11ec74718992189ea7d1445056
+original-oid fe9f2a15dcb9375db96c3a844b14759fd9d2f20a
 author Eric S. Raymond <esr@thyrsus.com> 1288087302 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288087302 -0400
 data 34
@@ -11362,7 +11362,7 @@ M 100755 :52 rs
 
 blob
 mark :54
-original-oid 4d5d931bf24dcf6cc5ec165c144025b15c6376a1
+original-oid d4056170930861192e45c6d4066d67dc0d0677eb
 data 15680
 #!/usr/bin/env python
 #
@@ -11399,7 +11399,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -11708,7 +11708,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -11779,7 +11779,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :55
-original-oid 7c7b8150cdacc5cb1b3b3b8f90c41389d095ebe5
+original-oid 760066da3a16a67f18374453c5a9c55f24fc09d7
 author Eric S. Raymond <esr@thyrsus.com> 1288087772 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288087772 -0400
 data 13
@@ -11807,7 +11807,7 @@ roundtrip:
 
 commit refs/tags/lightweight-sample
 mark :57
-original-oid ae0543ddab85dc330008268ad4b30aed11647f7e
+original-oid 7a7e0757338661803eed3fd0b2403b77238208f5
 author Eric S. Raymond <esr@thyrsus.com> 1288087832 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288087832 -0400
 data 37
@@ -11817,7 +11817,7 @@ M 100644 :56 test/Makefile
 
 blob
 mark :58
-original-oid 3871059d1635d5c6847d0b3c87d03a51ce7a73ba
+original-oid a15f94fe8062edfd345cca6e76d95e5e54980897
 data 15311
 #!/usr/bin/env python
 #
@@ -11854,7 +11854,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -12156,7 +12156,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -12227,7 +12227,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :59
-original-oid c65f2015adcdbf6939a791dcb1914e9976272d98
+original-oid 9dc7a9d26df05722fc80353b979aa7e1de5d6660
 author Eric S. Raymond <esr@thyrsus.com> 1288088010 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288088010 -0400
 data 28
@@ -12237,7 +12237,7 @@ M 100755 :58 rs
 
 blob
 mark :60
-original-oid 528a6d7a858f19724bf07f4966f625a89df06d66
+original-oid c7b3cfcf230cb2a54b5d64095b95ce5404fb8014
 data 16156
 #!/usr/bin/env python
 #
@@ -12274,7 +12274,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -12576,7 +12576,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -12671,7 +12671,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :61
-original-oid 6d392833d77c6929286cc2bc8504441c7779cafe
+original-oid 0218769b81713226e7407a7bda5cb11a8f6c822d
 author Eric S. Raymond <esr@thyrsus.com> 1288092270 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288092270 -0400
 data 28
@@ -12871,7 +12871,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 blob
 mark :65
-original-oid e0964e4bdde20a654af0416d331eacf41e7d2fbf
+original-oid da2903ea1450c57abdc3951930d84bfec5c51e67
 data 16419
 #!/usr/bin/env python
 #
@@ -12910,7 +12910,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -13212,7 +13212,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -13310,7 +13310,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :66
-original-oid 4b804d7e554cbd74aa96c3df86fa973425012541
+original-oid 52f29efbfd838e7ec9e7589394c95578411cfd8d
 author Eric S. Raymond <esr@thyrsus.com> 1288093185 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288093185 -0400
 data 65
@@ -13380,7 +13380,7 @@ roundtrip:
 
 commit refs/tags/lightweight-sample
 mark :69
-original-oid dea6da6d5e2c89240be89092d024df67edc2198e
+original-oid dba1ec15f30727d8984d357f41612493db82e718
 author Eric S. Raymond <esr@thyrsus.com> 1288093585 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288093585 -0400
 data 13
@@ -13432,7 +13432,7 @@ release: reposurgeon-$(VERS).tar.gz reposurgeon.html
 
 commit refs/tags/lightweight-sample
 mark :71
-original-oid b867834c5003656021f91b04d4e0b79f092f9469
+original-oid b2b2b6f366b7927323f0b763ec13e278c7764502
 author Eric S. Raymond <esr@thyrsus.com> 1288093728 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288093728 -0400
 data 27
@@ -13481,7 +13481,7 @@ release: reposurgeon-$(VERS).tar.gz reposurgeon.html
 
 blob
 mark :73
-original-oid 05eecf8d4a43a7e024e6556c423b9cd06443d5db
+original-oid b19493fa1ddc0c00b253aef5fba25b63e1f3f1b4
 data 16481
 #!/usr/bin/env python
 #
@@ -13520,7 +13520,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -13822,7 +13822,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -14069,7 +14069,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/tags/lightweight-sample
 mark :75
-original-oid d7fd276b01964bbc55e0d83de7c09a59c52b67d3
+original-oid dfbd041ee0345c6461820869a36e59ceebab2ba7
 author Eric S. Raymond <esr@thyrsus.com> 1288093891 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288093891 -0400
 data 26
@@ -14120,7 +14120,7 @@ release: reposurgeon-$(VERS).tar.gz reposurgeon.html
 
 commit refs/tags/lightweight-sample
 mark :77
-original-oid f4e42dbb524fd0d8b0cfe2e463a5368be0621e2a
+original-oid 7cf6b29f1edd0137a13c595cfac69a2e1bab8b94
 author Eric S. Raymond <esr@thyrsus.com> 1288093998 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288093998 -0400
 data 22
@@ -14130,7 +14130,7 @@ M 100644 :76 Makefile
 
 blob
 mark :78
-original-oid 0e950e83b481a977980e8948d3eb40016b2f8247
+original-oid 22b89cbe17b8af7ffca75f14b20bd55f9e3db62c
 data 18449
 #!/usr/bin/env python
 #
@@ -14169,7 +14169,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -14448,7 +14448,7 @@ def read_repo(source, preferred, verbose):
         hitcount = 0
         for (name, dirname, exporter, initializer, importer, checkout) in vcstypes:
             subdir = os.path.join(source, dirname)
-            # FIXME: preference is not implemented
+            # fixme: preference is not implemented
             if os.path.exists(subdir) and os.path.isdir(subdir):
                 (foundname, foundexporter) = (name, exporter)
                 hitcount += 1
@@ -14482,7 +14482,7 @@ def write_repo(repo, target, preferred, verbose):
     if target == '-':
         repo.fast_export(sys.stdout)
     elif os.path.isdir(source):
-        # FIXME
+        # fixme
         print >>sys.stderr, "reposurgeon: directory writes are not yet supported."
     elif os.path.exists(source):
         print >>sys.stderr, "reposurgeon: file %s already exists" % source
@@ -14579,7 +14579,7 @@ with command-line arguments).
 """
     def do_write(self, line):
         "Write out the results of repo surgery."
-        # FIXME: Default to . if we read from a directory
+        # fixme: Default to . if we read from a directory
         if not line:
             line = '-'
         write_repo(self.repo, line, self.preferred, self.verbose)
@@ -14780,7 +14780,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/tags/lightweight-sample
 mark :80
-original-oid c5055e6e510fbc59f690a02cb1ddba84e55cae59
+original-oid 5c1552399b27857522323209e7cbac6b62012244
 author Eric S. Raymond <esr@thyrsus.com> 1288100146 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288100146 -0400
 data 22
@@ -14791,7 +14791,7 @@ M 100755 :78 reposurgeon
 
 blob
 mark :81
-original-oid 5a3d841237fd5c5a70aa213553d7d08937a45fd8
+original-oid 321b81a686d1f3482c5d7691825e457045d0cafd
 data 18498
 #!/usr/bin/env python
 #
@@ -14829,7 +14829,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -15141,7 +15141,7 @@ def write_repo(repo, target, preferred, verbose):
     if target == '-':
         repo.fast_export(sys.stdout)
     elif os.path.isdir(source):
-        # FIXME
+        # fixme
         print >>sys.stderr, "reposurgeon: directory writes are not yet supported."
     elif os.path.exists(source):
         print >>sys.stderr, "reposurgeon: file %s already exists" % source
@@ -15238,7 +15238,7 @@ with command-line arguments).
 """
     def do_write(self, line):
         "Write out the results of repo surgery."
-        # FIXME: Default to . if we read from a directory
+        # fixme: Default to . if we read from a directory
         if not line:
             line = '-'
         write_repo(self.repo, line, self.preferred, self.verbose)
@@ -15270,7 +15270,7 @@ if __name__ == '__main__':
 
 commit refs/tags/lightweight-sample
 mark :82
-original-oid 659f4129ed381c003b4e091a06c4c10c85fe09a7
+original-oid 2f9ce3626d417a5128cf8e97feb09448a4c9d6ae
 author Eric S. Raymond <esr@thyrsus.com> 1288101062 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288101062 -0400
 data 38
@@ -15280,7 +15280,7 @@ M 100755 :81 reposurgeon
 
 blob
 mark :83
-original-oid f214e0645c75bae58b1efdff71ed3a3f46fcfd00
+original-oid 12395b241d8c355ba27961a8ae94bd5273e8f469
 data 18416
 #!/usr/bin/env python
 #
@@ -15318,7 +15318,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -15627,7 +15627,7 @@ def write_repo(repo, target, preferred, verbose):
     if target == '-':
         repo.fast_export(sys.stdout)
     elif os.path.isdir(source):
-        # FIXME
+        # fixme
         print >>sys.stderr, "reposurgeon: directory writes are not yet supported."
     elif os.path.exists(source):
         print >>sys.stderr, "reposurgeon: file %s already exists" % source
@@ -15762,7 +15762,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :84
-original-oid 174520f3074c91c1e46d371b4723bb8fc71c330e
+original-oid 1e1bb7667fcd5a312486bba536e14560640536a9
 author Eric S. Raymond <esr@thyrsus.com> 1288101602 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288101602 -0400
 data 47
@@ -15772,7 +15772,7 @@ M 100755 :83 reposurgeon
 
 blob
 mark :85
-original-oid 7e8a5babed905ec4f269420052a6f1dcf2128c0a
+original-oid d4117950cb16fb811377ffc0cb918df0664b7980
 data 21562
 #!/usr/bin/env python
 #
@@ -15810,7 +15810,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -16524,7 +16524,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/tags/annotated-sample
 mark :87
-original-oid bc52c5a097000da16724d18ac80e705e3b183eb3
+original-oid c1cedd7a199046088a3559f55233d57a798ace18
 author Eric S. Raymond <esr@thyrsus.com> 1288112612 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288112612 -0400
 data 46
@@ -16535,7 +16535,7 @@ M 100755 :85 reposurgeon
 
 blob
 mark :88
-original-oid bb6eb14f91f032f1aab816c6ecc8f2342cd780bc
+original-oid 729d5c0e9ed917de11eaacfc1702e310dcb0b586
 data 23221
 #!/usr/bin/env python
 #
@@ -16573,7 +16573,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -17147,7 +17147,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :89
-original-oid ffc6f86cf2e7abbf313d98d79ca67e340d710594
+original-oid 02ff878d57f57615672d872f6195f1e2dfdcb940
 author Eric S. Raymond <esr@thyrsus.com> 1288113962 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288113962 -0400
 data 36
@@ -17157,7 +17157,7 @@ M 100755 :88 reposurgeon
 
 blob
 mark :90
-original-oid 918856d60a56e20d079c298a5fb28a57790834c4
+original-oid a38dc711e930b9f438ddf9a3a2aa9a8c94e9dacb
 data 23623
 #!/usr/bin/env python
 #
@@ -17195,7 +17195,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -17974,7 +17974,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/tags/annotated-sample
 mark :92
-original-oid be4302df54c46d8034058475a88791aa7a728b39
+original-oid 9f53c7a5ba7a9962ddd9e32ee264c4c407d046a7
 author Eric S. Raymond <esr@thyrsus.com> 1288115880 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288115880 -0400
 data 35
@@ -17985,7 +17985,7 @@ M 100755 :90 reposurgeon
 
 blob
 mark :93
-original-oid 61ea5247d1245af0fd8f2f05fcc2f46b2c957ec4
+original-oid 52017ecb09c392933a76fb470e2e6fd23c95577b
 data 24447
 #!/usr/bin/env python
 #
@@ -18024,7 +18024,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -18036,7 +18036,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -18830,7 +18830,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/tags/annotated-sample
 mark :95
-original-oid 580b5f19fb6dec58a8bad6f9966c05ccd85166ac
+original-oid 8d39f6657b9b82f0d8047489af727b495e355f9a
 author Eric S. Raymond <esr@thyrsus.com> 1288117441 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288117441 -0400
 data 26
@@ -18841,7 +18841,7 @@ M 100755 :93 reposurgeon
 
 blob
 mark :96
-original-oid abc4871f9f70832bd3b1852042775af8cf7d4dda
+original-oid 65bbdbed643eb9a690c19f5aa91cefdc5046b5fb
 data 26358
 #!/usr/bin/env python
 #
@@ -18880,7 +18880,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -18892,7 +18892,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -19793,7 +19793,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/tags/annotated-sample
 mark :98
-original-oid 7fdd057574eb801d69f0bc56216690df6a06412f
+original-oid 14ed3883fc6825e35b1ee07d8955b5f80b229b07
 author Eric S. Raymond <esr@thyrsus.com> 1288160374 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288160374 -0400
 data 53
@@ -19804,7 +19804,7 @@ M 100755 :96 reposurgeon
 
 blob
 mark :99
-original-oid 0b1fb9bf6594850d8fe6d39cee27585c90e56a41
+original-oid fe07dea06076d7512cc970ea9b6b0908de6029fb
 data 32121
 #!/usr/bin/env python
 #
@@ -19843,7 +19843,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -19855,7 +19855,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -20630,7 +20630,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :100
-original-oid 8aea6566d0341f46a17693742ea47be39a546188
+original-oid 18135f284258227fc58e55fc56bf13f1c1b13602
 author Eric S. Raymond <esr@thyrsus.com> 1288173615 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288173615 -0400
 data 37
@@ -20640,7 +20640,7 @@ M 100755 :99 reposurgeon
 
 blob
 mark :101
-original-oid 4cdb77116361aaa18f28aaefc05eb16cbba84a26
+original-oid 80dc03457a2b502b3d2ab54a29b66d4b7d7c5189
 data 31908
 #!/usr/bin/env python
 #
@@ -20679,7 +20679,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -20691,7 +20691,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -21460,7 +21460,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :102
-original-oid 62851009560bfc36de209ab408cf871a71af4e81
+original-oid d68e1e656a94aa0d8d11b8c17e5d735897607d4a
 author Eric S. Raymond <esr@thyrsus.com> 1288179718 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288179718 -0400
 data 67
@@ -21470,7 +21470,7 @@ M 100755 :101 reposurgeon
 
 blob
 mark :103
-original-oid a3cde6ece63603c42838a723a800428ce41b8da0
+original-oid da7b544dce0872c230ead64471154ebdcb9cbfb6
 data 32448
 #!/usr/bin/env python
 #
@@ -21509,7 +21509,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -21521,7 +21521,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -22304,7 +22304,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :104
-original-oid b1ae2ce5ef8f43ae0e4cad697ddb6fcb2a9f1926
+original-oid 94a2ec8046bbea67788c87b7e5a5b29eb2b8e27b
 author Eric S. Raymond <esr@thyrsus.com> 1288181252 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288181252 -0400
 data 28
@@ -22314,7 +22314,7 @@ M 100755 :103 reposurgeon
 
 blob
 mark :105
-original-oid 46c08814de4435ebcc4a12f34d8668b4d3e44d43
+original-oid 896cd42c950bdcc6c289b8f4bad81485f5c651f4
 data 35910
 #!/usr/bin/env python
 #
@@ -22353,7 +22353,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -22365,7 +22365,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -23230,7 +23230,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :106
-original-oid 463a0a23f4e477f0c47fa6e8774fe369c4079f3a
+original-oid eda011d5e385d6002b66eff12d991894ebc6b73e
 author Eric S. Raymond <esr@thyrsus.com> 1288193458 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288193458 -0400
 data 40
@@ -23240,7 +23240,7 @@ M 100755 :105 reposurgeon
 
 blob
 mark :107
-original-oid 32b7e18bfbd4c9905adeaf9338d5f4281f6772fb
+original-oid 4557c7cf59a9c53f8b8caa82f0f74ee679a44f47
 data 35992
 #!/usr/bin/env python
 #
@@ -23279,7 +23279,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -23291,7 +23291,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -24160,7 +24160,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :108
-original-oid 23a765e77e5b458b330be93c617a358f948cfb44
+original-oid bde6c07938c2ddd54b63311a5756a4b4ecb0ce05
 author Eric S. Raymond <esr@thyrsus.com> 1288194165 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288194165 -0400
 data 49
@@ -24170,7 +24170,7 @@ M 100755 :107 reposurgeon
 
 blob
 mark :109
-original-oid cb54c15b8f2aa4ba7e995e4c0a1ef3030ea5ab79
+original-oid 1cdca5010ef1309ab6da7403ed3c80a528f5a571
 data 36130
 #!/usr/bin/env python
 #
@@ -24209,7 +24209,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -24221,7 +24221,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -25091,7 +25091,7 @@ if __name__ == '__main__':
 
 commit refs/tags/annotated-sample
 mark :110
-original-oid 6ecf0fedec5eed1186629341788a2178a395de9d
+original-oid 2c1341c397e29f2915067f7319b9217f8c78f6b2
 author Eric S. Raymond <esr@thyrsus.com> 1288194826 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288194826 -0400
 data 29
@@ -25101,7 +25101,7 @@ M 100755 :109 reposurgeon
 
 blob
 mark :111
-original-oid 0093c362ea6424410688e6cd039db019fa2f6b87
+original-oid 4d92dc90c93adc3fca971d954c0bc844cf1c4a51
 data 36088
 #!/usr/bin/env python
 #
@@ -25140,7 +25140,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -25152,7 +25152,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -26409,7 +26409,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/tags/annotated-sample
 mark :113
-original-oid 8f3ff752e691e9be4cd512449d3526cf8237ef98
+original-oid 475f77295c6dab5afb8ca1e9793e513c4d98f2ff
 author Eric S. Raymond <esr@thyrsus.com> 1288199857 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288199857 -0400
 data 41
@@ -26809,7 +26809,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/heads/master
 mark :115
-original-oid f5d79789cc581f147b96f67edcb8f1a2ae960fe1
+original-oid 83d7df2df6d61a646b39f585d52d9632b2032185
 author Eric S. Raymond <esr@thyrsus.com> 1288200336 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288200336 -0400
 data 21
@@ -26819,7 +26819,7 @@ M 100644 :114 reposurgeon.xml
 
 blob
 mark :116
-original-oid 3b9199d49bba2fa0932703a6faaded74cd4a94d2
+original-oid 7cd91189c592861edca5320b17f6f43bfa3068ad
 data 35714
 #!/usr/bin/env python
 #
@@ -26858,7 +26858,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -26870,7 +26870,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -27739,7 +27739,7 @@ if __name__ == '__main__':
 
 commit refs/heads/master
 mark :117
-original-oid 4cc63d3da43c7d139a981d225f4987167a9a159d
+original-oid 0afa9e41fad92f436458d1384d43d5d9db508130
 author Eric S. Raymond <esr@thyrsus.com> 1288202060 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288202060 -0400
 data 51
@@ -27749,7 +27749,7 @@ M 100755 :116 reposurgeon
 
 blob
 mark :118
-original-oid 9433e7f9f498ea945534d0cdf54b5b9c5c13429b
+original-oid ab5b93eea742637ce8588bd6414fce30fa49bdfe
 data 35715
 #!/usr/bin/env python
 #
@@ -27788,7 +27788,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -27800,7 +27800,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -28669,7 +28669,7 @@ if __name__ == '__main__':
 
 commit refs/heads/master
 mark :119
-original-oid 1b0e3f6e67b7023b94dc8e40e4f66deafbb53dcc
+original-oid af8ffe7bd95bb2ea66cdb34c74bf71931d259925
 author Eric S. Raymond <esr@thyrsus.com> 1288202462 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288202462 -0400
 data 67
@@ -28679,7 +28679,7 @@ M 100755 :118 reposurgeon
 
 blob
 mark :120
-original-oid 90639cb38d25862355a98b82bd40bbfcbfb40aac
+original-oid 9b958b194f50edec700e89f0c8efcec0167e6113
 data 35992
 #!/usr/bin/env python
 #
@@ -28718,7 +28718,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -28730,7 +28730,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -29604,7 +29604,7 @@ if __name__ == '__main__':
 
 commit refs/heads/master
 mark :121
-original-oid b4f44ca2a857c26700593fb677f362d5ac69ba83
+original-oid e66002640aa4b42bc66c97c4a9cf61919ceaa7b6
 author Eric S. Raymond <esr@thyrsus.com> 1288203721 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288203721 -0400
 data 27
@@ -29614,7 +29614,7 @@ M 100755 :120 reposurgeon
 
 blob
 mark :122
-original-oid a3c9e029bd2dc3d070677f35e6a38188d09bada1
+original-oid cb2b9751196318492026a19e1adc3182456f240e
 data 36097
 #!/usr/bin/env python
 #
@@ -29653,7 +29653,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -29665,7 +29665,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -30541,7 +30541,7 @@ if __name__ == '__main__':
 
 commit refs/heads/master
 mark :123
-original-oid 96e0f248985a4a149972a54356dd4515c040000a
+original-oid b75ea149075a4d5b0a2e160f72624be46e9114ce
 author Eric S. Raymond <esr@thyrsus.com> 1288204205 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288204205 -0400
 data 37
@@ -30551,7 +30551,7 @@ M 100755 :122 reposurgeon
 
 blob
 mark :124
-original-oid 62c152768d4b153ec1bb108686e8475f128f2ead
+original-oid 058b344387462da0e9c18c048824f722fa5832ab
 data 36129
 #!/usr/bin/env python
 #
@@ -30590,7 +30590,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -30602,7 +30602,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -31873,7 +31873,7 @@ url='http://www.catb.org/~esr/reposurgeon'>http://www.catb.org/~esr/reposurgeon<
 
 commit refs/heads/master
 mark :126
-original-oid d5067f6e00fe49ecb351f8dc377e77870b1dbf56
+original-oid 2ee4b788d3acf91cdcbf56c332d891c29ce454ce
 author Eric S. Raymond <esr@thyrsus.com> 1288205012 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288205012 -0400
 data 183
@@ -31887,7 +31887,7 @@ M 100755 :124 reposurgeon
 
 blob
 mark :127
-original-oid 07e2efbd35b971cbfce30631fb24e9ab49dc5055
+original-oid 62723281ded52e1992ced39c4392206e2da1eaa3
 data 36212
 #!/usr/bin/env python
 #
@@ -31926,7 +31926,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -31938,7 +31938,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -32815,7 +32815,7 @@ if __name__ == '__main__':
 
 commit refs/heads/master
 mark :128
-original-oid 23b1c471add0f5ae5611c2de972213eb8a8f54a4
+original-oid 4d68e5f28b021b4f0ef8ff8f67d51f728b1a62b6
 author Eric S. Raymond <esr@thyrsus.com> 1288206185 -0400
 committer Eric S. Raymond <esr@thyrsus.com> 1288206185 -0400
 data 55
@@ -32828,7 +32828,7 @@ from :128
 
 tag annotated-sample
 from :113
-original-oid d2be661b8dda6a252be3796c656ca721cb529c59
+original-oid 9f80d17381dbc60620521e32e518552f568a2b77
 tagger Eric S. Raymond <esr@thyrsus.com> 1288206780 -0400
 data 66
 We want an anntated tag in the repo for regression-test purposes.

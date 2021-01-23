@@ -231,13 +231,13 @@ class GenericRepo:
             elif line.startswith("options"):
                 continue     # Might need real code here someday
             elif line.startswith("blob"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("tag"):
-                continue     # FIXME
+                continue     # fixme
             else:
                 raise RepoSurgeonException("unexpected line in import stream")
 
@@ -343,7 +343,7 @@ class GenericRepo:
             elif line.startswith("data"):
                 error("unexpected data object")
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
                 tagname = line[4:].strip()
                 nextline = fp.readline()
@@ -2244,7 +2244,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -2599,7 +2599,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -2975,7 +2975,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -3365,7 +3365,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -3656,7 +3656,7 @@ def write_repo(repo, target):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -3770,7 +3770,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -4062,7 +4062,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -4177,7 +4177,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -4472,7 +4472,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -4587,7 +4587,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -4886,7 +4886,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -5001,7 +5001,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -5312,7 +5312,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -5442,7 +5442,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -5753,7 +5753,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -6074,13 +6074,13 @@ class GenericRepo:
             elif line.startswith("options"):
                 continue     # Might need real code here someday
             elif line.startswith("blob"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("tag"):
-                continue     # FIXME
+                continue     # fixme
             else:
                 raise RepoSurgeonException("unexpected line in import stream")
 
@@ -6186,7 +6186,7 @@ class GenericRepo:
             elif line.startswith("data"):
                 error("unexpected data object")
             elif line.startswith("commit"):
-                continue     # FIXME
+                continue     # fixme
             elif line.startswith("reset"):
                 tagname = line[4:].strip()
                 nextline = fp.readline()
@@ -8087,7 +8087,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -8442,7 +8442,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -8818,7 +8818,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -9208,7 +9208,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -9499,7 +9499,7 @@ def write_repo(repo, target):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -9613,7 +9613,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -9905,7 +9905,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -10020,7 +10020,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -10315,7 +10315,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -10430,7 +10430,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -10729,7 +10729,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -10919,7 +10919,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -11228,7 +11228,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -11344,7 +11344,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -11653,7 +11653,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -11795,7 +11795,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -12097,7 +12097,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -12213,7 +12213,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -12515,7 +12515,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -12844,7 +12844,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -13146,7 +13146,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -13445,7 +13445,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -13747,7 +13747,7 @@ def write_repo(repo, target, verbose):
     "Write a repository using fast-export."
     if target == '-':
         repo.fast_export(sys.stdout)
-    # FIXME: Have to decide a policy here
+    # fixme: Have to decide a policy here
 
 def act(cmd):
     (err, out) = commands.getstatusoutput(cmd)
@@ -14089,7 +14089,7 @@ vcstypes = [
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
      ("hg",
       ".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
@@ -14368,7 +14368,7 @@ def read_repo(source, preferred, verbose):
         hitcount = 0
         for (name, dirname, exporter, initializer, importer, checkout) in vcstypes:
             subdir = os.path.join(source, dirname)
-            # FIXME: preference is not implemented
+            # fixme: preference is not implemented
             if os.path.exists(subdir) and os.path.isdir(subdir):
                 (foundname, foundexporter) = (name, exporter)
                 hitcount += 1
@@ -14402,7 +14402,7 @@ def write_repo(repo, target, preferred, verbose):
     if target == '-':
         repo.fast_export(sys.stdout)
     elif os.path.isdir(source):
-        # FIXME
+        # fixme
         print >>sys.stderr, "reposurgeon: directory writes are not yet supported."
     elif os.path.exists(source):
         print >>sys.stderr, "reposurgeon: file %s already exists" % source
@@ -14499,7 +14499,7 @@ with command-line arguments).
 """
     def do_write(self, line):
         "Write out the results of repo surgery."
-        # FIXME: Default to . if we read from a directory
+        # fixme: Default to . if we read from a directory
         if not line:
             line = '-'
         write_repo(self.repo, line, self.preferred, self.verbose)
@@ -14746,7 +14746,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -15058,7 +15058,7 @@ def write_repo(repo, target, preferred, verbose):
     if target == '-':
         repo.fast_export(sys.stdout)
     elif os.path.isdir(source):
-        # FIXME
+        # fixme
         print >>sys.stderr, "reposurgeon: directory writes are not yet supported."
     elif os.path.exists(source):
         print >>sys.stderr, "reposurgeon: file %s already exists" % source
@@ -15155,7 +15155,7 @@ with command-line arguments).
 """
     def do_write(self, line):
         "Write out the results of repo surgery."
-        # FIXME: Default to . if we read from a directory
+        # fixme: Default to . if we read from a directory
         if not line:
             line = '-'
         write_repo(self.repo, line, self.preferred, self.verbose)
@@ -15233,7 +15233,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -15542,7 +15542,7 @@ def write_repo(repo, target, preferred, verbose):
     if target == '-':
         repo.fast_export(sys.stdout)
     elif os.path.isdir(source):
-        # FIXME
+        # fixme
         print >>sys.stderr, "reposurgeon: directory writes are not yet supported."
     elif os.path.exists(source):
         print >>sys.stderr, "reposurgeon: file %s already exists" % source
@@ -15723,7 +15723,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -16483,7 +16483,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -17103,7 +17103,7 @@ vcstypes = {
       "git init",
       "git fast-import <%s",
       "git checkout"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
       "hg-fast-export.sh %s",   # Not part of stock hg
       "hg init",
@@ -17929,7 +17929,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -17941,7 +17941,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -18782,7 +18782,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -18794,7 +18794,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -19742,7 +19742,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -19754,7 +19754,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -20576,7 +20576,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -20588,7 +20588,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -21404,7 +21404,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -21416,7 +21416,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -22246,7 +22246,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -22258,7 +22258,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -23170,7 +23170,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -23182,7 +23182,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -24098,7 +24098,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -24110,7 +24110,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -25027,7 +25027,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -25039,7 +25039,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -26740,7 +26740,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -26752,7 +26752,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -27668,7 +27668,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -27680,7 +27680,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -28596,7 +28596,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -28608,7 +28608,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -29529,7 +29529,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -29541,7 +29541,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -30464,7 +30464,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -30476,7 +30476,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
@@ -31797,7 +31797,7 @@ vcstypes = {
              "git fast-import <%s",
              "git checkout",
              "gitk"),
-     # FIXME: hg and bzr methods are untested
+     # fixme: hg and bzr methods are untested
     "hg" : (".hg",
             "hg-fast-export.sh %s",   # Not part of stock hg
             "hg init",
@@ -31809,7 +31809,7 @@ vcstypes = {
              "bzr init",
              "bzr fast-import %s",
              "bzr checkout",
-             None),    # FIXME: there probably is something...
+             None),    # fixme: there probably is something...
     }
 
 class Baton:
