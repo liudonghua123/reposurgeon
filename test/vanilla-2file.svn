@@ -1,5 +1,5 @@
 SVN-fs-dump-format-version: 2
- ## Standard layout. Simplest case, no tags or branches. 2 files
+ ## Standard layout, no tags or branches. 2 files
 
 UUID: be5bedff-a577-4def-8afe-cf522686966a
 
