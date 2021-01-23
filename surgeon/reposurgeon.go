@@ -5033,9 +5033,10 @@ func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
 branch { PATH-PATTERN } { rename | delete } [ ARG ]
 
-Rename or delete a branch (and any associated resets).  First argument
-must be an existing branch name or a regular expression matching branch names;
-second argument must one of the verbs 'rename' or 'delete'.
+Rename or delete a branch (also any associated annotated tags and resets). 
+First argument must be an existing branch name or a regular expression
+matching branch names; second argument must one of the verbs 'rename' or
+'delete'.
 
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
@@ -5172,7 +5173,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 // HelpTag says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
-[SELECTION] tag {TAG-NAME} {create|move|rename|delete} [ARG]
+[SELECTION] tag {TAG-PATTERN} {create|move|rename|delete} [ARG]
 
 Create, move, rename, or delete a tag.
 
@@ -5184,26 +5185,25 @@ commit if there are no tags).  The tagger, committish, and comment
 fields are copied from the commit's committer, mark, and comment
 fields.
 
-Otherwise, the first argument must be an existing name referring to a
-tag object, lightweight tag, or reset; second argument must be one of
+Otherwise, the TAG-PATTERN argument must be an existing name referring
+to a tag object, lightweight tag, or reset; alternatively it may be 
+dellimited regexp.  The second argument must be one of
 the verbs 'move', 'rename', or 'delete'.
 
 For a 'move', a third argument must be a singleton selection set. For
-a 'rename', the third argument may be any token that is a
-syntactically valid tag name (but not the name of an existing
-tag).
+a 'rename', the third argument may be any token that is a syntactically
+valid tag name (but not the name of an existing tag).  When RTG-PATTERN
+is a delimited regexp, the rename ARG may contain references to portions
+of the match for the TAG-PATTERN.
 
-For a 'delete', no third argument is required.  The name portion of a
-delete may be a regexp wrapped in //; if so, all objects of the
-specified type with names matching the regexp are deleted.  This is
-useful for mass deletion of junk tags such as CVS branch-root tags.
-Such deletions can be restricted by a selection set in the normal way.
-
-Tag names may use backslash escapes interpreted by the Python
-string-escape codec, such as \s.
+For a 'delete', no third argument is required.  If the TAG-PATTERN of a
+delete may be a delimited regexp all objects of the specified type with
+names matching the regexp are deleted.  This is useful for mass deletion of
+junk tags such as CVS branch-root tags. Such deletions can be restricted
+by a selection set in the normal way.
 
 The behavior of this command is complex because features which present
-as tags may be any of three things: (1) true tag objects, (2)
+as tags may be any of three things: (1) true annotated-tag objects, (2)
 lightweight tags, actually sequences of commits with a common
 branchname beginning with 'refs/tags' - in this case the tag is
 considered to point to the last commit in the sequence, (3) Reset
@@ -5303,9 +5303,10 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	resets := make([]*Reset, 0)
 	commits := make([]*Commit, 0)
 	var refMatches func(string) bool
-	if tagname[0] == '/' && tagname[len(tagname)-1] == '/' {
+	sourcepattern, isRe := delimitedRegexp(tagname)
+	if isRe {
 		// Regexp - can refer to a list of tags matched
-		tagre, err := regexp.Compile(tagname[1 : len(tagname)-1])
+		tagre, err := regexp.Compile(sourcepattern)
 		if err != nil {
 			croak("in tag command: %v", err)
 			return false
