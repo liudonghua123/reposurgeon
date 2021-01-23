@@ -494,9 +494,9 @@ other modern VCSes.
 
 ==== CVS
 
-Rreposurgeon can read CVS repositories.  You must have a copy of the
-repositoroy maeter directory, and run reporsugeon pointed at hat
-director or one of uts submodules; a checkout directory won't do.
+Reposurgeon can read CVS repositories.  You must have a copy of the
+repository madter directory, and run reposurgeon pointed at that
+director or one of its submodules; a checkout directory won't do.
 
 If you are exporting from CVS, it may be a good idea to run some trial
 conversions with cvsconvert, a wrapper script shipped with
@@ -2556,7 +2556,7 @@ surgical primitives after reading the history into reposurgeon.
 The transaction model of Subversion is nothing like that of the DVCSes
 (distributed version-control systems) that followed it. Two of the
 more obvious differences are around tags and branches. These
-differences occasuinally lead to conversion problems.
+differences occasionally lead to conversion problems.
 
 A Subversion tag isn't an annotation attached to a commit. The
 Subversion data model is that a history is a sequence of surgical
@@ -2612,7 +2612,7 @@ and reposurgeon gives you tools for coping with them.  Unfortunately,
 the warnings are (unavoidably) cryptic unless you understand
 Subversion internals in detail.
 
-The's another problem around Subversion merges. In a DVCS, a merge
+There's another problem around Subversion merges. In a DVCS, a merge
 normally coalesces two entire branches.  Subversion has something
 close to this in newer versions; it's called a "sync merge" working on
 directories (and is expressed as an svn:mergeinfo property of the
@@ -2949,12 +2949,12 @@ branch project2 delete
 
 The read option branchifies every directory underneath project1 for
 which that's required, with project2 left as its own branch from top
-level. This transformations is performed when the actual read of the
+level. This transformation is performed when the actual read of the
 repository happens.  
 
 The following branch renames transform these branches into a
-standard layout.  Tag creations do not need to be mapped separatrely,
-as the genmerated gitspace tags are moved when their base branch is.
+standard layout.  Tag creations do not need to be mapped separately,
+as the generated gitspace tags are moved when their base branch is.
 Following the rebames, the unneeded project2 branch can be dropped.
 
 Of course we could have done the same thing with project2 and dropped
@@ -2982,7 +2982,7 @@ This will turn two subdirectories into branches named "release-1.0"
 and "release-2.0", then pops "trunk" off all the paths where it occurs
 (leaving those commits on the master branch).
 
-This method has the disadvantages that you have to enumerate all
+This method has the disadvantage that you have to enumerate all
 branches you want to lift. Still, it may be useful on repositories
 that consist of one big unbranched file tree not conforming to a
 standard layout.
@@ -3039,7 +3039,7 @@ one changeset but were not.  You can either clean these up with the
 '```<<coalesce_cmd>>```' command in reposurgeon or run cvs-fast-export
 by hand with a larger `-w` option and read in the generated stream.
 
-G;itch #2: In cleaning up a CVS conversion that is unique to that
+Glitch #2: In cleaning up a CVS conversion that is unique to that
 system is deleting root tags - tags which have "-root" as a name
 suffix and mark the beginning of a branch,  CVS uses these for
 bookkeeping, but later systems don't need them.  They're just
@@ -3341,9 +3341,9 @@ users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
 In versions 4.23 and earlier, "<<branchify_opt>>" read
-option was a separate commands that needed to be invoked before the
+option was a separate command that needed to be invoked before the
 read and set hidden global context.  There was a related branchmap
-commannd thast has been retired becuse branch rename covers all
+command that has been retired because branch rename covers all
 its cases in a simpler way.
 
 In versions before 4.10, the "reduce" and "blob" options of the
