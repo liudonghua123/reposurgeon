@@ -13,11 +13,12 @@
 #
 # The TESTOPT variable can be used to pass an early command or option setting
 # to reposurgeon.
-#
-# FIXME:  This has not yet been fully adapted to work with unreliable $PWD.
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
+
+# Required because $PWD seems to be undefined in Gitlab's CI environment
+BIN="${BINDIR:-$(realpath ..)}"
 
 PATH=$PATH:..
 
@@ -162,7 +163,7 @@ svn2git) mkdir git-scratch; cp -r "$svnrepo" git-scratch;
 	    ruby -I../../externals/svn2git/lib \
 	    ../../externals/svn2git/bin/svn2git "file://${PWD}/$svnrepo") && \
 	    mv git-scratch "$gitrepo" ;;
-*)  ${REPOSURGEON:-reposurgeon} "${TESTOPT}" "read <$svnrepo" "prefer git" "rebuild $gitrepo"
+*)  ${BIN}/${REPOSURGEON:-reposurgeon} "${TESTOPT}" "read <$svnrepo" "prefer git" "rebuild $gitrepo"
 esac
 
 ) >&2
