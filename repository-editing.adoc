@@ -2712,15 +2712,8 @@ thousands of dead branches. While it is important that content copies
 from dead branches be resolved correctly, the branches themselves are
 almost never interesting.)
 
-The following options to the read command control the branchify set
-and how branch and tag names are to be rewritten as they are read from
-the Subversion repository.
-
 [[branchify_opt,--branchify=]]
 include::docinclude/branchify.adoc[]
-
-[[branchmap_opt,--branchmap=]]
-include::docinclude/branchmap.adoc[]
 
 These modifiers can go anywhere in any order on the command line after
 the `<<read_cmd>>` verb. They must be whitespace-separated.
@@ -2732,9 +2725,7 @@ line from reposurgeon's test suite:
 
 ----
 read <nesting.svn \
-     --branchify=cpp-msbuild/trunk:cpp-msbuild/branches/*:cpp-msbuild/tags/* \
-     --branchmap=@cpp-msbuild/trunk/@heads/master@ \
-     --branchmap=@cpp-msbuild/tags/(.*)/@tags/\1@
+     --branchify=cpp-msbuild/trunk:cpp-msbuild/branches/*:cpp-msbuild/tags/*
 ----
 
 
@@ -2785,12 +2776,10 @@ default).
 
 * Files in the top-level directory are assigned to a synthetic branch
 named '```unbranched```'. If there is no "trunk", then this synthetic
-'```unbranched```' branch becomes the master branch. You can map
-another directory to master using the read options `<<branchify_opt>>`
-and `<<branchmap_opt>>`. If the Subversion repository has a branch
-named '```unbranched```' the name '```unbranched-bis```' is used
-instead; actually, '```-bis```' is appended enough times to get to an
-unused branch name.
+'```unbranched```' branch becomes the master branch.  If the
+Subversion repository has a branch named '```unbranched```' the name
+'```unbranched-bis```' is used instead; actually, '```-bis```' is
+appended enough times to get to an unused branch name.
 
 * Each potential branch is checked to see if it has commits on it
 after the initial creation or copy.  If there are such commits, or if the
@@ -2966,20 +2955,20 @@ project1 looks like this:
 --------
 read <multiproject.svn \
   --branchify=project1/trunk:project1/branches/*:project1/tags/*:*
-  --branchmap=:project1/trunk:heads/master:
-  --branchmap=:project1/tags:refs/tags:
-  --branchmap=:project1/branches:refs/heads:
+branch project1/trunk rename heads/master
+branch @project1/branches/(.*)@ rename refs/heads/\1
 branch project2 delete
 --------
 
-The first option branchifies every directory underneath project1 for
+The read option branchifies every directory underneath project1 for
 which that's required, with project2 left as its own branch from top
-level. The following options set up a transform of these branches into
-a standard layout.
+level. This transformations is performed when the actual read of the
+repository happens.  
 
-These transformations are performed when the actual read of the
-repository happens.  Following that, the unneeded project2 branch can
-be dropped.
+The following branch renames transform these branches into a
+standard layout.  Tag creations do not need to be mapped separatrely,
+as the genmerated gitspace tags are moved when their base branch is.
+Following the rebames, the unneeded project2 branch can be dropped.
 
 Of course we could have done the same thing with project2 and dropped
 project1.  Repeat this as many times as required to turn each partial
@@ -3364,9 +3353,11 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
-In versions 4.22 and earlier, the "<<branchify_opt>>" and "<<branchmap_opt>>" read
-options were separate commands that needed to be invoked before the
-read and set hidden global context.
+In versions 4.23 and earlier, "<<branchify_opt>>" read
+option was a separate commands that needed to be invoked before the
+read and set hidden global context.  There was a related branchmap
+commannd thast has been retired becuse branch rename covers all
+its cases in a simpler way.
 
 In versions before 4.10, the "reduce" and "blob" options of the
 "<<strip_cmd>>" command were bare keywords. Also the options of the

@@ -5,6 +5,7 @@ Repository head::
      Subversion proerties discarded during read are logged, not shouted.
      In branch rename and expunge, be more flexible about RE delimiters.
      Commands that accept output redirection can also pipe to a command,
+     The --branchmap option is gone in favor of using branch rename.
 
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).
