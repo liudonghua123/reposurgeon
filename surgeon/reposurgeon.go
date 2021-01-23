@@ -274,9 +274,13 @@ func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSe
 			panic(throw("command", "no support for | redirection"))
 		}
 		cmd := strings.TrimSpace(lp.line[pipeIndex+1:])
-		fields := strings.Fields(cmd)
-		lp.proc = exec.Command(fields[0])
-		lp.proc.Args = append(lp.proc.Args, fields[1:]...)
+		shell := os.Getenv("SHELL")
+		if shell == "" {
+			shell = "/bin/sh"
+		}
+		lp.proc = exec.Command(shell)
+		lp.proc.Args = append(lp.proc.Args, "-c")
+		lp.proc.Args = append(lp.proc.Args, cmd)
 		var err error
 		lp.stdout, err = lp.proc.StdinPipe()
 		if err != nil {
@@ -2576,19 +2580,10 @@ used by the graphviz tool suite.  This can be fed as input to the main
 graphviz rendering program dot(1), which will yield a viewable
 image.
 
-Because graph supports output redirection, you may find a script like
-this useful:
+Because graph supports output redirection, you can do this:
 
 ----
-#! /bin/sh
-dot -Tpng | display -
-----
-
-If you mane this "dotviewer" and put it in  your $PATH,
-you can visualize the structure of your repository this way.
-
-----
-graph | dotviewer
+graph | dot -Tpng | display
 ----
 
 You can substitute in your own preferred image viewer, of course.
