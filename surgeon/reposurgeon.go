@@ -2671,7 +2671,7 @@ repository metadata. Takes a selection set; members of the set other
 than commits, annotated tags, and passthroughs are ignored (that is,
 presently, blobs and resets).
 
-May have an option --filter, followed by delimited regular
+May have an option --filter, followed by a delimited regular
 expression.  If this is given, only headers with names matching it are
 emitted.  In this control the name of the header includes its trailing
 colon.  The value of the option must be a delimitee regular expression.
@@ -5031,7 +5031,7 @@ func (rs *Reposurgeon) DoReorder(lineIn string) bool {
 // HelpBranch says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
-branch { PATH-PATTERN } { rename | delete } [ ARG ]
+branch {BRANCH-PATTERN} {rename|delete} [ARG]
 
 Rename or delete a branch (also any associated annotated tags and resets). 
 First argument must be an existing branch name or a regular expression
@@ -5043,11 +5043,11 @@ valid branch name (but not the name of an existing branch).  If it does not
 begin with "refs/", then "refs/" is prepended; you should supply "heads/"
 or "tags/" yourself.
 
-If the first argument is a regular expression (that is, begun and ended by
-the same delimiter character, unless tje delimiter is a double quote) all
-branches with names matching the regexp are renamed or deleted, and ARG
-may contain pattern references to be expanded.  Regexps in this context
-may not contain literal whitespace; usde \s or \t if you need to.
+If the first argument is a delimted regular expression (that is, begun
+and ended by the same delimiter character, unless the delimiter is a double 
+quote) all branches with names matching the regexp are renamed or deleted,
+and ARG may contain pattern references to be expanded.  Regexps in this
+context may not contain literal whitespace; usde \s or \t if you need to.
 
 Deletions or renames can be restricted by a selection set in the normal way,
 but use this capability with care as it can easily produce a broken topology.
@@ -5142,9 +5142,10 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			selection = repo.all()
 		}
 		var shouldDelete func(string) bool
-		if sourcepattern[0] == '/' && sourcepattern[len(sourcepattern)-1] == '/' {
+		sourcepattern, isRe := delimitedRegexp(sourcepattern)
+		if isRe {
 			// Regexp - can refer to a list of branchs matched
-			branchre, err := regexp.Compile(sourcepattern[1 : len(sourcepattern)-1])
+			branchre, err := regexp.Compile(sourcepattern)
 			if err != nil {
 				croak("in branch command: %v", err)
 				return false
