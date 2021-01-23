@@ -3635,10 +3635,11 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 			if removed.op == opM {
 				blob := repo.markToEvent(removed.ref).(*Blob)
 				blob.removeOperation(removed)
-				if len(blob.opset) == 0 {
-					i := repo.markToIndex(removed.ref)
-					repo.events = append(repo.events[:i], repo.events[i+1:]...)
-				}
+				// FIXME: Someday, scavenge blos with no references left
+				//if len(blob.opset) == 0 {
+				//	i := repo.markToIndex(removed.ref)
+				//	repo.events = append(repo.events[:i], repo.events[i+1:]...)
+				//}
 				repo.declareSequenceMutation("scavenging blob")
 			}
 		} else {

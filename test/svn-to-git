@@ -163,7 +163,9 @@ svn2git) mkdir git-scratch; cp -r "$svnrepo" git-scratch;
 	    ruby -I../../externals/svn2git/lib \
 	    ../../externals/svn2git/bin/svn2git "file://${PWD}/$svnrepo") && \
 	    mv git-scratch "$gitrepo" ;;
-*)  ${BIN}/${REPOSURGEON:-reposurgeon} "${TESTOPT}" "read <$svnrepo" "prefer git" "rebuild $gitrepo"
+*)
+    # shellcheck disable=SC2086
+    ${BIN}/${REPOSURGEON:-reposurgeon} "${TESTOPT}" "read <$svnrepo" "prefer git" "rebuild $gitrepo"
 esac
 
 ) >&2
