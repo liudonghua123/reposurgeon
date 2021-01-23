@@ -82,7 +82,7 @@ test-helpers:
 # and there is no additional material included in the long-form mnual only.
 # This means there's one line of BNF, a blank separator line, and one or
 # more blank-line-separated paragraphs of running text.
-TOPICS = \
+ANCHORED_TOPICS = \
 	add \
 	append \
 	authors \
@@ -176,9 +176,10 @@ TOPICS = \
 	unpreserve \
 	version \
 	when
+UNANCHORED_TOPICS = \
+	redirection
 READ_OPTION_TOPICS = \
-	branchify \
-	branchmap
+	branchify
 # These are in regular form, but the emtries in the
 # long-form manual have additional material.
 SHORTFORM = \
@@ -203,12 +204,15 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 		./reposurgeon "set asciidoc" "help $${1}" | \
 			sed -e 's/help regexp/<<regular_expressions,help regexp>>/g' \
 			    -e 's/help read/<<read_cmd,help read>>/g' \
-			    -e 's/help branchify/<<branchify_opt,help branchify>>/g' \
-			    -e 's/help branchmap/<<branchmap_opt,help branchmap>>/g'; \
+			    -e 's/help branchify/<<branchify_opt,help branchify>>/g'; \
 	}; \
-	for topic in $(TOPICS); \
+	for topic in $(ANCHORED_TOPICS); \
 	do \
 		echo "[[$${topic}_cmd,$${topic}]]" >>"docinclude/$${topic}.adoc"; \
+		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
+	done; \
+	for topic in $(UNANCHORED_TOPICS); \
+	do \
 		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
 	done; \
 	for topic in $(READ_OPTION_TOPICS); \

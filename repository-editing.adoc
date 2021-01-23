@@ -1549,36 +1549,10 @@ rules.
   whitespace; if you need to specify whitespace or a non-printable
   character use a standard C-style escape such as `\s` for space.
 
+[[redirection]]
 == Redirection and shell-like features
 
-An optional command argument prefixed by "<" indicates that the command
-accepts input redirection; an optional argument prefixed by ">"
-indicates that the command accepts output redirection. There
-must be whitespace before the "<" or ">" so that the command parser
-won't falsely mnatch uses of these chracters in regular expressions.
-
-Commands that support output redirection can also be followed by a
-pipe bar and a normal Unix command.  For example, "list | more"
-directs the output of a list command to more(1).  Some whitespace
-around te pipe bar is required to distibguish it from uses
-of the same chaacter as the alternation operator in regular
-expressions.
-
-The command line following the first pipe bar, if present, is
-passed to a shell and may contain a general shell command line,
-ibcluding more pipe bars. The SHELL environment variable can
-set the shell, falling back to /bin/sh.
-
-Beware that while the reposurgeon CLI mimics these simple shell
-features, many things you can do in a real shell won't work until the
-right-hand side of a pipe-bar output redirection, if there is one.
-String-quoting arguments will fail unless the specific, documented
-syntax of a command supports that.  You can't redirect standard error
-(but see the '```log```' command for a rough equivalent). And you
-can't pipe input from a shell command.
-
-In general you should avoid trying to get cute with the command parser.
-It's stupider than it looks.
+include::docinclude/redirection.adoc[]
 
 [[import-export]]
 == Import and Export

@@ -2292,39 +2292,6 @@ See "help read" for other options to the read command.
 `)
 }
 
-// HelpBranchmap says "Shut up, golint!"
-func (rs *Reposurgeon) HelpBranchmap() {
-	rs.helpOutput(`
---branchmap=@REGEXP@BRANCH@
-
-Specify a regular-expressions/branchname pair used for mapping Subversion
-branch directories detected by branchify to gitspace branches. More than one
-of these options may be specified; if none of the expressions matches, the
-default behavior applies. The default maps a Subversion branch to its
-basename, except for trunk and '*' which are mapped to master and root.
-
-While the syntax template above uses at-signs, any first character will
-be used as a delimiter and is expected to bound the ends of the regexp and
-subsitutions.
-
-For each potential branch name read from the Subversion repository,
-this command will attempt to match the name against each REGEXP in the
-map. If it finds a match, it rewrites the branch name to the associated
-BRANCH. It stops after it has either found a match, or there are no more
-regexps left in the map.
-
-BRANCH can use references to matches for parenthesized parts of the REGEXP.
-See "help regexp" for more information about regular expressions and
-references
-
-The prefix "refs/" is automatically supplied to the resulting branchname,
-but not the "heads/" or "tags/" part that distinguishes the branch type.
-You must supply one of these yourself.
-
-See "help read" for other options to the read command.
-`)
-}
-
 // HelpWrite says "Shut up, golint!"
 func (rs *Reposurgeon) HelpWrite() {
 	rs.helpOutput(`
@@ -7365,6 +7332,40 @@ Some commands support input redirection. When arguments for these are
 parsed, any argument beginning with '<' is extracted and interpreted
 as the name of a file from which command output should be taken.  Any
 remaining arguments are available to the command logic.
+`)
+}
+
+// HelpRedirection says "Shut up, golint!"
+func (rs *Reposurgeon) HelpRedirection() {
+	rs.helpOutputMisc(`
+An optional command argument prefixed by "<" indicates that the command
+accepts input redirection; an optional argument prefixed by ">"
+indicates that the command accepts output redirection. There
+must be whitespace before the "<" or ">" so that the command parser
+won't falsely mnatch uses of these chracters in regular expressions.
+
+Commands that support output redirection can also be followed by a
+pipe bar and a normal Unix command.  For example, "list | more"
+directs the output of a list command to more(1).  Some whitespace
+around te pipe bar is required to distibguish it from uses
+of the same chaacter as the alternation operator in regular
+expressions.
+
+The command line following the first pipe bar, if present, is
+passed to a shell and may contain a general shell command line,
+including more pipe bars. The SHELL environment variable can
+set the shell, falling back to /bin/sh.
+
+Beware that while the reposurgeon CLI mimics these simple shell
+features, many things you can do in a real shell won't work until the
+right-hand side of a pipe-bar output redirection, if there is one.
+String-quoting arguments will fail unless the specific, documented
+syntax of a command supports that.  You can't redirect standard error
+(but see the "log" command for a rough equivalent). And you
+can't pipe input from a shell command.
+
+In general you should avoid trying to get cute with the command parser.
+It's stupider than it looks.
 `)
 }
 
