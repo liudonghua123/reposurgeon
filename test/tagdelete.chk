@@ -1,5 +1,5 @@
 read <snarl.svn
-tag /INITIAL_IMPORT/ delete
+branch /INITIAL_IMPORT/ delete
 write -
 #reposurgeon sourcetype svn
 blob
@@ -36,9 +36,5 @@ data 17
 Initial revision
 M 100644 :1 .gitignore
 M 100644 :2 CHANGES
-
-reset refs/heads/INITIAL_IMPORT_AQ
-#legacy-id 3
-from :3
 
 done
