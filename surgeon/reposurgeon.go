@@ -5288,7 +5288,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	}
 	for _, idx := range selection {
 		event := repo.events[idx]
-		if tag, ok := event.(*Tag); ok && refMatches(tag.getPseudobranch()) {
+		if tag, ok := event.(*Tag); ok && refMatches("refs/tags/"+tag.tagname) {
 			tags = append(tags, tag)
 		} else if reset, ok := event.(*Reset); ok && refMatches(reset.ref) {
 			resets = append(resets, reset)
@@ -5351,7 +5351,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 					return false
 				}
 			}
-			tags[0].setHumanName(newname)
+			tags[0].tagname = newname
 
 			control.baton.twirl()
 		}

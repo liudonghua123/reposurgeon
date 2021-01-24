@@ -1902,17 +1902,6 @@ func newTag(repo *Repository,
 	return t
 }
 
-func (t *Tag) getPseudobranch() string {
-	if t.tagname == "" {
-		return ""
-	}
-	return "refs/tags/" + t.tagname
-}
-
-func (t *Tag) setHumanName(n string) {
-	t.tagname = n
-}
-
 func (t Tag) getDelFlag() bool {
 	return t.color == colorDELETE
 }
@@ -2034,7 +2023,7 @@ func (t *Tag) emailIn(msg *MessageBlock, fill bool) bool {
 			logit("in tag %s, Tag-Name is modified %q -> %q",
 				msg.getHeader("Event-Number"), t.tagname, tagname)
 		}
-		t.setHumanName(tagname)
+		t.tagname = tagname
 		modified = true
 	}
 	if target := msg.getHeader("Target-Mark"); target != "" && target != t.committish {
@@ -6744,7 +6733,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 					switch object := e.(type) {
 					case *Tag:
 						// object is already cast to Tag
-						if commit.Branch == object.getPseudobranch() {
+						if commit.Branch == "refs/tags/"+object.tagname {
 							needReset = false
 						}
 						object.remember(repo, newTarget.getMark())
