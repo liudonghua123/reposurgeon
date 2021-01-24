@@ -1,0 +1,979 @@
+SVN-fs-dump-format-version: 2
+ ## Strange example of vendor branching in Subversion.
+ # * first commit initializes trunk with some files, plus empty directories for normal branches,
+ #   tags and vendor branch (commit split)
+ # * tags for vendor branch remain inside the vendor directory (unusual structure)
+ # * first merge from vendor branch to trunk is just a file/directory copy
+ # * second merge is explicit
+ # This version has been blob-stripped.  The original is attached here:
+ $ https://gitlab.com/esr/reposurgeon/-/issues/328
+
+UUID: db59fd3c-6b8f-8c4f-bc89-962b7a139fb1
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+2009-12-07T11:52:34.580375Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 136
+Content-length: 136
+
+K 10
+svn:author
+V 13
+Administrator
+K 8
+svn:date
+V 27
+2009-12-07T12:15:09.766500Z
+K 7
+svn:log
+V 27
+establish general structure
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/_svn__guideline.txt
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 55
+Content-length: 65
+
+PROPS-END
+Revision is 1, file path is trunk/_svn__guideline.txt.
+
+
+Node-path: trunk/_svn_client_config.txt
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 58
+Content-length: 68
+
+PROPS-END
+Revision is 1, file path is trunk/_svn_client_config.txt.
+
+
+Node-path: trunk/_svn_dir_ignore_list.txt
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 60
+Content-length: 70
+
+PROPS-END
+Revision is 1, file path is trunk/_svn_dir_ignore_list.txt.
+
+
+Node-path: vendor
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: vendor/current
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 136
+Content-length: 136
+
+K 10
+svn:author
+V 13
+Administrator
+K 8
+svn:date
+V 27
+2009-12-07T12:20:14.407125Z
+K 7
+svn:log
+V 27
+importing dd-formmailer 5.4
+PROPS-END
+
+Node-path: vendor/current/dd-formmailer.css
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 62
+Content-length: 72
+
+PROPS-END
+Revision is 2, file path is vendor/current/dd-formmailer.css.
+
+
+Node-path: vendor/current/dd-formmailer.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 62
+Content-length: 72
+
+PROPS-END
+Revision is 2, file path is vendor/current/dd-formmailer.php.
+
+
+Node-path: vendor/current/lang
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: vendor/current/lang/BrazilianPortuguese.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 73
+Content-length: 83
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/BrazilianPortuguese.php.
+
+
+Node-path: vendor/current/lang/Catalan.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Catalan.php.
+
+
+Node-path: vendor/current/lang/Danish.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 60
+Content-length: 70
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Danish.php.
+
+
+Node-path: vendor/current/lang/Deutsch.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Deutsch.php.
+
+
+Node-path: vendor/current/lang/Dutch.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 59
+Content-length: 69
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Dutch.php.
+
+
+Node-path: vendor/current/lang/English.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/English.php.
+
+
+Node-path: vendor/current/lang/Finnish.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Finnish.php.
+
+
+Node-path: vendor/current/lang/French.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 60
+Content-length: 70
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/French.php.
+
+
+Node-path: vendor/current/lang/Greek.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 59
+Content-length: 69
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Greek.php.
+
+
+Node-path: vendor/current/lang/Italian.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Italian.php.
+
+
+Node-path: vendor/current/lang/NorwegianBokmaal.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 70
+Content-length: 80
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/NorwegianBokmaal.php.
+
+
+Node-path: vendor/current/lang/Polish.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 60
+Content-length: 70
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Polish.php.
+
+
+Node-path: vendor/current/lang/Portuguese.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 64
+Content-length: 74
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Portuguese.php.
+
+
+Node-path: vendor/current/lang/Romanian.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 62
+Content-length: 72
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Romanian.php.
+
+
+Node-path: vendor/current/lang/Russian.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Russian.php.
+
+
+Node-path: vendor/current/lang/Slovak.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 60
+Content-length: 70
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Slovak.php.
+
+
+Node-path: vendor/current/lang/Slovene.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Slovene.php.
+
+
+Node-path: vendor/current/lang/Spanish.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Spanish.php.
+
+
+Node-path: vendor/current/lang/Swedish.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Swedish.php.
+
+
+Node-path: vendor/current/lang/Turkish.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/lang/Turkish.php.
+
+
+Node-path: vendor/current/recaptchalib.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 61
+Content-length: 71
+
+PROPS-END
+Revision is 2, file path is vendor/current/recaptchalib.php.
+
+
+Revision-number: 3
+Prop-content-length: 134
+Content-length: 134
+
+K 10
+svn:author
+V 13
+Administrator
+K 8
+svn:date
+V 27
+2009-12-07T12:22:25.422750Z
+K 7
+svn:log
+V 25
+tagging dd-formmailer 5.4
+PROPS-END
+
+Node-path: vendor/5.4
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 1
+Node-copyfrom-path: vendor/current
+
+
+Node-path: vendor/5.4/dd-formmailer.css
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 2
+Node-copyfrom-path: vendor/current/dd-formmailer.css
+
+
+Node-path: vendor/5.4/dd-formmailer.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 2
+Node-copyfrom-path: vendor/current/dd-formmailer.php
+
+
+Node-path: vendor/5.4/lang
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 2
+Node-copyfrom-path: vendor/current/lang
+
+
+Node-path: vendor/5.4/recaptchalib.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 2
+Node-copyfrom-path: vendor/current/recaptchalib.php
+
+
+Revision-number: 4
+Prop-content-length: 144
+Content-length: 144
+
+K 10
+svn:author
+V 13
+Administrator
+K 8
+svn:date
+V 27
+2009-12-07T12:24:03.625875Z
+K 7
+svn:log
+V 35
+bringing dd-formmailer 5.4 to trunk
+PROPS-END
+
+Node-path: trunk/dd-formmailer.css
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 3
+Node-copyfrom-path: vendor/current/dd-formmailer.css
+
+
+Node-path: trunk/dd-formmailer.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 3
+Node-copyfrom-path: vendor/current/dd-formmailer.php
+
+
+Node-path: trunk/lang
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 3
+Node-copyfrom-path: vendor/current/lang
+
+
+Node-path: trunk/recaptchalib.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 3
+Node-copyfrom-path: vendor/current/recaptchalib.php
+
+
+Revision-number: 5
+Prop-content-length: 801
+Content-length: 801
+
+K 10
+svn:author
+V 5
+Dummy
+K 8
+svn:date
+V 27
+2009-12-07T19:56:02.765875Z
+K 7
+svn:log
+V 700
+Modifications:
+* Removed unnecessary echo of blank lines
+* Put creation code of verficiation image in separate PHP file
+   One image script can be used for all standalone forms; no hint to form script in created source code
+* Made a lot of the option variables changeable for non-standalone form pages, if empty or not set then defaults are used
+   One form script for all forms. Defaults for a server can be entered here if wanted.
+* Added option to use completely user build forms (standalone and manual_form_code = false/set)
+* Added option to avoid hints on used script (don't allow to search vulnerable pages on the internet)
+* added CSS for succes message
+* for smaller changes search "Maddes"
+
+PROPS-END
+
+Node-path: trunk/dd-formmailer.css
+Node-kind: file
+Node-action: change
+Text-content-length: 53
+Content-length: 53
+
+Revision is 5, file path is trunk/dd-formmailer.css.
+
+
+Node-path: trunk/dd-formmailer.php
+Node-kind: file
+Node-action: change
+Text-content-length: 53
+Content-length: 53
+
+Revision is 5, file path is trunk/dd-formmailer.php.
+
+
+Node-path: trunk/dd-verify.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 49
+Content-length: 59
+
+PROPS-END
+Revision is 5, file path is trunk/dd-verify.php.
+
+
+Revision-number: 6
+Prop-content-length: 127
+Content-length: 127
+
+K 10
+svn:author
+V 5
+Dummy
+K 8
+svn:date
+V 27
+2009-12-07T20:04:21.031500Z
+K 7
+svn:log
+V 27
+importing dd-formmailer 5.8
+PROPS-END
+
+Node-path: vendor/current/calendar.gif
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 57
+Content-length: 67
+
+PROPS-END
+Revision is 6, file path is vendor/current/calendar.gif.
+
+
+Node-path: vendor/current/date_chooser.js
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 60
+Content-length: 70
+
+PROPS-END
+Revision is 6, file path is vendor/current/date_chooser.js.
+
+
+Node-path: vendor/current/dd-formmailer.css
+Node-kind: file
+Node-action: change
+Text-content-length: 62
+Content-length: 62
+
+Revision is 6, file path is vendor/current/dd-formmailer.css.
+
+
+Node-path: vendor/current/dd-formmailer.php
+Node-kind: file
+Node-action: change
+Text-content-length: 62
+Content-length: 62
+
+Revision is 6, file path is vendor/current/dd-formmailer.php.
+
+
+Node-path: vendor/current/lang/Belarussian.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 65
+Content-length: 75
+
+PROPS-END
+Revision is 6, file path is vendor/current/lang/Belarussian.php.
+
+
+Node-path: vendor/current/lang/Czech.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 59
+Content-length: 69
+
+PROPS-END
+Revision is 6, file path is vendor/current/lang/Czech.php.
+
+
+Node-path: vendor/current/lang/Estonian.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 62
+Content-length: 72
+
+PROPS-END
+Revision is 6, file path is vendor/current/lang/Estonian.php.
+
+
+Node-path: vendor/current/lang/Japanese.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 62
+Content-length: 72
+
+PROPS-END
+Revision is 6, file path is vendor/current/lang/Japanese.php.
+
+
+Node-path: vendor/current/lang/Vietnamese.php
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 64
+Content-length: 74
+
+PROPS-END
+Revision is 6, file path is vendor/current/lang/Vietnamese.php.
+
+
+Node-path: vendor/current/recaptchalib.php
+Node-kind: file
+Node-action: change
+Text-content-length: 61
+Content-length: 61
+
+Revision is 6, file path is vendor/current/recaptchalib.php.
+
+
+Revision-number: 7
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 5
+Dummy
+K 8
+svn:date
+V 27
+2009-12-07T20:05:28.469000Z
+K 7
+svn:log
+V 25
+tagging dd-formmailer 5.8
+PROPS-END
+
+Node-path: vendor/5.8
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 3
+Node-copyfrom-path: vendor/current
+
+
+Node-path: vendor/5.8/calendar.gif
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/calendar.gif
+
+
+Node-path: vendor/5.8/date_chooser.js
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/date_chooser.js
+
+
+Node-path: vendor/5.8/dd-formmailer.css
+Node-action: delete
+
+Node-path: vendor/5.8/dd-formmailer.css
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/dd-formmailer.css
+
+
+Node-path: vendor/5.8/dd-formmailer.php
+Node-action: delete
+
+Node-path: vendor/5.8/dd-formmailer.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/dd-formmailer.php
+
+
+Node-path: vendor/5.8/lang/Belarussian.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/lang/Belarussian.php
+
+
+Node-path: vendor/5.8/lang/Czech.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/lang/Czech.php
+
+
+Node-path: vendor/5.8/lang/Estonian.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/lang/Estonian.php
+
+
+Node-path: vendor/5.8/lang/Japanese.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/lang/Japanese.php
+
+
+Node-path: vendor/5.8/lang/Vietnamese.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/lang/Vietnamese.php
+
+
+Node-path: vendor/5.8/recaptchalib.php
+Node-action: delete
+
+Node-path: vendor/5.8/recaptchalib.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 6
+Node-copyfrom-path: vendor/current/recaptchalib.php
+
+
+Revision-number: 8
+Prop-content-length: 134
+Content-length: 134
+
+K 10
+svn:author
+V 5
+Dummy
+K 8
+svn:date
+V 27
+2009-12-07T21:12:41.832125Z
+K 7
+svn:log
+V 34
+Updated trunk to dd-formmailer 5.8
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: change
+Prop-content-length: 54
+Content-length: 54
+
+K 13
+svn:mergeinfo
+V 19
+/vendor/current:2-7
+PROPS-END
+
+
+Node-path: trunk/calendar.gif
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 7
+Node-copyfrom-path: vendor/current/calendar.gif
+
+
+Node-path: trunk/date_chooser.js
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 7
+Node-copyfrom-path: vendor/current/date_chooser.js
+
+
+Node-path: trunk/dd-formmailer.css
+Node-kind: file
+Node-action: change
+Text-content-length: 53
+Content-length: 53
+
+Revision is 8, file path is trunk/dd-formmailer.css.
+
+
+Node-path: trunk/dd-formmailer.php
+Node-kind: file
+Node-action: change
+Text-content-length: 53
+Content-length: 53
+
+Revision is 8, file path is trunk/dd-formmailer.php.
+
+
+Node-path: trunk/dd-verify.php
+Node-kind: file
+Node-action: change
+Text-content-length: 49
+Content-length: 49
+
+Revision is 8, file path is trunk/dd-verify.php.
+
+
+Node-path: trunk/lang/Belarussian.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 7
+Node-copyfrom-path: vendor/current/lang/Belarussian.php
+
+
+Node-path: trunk/lang/Czech.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 7
+Node-copyfrom-path: vendor/current/lang/Czech.php
+
+
+Node-path: trunk/lang/Estonian.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 7
+Node-copyfrom-path: vendor/current/lang/Estonian.php
+
+
+Node-path: trunk/lang/Japanese.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 7
+Node-copyfrom-path: vendor/current/lang/Japanese.php
+
+
+Node-path: trunk/lang/Vietnamese.php
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 7
+Node-copyfrom-path: vendor/current/lang/Vietnamese.php
+
+
+Node-path: trunk/recaptchalib.php
+Node-kind: file
+Node-action: change
+Text-content-length: 52
+Content-length: 52
+
+Revision is 8, file path is trunk/recaptchalib.php.
+
+
+Revision-number: 9
+Prop-content-length: 177
+Content-length: 177
+
+K 10
+svn:author
+V 13
+Administrator
+K 8
+svn:date
+V 27
+2009-12-09T13:35:30.331625Z
+K 7
+svn:log
+V 68
+Fixed syntax error, corrected assert check and fixed var init of $o
+
+PROPS-END
+
+Node-path: trunk/dd-formmailer.php
+Node-kind: file
+Node-action: change
+Text-content-length: 53
+Content-length: 53
+
+Revision is 9, file path is trunk/dd-formmailer.php.
+
+
+Revision-number: 10
+Prop-content-length: 190
+Content-length: 190
+
+K 10
+svn:author
+V 13
+Administrator
+K 8
+svn:date
+V 27
+2009-12-09T14:09:03.229875Z
+K 7
+svn:log
+V 81
+Corrected message main text on new line.
+Fixed change for CSS of success message.
+PROPS-END
+
+Node-path: trunk/dd-formmailer.php
+Node-kind: file
+Node-action: change
+Text-content-length: 54
+Content-length: 54
+
+Revision is 10, file path is trunk/dd-formmailer.php.
+
+
+Revision-number: 11
+Prop-content-length: 150
+Content-length: 150
+
+K 10
+svn:author
+V 13
+Administrator
+K 8
+svn:date
+V 27
+2010-01-03T13:14:05.398831Z
+K 7
+svn:log
+V 41
+Updated client config for Windows Scripts
+PROPS-END
+
+Node-path: trunk/_svn_client_config.txt
+Node-kind: file
+Node-action: change
+Text-content-length: 59
+Content-length: 59
+
+Revision is 11, file path is trunk/_svn_client_config.txt.
+
+
