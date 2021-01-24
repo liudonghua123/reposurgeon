@@ -4998,6 +4998,9 @@ func (rs *Reposurgeon) HelpBranch() {
 branch {BRANCH-PATTERN} {rename|delete} [ARG]
 
 Rename or delete a branch (also any associated annotated tags and resets). 
+For purpoes of this command a Gut lightweight tag is simply a branch in
+the tags/ namespace.
+
 First argument must be an existing branch name or a regular expression
 matching branch names; second argument must one of the verbs 'rename' or
 'delete'.
@@ -5010,8 +5013,7 @@ or "tags/" yourself.
 If the first argument is a delimted regular expression (that is, begun
 and ended by the same delimiter character, unless the delimiter is a double 
 quote) all branches with names matching the regexp are renamed or deleted,
-and ARG may contain pattern references to be expanded.  Regexps in this
-context may not contain literal whitespace; usde \s or \t if you need to.
+and ARG may contain pattern references to be expanded.
 
 Deletions or renames can be restricted by a selection set in the normal way,
 but use this capability with care as it can easily produce a broken topology.
@@ -5033,6 +5035,20 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		return false
 	}
 	repo := rs.chosen()
+
+	removeBranchPrefix := func(branch string) string {
+		if strings.HasPrefix(branch, "refs/") {
+			branch = branch[5:]
+		}
+		return branch
+	}
+	addBranchPrefix := func(branch string) string {
+		if !strings.HasPrefix(branch, "refs/") {
+			return "refs/" + branch
+		}
+		return branch
+	}
+
 	sourcepattern, line := popToken(line)
 	var err error
 	if err != nil {
@@ -5048,15 +5064,6 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			croak("new branch name must be nonempty.")
 			return false
 		}
-		removeBranchPrefix := func(branch string) string {
-			if strings.HasPrefix(branch, "refs/") {
-				branch = branch[5:]
-			}
-			return branch
-		}
-		addBranchPrefix := func(branch string) string {
-			return "refs/" + branch
-		}
 		newname = removeBranchPrefix(newname)
 		sourcepattern, isRe := delimitedRegexp(sourcepattern)
 		sourcepattern = removeBranchPrefix(sourcepattern)
@@ -5069,10 +5076,6 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return false
 		}
 		for _, branch := range repo.branchset() {
-			if !strings.HasPrefix(branch, "refs/heads/") {
-				croak("Ill-formed branch name %s", branch)
-				return false
-			}
 			branch := removeBranchPrefix(branch)
 			if !sourceRE.MatchString(branch) {
 				continue
@@ -5107,27 +5110,20 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		}
 		var shouldDelete func(string) bool
 		sourcepattern, isRe := delimitedRegexp(sourcepattern)
-		if isRe {
-			// Regexp - can refer to a list of branchs matched
-			branchre, err := regexp.Compile(sourcepattern)
-			if err != nil {
-				croak("in branch command: %v", err)
-				return false
-			}
-			shouldDelete = func(branch string) bool {
-				return branchNameMatches(branch, branchre)
-			}
-		} else {
-			theref := "refs/heads/" + sourcepattern
-			if !repo.branchset().Contains(theref) {
-				croak("no such branch as %s", sourcepattern)
-				return false
-			}
-			shouldDelete = func(branch string) bool {
-				return branch == theref
-			}
+		if !isRe {
+			sourcepattern = "^" + regexp.QuoteMeta(addBranchPrefix(sourcepattern)) + "$"
 		}
+		branchRE, err := regexp.Compile(sourcepattern)
+		if err != nil {
+			croak("in branch command: %v", err)
+			return false
+		}
+		shouldDelete = func(branch string) bool {
+			return branchRE.MatchString(branch)
+		}
+		before := len(repo.branchset())
 		repo.deleteBranch(selection, shouldDelete, control.baton)
+		respond("%d branches deleted", before-len(repo.branchset()))
 	} else {
 		croak("unknown verb '%s' in branch command.", verb)
 		return false
@@ -7410,8 +7406,9 @@ double quote delimiters mean the literal should be interpreeted as plain
 text, suppressing interpretation of regexp special characters and requiring
 an abchored, entire match.
 
-Delimited regular expressions following the command verb. and may not
-contain literal whitespace; use \s or \t if you need to.
+Delimited regular expressions following the command verb may not
+contain literal whitespace; use \s or \t if you need to. Event-selection
+regexps may contain literal whitespace.
 
 Regular expressions are not anchored.  Use ^ and $ to anchor them
 to the beginning or end of the search space, when appropriate.

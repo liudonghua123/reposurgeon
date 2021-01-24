@@ -2942,9 +2942,9 @@ project1 looks like this:
 --------
 read <multiproject.svn \
   --branchify=project1/trunk:project1/branches/*:project1/tags/*:*
-branch project1/trunk rename heads/master
-branch @project1/branches/(.*)@ rename refs/heads/\1
-branch project2 delete
+branch heads/project1/trunk rename heads/master
+branch @heads/project1/branches/(.*)@ rename heads/\1
+branch heads/project2 delete
 --------
 
 The read option branchifies every directory underneath project1 for
@@ -3345,6 +3345,11 @@ option was a separate command that needed to be invoked before the
 read and set hidden global context.  There was a related branchmap
 command that has been retired because branch rename covers all
 its cases in a simpler way.
+
+In versions 4.23 and earlier, the behavior of the branch command was
+incompatibly different; it did not require a "heads/" or "tags/"
+prefix on its operand and, because of that, could only operate on
+heads/ branches and not lightweight tags.
 
 In versions before 4.10, the "reduce" and "blob" options of the
 "<<strip_cmd>>" command were bare keywords. Also the options of the
