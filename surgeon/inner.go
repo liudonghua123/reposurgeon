@@ -5648,7 +5648,7 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) (int, int, err
 		} else {
 			unmatched++
 		}
-		baton.twirl()
+		//baton.twirl()
 	}
 
 	return matched, unmatched, nil
@@ -5716,7 +5716,7 @@ func (repo *Repository) writeLegacyMap(fp io.Writer, baton *Baton) error {
 		}
 		seen[id]++
 		fmt.Fprintf(fp, "%s\t%s%s\n", cookie, id, serial)
-		baton.twirl()
+		//baton.twirl()
 	}
 	return nil
 }
