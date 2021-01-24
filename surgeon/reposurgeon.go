@@ -5136,7 +5136,7 @@ func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
 [SELECTION] tag {TAG-PATTERN} {create|move|rename|delete} [ARG]
 
-Create, move, rename, or delete a tag.
+Create, move, rename, or delete annotated taga.
 
 Creation is a special case.  First argument is a name, which must not
 be an existing tag. Takes a singleton event second argument which must
@@ -5147,49 +5147,21 @@ fields are copied from the commit's committer, mark, and comment
 fields.
 
 Otherwise, the TAG-PATTERN argument must be an existing name referring
-to a tag object, lightweight tag, or reset; alternatively it may be 
-dellimited regexp.  The second argument must be one of
-the verbs 'move', 'rename', or 'delete'.
+to an annotated tag; alternatively it may be a delimited regexp matching
+a set of tags.  The second argument must be one of the verbs 'move',
+'rename', or 'delete'.
 
 For a 'move', a third argument must be a singleton selection set. For
 a 'rename', the third argument may be any token that is a syntactically
-valid tag name (but not the name of an existing tag).  When RTG-PATTERN
+valid tag name (but not the name of an existing tag).  When TAG-PATTERN
 is a delimited regexp, the rename ARG may contain references to portions
 of the match for the TAG-PATTERN.
 
 For a 'delete', no third argument is required.  If the TAG-PATTERN of a
-delete may be a delimited regexp all objects of the specified type with
-names matching the regexp are deleted.  This is useful for mass deletion of
-junk tags such as CVS branch-root tags. Such deletions can be restricted
-by a selection set in the normal way.
-
-The behavior of this command is complex because features which present
-as tags may be any of three things: (1) true annotated-tag objects, (2)
-lightweight tags, actually sequences of commits with a common
-branchname beginning with 'refs/tags' - in this case the tag is
-considered to point to the last commit in the sequence, (3) Reset
-objects.  These may occur in combination; in fact, stream exporters
-from systems with annotation tags commonly express each of these as a
-true tag object (1) pointing at the tip commit of a sequence (2) in
-which the basename of the common branch field is identical to the tag
-name.  An exporter that generates lightweight-tagged commit sequences (2)
-may or may not generate resets pointing at their tip commits.
-
-This command tries to handle all combinations in a natural way by
-doing up to three operations on any true tag, commit sequence, and
-reset matching the source name. In a rename, all are renamed together.
-In a delete, any matching tag or reset is deleted; then matching
-branch fields are changed to match the branch of the unique descendant
-of the tagged commit, if there is one.  When a tag is moved, no branch
-fields are changed and a warning is issued.
-
-Attempts to delete a lightweight tag may fail with the message
-"couldn't determine a unique successor".  When this
-happens, the tag is on a commit with multiple children that have
-different branch labels. There is a hole in the specification
-of git fast-import streams that leaves it uncertain how branch
-labels can be safely reassigned in this case; rather than do
-something risky, reposurgeon throws a recoverable error.
+delete may be a delimited regexp annotated tags with names matching the
+regexp are deleted.  This is useful for mass deletion of junk tags
+such as those derived from CVS branch-root tags. Such deletions can be
+restricted by a selection set in the normal way.
 `)
 }
 
@@ -5200,28 +5172,26 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		return false
 	}
 	repo := rs.chosen()
-	// A tag name can refer to one of the following things {
-	// (1) A tag object, by name
-	// (2) A reset object having a name in the tags/ namespace
-	// (3) The tip commit of a branch with branch fields
-	// These things often occur in combination. Notably, git-fast-export
-	// generates for each tag object corresponding branch labels on
-	// some ancestor commits - the rule for where this stops is unclear.
+	selection := rs.selection
+	if rs.selection == nil {
+		selection = repo.all()
+	}
+
 	var tagname string
 	tagname, line = popToken(line)
 	if len(tagname) == 0 {
 		croak("missing tag name")
 		return false
 	}
+	sourcepattern, isRe := delimitedRegexp(tagname)
 	var err error
-	tagname, err = stringEscape(tagname)
-	if err != nil {
-		croak("in tag command: %v", err)
-		return false
-	}
 	var verb string
 	verb, line = popToken(line)
 	if verb == "create" {
+		if isRe {
+			croak("tag create cannot operate on a rgexp")
+			return false
+		}
 		var ok bool
 		var target *Commit
 		if repo.named(tagname) != nil {
@@ -5260,49 +5230,33 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		control.baton.twirl()
 		return false
 	}
-	tags := make([]*Tag, 0)
-	resets := make([]*Reset, 0)
-	commits := make([]*Commit, 0)
-	var refMatches func(string) bool
-	sourcepattern, isRe := delimitedRegexp(tagname)
-	if isRe {
-		// Regexp - can refer to a list of tags matched
-		tagre, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak("in tag command: %v", err)
-			return false
-		}
-		refMatches = func(branch string) bool {
-			return tagNameMatches(branch, tagre)
-		}
-	} else {
-		// Non-regexp - can only refer to a single tag
-		fulltagname := branchname(tagname)
-		refMatches = func(branch string) bool {
-			return branch == fulltagname
-		}
+
+	if !isRe {
+		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
 	}
-	selection := rs.selection
-	if selection == nil {
-		selection = repo.all()
-	}
-	for _, idx := range selection {
-		event := repo.events[idx]
-		if tag, ok := event.(*Tag); ok && refMatches("refs/tags/"+tag.tagname) {
-			tags = append(tags, tag)
-		} else if reset, ok := event.(*Reset); ok && refMatches(reset.ref) {
-			resets = append(resets, reset)
-		} else if commit, ok := event.(*Commit); ok && refMatches(commit.Branch) {
-			commits = append(commits, commit)
-		}
-		control.baton.twirl()
-	}
-	if len(tags) == 0 && len(resets) == 0 && len(commits) == 0 {
-		croak("no tags matching %s", tagname)
+	sourceRE, err := regexp.Compile(sourcepattern)
+	if err != nil {
+		croak(err.Error())
 		return false
 	}
+
+	// Collect all matching tags in the selection set
+	tags := make([]*Tag, 0)
+	for _, idx := range selection {
+		event := repo.events[idx]
+		if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) {
+			tags = append(tags, tag)
+		}
+	}
+	if len(tags) == 0 {
+		croak("no tag matches %s.", sourcepattern)
+		return false
+	}
+
+	// Validate the operation
+	var target *Commit
+	var newname string
 	if verb == "move" {
-		var target *Commit
 		var ok bool
 		rs.setSelectionSet(line)
 		if len(rs.selection) != 1 {
@@ -5312,80 +5266,42 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			croak("move target is not a commit.")
 			return false
 		}
-		if len(tags) > 0 {
-			for _, tag := range tags {
-				tag.forget()
-				tag.remember(repo, target.mark)
-				control.baton.twirl()
-			}
-		}
-		if len(resets) > 0 {
-			if len(resets) == 1 {
-				resets[0].committish = target.mark
-			} else {
-				croak("cannot move multiple tags.")
-			}
-			control.baton.twirl()
-		}
-		if len(commits) > 0 {
-			// Delete everything only reachable from the old tag position,
-			// and change the Branch of every commit that happened on that
-			// old tag but is still reachable from elsewhere.
-			repo.deleteBranch(selection, refMatches, control.baton)
-		}
 	} else if verb == "rename" {
-		if len(tags) > 1 {
-			croak("exactly one tag is required for rename")
-			return false
-		}
-		var newname string
 		newname, line = popToken(line)
 		if newname == "" {
 			croak("new tag name must be nonempty.")
 			return false
 		}
-		if len(tags) == 1 {
-			for _, event := range repo.events {
-				if tag, ok := event.(*Tag); ok && tag != tags[0] && tag.tagname == tags[0].tagname {
-					croak("tag name collision, not renaming.")
-					return false
-				}
-			}
-			tags[0].tagname = newname
-
-			control.baton.twirl()
-		}
-		fullnewname := branchname(newname)
-		for _, reset := range resets {
-			reset.ref = fullnewname
-		}
-		for _, event := range commits {
-			event.Branch = fullnewname
-		}
-	} else if verb == "delete" {
-		for _, tag := range tags {
-			// the order here in important
-			repo.delete([]int{tag.index()}, nil, control.baton)
-			tag.forget()
-			control.baton.twirl()
-		}
-		if len(tags) > 0 {
-			repo.declareSequenceMutation("tag deletion")
-		}
-		for _, reset := range resets {
-			reset.forget()
-			repo.delete([]int{repo.eventToIndex(reset)}, nil, control.baton)
-		}
-		if len(resets) > 0 {
-			repo.declareSequenceMutation("reset deletion")
-		}
-		if len(commits) > 0 {
-			repo.deleteBranch(selection, refMatches, control.baton)
-		}
-	} else {
+	} else if verb != "delete" {
 		croak("unknown verb '%s' in tag command.", verb)
 		return false
 	}
+
+	// Do it
+	control.baton.startProcess("tag"+verb, "")
+	for i, tag := range tags {
+		if verb == "move" {
+			tag.forget()
+			tag.remember(repo, target.mark)
+		} else if verb == "rename" {
+			possible := GoReplacer(sourceRE, tag.tagname, newname)
+			if i > 0 && possible == tags[i-1].tagname {
+				croak("tag name collision, not renaming.")
+				return false
+			}
+			tag.tagname = possible
+		} else if verb == "delete" {
+			// the order here in important
+			repo.delete([]int{tag.index()}, nil, control.baton)
+			tag.forget()
+		}
+		control.baton.twirl()
+	}
+	control.baton.endProcess()
+	if verb == "delete" {
+		repo.declareSequenceMutation("tag deletion")
+	}
+
 	return false
 }
 

@@ -8,8 +8,8 @@ This is a merge commit.
 
 
 
-reset refs/tags/foobar
-commit refs/tags/foobar
+reset refs/tags/annotated
+commit refs/tags/annotated
 mark :2
 author Eric S. Raymond <esr@thyrsus.com> 1354426675 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354426675 -0500
@@ -23,7 +23,7 @@ data 10
 *.o
 *.pyc
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :4
 author Eric S. Raymond <esr@thyrsus.com> 1354426758 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354426758 -0500
@@ -37,7 +37,7 @@ mark :5
 data 45
 This file will test deep directory creation.
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :6
 author Eric S. Raymond <esr@thyrsus.com> 1354426858 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354426858 -0500
@@ -53,7 +53,7 @@ data 14
 *.pyc
 *.a
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :8
 author Eric S. Raymond <esr@thyrsus.com> 1354426928 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354426928 -0500
@@ -67,7 +67,7 @@ mark :9
 data 46
 echo "Hello, world, I want to be executable."
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :10
 author Eric S. Raymond <esr@thyrsus.com> 1354427024 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354427024 -0500
@@ -76,7 +76,7 @@ A script without its executable bit.
 from :8
 M 100644 :9 hello
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :11
 author Eric S. Raymond <esr@thyrsus.com> 1354427041 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354427041 -0500
@@ -85,7 +85,7 @@ Delete the deep directory.
 from :10
 D foo/bar/junk
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :12
 author Eric S. Raymond <esr@thyrsus.com> 1354427171 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354427171 -0500
@@ -105,7 +105,7 @@ This is a spacer commit.
 
 
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :14
 author Eric S. Raymond <esr@thyrsus.com> 1354427300 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354427300 -0500
@@ -114,7 +114,7 @@ Just a spacer commit.
 from :12
 M 100644 :13 README
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :15
 author Eric S. Raymond <esr@thyrsus.com> 1354427312 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354427312 -0500
@@ -136,7 +136,7 @@ will have a tag.
 
 
 
-commit refs/tags/foobar
+commit refs/tags/annotated
 mark :17
 author Eric S. Raymond <esr@thyrsus.com> 1354428162 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354428162 -0500
