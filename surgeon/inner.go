@@ -5288,9 +5288,17 @@ func (repo *Repository) _buildNamecache() {
 			//addOrAppend(i, commit.gitHash().hexify())
 			//addOrAppend(i, commit.gitHash().short())
 		case *Tag:
-			repo._namecache[event.(*Tag).tagname] = []int{i}
+			tag := event.(*Tag)
+			repo._namecache[tag.tagname] = []int{i}
+			if tag.legacyID != "" {
+				repo._namecache[tag.legacyID] = []int{i}
+			}
 		case *Reset:
-			repo._namecache["reset@"+filepath.Base(event.(*Reset).ref)] = []int{i}
+			reset := event.(*Reset)
+			repo._namecache["reset@"+filepath.Base(reset.ref)] = []int{i}
+			if reset.legacyID != "" {
+				repo._namecache[reset.legacyID] = []int{i}
+			}
 		}
 	}
 }
