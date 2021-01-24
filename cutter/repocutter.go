@@ -529,7 +529,7 @@ func SetLength(header string, data []byte, val int) []byte {
 	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
 }
 
-// stripChecksums - remove chweckauums from a blob header
+// stripChecksums - remove chwecksums from a blob header
 func stripChecksums(header []byte) []byte {
 	r1 := regexp.MustCompile("Text-content-md5:.*\n")
 	header = r1.ReplaceAll(header, []byte{})
@@ -1679,9 +1679,9 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 					content = []byte(tell)
 					header = SetLength("Text-content", header, len(content))
 					header = SetLength("Content", header, len(properties)+len(content))
-					header = stripChecksums(header)
 				}
 			}
+			header = stripChecksums(header)
 		}
 
 		all := make([]byte, 0)
