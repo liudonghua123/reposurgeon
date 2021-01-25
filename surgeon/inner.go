@@ -9372,6 +9372,98 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 	repo.invalidateObjectMap()
 }
 
+func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newname string) int {
+	var sourceroot *Commit
+	var liftroot *Commit
+	splitcount := 0
+	for _, commit := range repo.commits(nil) {
+		if commit.Branch == sourcebranch {
+			if sourceroot == nil {
+				sourceroot = commit
+			}
+			goodcount := 0
+			badcount := 0
+			for _, trialpath := range commit.paths(nil) {
+				if strings.HasPrefix(trialpath, pathprefix) {
+					goodcount++
+				} else {
+					badcount++
+				}
+			}
+			if goodcount > 0 {
+				if badcount == 0 {
+					// Simple case - all nonempty Source and Path values have the prefix
+					commit.Branch = newname
+					for _, op := range commit.operations() {
+						if strings.HasPrefix(op.Source, pathprefix) {
+							op.Source = op.Source[len(pathprefix):]
+						}
+						if strings.HasPrefix(op.Path, pathprefix) {
+							op.Path = op.Path[len(pathprefix):]
+						}
+					}
+					if liftroot == nil {
+						liftroot = commit
+					}
+					//fmt.Printf("XXX This commit is lifted: %s", commit)
+				} else {
+					// Complex case - commit needs to be split because some
+					// paths have the prefix but others don't.
+					idx := commit.index()
+					err := repo.splitCommitByPrefix(idx, pathprefix)
+					if err != nil {
+						return -1
+					}
+					liftFrag := repo.events[idx+1].(*Commit)
+					liftFrag.Branch = newname
+					for _, op := range liftFrag.operations() {
+						if strings.HasPrefix(op.Source, pathprefix) {
+							op.Source = op.Source[len(pathprefix):]
+						}
+						if strings.HasPrefix(op.Path, pathprefix) {
+							op.Path = op.Path[len(pathprefix):]
+						}
+					}
+					if liftroot == nil {
+						liftroot = liftFrag
+					}
+					splitcount++
+					//fmt.Printf("XXX Fragment 1 stays: %s", commit)
+					//fmt.Printf("XXX Fragment 2 is lifted: %s", liftFrag)
+				}
+			}
+		}
+	}
+
+	// Now we need to fix up ancestry links.
+	var sourceparents []CommitLike
+	var liftparents []CommitLike
+	if sourceroot.hasParents() {
+		sourceparents = sourceroot.parents()
+	} else {
+		sourceparents = make([]CommitLike, 0)
+	}
+	if liftroot.hasParents() {
+		liftparents = liftroot.parents()
+	} else {
+		liftparents = make([]CommitLike, 0)
+	}
+	for _, commit := range repo.commits(nil) {
+		if commit.Branch == sourcebranch {
+			// Preserve merge links on the source branch.
+			if len(commit.parents()) > 1 {
+				sourceparents = append(sourceparents, commit.parents()[1:]...)
+			}
+			commit.setParents(sourceparents)
+			sourceparents = []CommitLike{commit}
+		} else if commit.Branch == newname {
+			commit.setParents(liftparents)
+			liftparents = []CommitLike{commit}
+		}
+	}
+	return splitcount
+}
+
 // A RepositoryList is a repository list with selection and access by name.
 type RepositoryList struct {
 	repo     *Repository
