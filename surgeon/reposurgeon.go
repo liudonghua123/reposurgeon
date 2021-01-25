@@ -186,11 +186,13 @@ type LineParse struct {
 	proc         *exec.Cmd
 }
 
+// Parse precondition flags
 const parseNONE = 0
-
 const (
-	parseREPO    uint = 1 << iota // Requires a loaded repo
-	parseALLREPO                  // Requires a loaded repo and selection sets defaults to all
+	parseREPO       uint = 1 << iota // Requires a loaded repo
+	parseALLREPO                     // Requires a loaded repo and selection sets defaults to all
+	parseNOSELECT                    // Giving a selection set is an error
+	parseNEEDSELECT                  // Command requires an explicit selection set
 )
 
 func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities orderedStringSet) *LineParse {
@@ -199,6 +201,12 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 	}
 	if rs.selection == nil && (parseflags&parseALLREPO) != 0 {
 		rs.selection = rs.chosen().all()
+	}
+	if rs.selection != nil && (parseflags&parseNOSELECT) != 0 {
+		panic(throw("command", "choose does not take a selection set"))
+	}
+	if rs.selection == nil && (parseflags&parseNEEDSELECT) != 0 {
+		panic(throw("command", "command requires an explicit selection"))
 	}
 
 	caps := make(map[string]bool)
@@ -1254,7 +1262,7 @@ this will not affect the reported high-water    mark.
 
 // DoMemory is the handler for the "memory" command.
 func (rs *Reposurgeon) DoMemory(line string) bool {
-	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	var memStats runtime.MemStats
 	debug.FreeOSMemory()
@@ -2149,13 +2157,9 @@ the long-form manual. See "help branchify" and "help branchmap" in particular.
 
 // DoRead reads in a repository for surgery.
 func (rs *Reposurgeon) DoRead(line string) bool {
-	parse := rs.newLineParse(line, parseNONE, []string{"stdin"})
+	parse := rs.newLineParse(line, parseNOSELECT, []string{"stdin"})
 	// Don't defer parse.Closem() here - you'll nuke the seekstream that
 	// we use to get content out of dump streams.
-	if rs.selection != nil {
-		croak("read does not take a selection set")
-		return false
-	}
 	var repo *Repository
 	if parse.redirected {
 		repo = newRepository("")
@@ -2886,16 +2890,9 @@ func (fc *filterCommand) do(content string, substitutions map[string]string) str
 
 // DoFilter  is rtthe handler for the "filter" command.
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	if line == "" {
 		croak("no filter is specified")
-		return false
-	}
-	if rs.selection == nil {
-		croak("no selection")
 		return false
 	}
 	// Mainline of do_filter() continues {
@@ -3132,12 +3129,8 @@ Example:
 
 // DoAppend appends a specified line to comments in the specified selection set.
 func (rs *Reposurgeon) DoAppend(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	defer parse.Closem()
-	if rs.selection == nil {
-		croak("no selection")
-		return false
-	}
 	fields, err := shlex.Split(parse.line, true)
 	if err != nil {
 		croak(err.Error())
@@ -4041,7 +4034,7 @@ without throwing a "fatal: You are on a branch yet to be born" error.
 // DoUnite melds repos together.
 func (rs *Reposurgeon) DoUnite(line string) bool {
 	rs.unchoose()
-	parse := rs.newLineParse(line, parseNONE, nil)
+	parse := rs.newLineParse(line, parseNOSELECT, nil)
 	defer parse.Closem()
 	factors := make([]*Repository, 0)
 	for _, name := range parse.Tokens() {
@@ -4784,32 +4777,27 @@ after the operation.
 
 // DoReorder re-orders a contiguous range of commits.
 func (rs *Reposurgeon) DoReorder(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	defer parse.Closem()
 	repo := rs.chosen()
-	sel := rs.selection
-	if sel == nil {
-		croak("no selection")
-		return false
-	}
 	if parse.line != "" {
 		croak("'reorder' takes no arguments")
 		return false
 	}
-	commits := repo.commits(sel)
+	commits := repo.commits(rs.selection)
 	if len(commits) == 0 {
 		croak("no commits in selection")
 		return false
 	} else if len(commits) == 1 {
 		croak("only 1 commit selected; nothing to re-order")
 		return false
-	} else if len(commits) != len(sel) {
+	} else if len(commits) != len(rs.selection) {
 		croak("selection set must be all commits")
 		return false
 	}
 	_, quiet := parse.OptVal("--quiet")
 
-	repo.reorderCommits(sel, quiet)
+	repo.reorderCommits(rs.selection, quiet)
 	return false
 }
 
@@ -6779,7 +6767,7 @@ reference.
 
 // DoVersion is the handler for the "version" command.
 func (rs *Reposurgeon) DoVersion(line string) bool {
-	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if line == "" {
 		// This is a technically wrong way of enumerting the list and will need to
@@ -6830,7 +6818,7 @@ Display elapsed time since start.
 
 // DoElapsed is the handler for the "elapsed" command.
 func (rs *Reposurgeon) DoElapsed(line string) bool {
-	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
 	return false
@@ -6847,7 +6835,7 @@ Exit cleanly, emitting a goodbye message including elapsed time.
 
 // DoExit is the handler for the "exit" command.
 func (rs *Reposurgeon) DoExit(line string) bool {
-	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	parse.respond("exiting, elapsed time %v.", time.Now().Sub(rs.startTime))
 	return true
@@ -7191,7 +7179,7 @@ tests.
 
 // DoPrint is the handler for the "print" command.
 func (rs *Reposurgeon) DoPrint(line string) bool {
-	parse := rs.newLineParse(line, parseNONE, []string{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT, []string{"stdout"})
 	defer parse.Closem()
 	fmt.Fprintf(parse.stdout, "%s\n", parse.line)
 	return false
@@ -7381,14 +7369,10 @@ but verifying the hash code itself.
 
 // DoHash is the handler for the "hash" command.
 func (rs *Reposurgeon) DoHash(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	selection := rs.selection
-	if rs.selection == nil {
-		selection = repo.all()
-	}
-	for _, eventid := range selection {
+	for _, eventid := range rs.selection {
 		event := repo.events[eventid]
 		var hashrep string
 		switch event.(type) {

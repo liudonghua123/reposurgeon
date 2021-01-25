@@ -1393,7 +1393,7 @@ reposurgeon: 'reorder' takes no arguments
 
 # error: no event selection
 reorder
-reposurgeon: no selection
+reposurgeon: command requires an explicit selection
 
 # error: no commits in selection
 2,4,5 reorder
