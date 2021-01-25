@@ -110,7 +110,6 @@ ANCHORED_TOPICS = \
 	exit \
 	expunge \
 	filter \
-	functions \
 	gc \
 	gitify \
 	graft \
@@ -177,10 +176,13 @@ ANCHORED_TOPICS = \
 	version \
 	when
 UNANCHORED_TOPICS = \
+	functions \
+	options \
 	redirection
 READ_OPTION_TOPICS = \
 	branchify
-# These are in regular form, but the emtries in the
+TOPICS = $(ANCHORED_TOPICS) $(UNANCHORED_TOPICS) $(READ_OPTION_TOPICS)
+# These are in regular form, but the entries in the
 # long-form manual have additional material.
 SHORTFORM = \
 	read \
@@ -190,7 +192,6 @@ SHORTFORM = \
 EXCEPTIONS = \
 	attribution \
 	lint \
-	options \
 	profile \
 	reparent \
 	selection \
@@ -231,6 +232,10 @@ helpcheck:
 	sed -n <repository-editing.adoc '/include::docinclude\/\([a-z]*\).adoc\[\]/s//\1/p' | sort >/tmp/includes$$$$ ; \
 	comm -3 /tmp/topics$$$$ /tmp/includes$$$$; \
 	rm /tmp/topics$$$$ /tmp/includes$$$$
+
+# Report most grammar summary lines. Missing: the SHORTFORM and EXCEPTION topics.
+summary:
+	@for topic in $(ANCHORED_TOPICS); do head -2 "docinclude/$${topic}.adoc"; done | grep -v '^\[\[' | sed '/::$$/s///'
 
 #
 # Auxillary Go tooling productions
