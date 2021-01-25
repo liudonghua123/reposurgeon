@@ -2410,48 +2410,8 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 		}
 	}
 	if striptypes.Contains("--reduce") {
-		interesting := newOrderedStringSet()
-		for _, event := range repo.events {
-			if tag, ok := event.(*Tag); ok {
-				interesting.Add(tag.committish)
-			} else if reset, ok := event.(*Reset); ok {
-				interesting.Add(reset.ref)
-			} else if commit, ok := event.(*Commit); ok {
-				if len(commit.children()) != 1 || len(commit.parents()) != 1 {
-					interesting.Add(commit.mark)
-				} else {
-					for _, op := range commit.operations() {
-						direct := commit.parents()[0]
-						var noAncestor bool
-						if _, ok := direct.(*Callout); ok {
-							noAncestor = true
-						} else if commit, ok := direct.(*Commit); ok {
-							noAncestor = commit.ancestorCount(op.Path) == 0
-						}
-						if op.op != opM || noAncestor {
-							interesting.Add(commit.mark)
-							break
-						}
-					}
-				}
-			}
-		}
-		neighbors := newOrderedStringSet()
-		for _, event := range repo.events {
-			if commit, ok := event.(*Commit); ok && interesting.Contains(commit.mark) {
-				neighbors = neighbors.Union(newOrderedStringSet(commit.parentMarks()...))
-				neighbors = neighbors.Union(newOrderedStringSet(commit.childMarks()...))
-			}
-		}
-		interesting = interesting.Union(neighbors)
 		oldlen = len(repo.events)
-		deletia := newOrderedIntSet()
-		for i, event := range repo.events {
-			if commit, ok := event.(*Commit); ok && !interesting.Contains(commit.mark) {
-				deletia.Add(i)
-			}
-		}
-		repo.delete(deletia, nil, control.baton)
+		repo.reduce()
 		respond("From %d to %d events.", oldlen, len(repo.events))
 	}
 
