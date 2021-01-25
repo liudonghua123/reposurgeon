@@ -22,7 +22,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"os/user"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -187,7 +186,21 @@ type LineParse struct {
 	proc         *exec.Cmd
 }
 
-func (rl *RepositoryList) newLineParse(line string, capabilities orderedStringSet) *LineParse {
+const parseNONE = 0
+
+const (
+	parseREPO    uint = 1 << iota // Requires a loaded repo
+	parseALLREPO                  // Requires a loaded repo and selection sets defaults to all
+)
+
+func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities orderedStringSet) *LineParse {
+	if rs.chosen() == nil && (parseflags&(parseREPO|parseALLREPO)) != 0 {
+		panic(throw("command", "no repo has been chosen."))
+	}
+	if rs.selection == nil && (parseflags&parseALLREPO) != 0 {
+		rs.selection = rs.chosen().all()
+	}
+
 	caps := make(map[string]bool)
 	for _, cap := range capabilities {
 		caps[cap] = true
@@ -643,7 +656,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 // edit mailboxizes and edits the non-blobs in the selection
 // Assumes that rs.chosen() and selection are not None
 func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
-	parse := rs.newLineParse(line, orderedStringSet{"stdin", "stdout"})
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin", "stdout"})
 	defer parse.Closem()
 	editor := os.Getenv("EDITOR")
 	if parse.line != "" {
@@ -843,13 +856,9 @@ that would otherwise be performed repeatedly, e.g. in macro calls.
 
 // DoAssign is the handler for the "assign" command,
 func (rs *Reposurgeon) DoAssign(line string) bool {
-	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	parse := rs.newLineParse(line, nil)
+	parse := rs.newLineParse(line, parseREPO, nil)
 	defer parse.Closem()
+	repo := rs.chosen()
 	if rs.selection == nil {
 		if line != "" {
 			croak("No selection")
@@ -940,11 +949,7 @@ parentheses.
 
 // DoNames is the handler for the "names" command,
 func (rs *Reposurgeon) DoNames(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	branches := rs.chosen().branchset()
 	//sortbranches.Sort()
@@ -997,23 +1002,15 @@ file in the blob.
 
 // DoIndex generates a summary listing of objects.
 func (rs *Reposurgeon) DoIndex(lineIn string) bool {
+	parse := rs.newLineParse(lineIn, parseALLREPO, orderedStringSet{"stdout"})
+	defer parse.Closem()
 	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	// We could do all this logic using reportSelect() and index() methods
 	// in the objects, but that would have two disadvantages.  First, we'd
 	// get a default-set computation we don't want.  Second, for this
 	// function it's helpful to have the method strings close together so
 	// we can maintain columnation.
-	selection := rs.selection
-	if rs.selection == nil {
-		selection = repo.all()
-	}
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	for _, eventid := range selection {
+	for _, eventid := range rs.selection {
 		event := repo.events[eventid]
 		switch e := event.(type) {
 		case *Blob:
@@ -1235,11 +1232,7 @@ long-running conversion recipes.
 
 // DoTiming reports repo-analysis times
 func (rs *Reposurgeon) DoTiming(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if parse.line != "" {
 		rs.chosen().timings = append(rs.chosen().timings, TimeMark{line, time.Now()})
@@ -1261,7 +1254,7 @@ this will not affect the reported high-water    mark.
 
 // DoMemory is the handler for the "memory" command.
 func (rs *Reposurgeon) DoMemory(line string) bool {
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	var memStats runtime.MemStats
 	debug.FreeOSMemory()
@@ -1315,15 +1308,8 @@ currently chosen repository.
 
 // DoStats reports information on repositories.
 func (rs *Reposurgeon) DoStats(line string) bool {
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	if parse.line == "" {
-		if rs.chosen() == nil {
-			croak("no repo has been chosen.")
-			return false
-		}
-		parse.line = rs.chosen().name
-	}
 	for _, name := range parse.Tokens() {
 		repo := rs.repoByName(name)
 		if repo == nil {
@@ -1368,19 +1354,11 @@ in the currently-selected repo.
 `)
 }
 
-// DoCount us the command handler for the "count" command.
+// DoCount is the command handler for the "count" command.
 func (rs *Reposurgeon) DoCount(lineIn string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(lineIn, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	fmt.Fprintf(parse.stdout, "%d\n", len(selection))
+	fmt.Fprintf(parse.stdout, "%d\n", len(rs.selection))
 	return false
 }
 
@@ -1398,7 +1376,7 @@ leading portion of the comment follows.
 
 // DoList generates a human-friendly listing of objects.
 func (rs *Reposurgeon) DoList(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(lineIn, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1431,8 +1409,8 @@ child's tip.  Otherwise this function throws a recoverable error.
 }
 
 // DoTip generates a human-friendly listing of objects.
-func (rs *Reposurgeon) DoTip(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
+func (rs *Reposurgeon) DoTip(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1459,8 +1437,8 @@ field 'commit'.
 }
 
 // DoTags is the handler for the "tags" command.
-func (rs *Reposurgeon) DoTags(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
+func (rs *Reposurgeon) DoTags(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1492,8 +1470,8 @@ The stamp is followed by the first line of the commit message.
 }
 
 // DoStamp lists action stamps for each element of the selection set
-func (rs *Reposurgeon) DoStamp(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
+func (rs *Reposurgeon) DoStamp(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1529,19 +1507,11 @@ unwieldy.
 
 // DoSizes reports branch relative sizes.
 func (rs *Reposurgeon) DoSizes(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	repo := rs.chosen()
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	sizes := make(map[string]int)
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	for _, i := range selection {
+	repo := rs.chosen()
+	sizes := make(map[string]int)
+	for _, i := range rs.selection {
 		if commit, ok := repo.events[i].(*Commit); ok {
 			if _, ok := sizes[commit.Branch]; !ok {
 				sizes[commit.Branch] = 0
@@ -1616,7 +1586,7 @@ change without notice as more sanity checks are added.
 
 // DoLint looks for possible data malformations in a repo.
 func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if parse.options.Contains("--options") || parse.options.Contains("-?") {
 		fmt.Fprint(parse.stdout, `
@@ -1630,14 +1600,6 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 `[1:])
 		return false
 	}
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
 	var lintmutex sync.Mutex
 	unmapped := regexp.MustCompile("^[^@]*$|^[^@]*@" + rs.chosen().uuid + "$")
 	shortset := newOrderedStringSet()
@@ -1648,7 +1610,7 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 	emptyname := newOrderedStringSet()
 	badaddress := newOrderedStringSet()
 	cvsignores := 0
-	rs.chosen().walkEvents(selection, func(idx int, event Event) {
+	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
 		commit, iscommit := event.(*Commit)
 		if !iscommit {
 			return
@@ -2187,13 +2149,13 @@ the long-form manual. See "help branchify" and "help branchmap" in particular.
 
 // DoRead reads in a repository for surgery.
 func (rs *Reposurgeon) DoRead(line string) bool {
+	parse := rs.newLineParse(line, parseNONE, []string{"stdin"})
+	// Don't defer parse.Closem() here - you'll nuke the seekstream that
+	// we use to get content out of dump streams.
 	if rs.selection != nil {
 		croak("read does not take a selection set")
 		return false
 	}
-	parse := rs.newLineParse(line, []string{"stdin"})
-	// Don't do parse.Closem() here - you'll nuke the seekstream that
-	// we use to get content out of dump streams.
 	var repo *Repository
 	if parse.redirected {
 		repo = newRepository("")
@@ -2314,18 +2276,7 @@ the long-form manual.
 
 // DoWrite streams out the results of repo surgery.
 func (rs *Reposurgeon) DoWrite(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	// Python also handled prefix ~user
-	if strings.HasPrefix(line, "~/") {
-		usr, err := user.Current()
-		if err == nil {
-			line = usr.HomeDir + line[1:]
-		}
-	}
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	// This is slightly asymmetrical with the read side, which
 	// interprets an empty argument list as '.'
@@ -2383,16 +2334,10 @@ before each event dump.
 }
 
 // DoInspect dumps raw events.
-func (rs *Reposurgeon) DoInspect(lineIn string) bool {
-	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
+func (rs *Reposurgeon) DoInspect(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-
+	repo := rs.chosen()
 	selection := rs.selection
 	if selection == nil {
 		state := rs.evalState(len(repo.events))
@@ -2443,15 +2388,9 @@ func (rs *Reposurgeon) CompleteStrip(text string) []string {
 
 // DoStrip strips out content to produce a reduced test case.
 func (rs *Reposurgeon) DoStrip(line string) bool {
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
+	defer parse.Closem()
 	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
 	var striptypes orderedStringSet
 	var oldlen int
 	if line == "" {
@@ -2460,7 +2399,7 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 		striptypes = newOrderedStringSet(strings.Fields(line)...)
 	}
 	if striptypes.Contains("--blobs") {
-		for _, ei := range selection {
+		for _, ei := range rs.selection {
 			if blob, ok := repo.events[ei].(*Blob); ok {
 				blob.setContent([]byte(fmt.Sprintf("Blob at %s\n", blob.mark)), noOffset)
 			}
@@ -2562,17 +2501,9 @@ const graphCaptionLength = 32
 
 // DoGraph dumps a commit graph.
 func (rs *Reposurgeon) DoGraph(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	rs.chosen().doGraph(selection, parse.stdout)
+	rs.chosen().doGraph(rs.selection, parse.stdout)
 	return false
 }
 
@@ -2602,16 +2533,12 @@ Subversion and CVS conversions.)
 
 // DoRebuild rebuilds a live repository from the edited state.
 func (rs *Reposurgeon) DoRebuild(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	if len(rs.selection) != 0 {
 		croak("rebuild does not take a selection set")
 		return false
 	}
-	parse := rs.newLineParse(line, nil)
-	defer parse.Closem()
 	err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
 	if err != nil {
 		croak(err.Error())
@@ -2644,8 +2571,8 @@ Blobs may be included in the output with the option --blobs.
 }
 
 // DoMsgout generates a message-box file representing object metadata.
-func (rs *Reposurgeon) DoMsgout(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
+func (rs *Reposurgeon) DoMsgout(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 
 	var filterRegexp *regexp.Regexp
@@ -2732,14 +2659,9 @@ CVS empty-comment marker.
 
 // DoMsgin accepts a message-box file representing object metadata and update from it.
 func (rs *Reposurgeon) DoMsgin(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	repo := rs.chosen()
-	parse := rs.newLineParse(line, orderedStringSet{"stdin", "stdout"})
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin", "stdout"})
 	defer parse.Closem()
-	repo.readMessageBox(rs.selection, parse.stdin, parse.stdout,
+	rs.chosen().readMessageBox(rs.selection, parse.stdin, parse.stdout,
 		parse.options.Contains("--create"),
 		parse.options.Contains("--empty-only"),
 		parse.options.Contains("--changed"))
@@ -2768,15 +2690,9 @@ as with msgout, the --blobs option will include blobs in the file.
 
 // DoEdit edits metadata interactively.
 func (rs *Reposurgeon) DoEdit(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	rs.edit(selection, line)
+	parse := rs.newLineParse(line, parseALLREPO, nil)
+	defer parse.Closem()
+	rs.edit(rs.selection, line)
 	return false
 }
 
@@ -3216,16 +3132,12 @@ Example:
 
 // DoAppend appends a specified line to comments in the specified selection set.
 func (rs *Reposurgeon) DoAppend(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	if rs.selection == nil {
 		croak("no selection")
 		return false
 	}
-	parse := rs.newLineParse(line, nil)
-	defer parse.Closem()
 	fields, err := shlex.Split(parse.line, true)
 	if err != nil {
 		croak(err.Error())
@@ -3281,15 +3193,11 @@ removal of fileops associated with commits requires this.
 
 // DoSquash squashes events in the specified selection set.
 func (rs *Reposurgeon) DoSquash(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	if rs.selection == nil {
 		rs.selection = nil
 	}
-	parse := rs.newLineParse(line, nil)
-	defer parse.Closem()
 	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
 }
@@ -3312,15 +3220,11 @@ squash with the --delete flag.
 
 // DoDelete is the handler for the "delete" command.
 func (rs *Reposurgeon) DoDelete(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	if rs.selection == nil {
 		rs.selection = nil
 	}
-	parse := rs.newLineParse(line, nil)
-	defer parse.Closem()
 	parse.options.Add("--delete")
 	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
@@ -3359,17 +3263,9 @@ With  the --debug option, show messages about mismatches.
 
 // DoCoalesce coalesces events in the specified selection set.
 func (rs *Reposurgeon) DoCoalesce(line string) bool {
-	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo is loaded")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	parse := rs.newLineParse(line, nil)
+	parse := rs.newLineParse(line, parseALLREPO, nil)
 	defer parse.Closem()
+	repo := rs.chosen()
 	timefuzz := 90
 	changelog := parse.options.Contains("--changelog")
 	if parse.line != "" {
@@ -3380,7 +3276,7 @@ func (rs *Reposurgeon) DoCoalesce(line string) bool {
 			return false
 		}
 	}
-	modified := repo.doCoalesce(selection, timefuzz, changelog, parse.options.Contains("--debug"), control.baton)
+	modified := repo.doCoalesce(rs.selection, timefuzz, changelog, parse.options.Contains("--debug"), control.baton)
 	respond("%d spans coalesced.", modified)
 	return false
 }
@@ -3403,12 +3299,10 @@ in the commit's ancestry.
 
 // DoAdd adds a fileop to a specified commit.
 func (rs *Reposurgeon) DoAdd(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	repo := rs.chosen()
-	fields, err := shlex.Split(line, true)
+	fields, err := shlex.Split(parse.line, true)
 	if err != nil && len(fields) < 2 {
 		croak("add requires an operation type and arguments")
 		return false
@@ -3512,17 +3406,13 @@ used with the add command to patch data into a repository.
 
 // DoBlob adds a fileop to a specified commit.
 func (rs *Reposurgeon) DoBlob(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
+	defer parse.Closem()
 	repo := rs.chosen()
 	repo.renumber(2, nil)
 	blob := newBlob(repo)
 	blob.setMark(":1")
 	repo.insertEvent(blob, len(repo.frontEvents()), "adding blob")
-	parse := rs.newLineParse(line, orderedStringSet{"stdin"})
-	defer parse.Closem()
 	content, err := ioutil.ReadAll(parse.stdin)
 	if err != nil {
 		croak("while reading blob content: %v", err)
@@ -3555,15 +3445,13 @@ cannot be combined with 'deletes'.
 
 // DoRemove deletes a fileop from a specified commit.
 func (rs *Reposurgeon) DoRemove(line string) bool {
-	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	if rs.selection == nil {
 		rs.selection = newOrderedIntSet()
 	}
-	orig := line
+	repo := rs.chosen()
+	orig := parse.line
 	opindex, line := popToken(line)
 	optypes := "DMRCN"
 	regex := regexp.MustCompile("^[DMRCN]+$")
@@ -3708,17 +3596,11 @@ referencing them to instead reference the (kept) first blob.
 
 // DoDedup deduplicates identical (up to hash) blobs within the selection set
 func (rs *Reposurgeon) DoDedup(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
+	parse := rs.newLineParse(line, parseALLREPO, nil)
+	defer parse.Closem()
 	blobMap := make(map[string]string) // hash -> mark
 	dupMap := make(map[string]string)  // duplicate mark -> canonical mark
-	for _, ei := range selection {
+	for _, ei := range rs.selection {
 		event := rs.chosen().events[ei]
 		if blob, ok := event.(*Blob); ok {
 			sha := blob.gitHash().hexify()
@@ -3751,14 +3633,8 @@ an offset literal of 0, +0 or -0.
 
 // DoTimeoffset applies a time offset to all dates in selected events.
 func (rs *Reposurgeon) DoTimeoffset(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
+	parse := rs.newLineParse(line, parseALLREPO, nil)
+	defer parse.Closem()
 	offsetOf := func(hhmmss string) (int, error) {
 		h := "0"
 		m := "0"
@@ -3822,7 +3698,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 		}
 		loc = time.FixedZone(args[1], zoffset)
 	}
-	for _, ei := range selection {
+	for _, ei := range rs.selection {
 		event := rs.chosen().events[ei]
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagger != nil {
@@ -3859,15 +3735,15 @@ date format and converts to RFC3339.
 }
 
 // DoWhen uis thee command handler for the "when" command.
-func (rs *Reposurgeon) DoWhen(LineIn string) (StopOut bool) {
-	if LineIn == "" {
+func (rs *Reposurgeon) DoWhen(line string) (StopOut bool) {
+	if line == "" {
 		croak("a supported date format is required.")
 		return false
 	}
-	d, err := newDate(LineIn)
+	d, err := newDate(line)
 	if err != nil {
 		croak("unrecognized date format")
-	} else if strings.Contains(LineIn, "Z") {
+	} else if strings.Contains(line, "Z") {
 		control.baton.printLogString(d.String())
 	} else {
 		control.baton.printLogString(d.rfc3339())
@@ -4017,15 +3893,8 @@ func delimitedRegexp(in string) (out string, re bool) {
 
 // DoExpunge expunges files from the chosen repository.
 func (rs *Reposurgeon) DoExpunge(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-
-	}
+	parse := rs.newLineParse(line, parseALLREPO, nil)
+	defer parse.Closem()
 	fields := strings.Fields(line)
 	digest := func(toklist []string) (*regexp.Regexp, bool) {
 		digested := make([]string, 0)
@@ -4049,7 +3918,7 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 		fields = fields[1:]
 	}
 	expunge, notagify := digest(fields)
-	err := rs.chosen().expunge(selection, expunge, delete, notagify, control.baton)
+	err := rs.chosen().expunge(rs.selection, expunge, delete, notagify, control.baton)
 	if err != nil {
 		respond(err.Error())
 	}
@@ -4172,10 +4041,10 @@ without throwing a "fatal: You are on a branch yet to be born" error.
 // DoUnite melds repos together.
 func (rs *Reposurgeon) DoUnite(line string) bool {
 	rs.unchoose()
-	factors := make([]*Repository, 0)
-	parse := rs.newLineParse(line, nil)
+	parse := rs.newLineParse(line, parseNONE, nil)
 	defer parse.Closem()
-	for _, name := range strings.Fields(parse.line) {
+	factors := make([]*Repository, 0)
+	for _, name := range parse.Tokens() {
 		repo := rs.repoByName(name)
 		if repo == nil {
 			croak("no such repo as %s", name)
@@ -4221,16 +4090,12 @@ of the grafted repository.
 
 // DoGraft grafts a named repo onto the selected one.
 func (rs *Reposurgeon) DoGraft(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	if len(rs.repolist) == 0 {
 		croak("no repositories are loaded.")
 		return false
 	}
-	parse := rs.newLineParse(line, nil)
-	defer parse.Closem()
 	graftRepo := rs.repoByName(parse.line)
 	requireGraftPoint := true
 	var graftPoint int
@@ -4274,11 +4139,9 @@ source branch are removed.
 
 // DoDebranch turns a branch into a subdirectory.
 func (rs *Reposurgeon) DoDebranch(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	args := strings.Fields(line)
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
+	args := parse.Tokens()
 	if len(args) == 0 {
 		croak("debranch command requires at least one argument")
 		return false
@@ -4407,17 +4270,11 @@ func (pa pathAction) String() string {
 
 // DoPath renames paths in the history.
 func (rs *Reposurgeon) DoPath(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	parse := rs.newLineParse(line, parseALLREPO, nil)
+	defer parse.Closem()
 	repo := rs.chosen()
-	selection := rs.selection
-	if selection == nil {
-		selection = repo.all()
-	}
 	var sourcePattern string
-	sourcePattern, line = popToken(line)
+	sourcePattern, parse.line = popToken(parse.line)
 	sourceRE, err1 := regexp.Compile(sourcePattern)
 	if err1 != nil {
 		if logEnable(logWARN) {
@@ -4426,9 +4283,7 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		return false
 	}
 	var verb string
-	verb, line = popToken(line)
-	parse := rs.newLineParse(line, nil)
-	defer parse.Closem()
+	verb, parse.line = popToken(parse.line)
 	if verb == "rename" {
 		force := parse.options.Contains("--force")
 		targetPattern, _ := popToken(parse.line)
@@ -4466,17 +4321,9 @@ directory component from the beginning of every path.
 
 // DoPaths is the command handler for the "paths" command.
 func (rs *Reposurgeon) DoPaths(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	if !strings.HasPrefix(line, "sub") && !strings.HasPrefix(line, "sup") {
+	if !strings.HasPrefix(parse.line, "sub") && !strings.HasPrefix(parse.line, "sup") {
 		allpaths := newOrderedStringSet()
 		for _, commit := range rs.chosen().commits(rs.selection) {
 			allpaths = allpaths.Union(commit.paths(nil))
@@ -4485,19 +4332,19 @@ func (rs *Reposurgeon) DoPaths(line string) bool {
 		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
 		return false
 	}
-	fields := strings.Fields(line)
+	fields := parse.Tokens()
 	if fields[0] == "sub" {
 		if len(fields) < 2 {
 			croak("Error paths sub needs a directory name argument")
 			return false
 		}
 		prefix := fields[1]
-		modified := rs.chosen().pathWalk(selection,
+		modified := rs.chosen().pathWalk(rs.selection,
 			func(f string) string { return prefix + string(os.PathSeparator) + f })
 		fmt.Fprint(parse.stdout, strings.Join(modified, control.lineSep)+control.lineSep)
 	} else if fields[0] == "sup" {
 		if len(fields) == 1 {
-			modified := rs.chosen().pathWalk(selection,
+			modified := rs.chosen().pathWalk(rs.selection,
 				func(f string) string {
 					slash := strings.Index(f, "/")
 					if slash == -1 {
@@ -4512,7 +4359,7 @@ func (rs *Reposurgeon) DoPaths(line string) bool {
 			if !strings.HasSuffix(prefix, "/") {
 				prefix += "/"
 			}
-			modified := rs.chosen().pathWalk(selection,
+			modified := rs.chosen().pathWalk(rs.selection,
 				func(f string) string {
 					if strings.HasPrefix(f, prefix) {
 						return f[len(prefix):]
@@ -4546,17 +4393,7 @@ expressions.
 
 // DoManifest prints all files (matching the regex) in the selected commits trees.
 func (rs *Reposurgeon) DoManifest(line string) bool {
-	if rs.chosen() == nil {
-		if logEnable(logWARN) {
-			logit("no repo has been chosen")
-		}
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	var filterFunc = func(s string) bool { return true }
 	line = strings.TrimSpace(parse.line)
@@ -4577,7 +4414,7 @@ func (rs *Reposurgeon) DoManifest(line string) bool {
 		}
 	}
 	events := rs.chosen().events
-	for _, ei := range selection {
+	for _, ei := range rs.selection {
 		commit, ok := events[ei].(*Commit)
 		if !ok {
 			continue
@@ -4651,24 +4488,16 @@ merge link is moved to the tagified commit's parent.
 
 // DoTagify searches for empty commits and turn them into tags.
 func (rs *Reposurgeon) DoTagify(line string) bool {
-	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen")
-		return false
-	}
-	selection := rs.selection
-	if selection == nil {
-		selection = repo.all()
-	}
-	parse := rs.newLineParse(line, nil)
+	parse := rs.newLineParse(line, parseALLREPO, nil)
 	defer parse.Closem()
+	repo := rs.chosen()
 	if parse.line != "" {
 		croak("too many arguments for tagify.")
 		return false
 	}
 	before := len(repo.commits(nil))
 	err := repo.tagifyEmpty(
-		selection,
+		rs.selection,
 		parse.options.Contains("--tipdeletes"),
 		parse.options.Contains("--tagify-merges"),
 		parse.options.Contains("--canonicalize"),
@@ -4829,18 +4658,14 @@ Options:
 `)
 }
 
-// DoReparent is rthe ommand handler for the "reparent" command.
+// DoReparent is the ommand handler for the "reparent" command.
 func (rs *Reposurgeon) DoReparent(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	for _, commit := range repo.commits(nil) {
 		commit.invalidateManifests()
 	}
-	parse := rs.newLineParse(line, nil)
-	defer parse.Closem()
 	useOrder := parse.options.Contains("--use-order")
 	// Determine whether an event resort might be needed.  it is
 	// assumed that ancestor commits already have a lower event
@@ -4958,19 +4783,15 @@ after the operation.
 }
 
 // DoReorder re-orders a contiguous range of commits.
-func (rs *Reposurgeon) DoReorder(lineIn string) bool {
+func (rs *Reposurgeon) DoReorder(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, nil)
+	defer parse.Closem()
 	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	sel := rs.selection
 	if sel == nil {
 		croak("no selection")
 		return false
 	}
-	parse := rs.newLineParse(lineIn, nil)
-	defer parse.Closem()
 	if parse.line != "" {
 		croak("'reorder' takes no arguments")
 		return false
@@ -5811,7 +5632,7 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 	}
 	selparser := newAttrEditSelParser()
 	machine, rest := selparser.compile(line)
-	parse := rs.newLineParse(rest, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(rest, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	fields, err := shlex.Split(parse.line, true)
 	if err != nil {
@@ -5951,17 +5772,13 @@ part to the right of an equals sign will need editing.
 
 // DoAuthors applies or dumps author-mapping file.
 func (rs *Reposurgeon) DoAuthors(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	selection := rs.selection
 	if selection == nil {
 		selection = rs.chosen().all()
 	}
 	if strings.HasPrefix(line, "write") {
 		line = strings.TrimSpace(line[5:])
-		parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+		parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 		defer parse.Closem()
 		if len(parse.Tokens()) > 0 {
 			croak("authors write no longer takes a filename argument - use > redirection instead")
@@ -5972,7 +5789,7 @@ func (rs *Reposurgeon) DoAuthors(line string) bool {
 		if strings.HasPrefix(line, "read") {
 			line = strings.TrimSpace(line[4:])
 		}
-		parse := rs.newLineParse(line, orderedStringSet{"stdin"})
+		parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
 		defer parse.Closem()
 		if len(parse.Tokens()) > 0 {
 			croak("authors read no longer takes a filename argument - use < redirection instead")
@@ -6001,13 +5818,9 @@ output or a >-redirected filename.
 
 // DoLegacy apply a reference-mapping file.
 func (rs *Reposurgeon) DoLegacy(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	if strings.HasPrefix(line, "write") {
 		line = strings.TrimSpace(line[5:])
-		parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+		parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 		defer parse.Closem()
 		if len(parse.Tokens()) > 0 {
 			croak("legacy write does not take a filename argument - use > redirection instead")
@@ -6018,7 +5831,7 @@ func (rs *Reposurgeon) DoLegacy(line string) bool {
 		if strings.HasPrefix(line, "read") {
 			line = strings.TrimSpace(line[4:])
 		}
-		parse := rs.newLineParse(line, []string{"stdin"})
+		parse := rs.newLineParse(line, parseREPO, []string{"stdin"})
 		defer parse.Closem()
 		if len(parse.Tokens()) > 0 {
 			croak("legacy read does not take a filename argument - use < redirection instead")
@@ -6147,7 +5960,7 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 			if strings.HasPrefix(line, "edit") {
 				rs.edit(selection, strings.TrimSpace(line[4:]))
 			} else {
-				parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+				parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 				defer parse.Closem()
 				w := screenwidth()
 				for _, ei := range selection {
@@ -6287,10 +6100,8 @@ must resolve to exactly two commits.
 
 // DoDiff displays a diff between versions.
 func (rs *Reposurgeon) DoDiff(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	defer parse.Closem()
 	repo := rs.chosen()
 	if len(rs.selection) != 2 {
 		if logEnable(logWARN) {
@@ -6316,8 +6127,6 @@ func (rs *Reposurgeon) DoDiff(line string) bool {
 	})
 	allpaths := dir1.Union(dir2)
 	sort.Strings(allpaths)
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
-	defer parse.Closem()
 	for _, path := range allpaths {
 		if dir1.Contains(path) && dir2.Contains(path) {
 			fromtext, _ := lower.blobByName(path)
@@ -6572,7 +6381,7 @@ the command generated by the expansion.
 
 // DoDo performs a macro
 func (rs *Reposurgeon) DoDo(ctx context.Context, line string) bool {
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	words, err := shlex.Split(parse.line, true)
 	if len(words) == 0 {
@@ -6895,11 +6704,9 @@ content fromm leaking forward.
 
 // DoIncorporate creates a new commit from a tarball.
 func (rs *Reposurgeon) DoIncorporate(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
+	defer parse.Closem()
 	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	if rs.selection == nil {
 		rs.selection = []int{repo.markToIndex(repo.earliestCommit().mark)}
 	}
@@ -6915,8 +6722,6 @@ func (rs *Reposurgeon) DoIncorporate(line string) bool {
 		croak("a singleton selection set is required.")
 		return false
 	}
-	parse := rs.newLineParse(line, orderedStringSet{"stdin"})
-	defer parse.Closem()
 
 	stripstr, present := parse.OptVal("--strip")
 	var strip int
@@ -6974,7 +6779,7 @@ reference.
 
 // DoVersion is the handler for the "version" command.
 func (rs *Reposurgeon) DoVersion(line string) bool {
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if line == "" {
 		// This is a technically wrong way of enumerting the list and will need to
@@ -7025,7 +6830,7 @@ Display elapsed time since start.
 
 // DoElapsed is the handler for the "elapsed" command.
 func (rs *Reposurgeon) DoElapsed(line string) bool {
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
 	return false
@@ -7042,7 +6847,7 @@ Exit cleanly, emitting a goodbye message including elapsed time.
 
 // DoExit is the handler for the "exit" command.
 func (rs *Reposurgeon) DoExit(line string) bool {
-	parse := rs.newLineParse(line, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	parse.respond("exiting, elapsed time %v.", time.Now().Sub(rs.startTime))
 	return true
@@ -7385,8 +7190,8 @@ tests.
 }
 
 // DoPrint is the handler for the "print" command.
-func (rs *Reposurgeon) DoPrint(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, []string{"stdout"})
+func (rs *Reposurgeon) DoPrint(line string) bool {
+	parse := rs.newLineParse(line, parseNONE, []string{"stdout"})
 	defer parse.Closem()
 	fmt.Fprintf(parse.stdout, "%s\n", parse.line)
 	return false
@@ -7575,18 +7380,14 @@ but verifying the hash code itself.
 }
 
 // DoHash is the handler for the "hash" command.
-func (rs *Reposurgeon) DoHash(lineIn string) bool {
+func (rs *Reposurgeon) DoHash(line string) bool {
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	defer parse.Closem()
 	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	selection := rs.selection
 	if rs.selection == nil {
 		selection = repo.all()
 	}
-	parse := rs.newLineParse(lineIn, orderedStringSet{"stdout"})
-	defer parse.Closem()
 	for _, eventid := range selection {
 		event := repo.events[eventid]
 		var hashrep string
