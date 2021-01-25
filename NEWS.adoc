@@ -6,7 +6,7 @@ Repository head::
      In branch/tag rename and expunge, be more flexible about RE delimiters.
      Commands that accept output redirection can also pipe to a command,
      The --branchmap option is gone in favor of using branch rename.
-     Scavenge blobs keft without references by a remove operation.
+     The behavior and interface of tje tag command has been simplified.
 
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).
