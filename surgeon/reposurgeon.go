@@ -753,6 +753,51 @@ func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
 // Command implementation begins here
 //
 
+// The DSL grammar obeys some rules intended to make it easy to
+// remember and to parse.  These rules are expressed in the BNF given
+// in the embedded help through choice of metavariable (capitalized)
+// names.
+//
+// Every command has a leading keyword argument (this is enforced by
+// using Kommandant, which dispatches on these keywords). Some
+// commands have a required second subcommand keyword. One , "paths",
+// has an optional subcommand, either "sub" or "sup".
+//
+// Many commands have a selection expression before the keyword.
+// Selection expressions have their own lexical rules and grammar,
+// not described in this comment.
+//
+// Lexically, almost every command line is processed as a sewquence
+// of tokens. There are only two exceptions to this: "shell" and "print",
+// which consume the entire untokenized remainder of the input line other
+// than its leading space.
+//
+// There are three kinds of tokens: barewords (including syntax keywords),
+// strings (bounded by single or double quotes, may contain whitespace)
+// and regexp literals (which may not contain whitespace,
+// unlike the regexp literals in selection expressions before the dispatch
+// keyword).
+//
+// If a command has a regular-expression argument, it has exactly one
+// and it is the first (it may be optional).  There are two exceptions to
+// this rule: expunge (which ends with a regexp list), and filter
+// (which has an option taking a regexp-literal value).
+//
+// All optional arguments and keywords follow any required arguments
+// and keywords.
+//
+// All unbounded lists of arguments are final in their command syntax.
+//
+// No command has more than three arguments (excluding syntactic
+// keywords), except for those ending with string/bareword lists and
+// expunge (which ends with a regexp list).
+//
+// All uses of alternation in the BNF are a choice of keywords, except
+// in the "add" and "split" commands
+//
+// One command is not yet covered by this comment: "attribution"
+//
+
 // DoEOF is the handler for end of command input.
 func (rs *Reposurgeon) DoEOF(lineIn string) bool {
 	if rs.inputIsStdin {
@@ -6048,7 +6093,7 @@ func (rs *Reposurgeon) HelpOptions() {
 // HelpSet says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSet() {
 	rs.helpOutput(`
-set [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]
+set [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]+
 
 Set a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
@@ -6108,7 +6153,7 @@ func (rs *Reposurgeon) DoSet(line string) bool {
 // HelpClear says "Shut up, golint!"
 func (rs *Reposurgeon) HelpClear() {
 	rs.helpOutput(`
-clear [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]
+clear [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]+
 
 Clear a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
