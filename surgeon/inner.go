@@ -709,7 +709,7 @@ replaced with Cr-LF and CR-LF is appended.
 		`If set, expect CR-LF line endings on text input and emit them on
 output. Comment canonicalization will map LF to CR-LF.
 `},
-	{"compressblobs",
+	{"compress",
 		`Use compression for on-disk copies of blobs. Accepts an increase
 in repository read and write time in order to reduce the amount of
 disk space required while editing; this may be useful for large
@@ -1595,7 +1595,7 @@ func (b *Blob) getContent() []byte {
 		panic(fmt.Errorf("Blob read: %v", err))
 	}
 	defer file.Close()
-	if control.flagOptions["compressblobs"] {
+	if control.flagOptions["compress"] {
 		input, err2 := gzip.NewReader(file)
 		if err2 != nil {
 			panic(err.Error())
@@ -1631,7 +1631,7 @@ func (b *Blob) getContentStream() io.ReadCloser {
 	if err != nil {
 		panic(fmt.Errorf("Blob read: %v", err))
 	}
-	if control.flagOptions["compressblobs"] {
+	if control.flagOptions["compress"] {
 		input, err2 := gzip.NewReader(file)
 		if err2 != nil {
 			panic(err.Error())
@@ -1655,7 +1655,7 @@ func (b *Blob) setContent(text []byte, tell int64) {
 			panic(fmt.Errorf("Blob write: %v", err))
 		}
 		defer file.Close()
-		if control.flagOptions["compressblobs"] {
+		if control.flagOptions["compress"] {
 			output := gzip.NewWriter(file)
 
 			defer output.Close()
@@ -1681,7 +1681,7 @@ func (b *Blob) setContentFromStream(s io.ReadCloser) {
 	}
 	defer file.Close()
 	var nBytes int64
-	if control.flagOptions["compressblobs"] {
+	if control.flagOptions["compress"] {
 		output := gzip.NewWriter(file)
 
 		defer output.Close()
@@ -7557,6 +7557,7 @@ func (repo *Repository) absorb(other *Repository) {
 const invalidGraftIndex = -1
 
 // Graft a repo on to this one at a specified point.
+// FIXME: Prevent extra done markers (and fix the help to reflect this)
 func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options stringSet) error {
 	var persist map[string]string
 	var anchor *Commit

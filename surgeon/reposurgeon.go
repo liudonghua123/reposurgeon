@@ -773,7 +773,8 @@ Typing EOT (usually Ctrl-D) is a shortcut for this.
 }
 
 // DoQuit is the handler for the "quit" command.
-func (rs *Reposurgeon) DoQuit(lineIn string) bool {
+func (rs *Reposurgeon) DoQuit(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	return true
 }
 
@@ -790,6 +791,7 @@ Run a shell command. Honors the $SHELL environment variable.
 
 // DoShell is the handler for the "shell" command.
 func (rs *Reposurgeon) DoShell(line string) bool {
+	//Can't use newLineParse() here, it false-matches on shell redirect syntax
 	shell := os.Getenv("SHELL")
 	if shell == "" {
 		shell = "/bin/sh"
@@ -930,15 +932,8 @@ func (rs *Reposurgeon) CompleteUnassign(text string) []string {
 
 // DoUnassign is the handler for the "unassign" command.
 func (rs *Reposurgeon) DoUnassign(line string) bool {
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	repo := rs.chosen()
-	if repo == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	if rs.selection != nil {
-		croak("cannot take a selection")
-		return false
-	}
 	name := strings.TrimSpace(line)
 	if _, ok := repo.assignments[name]; ok {
 		delete(repo.assignments, name)
@@ -993,7 +988,8 @@ with these commands.
 }
 
 // DoHistory is the handler for the "history" command,
-func (rs *Reposurgeon) DoHistory(_line string) bool {
+func (rs *Reposurgeon) DoHistory(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	for _, line := range rs.history {
 		control.baton.printLogString(line)
 	}
@@ -1245,7 +1241,7 @@ long-running conversion recipes.
 
 // DoTiming reports repo-analysis times
 func (rs *Reposurgeon) DoTiming(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if parse.line != "" {
 		rs.chosen().timings = append(rs.chosen().timings, TimeMark{line, time.Now()})
@@ -1296,6 +1292,7 @@ this will not affect the reported high-water mark.
 
 // DoBench is the command ghandler for the "bench" command.
 func (rs *Reposurgeon) DoBench(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	var memStats runtime.MemStats
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&memStats)
@@ -1784,6 +1781,7 @@ func (rs *Reposurgeon) CompletePrefer(text string) []string {
 
 // DoPrefer reports or select the preferred repository type.
 func (rs *Reposurgeon) DoPrefer(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	if line == "" {
 		for _, vcs := range vcstypes {
 			control.baton.printLogString(vcs.String() + control.lineSep)
@@ -1866,6 +1864,7 @@ func (rs *Reposurgeon) CompleteSourcetype(text string) []string {
 
 // DoSourcetype reports or selects the current repository's source type.
 func (rs *Reposurgeon) DoSourcetype(line string) bool {
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	if rs.chosen() == nil {
 		croak("no repo has been chosen.")
 		return false
@@ -1913,6 +1912,7 @@ collection and will raise maximum working set.
 
 // DoGc is the handler for the "gc" command.
 func (rs *Reposurgeon) DoGc(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	for _, repo := range rs.repolist {
 		repo.gcBlobs()
 	}
@@ -1964,10 +1964,7 @@ func (rs *Reposurgeon) CompleteChoose(text string) []string {
 
 // DoChoose selects a named repo on which to operate.
 func (rs *Reposurgeon) DoChoose(line string) bool {
-	if rs.selection != nil {
-		croak("choose does not take a selection set")
-		return false
-	}
+	rs.newLineParse(line, parseNOSELECT, nil)
 	if len(rs.repolist) == 0 && len(line) > 0 {
 		if control.isInteractive() {
 			croak("no repositories are loaded, can't find %q.", line)
@@ -2013,6 +2010,7 @@ func (rs *Reposurgeon) CompleteDrop(text string) []string {
 
 // DoDrop drops a repo from reposurgeon's list.
 func (rs *Reposurgeon) DoDrop(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	if len(rs.reponames()) == 0 {
 		if control.isInteractive() {
 			croak("no repositories are loaded.")
@@ -2059,10 +2057,7 @@ if there is already one by the new name.
 
 // DoRename changes the name of a repository.
 func (rs *Reposurgeon) DoRename(line string) bool {
-	if rs.selection != nil {
-		croak("rename does not take a selection set")
-		return false
-	}
+	rs.newLineParse(line, parseNOSELECT, nil)
 	if rs.reponames().Contains(line) {
 		croak("there is already a repo named %s.", line)
 	} else if rs.chosen() == nil {
@@ -2088,14 +2083,7 @@ list is displayed afterwards.
 
 // DoPreserve adds files and subdirectories to the preserve set.
 func (rs *Reposurgeon) DoPreserve(line string) bool {
-	if rs.selection != nil {
-		croak("preserve does not take a selection set")
-		return false
-	}
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	for _, filename := range strings.Fields(line) {
 		rs.chosen().preserve(filename)
 	}
@@ -2117,14 +2105,7 @@ current preserve list is displayed afterwards.
 
 // DoUnpreserve removes files and subdirectories from the preserve set.
 func (rs *Reposurgeon) DoUnpreserve(line string) bool {
-	if rs.selection != nil {
-		croak("unpreserve does not take a selection set")
-		return false
-	}
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	for _, filename := range strings.Fields(line) {
 		rs.chosen().unpreserve(filename)
 	}
@@ -2585,13 +2566,13 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 // HelpMsgin says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgin() {
 	rs.helpOutput(`
-msgin [--create] [<INFILE] [>OUTFILE]
+[SELECTION] msgin [--create] [<INFILE] [>OUTFILE]
 
 Accept a file of messages in RFC822 format representing the
-contents of the metadata in selected commits and annotated tags. Takes
-no selection set. If there is an argument it will be taken as the name
-of a message-box file to read from; if no argument, or one of '-', reads
-from standard input. Supports < redirection.
+contents of the metadata in selected commits and annotated tags. 
+If there is an argument, it will be taken as the name of a message-box
+file to read from; if no argument, or one of '-', reads from standard
+input. Supports < redirection.  Ordinariy takes no selextion set.
 
 Users should be aware that modifying an Event-Number or Event-Mark field
 will change which event the update from that message is applied to.  This
@@ -2640,11 +2621,11 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 // HelpEdit says "Shut up, golint!"
 func (rs *Reposurgeon) HelpEdit() {
 	rs.helpOutput(`
-[SELECTION] edit [<INFILE] [>OUTFILE]
+{SELECTION} edit [EDITOR-NAME] [<INFILE] [>OUTFILE]
 
 Report the selection set of events to a tempfile as msgout does,
 call an editor on it, and update from the result as msgin does.
-If you do not specify an editor name as second argument, it will be
+If you do not specify an editor name as first argument, it will be
 taken from the $EDITOR variable in your environment.
 If $EDITOR is not set, /usr/bin/editor will be used as a fallback
 if it exists as a symlink to your default editor, as is the case on
@@ -2657,9 +2638,9 @@ as with msgout, the --blobs option will include blobs in the file.
 `)
 }
 
-// DoEdit edits metadata interactively.
+// DoEdit edits metadata interactively. FIXME: Should be removed
 func (rs *Reposurgeon) DoEdit(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	defer parse.Closem()
 	rs.edit(rs.selection, line)
 	return false
@@ -3013,7 +2994,7 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 // HelpSetperm says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSetperm() {
 	rs.helpOutput(`
-[SELECTION] setperm {PERM} [PATH...]
+{SELECTION} setperm {PERM} [PATH...]
 
 For the selected objects (defaulting to none) take the first argument as an
 octal literal describing permissions.  All subsequent arguments are paths.
@@ -3024,14 +3005,7 @@ paths, patch the permission field to the first argument value.
 
 // DoSetperm alters permissions on M fileops matching a path list.
 func (rs *Reposurgeon) DoSetperm(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
-	if rs.selection == nil {
-		croak("no selection")
-		return false
-	}
+	rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	fields, err := shlex.Split(line, true)
 	if err != nil {
 		croak("failurev in line pesing: %v", err)
@@ -3227,7 +3201,7 @@ func (rs *Reposurgeon) DoCoalesce(line string) bool {
 // HelpAdd says "Shut up, golint!"
 func (rs *Reposurgeon) HelpAdd() {
 	rs.helpOutput(`
-{ SELECTION } add { "D" {PATH} | "M" {PERM} {MARK} {PATH} | "R" {SOURCE} {TARGET} | "C" {SOURCE} {TARGET} }
+{SELECTION} add { "D" {PATH} | "M" {PERM} {MARK} {PATH} | "R" {SOURCE} {TARGET} | "C" {SOURCE} {TARGET} }
 
 From a specified commit, add a specified fileop.
 
@@ -3349,7 +3323,7 @@ used with the add command to patch data into a repository.
 
 // DoBlob adds a fileop to a specified commit.
 func (rs *Reposurgeon) DoBlob(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
+	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, orderedStringSet{"stdin"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	repo.renumber(2, nil)
@@ -3517,11 +3491,7 @@ one "done", and it will be at the end of the events.
 
 // DoRenumber is he handler for the "renumber" command.
 func (rs *Reposurgeon) DoRenumber(line string) bool {
-	// Renumber the marks in the selected repo.
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	rs.repo.renumber(1, nil)
 	return false
 }
@@ -3679,6 +3649,7 @@ date format and converts to RFC3339.
 
 // DoWhen uis thee command handler for the "when" command.
 func (rs *Reposurgeon) DoWhen(line string) (StopOut bool) {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	if line == "" {
 		croak("a supported date format is required.")
 		return false
@@ -3715,11 +3686,8 @@ branch 'qux', the branch segments are renamed 'qux-early' and
 }
 
 // DoDivide is the command handler for the "divide" command.
-func (rs *Reposurgeon) DoDivide(_line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+func (rs *Reposurgeon) DoDivide(line string) bool {
+	rs.newLineParse(line, parseREPO, nil)
 	if len(rs.selection) == 0 {
 		croak("one or possibly two arguments specifying a link are required")
 		return false
@@ -4082,7 +4050,7 @@ source branch are removed.
 
 // DoDebranch turns a branch into a subdirectory.
 func (rs *Reposurgeon) DoDebranch(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	defer parse.Closem()
 	args := parse.Tokens()
 	if len(args) == 0 {
@@ -4779,20 +4747,10 @@ but use this capability with care as it can easily produce a broken topology.
 `)
 }
 
-func branchNameMatches(name string, regex *regexp.Regexp) bool {
-	return strings.HasPrefix(name, "refs/heads/") && regex.MatchString(name[11:])
-}
-
-func tagNameMatches(name string, regex *regexp.Regexp) bool {
-	return strings.HasPrefix(name, "refs/tags/") && regex.MatchString(name[10:])
-}
-
 // DoBranch renames a branch or deletes it.
 func (rs *Reposurgeon) DoBranch(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
+
 	repo := rs.chosen()
 
 	removeBranchPrefix := func(branch string) string {
@@ -5255,14 +5213,15 @@ func (rs *Reposurgeon) HelpBranchlift() {
 branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
 
 Every commit on SOURCEBRANCH with fileops matching the PATHPREFIX is examined;
-if any such commits contains fileops *not* matching the PATH, the mismatch is
-logged and the command aborted.  Such commits need to be fixed up manually with
-a "split" command before this command can be applied successfully. 
+all commits with every fileop matching the PATH are moved to a new branch; if
+a commit has only some matching fileops it is split and the fragment containing
+the matching fileops is moved.
 
-If there are no such errors, every matching commit is modified to have the
-branch label specified by NEWNAME. If NEWNAME is not specified, the basename
-of PATHPREFIX is used.  The PATHPREFIX is removed from the paths of all
-fileops in the commit.
+Every matching commit is modified to have the branch label specified by NEWNAME. 
+If NEWNAME is not specified, the basename of PATHPREFIX is used.  If the resulting
+branch already exists, this command errors out without modifying the repository. 
+
+The PATHPREFIX is removed from the paths of all fileops in modified commits.
 
 Backslash escapes are processed in all three names.
 `)
@@ -5270,10 +5229,8 @@ Backslash escapes are processed in all three names.
 
 // DoBranchlift lifts a directory to become a branch
 func (rs *Reposurgeon) DoBranchlift(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
+
 	repo := rs.chosen()
 
 	// We need a source branch
@@ -5358,6 +5315,7 @@ patterns.
 
 // DoIgnores manipulates ignore patterns in the repo.
 func (rs *Reposurgeon) DoIgnores(line string) bool {
+	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	if rs.chosen() == nil {
 		croak("no repo has been chosen.")
 		return false
@@ -5654,7 +5612,7 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 // HelpAuthors says "Shut up, golint!"
 func (rs *Reposurgeon) HelpAuthors() {
 	rs.helpOutput(`
-authors {read <INFILE | write >OUTFILE}
+[SELECTION] authors {read <INFILE | write >OUTFILE}
 
 Apply or dump author-map information for the specified selection
 set, defaulting to all events.
@@ -6090,11 +6048,11 @@ func (rs *Reposurgeon) HelpOptions() {
 // HelpSet says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSet() {
 	rs.helpOutput(`
-set [OPTION]
+set [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]
 
 Set a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
-Do "help options" to see the vailable options.
+Do "help options" to see the available options.
 `)
 }
 
@@ -6142,6 +6100,7 @@ func tweakFlagOptions(line string, val bool) {
 
 // DoSet is the handler for the "set" command.
 func (rs *Reposurgeon) DoSet(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	tweakFlagOptions(line, true)
 	return false
 }
@@ -6149,7 +6108,7 @@ func (rs *Reposurgeon) DoSet(line string) bool {
 // HelpClear says "Shut up, golint!"
 func (rs *Reposurgeon) HelpClear() {
 	rs.helpOutput(`
-clear [OPTION]
+clear [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]
 
 Clear a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
@@ -6171,6 +6130,7 @@ func (rs *Reposurgeon) CompleteClear(text string) []string {
 
 // DoClear is the handler for the "clear" command.
 func (rs *Reposurgeon) DoClear(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	tweakFlagOptions(line, false)
 	return false
 }
@@ -6188,6 +6148,7 @@ Without arguments, report the read limit; 0 means there is none.
 
 // DoReadlimit is the command handler for the "readlimit" command.
 func (rs *Reposurgeon) DoReadlimit(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	if line == "" {
 		respond("readlimit %d\n", control.readLimit)
 		return false
@@ -6222,8 +6183,9 @@ A later 'do' call can invoke this macro.
 }
 
 // DoDefine defines a macro
-func (rs *Reposurgeon) DoDefine(lineIn string) bool {
-	words := strings.SplitN(lineIn, " ", 2)
+func (rs *Reposurgeon) DoDefine(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
+	words := strings.SplitN(line, " ", 2)
 	name := words[0]
 	if len(words) > 1 {
 		body := words[1]
@@ -6342,7 +6304,7 @@ func (rs *Reposurgeon) DoDo(ctx context.Context, line string) bool {
 // HelpUndefine says "Shut up, golint!"
 func (rs *Reposurgeon) HelpUndefine() {
 	rs.helpOutput(`
-undef {MACRO-NAME}
+undefine {MACRO-NAME}
 
 Undefine the macro named in this command's first argument.
 `)
@@ -6363,6 +6325,7 @@ func (rs *Reposurgeon) CompleteUndefine(text string) []string {
 
 // DoUndefine is the handler for the "undefine" command.
 func (rs *Reposurgeon) DoUndefine(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	words := strings.SplitN(line, " ", 2)
 	name := words[0]
 	if name == "" {
@@ -6408,19 +6371,11 @@ action-stamp ID for each commit.
 
 // DoTimequake is the handler for the "timequake" command.
 func (rs *Reposurgeon) DoTimequake(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseALLREPO, nil)
 	repo := rs.chosen()
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	baton := control.baton
 	//baton.startProcess("reposurgeon: disambiguating", "")
 	modified := 0
-	for _, event := range repo.commits(selection) {
+	for _, event := range repo.commits(rs.selection) {
 		parents := event.parents()
 		if len(parents) == 1 {
 			if parent, ok := parents[0].(*Commit); ok {
@@ -6430,7 +6385,7 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 				}
 			}
 		}
-		baton.twirl()
+		//baton.twirl()
 	}
 	//baton.endProcess()
 	respond("%d events modified", modified)
@@ -6479,16 +6434,8 @@ that zone is used.
 
 // DoChangelogs mines repository changelogs for authorship data.
 func (rs *Reposurgeon) DoChangelogs(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	repo := rs.chosen()
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
-	ok, cm, cc, cd, cl := repo.processChangelogs(selection, line, control.baton)
+	rs.newLineParse(line, parseALLREPO, nil)
+	ok, cm, cc, cd, cl := rs.chosen().processChangelogs(rs.selection, line, control.baton)
 	if ok {
 		respond("fills %d of %d authorships, changing %d, from %d ChangeLogs.", cm, cc, cd, cl)
 	}
@@ -6963,9 +6910,10 @@ func verbosityLevelList() []assoc {
 }
 
 // DoLog is the handler for the "log" command.
-func (rs *Reposurgeon) DoLog(lineIn string) bool {
-	lineIn = strings.Replace(lineIn, ",", " ", -1)
-	for _, tok := range strings.Fields(lineIn) {
+func (rs *Reposurgeon) DoLog(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
+	line = strings.Replace(line, ",", " ", -1)
+	for _, tok := range strings.Fields(line) {
 		enable := tok[0] == '+'
 		if !(enable || tok[0] == '-') {
 			croak("an entry should start with a + or a -")
@@ -6988,7 +6936,7 @@ func (rs *Reposurgeon) DoLog(lineIn string) bool {
 		}
 	}
 breakout:
-	if len(lineIn) == 0 || control.isInteractive() {
+	if len(line) == 0 || control.isInteractive() {
 		// We make the capabilities display in ascending value order
 		out := "log"
 		for i, item := range verbosityLevelList() {
@@ -7020,9 +6968,9 @@ set.
 }
 
 // DoLogfile is the handler for the "logfile" command.
-func (rs *Reposurgeon) DoLogfile(lineIn string) bool {
-	if len(lineIn) != 0 {
-		fp, err := os.OpenFile(lineIn, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
+func (rs *Reposurgeon) DoLogfile(line string) bool {
+	if len(line) != 0 {
+		fp, err := os.OpenFile(line, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 		if err != nil {
 			respond("log file open failed: %v", err)
 		} else {
@@ -7030,7 +6978,7 @@ func (rs *Reposurgeon) DoLogfile(lineIn string) bool {
 			control.logfp = i.(io.Writer)
 		}
 	}
-	if len(lineIn) == 0 || control.isInteractive() {
+	if len(line) == 0 || control.isInteractive() {
 		switch v := control.logfp.(type) {
 		case *os.File:
 			respond("logfile %s", v.Name())
@@ -7088,7 +7036,7 @@ temporary file, and that file fed to the command and afterwards
 deleted.  "EOF" may be replaced by any string. Backslashes have no
 special meaning while reading a here-document.
 
-Scripts may have comments.  Any line beginning with a "\#" is
+Scripts may have comments.  Any line beginning with a "#" is
 ignored. If a line has a trailing portion that begins with one or more
 whitespace characters followed by "#", that trailing portion is
 ignored.
@@ -7098,13 +7046,14 @@ Scripts may call other scripts to arbitrary depth.
 }
 
 // DoScript is the handler for the "script" command.
-func (rs *Reposurgeon) DoScript(ctx context.Context, lineIn string) bool {
+func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	interpreter := rs.cmd
-	if len(lineIn) == 0 {
+	if len(line) == 0 {
 		respond("script requires a file argument\n")
 		return false
 	}
-	words := strings.Split(lineIn, " ")
+	words := strings.Split(line, " ")
 	rs.callstack = append(rs.callstack, words)
 	fname := words[0]
 	scriptfp, err := os.Open(fname)
@@ -7226,7 +7175,7 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, lineIn string) bool {
 // HelpHash says "Shut up, golint!"
 func (rs *Reposurgeon) HelpHash() {
 	rs.helpOutput(`
-hash [--tree] [>OUTFILE]
+[SELECTION] hash [--tree] [>OUTFILE]
 
 Report Git object hashes.  This command simulates Git hash generation.
 
@@ -7295,7 +7244,8 @@ in an array of the structs.
 // const MinUint = 0
 // const MaxInt = int(MaxUint >> 1)
 // const MinInt = -MaxInt - 1
-func (rs *Reposurgeon) DoSizeof(lineIn string) bool {
+func (rs *Reposurgeon) DoSizeof(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
 	const wordLengthInBytes = 8
 	roundUp := func(n, m uintptr) uintptr {
 		return ((n + m - 1) / m) * m

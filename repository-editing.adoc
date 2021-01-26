@@ -1266,6 +1266,7 @@ edit                   ;; edit all editable objects.
 [[regular_expressions]]
 === Regular Expressions
 
+[[regexp]]
 include::docinclude/regexp.adoc[]
 
 [[selections]]

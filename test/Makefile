@@ -108,7 +108,7 @@ roundtrip-compress:
 
 $(RULES_ROUNDTRIP_COMPRESS): roundtrip-compress-%: %
 	@echo "  $<"; \
-	$(REPOSURGEON) "$(TESTOPT)" "set compressblobs" "read -;write -" \
+	$(REPOSURGEON) "$(TESTOPT)" "set compress" "read -;write -" \
 		<$< >/tmp/rs$$$$ || exit $(STOPOUT); \
 	[ -s /tmp/rs$$$$ ] && diff --text -u $< /tmp/rs$$$$ \
 		|| exit $(STOPOUT); \

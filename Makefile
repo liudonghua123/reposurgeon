@@ -82,7 +82,7 @@ test-helpers:
 # and there is no additional material included in the long-form mnual only.
 # This means there's one line of BNF, a blank separator line, and one or
 # more blank-line-separated paragraphs of running text.
-ANCHORED_TOPICS = \
+BNF_TOPICS = \
 	add \
 	append \
 	authors \
@@ -141,7 +141,6 @@ ANCHORED_TOPICS = \
 	readlimit \
 	rebuild \
 	references \
-	regexp \
 	remove \
 	rename \
 	renumber \
@@ -178,10 +177,11 @@ ANCHORED_TOPICS = \
 UNANCHORED_TOPICS = \
 	functions \
 	options \
-	redirection
+	redirection \
+	regexp
 READ_OPTION_TOPICS = \
 	branchify
-TOPICS = $(ANCHORED_TOPICS) $(UNANCHORED_TOPICS) $(READ_OPTION_TOPICS)
+TOPICS = $(BNF_TOPICS) $(UNANCHORED_TOPICS) $(READ_OPTION_TOPICS)
 # These are in regular form, but the entries in the
 # long-form manual have additional material.
 SHORTFORM = \
@@ -207,7 +207,7 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 			    -e 's/help read/<<read_cmd,help read>>/g' \
 			    -e 's/help branchify/<<branchify_opt,help branchify>>/g'; \
 	}; \
-	for topic in $(ANCHORED_TOPICS); \
+	for topic in $(BNF_TOPICS); \
 	do \
 		echo "[[$${topic}_cmd,$${topic}]]" >>"docinclude/$${topic}.adoc"; \
 		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
@@ -235,7 +235,7 @@ helpcheck:
 
 # Report most grammar summary lines. Missing: the SHORTFORM and EXCEPTION topics.
 summary:
-	@for topic in $(ANCHORED_TOPICS); do head -2 "docinclude/$${topic}.adoc"; done | grep -v '^\[\[' | sed '/::$$/s///'
+	@for topic in $(BNF_TOPICS); do head -2 "docinclude/$${topic}.adoc"; done | grep -v '^\[\[' | sed '/::$$/s///'
 
 #
 # Auxillary Go tooling productions
