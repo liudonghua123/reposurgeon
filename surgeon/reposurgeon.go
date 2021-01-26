@@ -779,9 +779,8 @@ func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
 // keyword).
 //
 // If a command has a regular-expression argument, it has exactly one
-// and it is the first (it may be optional).  There are two exceptions to
-// this rule: expunge (which ends with a regexp list), and filter
-// (which has an option taking a regexp-literal value).
+// and it is the first (it may be optional).  There is a half-exception to
+// this rule: filter, which has an option taking a regexp-literal value.
 //
 // All optional arguments and keywords follow any required arguments
 // and keywords.
@@ -789,13 +788,12 @@ func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
 // All unbounded lists of arguments are final in their command syntax.
 //
 // No command has more than three arguments (excluding syntactic
-// keywords), except for those ending with string/bareword lists and
-// expunge (which ends with a regexp list).
+// keywords), except for those ending with string/bareword lists.
 //
 // All uses of alternation in the BNF are a choice of keywords, except
 // in the "add" and "split" commands
 //
-// One command is not yet covered by this comment: "attribution"
+// FIXME: One command is not yet covered by this comment: "attribution"
 //
 
 // DoEOF is the handler for end of command input.
@@ -3809,16 +3807,16 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 // HelpExpunge says "Shut up, golint!"
 func (rs *Reposurgeon) HelpExpunge() {
 	rs.helpOutput(`
-[SELECTION] expunge [~] [PATH-PATTERN...]
+[SELECTION] expunge [--not|--notagify] {PATH-PATTERN}
 
 Expunge files from the selected portion of the repo history; the
-default is the entire history.  The arguments to this command may be
-paths or delimited regular expressions matching paths.
+default is the entire history.  The arguments to this command is a
+delimited regular expressions matching paths; if surrounded.
 
-Exceptionally, the first argument may be the token "~" which chooses
-all file paths other than those selected by the remaining arguments to
-ne expunged.  You may use this to sift out all file operations
-matching a pattern set rather than expunging them.
+The option --not inverts this; all file paths other than those
+selected by the remaining arguments to be expunged.  You may use
+this to sift out all file operations matching a pattern set rather
+than expunging them.
 
 All filemodify (M) operations and delete (D) operations involving a
 matched file in the selected set of events are disconnected from the
@@ -3832,10 +3830,9 @@ issued.
 After file expunges have been performed, any commits with no
 remaining file operations will be deleted, and any tags pointing to
 them. By default each deleted commit is replaced with a tag of the form
-emptycommit-<ident> on the preceding commit unless --notagify is
-specified as an argument.  Commits with deleted fileops pointing both
-in and outside the path set are not deleted, but are cloned into the
-removal set.
+emptycommit-<ident> on the preceding commit unless the --notagify option
+is specified.  Commits with deleted fileops pointing both in and outside the
+path set are not deleted.
 `)
 }
 
@@ -3851,30 +3848,21 @@ func delimitedRegexp(in string) (out string, re bool) {
 func (rs *Reposurgeon) DoExpunge(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, nil)
 	defer parse.Closem()
-	fields := strings.Fields(line)
-	digest := func(toklist []string) (*regexp.Regexp, bool) {
-		digested := make([]string, 0)
-		notagify := false
-		for _, s := range toklist {
-			s, isRe := delimitedRegexp(s)
-			if isRe {
-				digested = append(digested, "(?:"+s+")")
-			} else if s == "--notagify" {
-				notagify = true
-			} else {
-				digested = append(digested, "^"+regexp.QuoteMeta(s)+"$")
-			}
-		}
-		return regexp.MustCompile(strings.Join(digested, "|")), notagify
+	fields := parse.Tokens()
+	if len(fields) == 0 {
+		croak("required argument is missing.")
+		return false
 	}
-
-	// First argument parsing - there might be a reparse later
-	delete := fields[0] != "~"
-	if !delete {
-		fields = fields[1:]
+	pattern, isRe := delimitedRegexp(fields[0])
+	if !isRe {
+		pattern = "^" + regexp.QuoteMeta(pattern) + "$"
 	}
-	expunge, notagify := digest(fields)
-	err := rs.chosen().expunge(rs.selection, expunge, delete, notagify, control.baton)
+	// FIXME: expunge with --not and --notagify needs tests
+	expunge, err := regexp.Compile(pattern)
+	if err == nil {
+		err = rs.chosen().expunge(rs.selection, expunge,
+			!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
+	}
 	if err != nil {
 		respond(err.Error())
 	}

@@ -3352,6 +3352,10 @@ incompatibly different; it did not require a "heads/" or "tags/"
 prefix on its operand and, because of that, could only operate on
 heads/ branches and not lightweight tags.
 
+In versions 4.23 and earlier, the syntax of the expunge command
+was different; it use  "~" instad of "--not" and took multiple
+patterns.
+
 In versions before 4.10, the "reduce" and "blob" options of the
 "<<strip_cmd>>" command were bare keywords. Also the options of the
 "<<ignores_cmd>>" command were bare keywords. There was a command to
