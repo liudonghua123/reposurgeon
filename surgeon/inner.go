@@ -221,6 +221,16 @@ func filecopy(src, dst string) (int64, error) {
 	return nBytes, err
 }
 
+// stringCopy forces crearion of a copy of the input strimg.  This is
+// useful because the Go runtime tries not to do more allcations tn
+// necessary, making string-valued references instead. Thus,
+// sectioning a small string out of a very large one may cause
+// the large string to be held in memory even thouggh the rest of the
+// contnt is no longer referenced.
+func stringCopy(a string) string {
+	return (a + " ")[:len(a)]
+}
+
 // getAttr emulates Python hasattr/getattr using the Go reflection system
 // Current version can only return string-valued fields.
 func getAttr(obj interface{}, fld string) (string, bool) {
@@ -8243,6 +8253,48 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 		respond("no preservations.")
 	}
 	return nil
+}
+
+var addressRE = regexp.MustCompile(`([^<@>]+\S)\s+<([^<@>\s]+@[^<@>\s]+)>`)
+var wsRE = regexp.MustCompile(`\s+`)
+
+// canonicalizeInlineAddress detects and cleans up an email address in a line,
+// then breaks the line around it.
+func canonicalizeInlineAddress(line string) (bool, string, string, string) {
+	// Massage old-style addresses into newstyle
+	line = strings.Replace(line, "(", "<", -1)
+	line = strings.Replace(line, ")", ">", -1)
+	// And another kind of quirks
+	line = strings.Replace(line, "&lt;", "<", -1)
+	line = strings.Replace(line, "&gt;", ">", -1)
+	// Deal with some address masking that can interfere with next stages
+	line = strings.Replace(line, "<at>", "@", -1)
+	line = strings.Replace(line, "<dot>", ".", -1)
+	// Line must contain an email address. Find it.
+	addrStart := strings.LastIndex(line, "<")
+	addrEnd := strings.Index(line[addrStart+1:], ">") + addrStart + 1
+	if addrStart < 0 || addrEnd <= addrStart {
+		return false, "", "", ""
+	}
+	// Remove all other < and > delimiters to avoid malformed attributions
+	// After the address, they can be dropped, but before them might come
+	// legit parentheses that were converted above.
+	pre := strings.Replace(
+		strings.Replace(line[:addrStart], "<", "(", -1),
+		">", ")", -1)
+	post := strings.Replace(line[addrEnd+1:], ">", "", -1)
+	email := line[addrStart+1 : addrEnd]
+	// Detect more types of address masking
+	email = strings.Replace(email, " at ", "@", -1)
+	email = strings.Replace(email, " dot ", ".", -1)
+	email = strings.Replace(email, " @ ", "@", -1)
+	email = strings.Replace(email, " . ", ".", -1)
+	// We require exactly one @ in the address, and none outside
+	if strings.Count(email, "@") != 1 ||
+		strings.Count(pre, "@")+strings.Count(post, "@") > 0 {
+		return false, "", "", ""
+	}
+	return true, pre, fmt.Sprintf("<%s>", strings.TrimSpace(email)), post
 }
 
 func (repo *Repository) processChangelogs(selection orderedIntSet, line string, baton *Baton) (bool, int, int, int, int) {
