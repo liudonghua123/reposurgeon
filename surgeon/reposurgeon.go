@@ -5468,7 +5468,7 @@ Available actions are:
     prepended to the author list.
 
     It is presently an error to insert a new committer or tagger attribution.
-    To change a committer or tagger, use 'set' instead.
+    To change a committer or tagger, use 'setfield' instead.
 
 {SELECTION} attribution [ATTR-SELECTION] append {NAME} [EMAIL] [DATE]
 {SELECTION} attribution [ATTR-SELECTION] append [NAME] {EMAIL} [DATE]
@@ -5487,7 +5487,7 @@ Available actions are:
     appended to the author list.
 
     It is presently an error to insert a new committer or tagger attribution.
-    To change a committer or tagger, use 'set' instead.
+    To change a committer or tagger, use 'setfield' instead.
 
 {SELECTION} attribution {ATTR-SELECTION} resolve [>file] [LABEL-TEXT...]
     Does nothing but resolve an attribution selection-set expression for the

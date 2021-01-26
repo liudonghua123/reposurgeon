@@ -2016,12 +2016,12 @@ include::docinclude/setfield.adoc[]
 include::docinclude/edit.adoc[]
 
 [[attribution_cmd,attribution]]
-[ _selection_ ] `attribution` [ _attr-selection_ ] { `show` | `set` | `delete` | `prepend` | `append` } [ _args_ ]::
+[SELECTION] attribution [ATTR-SELECTION] {show|set|delete|prepend|append} [ARG...]::
    Inspect, modify, add, and remove commit and tag attributions.
 +
 Attributions upon which to operate are selected in much the same way as
 events are selected, as described in <<selections>>.
-_attr-selection_ is an expression composed of
+ATTR_SELECTION is an expression composed of
 1-origin attribution-sequence numbers, '```$```' for last attribution,
 '```..```' ranges, comma-separated items, '```(...)```' grouping,
 set operations '```|```' union, '```&```' intersection, and '```~```' negation,
@@ -2036,62 +2036,61 @@ the email address.
 With the exception of '```show```', all actions require an
 explicit event selection upon which to operate. Available actions are:
 +
-[ _attr-selection_ ] [ `show` ] [ >__file__ ]:::
+[ATTR-SELECTION] [show] [>OUTFILE]:::
    Inspect the selected attributions of the specified events (commits and
    tags).  The '```show```' keyword is optional.  If no attribution
    selection expression is given, defaults to all attributions. If no event
    selection is specified, defaults to all events.  Supports > redirection.
 
-{ _attr-selection_ } `set` [ _name_ ] [ _email_ ] [ _date_ ]:::
-   Assign _name_, _email_, _date_ to the selected attributions.  As a
+{ATTR-SELECTION} set [NAME] [EMAIL] [DATE]:::
+   Assign NAME, EMAIL, DATE to the selected attributions.  As a
    convenience, if only some fields need to be changed, the others can be
-   omitted.  Arguments _name_, _email_, and _date_ can be given in any
+   omitted.  Arguments NAME, EMAIL, and DATE can be given in any
    order.
 
-[ _attr-selection_ ] `delete` :::
+[ATTR-SELECTION] delete:::
    Delete the selected attributions.  As a convenience, deletes all authors
-   if _attr-selection_ is not given.  It is an error to delete the
+   if ATTR-SELECTION is not given.  It is an error to delete the
    mandatory committer and tagger attributions of commit and tag events,
    respectively.
 
-[ _attr-selection_ ] | `prepend` [ _name_ ] [ _email_ ] [ _date_ ]:::
+[ATTR-SELECTION] prepend [NAME] [EMAIL] [DATE]:::
    Insert a new attribution before the first attribution named by
-   _attr-selection_.  The new attribution has the same type (_committer_,
+   ATTR_SELECTION.  The new attribution has the same type (_committer_,
    _author_, or _tagger_) as the one before which it is being inserted.
-   Arguments _name_, _email_, and _date_ can be given in any order.
+   Arguments NAME, EMAIL, and DATE can be given in any order.
 +
-If _name_ is omitted, an attempt is made to infer it
-from _email_ by trying to match _email_
+If NAME is omitted, an attempt is made to infer it
+from EMAIL by trying to match EMAIL
 against an existing attribution of the event, with preference given to the
 attribution before which the new attribution is being inserted.  Similarly,
-_email_ is inferred from an existing matching
-_name_.  Likewise, for _date_.
+EMAIL is inferred from an existing matching
+NAME.  Likewise, for DATE.
 +
-As a convenience, if _attr-selection_ is empty or not
+As a convenience, if ATTR-SELECTION is empty or not
 specified a new author is prepended to the author list.
 +
 It is presently an error to insert a new committer or tagger
-attribution.  To change a committer or tagger, use '```set```'
+attribution.  To change a committer or tagger, use "setfield"
 instead.
 +
-[ _attr-selection_ ] `append` [ _name_ ] [ _email_ ] [ _date_ ]:::
+[ATTR-SELECTION] append [NAME] [EMAIL] [DATE]:::
    Insert a new attribution after the last attribution named by
-   _attr-selection_.  The new attribution has the same type (_committer_,
+   ATTR_SELECTION.  The new attribution has the same type (_committer_,
    _author_, or _tagger_) as the one after which it is being inserted.
-   Arguments _name_, _email_, and _date_ can be given in any order.
+   Arguments NAME, EMAIL, and DATE can be given in any order.
 +
-If _name_ is omitted, an attempt is made to infer it
-from _email_ by trying to match _email_
-against an existing attribution of the event, with preference given to the
-attribution after which the new attribution is being inserted.  Similarly,
-_email_ is inferred from an existing matching
-_name_.  Likewise, for _date_.
+If NAME is omitted, an attempt is made to infer it from EMAIL by
+trying to match EMAIL against an existing attribution of the event,
+with preference given to the attribution after which the new
+attribution is being inserted.  Similarly, EMAIL is inferred from an
+existing matching NAME.  Likewise, for DATE.
 +
-As a convenience, if _attr-selection_ is empty or not
+As a convenience, if ATTR-SELECTION is empty or not
 specified a new author is appended to the author list.
 +
 It is presently an error to insert a new committer or tagger
-attribution.  To change a committer or tagger, use '```set```'
+attribution.  To change a committer or tagger, use "setfield"
 instead.
 
 include::docinclude/append.adoc[]
