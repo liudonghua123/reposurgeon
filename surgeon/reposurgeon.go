@@ -1421,7 +1421,7 @@ func (rs *Reposurgeon) HelpList() {
 [SELECTION] list [>OUTFILE]
 
 Display commits in a human-friendly format; the first column is raw
-event numbers, the second a timestamp in local time. If the repository
+event numbers, the second a timestamp in UTC. If the repository
 has legacy IDs, they will be displayed in the third column. The
 leading portion of the comment follows.
 `)
@@ -4712,7 +4712,7 @@ func (rs *Reposurgeon) DoReorder(line string) bool {
 // HelpBranch says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
-branch {BRANCH-PATTERN} {rename|delete} [ARG]
+branch {BRANCH-PATTERN} {rename|delete} [NEW-NAME]
 
 Rename or delete a branch (also any associated annotated tags and resets). 
 For purpoes of this command a Gut lightweight tag is simply a branch in
@@ -4841,7 +4841,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 // HelpTag says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
-[SELECTION] tag {TAG-PATTERN} {create|move|rename|delete} [ARG]
+[SELECTION] tag {TAG-PATTERN} {create|move|rename|delete} [NEW-NAME]
 
 Create, move, rename, or delete annotated taga.
 
@@ -5015,7 +5015,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 // HelpReset says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReset() {
 	rs.helpOutput(`
-[SELECTION] reset {RESET-NAME} {create|move|rename|delete} [ARG]
+[SELECTION] reset {RESET-NAME} {create|move|rename|delete} [NEW-NAME]
 
 Create, move, rename, or delete a reset. Create is a special case; it
 requires a singleton selection which is the associated commit for the
