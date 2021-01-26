@@ -4172,14 +4172,14 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 }
 
 // HelpPath says "Shut up, golint!"
-// FIXME: Odd syntax
+// FIXME: Odd syntax. Make first argument a delimited regexp
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
 path {REGEXP} rename [--force] {TARGET}
 
 Rename a path in every fileop of every selected commit.  The default
 selection set is all commits. The first argument is interpreted as a
-Go regular expression to match against paths; the second may contain
+delimited regexp to match against paths; the second may contain
 backreference syntax (\1 etc.). See "help regexp" for more information about
 regular expressions.
 
@@ -4189,8 +4189,12 @@ in the ancestry of the commit, this command throws an error.  With the
 
 Example:
 
-    # move all content into docs/ subdir
-	path ".+" rename "docs/\0"
+----
+# move all content into docs/ subdir
+path /.+/ rename docs/\0
+----
+
+The path command has no other verbs as yet. More might be added in the future 
 `)
 }
 
@@ -4214,35 +4218,37 @@ func (pa pathAction) String() string {
 }
 
 // DoPath renames paths in the history.
+// FIXME: Odd syntax
 func (rs *Reposurgeon) DoPath(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, nil)
 	defer parse.Closem()
 	repo := rs.chosen()
+	fields := parse.Tokens()
+	if len(fields) != 3 {
+		croak("wrong number of fields in path rename command")
+		return false
+	}
 	var sourcePattern string
-	sourcePattern, parse.line = popToken(parse.line)
+	sourcePattern, isRe := delimitedRegexp(fields[0])
+	if !isRe {
+		sourcePattern = "^" + regexp.QuoteMeta(sourcePattern) + "$"
+	}
 	sourceRE, err1 := regexp.Compile(sourcePattern)
 	if err1 != nil {
-		if logEnable(logWARN) {
-			logit("source path regexp compilation failed: %v", err1)
-		}
+		croak("path rename regexp compilation failed: %v", err1)
 		return false
 	}
 	var verb string
-	verb, parse.line = popToken(parse.line)
-	if verb == "rename" {
+	if fields[1] == "rename" {
 		force := parse.options.Contains("--force")
-		targetPattern, _ := popToken(parse.line)
+		targetPattern := fields[2]
 		if targetPattern == "" {
-			if logEnable(logWARN) {
-				logit("no target specified in rename")
-			}
+			croak("no target specified in path rename")
 			return false
 		}
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
 	} else {
-		if logEnable(logWARN) {
-			logit("unknown verb '%s' in path command.", verb)
-		}
+		croak("unknown verb '%s' in path command.", verb)
 	}
 	return false
 }
