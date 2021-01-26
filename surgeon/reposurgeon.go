@@ -189,10 +189,11 @@ type LineParse struct {
 // Parse precondition flags
 const parseNONE = 0
 const (
-	parseREPO       uint = 1 << iota // Requires a loaded repo
-	parseALLREPO                     // Requires a loaded repo and selection sets defaults to all
-	parseNOSELECT                    // Giving a selection set is an error
-	parseNEEDSELECT                  // Command requires an explicit selection set
+	parseREPO         uint = 1 << iota // Requires a loaded repo
+	parseALLREPO                       // Requires a loaded repo and selection sets defaults to all
+	parseNOSELECT                      // Giving a selection set is an error
+	parseNEEDSELECT                    // Command requires an explicit selection set
+	parseNEEDREDIRECT                  // Command requires an explicit selection set
 )
 
 func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities orderedStringSet) *LineParse {
@@ -203,7 +204,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		rs.selection = rs.chosen().all()
 	}
 	if rs.selection != nil && (parseflags&parseNOSELECT) != 0 {
-		panic(throw("command", "choose does not take a selection set"))
+		panic(throw("command", "command does not take a selection set"))
 	}
 	if rs.selection == nil && (parseflags&parseNEEDSELECT) != 0 {
 		panic(throw("command", "command requires an explicit selection"))
@@ -337,6 +338,11 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 			lp.redirected = true
 		}
 	}
+
+	if len(lp.line) > 0 && (parseflags&parseNEEDREDIRECT) != 0 {
+		panic(throw("command", "command write does not take a filename argument - use redirection instead"))
+	}
+
 	return &lp
 }
 
@@ -5719,24 +5725,16 @@ func (rs *Reposurgeon) DoAuthors(line string) bool {
 	}
 	if strings.HasPrefix(line, "write") {
 		line = strings.TrimSpace(line[5:])
-		parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+		parse := rs.newLineParse(line, parseREPO|parseNEEDREDIRECT, orderedStringSet{"stdout"})
 		defer parse.Closem()
-		if len(parse.Tokens()) > 0 {
-			croak("authors write no longer takes a filename argument - use > redirection instead")
-			return false
-		}
 		rs.chosen().writeAuthorMap(selection, parse.stdout)
-	} else {
-		if strings.HasPrefix(line, "read") {
-			line = strings.TrimSpace(line[4:])
-		}
-		parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
+	} else if strings.HasPrefix(line, "read") {
+		line = strings.TrimSpace(line[4:])
+		parse := rs.newLineParse(line, parseREPO|parseNEEDREDIRECT, orderedStringSet{"stdin"})
 		defer parse.Closem()
-		if len(parse.Tokens()) > 0 {
-			croak("authors read no longer takes a filename argument - use < redirection instead")
-			return false
-		}
 		rs.chosen().readAuthorMap(selection, parse.stdin)
+	} else {
+		croak("ill-formed authors command")
 	}
 	return false
 }
@@ -5761,24 +5759,16 @@ output or a >-redirected filename.
 func (rs *Reposurgeon) DoLegacy(line string) bool {
 	if strings.HasPrefix(line, "write") {
 		line = strings.TrimSpace(line[5:])
-		parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+		parse := rs.newLineParse(line, parseREPO|parseNEEDREDIRECT, orderedStringSet{"stdout"})
 		defer parse.Closem()
-		if len(parse.Tokens()) > 0 {
-			croak("legacy write does not take a filename argument - use > redirection instead")
-			return false
-		}
 		rs.chosen().writeLegacyMap(parse.stdout, control.baton)
-	} else {
-		if strings.HasPrefix(line, "read") {
-			line = strings.TrimSpace(line[4:])
-		}
-		parse := rs.newLineParse(line, parseREPO, []string{"stdin"})
+	} else if strings.HasPrefix(line, "read") {
+		line = strings.TrimSpace(line[4:])
+		parse := rs.newLineParse(line, parseREPO|parseNEEDREDIRECT, []string{"stdin"})
 		defer parse.Closem()
-		if len(parse.Tokens()) > 0 {
-			croak("legacy read does not take a filename argument - use < redirection instead")
-			return false
-		}
 		rs.chosen().readLegacyMap(parse.stdin, control.baton)
+	} else {
+		croak("ill-formed legacy command")
 	}
 	return false
 }
