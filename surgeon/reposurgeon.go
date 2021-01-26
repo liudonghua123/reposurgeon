@@ -193,7 +193,7 @@ const (
 	parseALLREPO                       // Requires a loaded repo and selection sets defaults to all
 	parseNOSELECT                      // Giving a selection set is an error
 	parseNEEDSELECT                    // Command requires an explicit selection set
-	parseNEEDREDIRECT                  // Command requires an explicit selection set
+	parseNEEDREDIRECT                  // Command requires aredirect, not a file name argument
 )
 
 func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities orderedStringSet) *LineParse {
@@ -340,7 +340,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 	}
 
 	if len(lp.line) > 0 && (parseflags&parseNEEDREDIRECT) != 0 {
-		panic(throw("command", "command write does not take a filename argument - use redirection instead"))
+		panic(throw("command", "command does not take a filename argument - use redirection instead"))
 	}
 
 	return &lp
@@ -668,9 +668,8 @@ func (commit *Commit) findSuccessors(path string) []string {
 }
 
 // edit mailboxizes and edits the non-blobs in the selection
-// Assumes that rs.chosen() and selection are not None
 func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin", "stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, orderedStringSet{"stdin", "stdout"})
 	defer parse.Closem()
 	editor := os.Getenv("EDITOR")
 	if parse.line != "" {
@@ -2969,7 +2968,7 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 	if err != nil || len(fields) != 2 {
 		croak("missing or malformed setfield line")
 	}
-	// Caling strings.Title so that Python-sytle (uncapitalized)
+	// Caling strings.Title so that Python-style (uncapitalized)
 	// fieldnames will still work.
 	field := strings.Title(fields[0])
 	value, err := stringEscape(fields[1])
@@ -3146,10 +3145,6 @@ removal of fileops associated with commits requires this.
 // DoSquash squashes events in the specified selection set.
 func (rs *Reposurgeon) DoSquash(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, nil)
-	defer parse.Closem()
-	if rs.selection == nil {
-		rs.selection = nil
-	}
 	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
 }
@@ -3173,10 +3168,6 @@ squash with the --delete flag.
 // DoDelete is the handler for the "delete" command.
 func (rs *Reposurgeon) DoDelete(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, nil)
-	defer parse.Closem()
-	if rs.selection == nil {
-		rs.selection = nil
-	}
 	parse.options.Add("--delete")
 	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
