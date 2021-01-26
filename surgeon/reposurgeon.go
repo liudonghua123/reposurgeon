@@ -779,20 +779,22 @@ func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
 //
 // If a command has a regular-expression argument, it has exactly one
 // and it is the first (it may be optional).  There is a half-exception to
-// this rule: filter, which has an option taking a regexp-literal value.
+// this rule: filter, with a first argument that may be either a bareword
+// or a delimited regular expression
 //
 // All optional arguments and keywords follow any required arguments
-// and keywords. All unbounded lists of arguments are final in their
+// and keywords.  There are two exceptions to this rule, in
+// the "attribution" and "remove" commands; these sometimes have
+// required arguments following optionsls
+//
+// All unbounded lists of arguments are final in their
 // command syntax.
 //
 // No command has more than three arguments (excluding syntactic
 // keywords), except for those ending with string/bareword lists.
 //
 // All uses of alternation in the BNF are a choice of keywords, except
-// in the "add" and "split" commands
-//
-// FIXME: One command is not yet covered by this comment: "attribution"
-//
+// in the "add" and "split" commands.
 
 // DoEOF is the handler for end of command input.
 func (rs *Reposurgeon) DoEOF(lineIn string) bool {
@@ -2875,7 +2877,8 @@ func (fc *filterCommand) do(content string, substitutions map[string]string) str
 	return content
 }
 
-// DoFilter  is rtthe handler for the "filter" command.
+// DoFilter is the handler for the "filter" command.
+// FIXME: Odd syntax
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
 	rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	if line == "" {
