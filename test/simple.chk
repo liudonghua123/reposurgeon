@@ -169,24 +169,6 @@ mark :123
 
 reposurgeon -> :122
 reposurgeon.xml -> :114
-paths sub foo
-foo/.gitignore
-foo/Makefile
-foo/READ[ME].txt
-foo/reposurgeon
-foo/reposurgeon.xml
-foo/rs
-foo/test/Makefile
-foo/test/simple.dump
-paths sup
-.gitignore
-Makefile
-READ[ME].txt
-reposurgeon
-reposurgeon.xml
-rs
-test/Makefile
-test/simple.dump
 :2 setfield comment "The quick brown fox jumped over the lazy dog.\n"
 :2 setperm 100755 rs
 # Stream enough parts to verify the last two operations

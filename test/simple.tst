@@ -14,8 +14,6 @@ paths
 101,103 manifest 
 116 manifest 
 116 manifest /^reposurgeon/
-paths sub foo
-paths sup
 :2 setfield comment "The quick brown fox jumped over the lazy dog.\n"
 :2 setperm 100755 rs
 # Stream enough parts to verify the last two operations

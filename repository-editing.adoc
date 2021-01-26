@@ -3356,6 +3356,9 @@ In versions 4.23 and earlier, the syntax of the expunge command
 was different; it use  "~" instad of "--not" and took multiple
 patterns.
 
+The "paths sup" and "paths sub" commands of versions 4.23 and earlier
+have been retired and replaced by the enhanced path rename command.
+
 In versions before 4.10, the "reduce" and "blob" options of the
 "<<strip_cmd>>" command were bare keywords. Also the options of the
 "<<ignores_cmd>>" command were bare keywords. There was a command to

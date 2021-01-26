@@ -760,8 +760,7 @@ func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
 //
 // Every command has a leading keyword argument (this is enforced by
 // using Kommandant, which dispatches on these keywords). Some
-// commands have a required second subcommand keyword. One , "paths",
-// has an optional subcommand, either "sub" or "sup".
+// commands have a required second subcommand keyword.
 //
 // Many commands have a selection expression before the keyword.
 // Selection expressions have their own lexical rules and grammar,
@@ -783,9 +782,8 @@ func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
 // this rule: filter, which has an option taking a regexp-literal value.
 //
 // All optional arguments and keywords follow any required arguments
-// and keywords.
-//
-// All unbounded lists of arguments are final in their command syntax.
+// and keywords. All unbounded lists of arguments are final in their
+// command syntax.
 //
 // No command has more than three arguments (excluding syntactic
 // keywords), except for those ending with string/bareword lists.
@@ -4249,17 +4247,10 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 // HelpPaths says "Shut up, golint!"
 func (rs *Reposurgeon) HelpPaths() {
 	rs.helpOutput(`
-paths [sub|sup] [DIRECTORY] [>OUTFILE]
+paths [DIRECTORY] [>OUTFILE]
 
-Without a modifier, list all paths touched by fileops in
-the selection set (which defaults to the entire repo). This
-variant does > redirection.
-
-With the 'sub' modifier, take a second argument that is a
-directory name and prepend it to every path. With the 'sup'
-modifier, strip either the first directory component from every
-path, or if a directory argument is supplied strip only that
-directory component from the beginning of every path.
+List all paths touched by fileops in the selection set (which defaults
+to the entire repo). This command does > redirection.
 `)
 }
 
@@ -4267,55 +4258,12 @@ directory component from the beginning of every path.
 func (rs *Reposurgeon) DoPaths(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	if !strings.HasPrefix(parse.line, "sub") && !strings.HasPrefix(parse.line, "sup") {
-		allpaths := newOrderedStringSet()
-		for _, commit := range rs.chosen().commits(rs.selection) {
-			allpaths = allpaths.Union(commit.paths(nil))
-		}
-		sort.Strings(allpaths)
-		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
-		return false
+	allpaths := newOrderedStringSet()
+	for _, commit := range rs.chosen().commits(rs.selection) {
+		allpaths = allpaths.Union(commit.paths(nil))
 	}
-	fields := parse.Tokens()
-	if fields[0] == "sub" {
-		if len(fields) < 2 {
-			croak("Error paths sub needs a directory name argument")
-			return false
-		}
-		prefix := fields[1]
-		modified := rs.chosen().pathWalk(rs.selection,
-			func(f string) string { return prefix + string(os.PathSeparator) + f })
-		fmt.Fprint(parse.stdout, strings.Join(modified, control.lineSep)+control.lineSep)
-	} else if fields[0] == "sup" {
-		if len(fields) == 1 {
-			modified := rs.chosen().pathWalk(rs.selection,
-				func(f string) string {
-					slash := strings.Index(f, "/")
-					if slash == -1 {
-						return f
-					}
-					return f[slash+1:]
-				})
-			sort.Strings(modified)
-			fmt.Fprint(parse.stdout, strings.Join(modified, control.lineSep)+control.lineSep)
-		} else {
-			prefix := fields[1]
-			if !strings.HasSuffix(prefix, "/") {
-				prefix += "/"
-			}
-			modified := rs.chosen().pathWalk(rs.selection,
-				func(f string) string {
-					if strings.HasPrefix(f, prefix) {
-						return f[len(prefix):]
-					}
-					return f
-				})
-			sort.Strings(modified)
-			fmt.Fprint(parse.stdout, strings.Join(modified, control.lineSep)+control.lineSep)
-			return false
-		}
-	}
-	//rs.chosen().invalidateManifests()
+	sort.Strings(allpaths)
+	fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
 	return false
 }
 
