@@ -5775,6 +5775,9 @@ a blank line if the first line of the comment ends with '.', ',', ':',
 won't be touched.
 
 Takes a selection set, defaulting to all commits and tags.
+
+Sets Q bits: true for each commit and tag with a commemt modified by this
+command, false on all other events.
 `)
 }
 
@@ -5783,6 +5786,7 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 	rs.newLineParse(line, parseALLREPO, nil)
 	lineEnders := orderedStringSet{".", ",", ";", ":", "?", "!"}
 	control.baton.startProgress("gitifying comments", uint64(len(rs.selection)))
+	rs.chosen().clrDelFlags()
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
 		if commit, ok := event.(*Commit); ok {
 			commit.Comment = canonicalizeComment(commit.Comment)
@@ -5797,6 +5801,7 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 				commit.Comment = commit.Comment[:firsteol] +
 					"\n" +
 					commit.Comment[firsteol:]
+				commit.setDelFlag(true)
 			}
 		} else if tag, ok := event.(*Tag); ok {
 			tag.Comment = strings.TrimSpace(tag.Comment) + "\n"
@@ -5811,6 +5816,7 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 				tag.Comment = tag.Comment[:firsteol] +
 					"\n" +
 					tag.Comment[firsteol:]
+				commit.setDelFlag(true)
 			}
 		}
 		control.baton.percentProgress(uint64(idx))
