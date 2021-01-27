@@ -8839,11 +8839,7 @@ func (repo *Repository) pathRename(selection orderedIntSet, sourceRE *regexp.Reg
 // Delete branches as git does, by forgetting all commits reachable only from
 // these branches, then renaming the branch of all commits still reachable to
 // ensure the deleted branches no longer appear anywhere
-func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(string) bool, baton *Baton) {
-	if selection == nil {
-		selection = repo.all()
-	}
-	selected := newFastOrderedIntSet(selection...)
+func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Baton) {
 	// Select resets & commits to keep
 	toKeep := newFastOrderedIntSet()
 	wrongBranch := newFastOrderedIntSet()
@@ -8881,7 +8877,7 @@ func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(
 				if wrongBranch.Contains(i) {
 					lastKeptIdxWithWrongBranch = i
 				}
-			} else if selected.Contains(i) {
+			} else {
 				deletia = append(deletia, i)
 			}
 		}
@@ -8910,7 +8906,7 @@ func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(
 			panic("Impossible commit with no good children in deleteBranch")
 		}
 		for i, ev := range repo.events {
-			if selected.Contains(i) && toKeep.Contains(i) && wrongBranch.Contains(i) {
+			if toKeep.Contains(i) && wrongBranch.Contains(i) {
 				ev.(*Commit).setBranch(newBranch)
 			}
 			baton.twirl()

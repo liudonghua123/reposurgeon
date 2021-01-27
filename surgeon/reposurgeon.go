@@ -684,7 +684,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 // Selection expressions have their own lexical rules and grammar,
 // not described in this comment.
 //
-// Lexically, almost every command line is processed as a sewquence
+// Lexically, almost every command line is processed as a sequence
 // of tokens. There are only two exceptions to this: "shell" and "print",
 // which consume the entire untokenized remainder of the input line other
 // than its leading space.
@@ -712,7 +712,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 // keywords), except for those ending with string/bareword lists.
 //
 // All uses of alternation in the BNF are a choice of keywords, except
-// in the "add" and "split" commands.
+// in the "add", "attrbution", and "split" commands.
 
 // DoEOF is the handler for end of command input.
 func (rs *Reposurgeon) DoEOF(lineIn string) bool {
@@ -782,8 +782,8 @@ func (rs *Reposurgeon) HelpResolve() {
 
 Does nothing but resolve a selection-set expression
 and report the resulting event-number set to standard
-output. The remainder of the line after the command is used
-as a label for the output.
+output. The remainder of the line after the command,
+if any, is used as a label for the output.
 
 Implemented mainly for regression testing, but may be useful
 for exploring the selection-set language.
@@ -4647,19 +4647,16 @@ valid branch name (but not the name of an existing branch).  If it does not
 begin with "refs/", then "refs/" is prepended; you should supply "heads/"
 or "tags/" yourself.
 
-If the first argument is a delimted regular expression (that is, begun
+If the first argument is a delimited regular expression (that is, begun
 and ended by the same delimiter character, unless the delimiter is a double 
 quote) all branches with names matching the regexp are renamed or deleted,
 and ARG may contain pattern references to be expanded.
-
-Deletions or renames can be restricted by a selection set in the normal way,
-but use this capability with care as it can easily produce a broken topology.
 `)
 }
 
 // DoBranch renames a branch or deletes it.
 func (rs *Reposurgeon) DoBranch(line string) bool {
-	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
+	rs.newLineParse(line, parseNOSELECT, nil)
 
 	repo := rs.chosen()
 
@@ -4731,10 +4728,6 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			}
 		}
 	} else if verb == "delete" {
-		selection := rs.selection
-		if selection == nil {
-			selection = repo.all()
-		}
 		var shouldDelete func(string) bool
 		sourcepattern, isRe := delimitedRegexp(sourcepattern)
 		if !isRe {
@@ -4749,7 +4742,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return branchRE.MatchString(branch)
 		}
 		before := len(repo.branchset())
-		repo.deleteBranch(selection, shouldDelete, control.baton)
+		repo.deleteBranch(shouldDelete, control.baton)
 		respond("%d branches deleted", before-len(repo.branchset()))
 	} else {
 		croak("unknown verb '%s' in branch command.", verb)

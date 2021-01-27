@@ -2851,7 +2851,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	})
 	preserve := options.Contains("--preserve")
 	if !preserve {
-		sp.repo.deleteBranch(nil,
+		sp.repo.deleteBranch(
 			func(branch string) bool {
 				return strings.HasPrefix(branch, "refs/deleted/")
 			},
