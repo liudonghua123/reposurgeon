@@ -759,14 +759,16 @@ See the documentation of the `<<references_cmd>>` command, for details
 on how fix up Subversion and CVS changeset references in comments so
 they're still meaningful.
 
-The command `=L <<edit_cmd>>` is good for fixing up multi-line comments.
+The command `=L <<msgout_cmd>>` is good for extacting commits with
+multi-line comments in a form that cann be deited and merged nacl in
+with the msgin command.
 
 The reposurgeon command `<<inspect_cmd>> =H` will show you tip commits
 which may contain only deletes and deletealls.
 
 Tags can be inspected with `=T <<inspect_cmd>>`. Junk tags can be
 removed with the `<<delete_cmd>>` command. Tag comments can be
-modified with `<<edit_cmd>>`.  Check that the creation date of tags
+modified with a msgin/msgout sequence.  Check that the creation date of tags
 matches what you see in the source repository; this is the easiest way
 to spot when one has been attached to the wrong commit, something that
 can be manually fixed by editing its "from" field.
@@ -777,7 +779,7 @@ figure out what the encoding is and apply the `<<transcode_cmd>>`
 command to fix things.
 
 Reposurgeon has a `<<merge_cmd>>` command specifically for performing
-branch merges.  The `<<edit_cmd>>` command will also allow you to add
+branch merges.  The `<<msgin_cmd>>` command will also allow you to add
 a parent mark to a commit.
 
 One minor feature you lose in moving from SCCS, CVS, Subversion, or
@@ -1221,10 +1223,6 @@ syntax.
 
 // bad end/
 --------
-:15 edit               ;; edit the object associated with mark :15.
-
-edit                   ;; edit all editable objects.
-
 29..71 list            ;; list summary index of events 29..71.
 
 236..$ list            ;; List events from 236 to the last.
@@ -2013,8 +2011,6 @@ include::docinclude/msgout.adoc[]
 include::docinclude/msgin.adoc[]
 
 include::docinclude/setfield.adoc[]
-
-include::docinclude/edit.adoc[]
 
 [[attribution_cmd,attribution]]
 [SELECTION] attribution [ATTR-SELECTION] {show|set|delete|prepend|append} [ARG...]::

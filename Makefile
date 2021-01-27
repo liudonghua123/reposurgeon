@@ -105,7 +105,6 @@ BNF_TOPICS = \
 	divide \
 	do \
 	drop \
-	edit \
 	elapsed \
 	exit \
 	expunge \

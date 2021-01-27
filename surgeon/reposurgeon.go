@@ -667,88 +667,6 @@ func (commit *Commit) findSuccessors(path string) []string {
 	return here
 }
 
-// edit mailboxizes and edits the non-blobs in the selection
-func (rs *Reposurgeon) edit(selection orderedIntSet, line string) {
-	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, orderedStringSet{"stdin", "stdout"})
-	defer parse.Closem()
-	editor := os.Getenv("EDITOR")
-	if parse.line != "" {
-		editor = parse.line
-	}
-	if editor == "" {
-		croak("you have not specified an editor and $EDITOR is unset")
-		// Fallback on /usr/bin/editor on Debian and
-		// derivatives.  See
-		// https://www.debian.org/doc/debian-policy/#editors-and-pagers
-		editor = "/usr/bin/editor"
-		realEditor, err := filepath.EvalSymlinks(editor)
-		if err != nil {
-			croak(err.Error())
-			return
-		}
-		if islink(editor) && exists(realEditor) {
-			respond("using %s -> %s instead", editor, realEditor)
-
-		} else {
-			return
-		}
-		control.setAbort(false)
-	}
-	// Special case: user selected a single blob
-	if len(selection) == 1 && !parse.options.Contains("--blobs") {
-		singleton := rs.chosen().events[selection[0]]
-		if blob, ok := singleton.(*Blob); ok {
-			for _, commit := range rs.chosen().commits(nil) {
-				for _, fileop := range commit.operations() {
-					if fileop.op == opM && fileop.ref == singleton.getMark() {
-						if len(commit.findSuccessors(fileop.Path)) > 0 && !parse.options.Contains("--not-last") {
-							croak("beware: not the last 'M %s' on its branch", fileop.Path)
-						}
-						break
-					}
-				}
-			}
-			runProcess(editor+" "+blob.materialize(), "editing")
-			// recalculate blob.size
-			blob.setBlobfile(blob.getBlobfile(false))
-			return
-		}
-		// Fall through
-	}
-
-	file, err1 := ioutil.TempFile(".", "rse")
-	if err1 != nil {
-		croak("creating tempfile for edit: %v", err1)
-		return
-	}
-	defer os.Remove(file.Name())
-	for _, i := range selection {
-		event := rs.chosen().events[i]
-		switch event.(type) {
-		case *Commit:
-			file.WriteString(event.(*Commit).emailOut(nil, i, nil))
-		case *Tag:
-			file.WriteString(event.(*Tag).emailOut(nil, i, nil))
-		case *Blob:
-			if parse.options.Contains("--blobs") {
-				file.WriteString(event.(*Blob).emailOut(nil, i, nil))
-			}
-		}
-	}
-	file.Close()
-	cmd := exec.Command(editor, file.Name())
-	// Can't use LineParse defaults here, one point at the baton.
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		croak("running editor: %v", err)
-		return
-	}
-	rs.DoMsgin("<" + file.Name())
-}
-
 //
 // Command implementation begins here
 //
@@ -2665,34 +2583,6 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 			respond("%d events modified by msgin.", changed)
 		}
 	}
-	return false
-}
-
-// HelpEdit says "Shut up, golint!"
-func (rs *Reposurgeon) HelpEdit() {
-	rs.helpOutput(`
-{SELECTION} edit [EDITOR-NAME] [<INFILE] [>OUTFILE]
-
-Report the selection set of events to a tempfile as msgout does,
-call an editor on it, and update from the result as msgin does.
-If you do not specify an editor name as first argument, it will be
-taken from the $EDITOR variable in your environment.
-If $EDITOR is not set, /usr/bin/editor will be used as a fallback
-if it exists as a symlink to your default editor, as is the case on
-Debian, Ubuntu and their derivatives.
-
-Normally this command ignores blobs because msgout does.
-However, if you specify a selection set consisting of a single
-blob, your editor will be called on the blob file; alternatively,
-as with msgout, the --blobs option will include blobs in the file.
-`)
-}
-
-// DoEdit edits metadata interactively. FIXME: Should be removed
-func (rs *Reposurgeon) DoEdit(line string) bool {
-	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
-	defer parse.Closem()
-	rs.edit(rs.selection, line)
 	return false
 }
 
@@ -5741,14 +5631,11 @@ func (rs *Reposurgeon) DoLegacy(line string) bool {
 // FIXME: Odd syntax
 func (rs *Reposurgeon) HelpReferences() {
 	rs.helpOutput(`
-[SELECTION] references [list|edit|lift]
+[SELECTION] references [list|lift]
 
 With the 'list' modifier, produces a listing of events that may have
 Subversion or CVS commit references in them.  This version
 of the command supports > redirection.  Equivalent to '=N list'.
-
-With the modifier 'edit', edit this set.  This version of the command
-supports < and > redirection.  Equivalent to '=N edit'.
 
 With the modifier 'lift', transform commit-reference cookies from CVS
 and Subversion into action stamps.  This command expects cookies
@@ -5852,27 +5739,23 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 			}
 		}
 		if len(selection) > 0 {
-			if strings.HasPrefix(line, "edit") {
-				rs.edit(selection, strings.TrimSpace(line[4:]))
-			} else {
-				parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
-				defer parse.Closem()
-				w := screenwidth()
-				for _, ei := range selection {
-					event := repo.events[ei]
-					summary := ""
-					switch event.(type) {
-					case *Commit:
-						commit := event.(*Commit)
-						summary = commit.lister(nil, ei, w)
-						break
-						//case *Tag:
-						//	tag := event.(*Tag)
-						//	summary = tag.lister(nil, ei, w)
-					}
-					if summary != "" {
-						fmt.Fprint(parse.stdout, summary+control.lineSep)
-					}
+			parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
+			defer parse.Closem()
+			w := screenwidth()
+			for _, ei := range selection {
+				event := repo.events[ei]
+				summary := ""
+				switch event.(type) {
+				case *Commit:
+					commit := event.(*Commit)
+					summary = commit.lister(nil, ei, w)
+					break
+					//case *Tag:
+					//	tag := event.(*Tag)
+					//	summary = tag.lister(nil, ei, w)
+				}
+				if summary != "" {
+					fmt.Fprint(parse.stdout, summary+control.lineSep)
 				}
 			}
 		}
