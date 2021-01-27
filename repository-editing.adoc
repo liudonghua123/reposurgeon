@@ -1362,7 +1362,8 @@ empty line after the first
 including comments, `progress` commands,
 and `checkpoint` commands
 | N | Legacy IDs                      | Any comment matching a cookie
-(legacy-ID) format.
+(legacy-ID) format
+| Q | Recently touched                | Set/cleared by some commands
 |===================================================================
 
 references::

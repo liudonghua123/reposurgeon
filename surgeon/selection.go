@@ -335,6 +335,7 @@ func (rs *Reposurgeon) visibilityTypeletters() map[rune]func(int) bool {
 		'M': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.parents()) > 1 },
 		'F': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.children()) > 1 },
 		'L': func(i int) bool { c, ok := e(i).(*Commit); return ok && unclean.MatchString(c.Comment) },
+		'Q': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.getDelFlag() },
 		'I': func(i int) bool { p, ok := e(i).(decodable); return ok && !p.decodable() },
 		'D': func(i int) bool { p, ok := e(i).(alldel); return ok && p.alldeletes() },
 		'N': func(i int) bool { return rs.hasReference(e(i)) },

@@ -2732,6 +2732,9 @@ With --replace, the behavior is like --regexp but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
 
 With --dedos, DOS/Windows-style \r\n line terminators are replaced with \n.
+
+All variants of this command set Q bits; onjects actually modified by
+thw command hert true, all other events get false
 `)
 }
 
@@ -2926,6 +2929,9 @@ identify metadata containing non-Unicode high bytes in text, a human
 must use context to identify which particular encodings were used in
 particular event spans and compose appropriate transcode commands
 to fix them up.
+
+This command sets Q bits; onjects actually modified by thw command
+get true, all other events get false.
 `)
 }
 
@@ -3157,6 +3163,8 @@ outside the selection range, depending on policy flags.
 The default selection set for this command is empty.  Blobs cannot be
 directly affected by this command; they move or are deleted only when
 removal of fileops associated with commits requires this.
+
+Clears all =Q bits.
 `)
 }
 
@@ -3180,6 +3188,8 @@ are removed only when removal of fileops associated with commits requires this.
 When a commit is deleted, what becomes of tags and fileops attached to
 it is controlled by policy flags.  A delete is equivalent to a
 squash with the --delete flag.
+
+Clears all =Q bits.
 `)
 }
 
@@ -4193,6 +4203,8 @@ Example:
 # move all content into docs/ subdir
 path /.+/ rename docs/\0
 ----
+
+This command sets commit =Q bits; true if the commit was modified.
 
 The path command has no other verbs as yet. More might be added in the future 
 `)
@@ -5214,6 +5226,9 @@ branch already exists, this command errors out without modifying the repository.
 The PATHPREFIX is removed from the paths of all fileops in modified commits.
 
 Backslash escapes are processed in all three names.
+
+Sets Q bits: commits on the source branch modified by having fileops lifted to the 
+new branch true, all others false.
 `)
 }
 
@@ -6721,6 +6736,7 @@ More ways to construct event sets:
 =I         all commits not decodable to UTF-8
 =D         all commits in which every fileop is a D or deleteall
 =N         all commits and tags matching a cookie (legacy-ID) format.
+=Q         all events marked with the "recently touched" bit.
 
 @min()     create singleton set of the least element in the argument
 @max()     create singleton set of the greatest element in the argument

@@ -6449,6 +6449,10 @@ var allPolicies = orderedStringSet{
 	"--blobs",
 }
 
+func (repo *Repository) clrDelFlags() {
+	walkEvents(repo.events, func(i int, event Event) { event.setDelFlag(false) })
+}
+
 // Delete a set of events, or rearrange it forward or backwards.
 func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, baton *Baton) error {
 	if logEnable(logDELETE) {
@@ -6542,9 +6546,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 		branchmap = repo.branchmap()
 	}
 	// Here are the deletions
-	for _, event := range repo.events {
-		event.setDelFlag(false)
-	}
+	repo.clrDelFlags()
 	var delCount int
 	for _, ei := range selected {
 		var newTarget *Commit
@@ -8652,6 +8654,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 		baton.startProgress(prompt, uint64(len(selection)))
 	}
 	altered := new(Safecounter)
+	repo.clrDelFlags()
 	repo.walkEvents(selection, func(idx int, event Event) {
 		if tag, ok := event.(*Tag); ok {
 			if nonblobs {
@@ -8671,6 +8674,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 				}
 				if anychanged {
 					altered.bump()
+					tag.setDelFlag(true)
 				}
 			}
 		} else if commit, ok := event.(*Commit); ok {
@@ -8714,6 +8718,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 				}
 				if anychanged {
 					altered.bump()
+					commit.setDelFlag(true)
 				}
 			}
 			if blobs {
@@ -8733,6 +8738,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 			if content != modified {
 				blob.setContent([]byte(modified), noOffset)
 				altered.bump()
+				blob.setDelFlag(true)
 			}
 		}
 		if !quiet {
@@ -8784,6 +8790,7 @@ func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 func (repo *Repository) pathRename(selection orderedIntSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)
 	for _, commit := range repo.commits(selection) {
+		commit.setDelFlag(false)
 		for idx := range commit.fileops {
 			for _, attr := range []string{"Path", "Source", "Target"} {
 				fileop := commit.fileops[idx]
@@ -8802,6 +8809,7 @@ func (repo *Repository) pathRename(selection orderedIntSet, sourceRE *regexp.Reg
 							return
 						} else {
 							actions = append(actions, pathAction{fileop, commit, attr, newpath})
+							commit.setDelFlag(true)
 						}
 					}
 				}
@@ -9430,6 +9438,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 	var liftroot *Commit
 	splitcount := 0
 	for _, commit := range repo.commits(nil) {
+		commit.setDelFlag(false)
 		if commit.Branch == sourcebranch {
 			if sourceroot == nil {
 				sourceroot = commit
@@ -9458,7 +9467,6 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 					if liftroot == nil {
 						liftroot = commit
 					}
-					//fmt.Printf("XXX This commit is lifted: %s", commit)
 				} else {
 					// Complex case - commit needs to be split because some
 					// paths have the prefix but others don't.
@@ -9469,6 +9477,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 					}
 					liftFrag := repo.events[idx+1].(*Commit)
 					liftFrag.Branch = newname
+					liftFrag.setDelFlag(true)
 					for _, op := range liftFrag.operations() {
 						if strings.HasPrefix(op.Source, pathprefix) {
 							op.Source = op.Source[len(pathprefix):]
@@ -9481,8 +9490,6 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 						liftroot = liftFrag
 					}
 					splitcount++
-					//fmt.Printf("XXX Fragment 1 stays: %s", commit)
-					//fmt.Printf("XXX Fragment 2 is lifted: %s", liftFrag)
 				}
 			}
 		}
