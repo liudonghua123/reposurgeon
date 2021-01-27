@@ -787,6 +787,10 @@ as a label for the output.
 
 Implemented mainly for regression testing, but may be useful
 for exploring the selection-set language.
+
+The parenthesized literal produced by this command is valid
+selection-set syntax; it can be pasted into a script for 
+re-use.
 `)
 }
 
@@ -795,14 +799,18 @@ func (rs *Reposurgeon) DoResolve(line string) bool {
 	if rs.selection == nil {
 		respond("No selection\n")
 	} else {
-		oneOrigin := newOrderedIntSet()
+		out := ""
 		for _, i := range rs.selection {
-			oneOrigin.Add(i + 1)
+			out += fmt.Sprintf("%d,", i+1)
 		}
+		if len(out) > 0 {
+			out = out[:len(out)-1]
+		}
+		out = "(" + out + ")"
 		if line != "" {
-			control.baton.printLogString(fmt.Sprintf("%s: %v\n", line, oneOrigin))
+			control.baton.printLogString(fmt.Sprintf("%s: %s\n", line, out))
 		} else {
-			control.baton.printLogString(fmt.Sprintf("%v\n", oneOrigin))
+			control.baton.printLogString(fmt.Sprintf("%v\n", out))
 		}
 	}
 	return false

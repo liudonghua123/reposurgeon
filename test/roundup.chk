@@ -1,7 +1,7 @@
 read <roundup.fi
 set interactive
 :1? resolve
-[3, 41]
+(3,41)
 :39,:42 inspect
 Event 41 ================================================================
 commit refs/tags/release-0-5-0

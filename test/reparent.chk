@@ -111,10 +111,10 @@ rs -> :1
 
 129 reparent
 @par(129) resolve parents of root commit
-parents of root commit: []
+parents of root commit: ()
 129,127,3 reparent
 @par(129) resolve parents of octopus merge
-parents of octopus merge: [3, 127]
+parents of octopus merge: (3,127)
 
 # this next one should fail because it would create a cycle
 :123,:121 reparent --use-order
