@@ -5643,22 +5643,18 @@ consisting of the leading string '[[', followed by a VCS identifier
 (currently SVN or CVS) followed by VCS-dependent information, followed
 by ']]'. An action stamp pointing at the corresponding commit is
 substituted when possible.  Enables writing of the legacy-reference
-map when the repo is written or rebuilt.
+map when the repo is written or rebuilt.  This variant sets Q bits:
+true if a commit's comment was modified by a reference lift, false
+on all other events.
 `)
 }
 
 // DoReferences looks for things that might be CVS or Subversion revision references.
 func (rs *Reposurgeon) DoReferences(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseALLREPO, nil)
 	repo := rs.chosen()
-	selection := rs.selection
-	if selection == nil {
-		selection = rs.chosen().all()
-	}
 	if strings.Contains(line, "lift") {
+		repo.clrDelFlags()
 		rs.chosen().parseDollarCookies()
 		hits := 0
 		substitute := func(getter func(string) *Commit, legend string) string {
@@ -5721,18 +5717,22 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 		}
 		for _, item := range getterPairs {
 			matchRE := regexp.MustCompile(item.pattern)
-			for _, commit := range rs.chosen().commits(selection) {
+			for _, commit := range rs.chosen().commits(rs.selection) {
+				oldcomment := commit.Comment
 				commit.Comment = matchRE.ReplaceAllStringFunc(
 					commit.Comment,
 					func(m string) string {
 						return substitute(item.getter, m)
 					})
+				if commit.Comment != oldcomment {
+					commit.setDelFlag(true)
+				}
 			}
 		}
 		respond("%d references resolved.", hits)
 		repo.writeLegacy = true
 	} else {
-		selection = make([]int, 0)
+		selection := make([]int, 0)
 		for idx, commit := range repo.commits(nil) {
 			if rs.hasReference(commit) {
 				selection = append(selection, idx)
