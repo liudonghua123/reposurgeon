@@ -6,9 +6,10 @@ Repository head::
      In branch/tag rename and expunge, be more flexible about RE delimiters.
      Commands that accept output redirection can also pipe to a command,
      The --branchmap option is gone in favor of using branch rename.
-     The behavior and interface of tje tag command has been simplified.
+     The behavior and interface of the tag command has been simplified.
      The syntax of the expunge command has been simplified.
      The "paths [sub|sup]" command have been replaced by "path rename".
+     The =Q set now provides a way to inspect recently modified events.
 
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).

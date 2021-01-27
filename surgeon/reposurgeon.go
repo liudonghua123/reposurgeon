@@ -2644,7 +2644,7 @@ If the option --empty-only is given, this command will throw a recoverable error
 if it tries to alter a message body that is neither empty nor consists of the
 CVS empty-comment marker.
 
-This operation sets =Q bits; true where an abject was modified by it, false 
+This operation sets Q bits; true where an abject was modified by it, false 
 otherwise. 
 `)
 }
@@ -2740,8 +2740,8 @@ not interpreted as regular expressions. (This is slightly faster).
 
 With --dedos, DOS/Windows-style \r\n line terminators are replaced with \n.
 
-All variants of this command set Q bits; onjects actually modified by
-thw command hert true, all other events get false
+All variants of this command set Q bits; objects actually modified by
+thw command get true, all other events get false
 `)
 }
 
@@ -3171,7 +3171,7 @@ The default selection set for this command is empty.  Blobs cannot be
 directly affected by this command; they move or are deleted only when
 removal of fileops associated with commits requires this.
 
-Clears all =Q bits.
+Clears all Q bits.
 `)
 }
 
@@ -3196,7 +3196,7 @@ When a commit is deleted, what becomes of tags and fileops attached to
 it is controlled by policy flags.  A delete is equivalent to a
 squash with the --delete flag.
 
-Clears all =Q bits.
+Clears all Q bits.
 `)
 }
 
@@ -4211,7 +4211,7 @@ Example:
 path /.+/ rename docs/\0
 ----
 
-This command sets commit =Q bits; true if the commit was modified.
+This command sets commit Q bits; true if the commit was modified.
 
 The path command has no other verbs as yet. More might be added in the future 
 `)
@@ -6441,6 +6441,9 @@ In accordance with FSF policy for ChangeLogs, any date in an
 attribution header is discarded and the committer date is used.
 However, if the name is an author-map alias with an associated timezone,
 that zone is used.
+
+Sets Q bits: true if the object is a commit with authorship modified
+by this command, false otherwise.
 `)
 }
 

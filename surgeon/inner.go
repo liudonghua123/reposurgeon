@@ -8437,6 +8437,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 		return clRe.MatchString(filepath.Base(filename))
 	}
 	repo.walkEvents(selection, func(eventRank int, event Event) {
+		event.setDelFlag(false)
 		commit, iscommit := event.(*Commit)
 		evts.bump()
 		defer baton.percentProgress(uint64(evts.value))
@@ -8563,7 +8564,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 		newattr.email = matches[0][2]
 		newattr.fullname = matches[0][1]
 		newattr.date.setTZ("UTC")
-		// This assumes email addreses of contributors are unique.
+		// This assumes email addresses of contributors are unique.
 		// We could get wacky results if two people with different
 		// human names but identicall email addresses were run through
 		// this code, but that outcome seems wildly unlikely.
@@ -8601,6 +8602,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 				if !matched {
 					commit.authors = append(commit.authors, *newattr)
 					cd++
+					commit.setDelFlag(true)
 				}
 			}
 		}
