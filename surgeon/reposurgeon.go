@@ -6270,6 +6270,9 @@ to be individually dealt with using 'timeoffset' commands.
 The normal use case for this command is early in converting CVS or Subversion
 repositories, to ensure that the surgical language can count on having a unique
 action-stamp ID for each commit.
+
+This command sets Q bits: true on each event with a timestamp bumped, false on
+all other events.
 `)
 }
 
@@ -6279,12 +6282,14 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 	repo := rs.chosen()
 	//baton.startProcess("reposurgeon: disambiguating", "")
 	modified := 0
+	repo.clrDelFlags()
 	for _, event := range repo.commits(rs.selection) {
 		parents := event.parents()
 		if len(parents) == 1 {
 			if parent, ok := parents[0].(*Commit); ok {
 				if event.committer.date.timestamp.Equal(parent.committer.date.timestamp) {
 					event.bump(1)
+					event.setDelFlag(true)
 					modified++
 				}
 			}
