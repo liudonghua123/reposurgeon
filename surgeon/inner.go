@@ -6895,6 +6895,7 @@ func (repo *Repository) gcBlobs() {
 func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp, delete bool, notagify bool, baton *Baton) error {
 	// First pass: compute fileop deletions
 	alterations := make([][]int, 0)
+	repo.clrDelFlags()
 	for _, ei := range selection {
 		event := repo.events[ei]
 		deletia := make([]int, 0)
@@ -6979,6 +6980,7 @@ func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp,
 			}
 		}
 		commit.setOperations(nondeletia)
+		commit.setDelFlag(true)
 	}
 	backreferences := make(map[string]int)
 	for _, commit := range repo.commits(nil) {

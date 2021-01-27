@@ -599,7 +599,7 @@ func (rs *Reposurgeon) accumulateCommits(subarg *fastOrderedIntSet,
 	return rs.chosen().accumulateCommits(subarg, operation, recurse)
 }
 
-// Generate a repository report on all objects with a specified display method.
+// Generate a repository report on all events with a specified display method.
 func (rs *Reposurgeon) reportSelect(parse *LineParse, display func(*LineParse, int, Event) string) {
 	if rs.chosen() == nil {
 		croak("no repo has been chosen.")
@@ -1044,7 +1044,7 @@ func (rs *Reposurgeon) HelpIndex() {
 	rs.helpOutput(`
 [SELECTION] index [>OUTFILE]
 
-Display four columns of info on selected objects: their number, their
+Display four columns of info on selected events: their number, their
 type, the associate mark (or '-' if no mark) and a summary field
 varying by type.  For a branch or tag it's the reference; for a commit
 it's the commit branch; for a blob it's the repository path of the
@@ -1052,13 +1052,13 @@ file in the blob.
 `)
 }
 
-// DoIndex generates a summary listing of objects.
+// DoIndex generates a summary listing of events.
 func (rs *Reposurgeon) DoIndex(lineIn string) bool {
 	parse := rs.newLineParse(lineIn, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	// We could do all this logic using reportSelect() and index() methods
-	// in the objects, but that would have two disadvantages.  First, we'd
+	// in the events, but that would have two disadvantages.  First, we'd
 	// get a default-set computation we don't want.  Second, for this
 	// function it's helpful to have the method strings close together so
 	// we can maintain columnation.
@@ -1427,7 +1427,7 @@ leading portion of the comment follows.
 `)
 }
 
-// DoList generates a human-friendly listing of objects.
+// DoList generates a human-friendly listing of events.
 func (rs *Reposurgeon) DoList(lineIn string) bool {
 	parse := rs.newLineParse(lineIn, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
@@ -1461,7 +1461,7 @@ child's tip.  Otherwise this function throws a recoverable error.
 `)
 }
 
-// DoTip generates a human-friendly listing of objects.
+// DoTip generates a human-friendly listing of events.
 func (rs *Reposurgeon) DoTip(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
@@ -1940,7 +1940,7 @@ func (rs *Reposurgeon) HelpGc() {
 	rs.helpOutput(`
 gc [GOGC]
 
-Trigger a garbage collection. Scavenges and removes all blob objects
+Trigger a garbage collection. Scavenges and removes all blob events
 that no longer have references, e.g. as a result of delete operqtions
 on repositories. This is followed by a Go-runtime garbage collection.
 
@@ -2563,7 +2563,7 @@ Blobs may be included in the output with the option --blobs.
 `)
 }
 
-// DoMsgout generates a message-box file representing object metadata.
+// DoMsgout generates a message-box file representing event metadata.
 func (rs *Reposurgeon) DoMsgout(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
@@ -2628,7 +2628,7 @@ updates on the events you intend.
 
 If the --create modifier is present, new tags and commits will be
 appended to the repository.  In this case it is an error for a tag
-name to match any exting tag name. Commit objects are created with no
+name to match any exting tag name. Commit events are created with no
 fileops.  If Committer-Date or Tagger-Date fields are not present they
 are filled in with the time at which this command is executed. If
 Committer or Tagger fields are not present, reposurgeon will attempt
@@ -2649,7 +2649,7 @@ otherwise.
 `)
 }
 
-// DoMsgin accepts a message-box file representing object metadata and update from it.
+// DoMsgin accepts a message-box file representing event metadata and update from it.
 func (rs *Reposurgeon) DoMsgin(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
 	defer parse.Closem()
@@ -2740,7 +2740,7 @@ not interpreted as regular expressions. (This is slightly faster).
 
 With --dedos, DOS/Windows-style \r\n line terminators are replaced with \n.
 
-All variants of this command set Q bits; objects actually modified by
+All variants of this command set Q bits; events actually modified by
 thw command get true, all other events get false
 `)
 }
@@ -2927,7 +2927,7 @@ The encoding argument must name one of the codecs known to the Go
 standard codecs library. In particular, 'latin-1' is a valid codec name.
 
 Errors in this command force the repository to be dropped, because an
-error may leave repository objects in a damaged state.
+error may leave repository events in a damaged state.
 
 The theory behind the design of this command is that the
 repository might contain a mixture of encodings used to enter commit
@@ -2979,7 +2979,7 @@ func (rs *Reposurgeon) HelpSetfield() {
 	rs.helpOutput(`
 [SELECTION] setfield {FIELD} {VALUE}
 
-In the selected objects (defaulting to none) set every instance of a
+In the selected events (defaulting to none) set every instance of a
 named field to a string value.  The string may be quoted to include
 whitespace, and use backslash escapes interpreted by Go's C-like
 string-escape codec, such as \s.
@@ -2998,7 +2998,7 @@ address.
 `)
 }
 
-// DoSetfield sets an object field from a string.
+// DoSetfield sets an event field from a string.
 func (rs *Reposurgeon) DoSetfield(line string) bool {
 	rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	repo := rs.chosen()
@@ -3053,7 +3053,7 @@ func (rs *Reposurgeon) HelpSetperm() {
 	rs.helpOutput(`
 {SELECTION} setperm {PERM} [PATH...]
 
-For the selected objects (defaulting to none) take the first argument as an
+For the selected events (defaulting to none) take the first argument as an
 octal literal describing permissions.  All subsequent arguments are paths.
 For each M fileop in the selection set and exactly matching one of the
 paths, patch the permission field to the first argument value.
@@ -3851,6 +3851,9 @@ them. By default each deleted commit is replaced with a tag of the form
 emptycommit-<ident> on the preceding commit unless the --notagify option
 is specified.  Commits with deleted fileops pointing both in and outside the
 path set are not deleted.
+
+This command sets Q bits: true on any commit which lost fileops but was
+not entirely deleted, false on all other events.
 `)
 }
 
@@ -4866,7 +4869,7 @@ Create, move, rename, or delete annotated taga.
 
 Creation is a special case.  First argument is a name, which must not
 be an existing tag. Takes a singleton event second argument which must
-point to a commit.  A tag object pointing to the commit is created and
+point to a commit.  A tag event pointing to the commit is created and
 inserted just after the last tag in the repo (or just after the last
 commit if there are no tags).  The tagger, committish, and comment
 fields are copied from the commit's committer, mark, and comment
@@ -6442,7 +6445,7 @@ attribution header is discarded and the committer date is used.
 However, if the name is an author-map alias with an associated timezone,
 that zone is used.
 
-Sets Q bits: true if the object is a commit with authorship modified
+Sets Q bits: true if the event is a commit with authorship modified
 by this command, false otherwise.
 `)
 }
@@ -6839,7 +6842,7 @@ functions are defined:
 |===================================================================
 | @min() | create singleton set of the least element in the argument
 | @max() | create singleton set of the greatest element in the argument
-| @amp() | nonempty selection set becomes all objects, empty set is returned
+| @amp() | nonempty selection set becomes all events, empty set is returned
 | @par() | all parents of commits in the argument set
 | @chn() | all children of commits in the argument set
 | @dsc() | all commits descended from the argument set (argument set included)
@@ -7193,11 +7196,11 @@ func (rs *Reposurgeon) HelpHash() {
 	rs.helpOutput(`
 [SELECTION] hash [--tree] [>OUTFILE]
 
-Report Git object hashes.  This command simulates Git hash generation.
+Report Git event hashes.  This command simulates Git hash generation.
 
-Takes a selection set, defaulting to all.  For each eligible object in the set,
+Takes a selection set, defaulting to all.  For each eligible event in the set,
 returns its index  and the same hash that Git would generate for its
-representation of the object. Eligible objects are blobs and commits.
+representation of the event. Eligible events are blobs and commits.
 
 With the option --bare, omit the event number; list only the hash.
 
