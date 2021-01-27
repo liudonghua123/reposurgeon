@@ -2609,7 +2609,7 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 // HelpMsgin says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgin() {
 	rs.helpOutput(`
-[SELECTION] msgin [--create] [<INFILE] [>OUTFILE]
+[SELECTION] msgin [--create] [<INFILE]
 
 Accept a file of messages in RFC822 format representing the
 contents of the metadata in selected commits and annotated tags. 
@@ -2640,24 +2640,31 @@ Otherwise, if the Event-Number and Event-Mark fields are absent, the
 msgin logic will attempt to match the commit or tag first by Legacy-ID,
 then by a unique committer ID and timestamp pair.
 
-If output is redirected and the modifier '--changed' appears, a minimal
-set of modifications actually made is written to the output file in a form
-that can be fed back in. Supports > redirection.
-
 If the option --empty-only is given, this command will throw a recoverable error
 if it tries to alter a message body that is neither empty nor consists of the
 CVS empty-comment marker.
+
+This operation sets =Q bits; true where an abject was modified by it, false 
+otherwise. 
 `)
 }
 
 // DoMsgin accepts a message-box file representing object metadata and update from it.
 func (rs *Reposurgeon) DoMsgin(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin", "stdout"})
+	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
 	defer parse.Closem()
-	rs.chosen().readMessageBox(rs.selection, parse.stdin, parse.stdout,
+	repo := rs.chosen()
+	repo.readMessageBox(rs.selection, parse.stdin,
 		parse.options.Contains("--create"),
-		parse.options.Contains("--empty-only"),
-		parse.options.Contains("--changed"))
+		parse.options.Contains("--empty-only"))
+	if control.isInteractive() {
+		changed := repo.countDelFlags()
+		if changed == 0 {
+			respond("no events modified by msgin.")
+		} else {
+			respond("%d events modified by msgin.", changed)
+		}
+	}
 	return false
 }
 

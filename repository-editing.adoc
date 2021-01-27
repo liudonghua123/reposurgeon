@@ -3341,6 +3341,11 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
+In versions 4.23 and earlier, it was possible to redirect output from
+msgin to capture a mailbox of changed entries. This feature has been
+removed; msgin now sets =Q bits which can be used to generatew the
+same report.
+
 In versions 4.23 and earlier, "<<branchify_opt>>" read
 option was a separate command that needed to be invoked before the
 read and set hidden global context.  There was a related branchmap

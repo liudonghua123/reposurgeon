@@ -6453,6 +6453,16 @@ func (repo *Repository) clrDelFlags() {
 	walkEvents(repo.events, func(i int, event Event) { event.setDelFlag(false) })
 }
 
+func (repo *Repository) countDelFlags() int {
+	count := 0
+	for _, event := range repo.events {
+		if event.getDelFlag() {
+			count++
+		}
+	}
+	return count
+}
+
 // Delete a set of events, or rearrange it forward or backwards.
 func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, baton *Baton) error {
 	if logEnable(logDELETE) {
@@ -8908,9 +8918,8 @@ func (repo *Repository) deleteBranch(selection orderedIntSet, shouldDelete func(
 }
 
 // readMessageBox modifies repo metadata by reading/merging in a mailbox stream.
-// if 'changed' is on, mailbox format of changed entries is reported.
-func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadCloser, output io.Writer,
-	create bool, emptyOnly bool, changed bool) {
+func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadCloser,
+	create bool, emptyOnly bool) {
 	updateList := make([]*MessageBlock, 0)
 	r := bufio.NewReader(input)
 	if r == nil {
@@ -8946,6 +8955,7 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 		attributionByCommitter[stamp] = commit
 	}
 	for _, event := range repo.events {
+		event.setDelFlag(false)
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagname != "" {
 				nameMap[tag.tagname] = tag
@@ -9133,16 +9143,19 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			commit := event.(*Commit)
 			if commit.emailIn(update, false) {
 				changers = append(changers, update)
+				event.setDelFlag(true)
 			}
 		case *Tag:
 			tag := event.(*Tag)
 			if tag.emailIn(update, false) {
 				changers = append(changers, update)
+				event.setDelFlag(true)
 			}
 		case *Blob:
 			blob := event.(*Blob)
 			if blob.emailIn(update, false) {
 				changers = append(changers, update)
+				event.setDelFlag(true)
 			}
 		}
 	}
@@ -9151,13 +9164,6 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			respond("no events modified by msgin.")
 		} else {
 			respond("%d events modified by msgin.", len(changers))
-		}
-	}
-	if output != os.Stdout {
-		if changed {
-			for _, update := range changers {
-				fmt.Fprint(output, string(MessageBlockDivider)+control.lineSep+update.String())
-			}
 		}
 	}
 }
