@@ -690,15 +690,17 @@ func (commit *Commit) findSuccessors(path string) []string {
 // than its leading space.
 //
 // There are three kinds of tokens: barewords (including syntax keywords),
-// strings (bounded by single or double quotes, may contain whitespace)
-// and regexp literals (which may not contain whitespace,
-// unlike the regexp literals in selection expressions before the dispatch
-// keyword).
+// strings (bounded by double quotes, may contain whitespace)
+// and pattern expressions.  A pattern expression is interpreted as (1) a regexp
+// if its first and last characters matchm are punctuation, and are anything other
+// than an ASCII single quote, (2) a literal string if its first and last characters
+// are ASCII single quotes, or (3) a literal string, otherwise. Pattern expressions
+// may not contain whitespace, unlike the regular expressions in selections.
 //
-// If a command has a regular-expression argument, it has exactly one
+// If a command has a pattern-expression argument, it has exactly one
 // and it is the first (it may be optional).  There is a half-exception to
 // this rule: filter, with a first argument that may be either a bareword
-// or a delimited regular expression
+// or a pattern expression
 //
 // All optional arguments and keywords follow any required arguments
 // and keywords.  There are two exceptions to this rule, in
@@ -2472,18 +2474,18 @@ func (rs *Reposurgeon) DoRebuild(line string) bool {
 // HelpMsgout says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgout() {
 	rs.helpOutput(`
-[SELECTION] msgout [--filter=/REGEXP/] [--blobs]
+[SELECTION] msgout [--filter=PATTERN] [--blobs]
 
 Emit a file of messages in RFC822 format representing the contents of
 repository metadata. Takes a selection set; members of the set other
 than commits, annotated tags, and passthroughs are ignored (that is,
 presently, blobs and resets).
 
-May have an option --filter, followed by a delimited regular
-expression.  If this is given, only headers with names matching it are
-emitted.  In this control the name of the header includes its trailing
-colon.  The value of the option must be a delimitee regular expression.
-See "help regexp" for information on the regexp syntax.
+May have an option --filter, followed by a pattern expression.  If this
+is given, only headers with names matching it are emitted.  In this
+control the name of the header includes its trailing colon.  The value
+of the option must be a pattern expression. See "help regexp"
+for information on the regexp syntax.
 
 Blobs may be included in the output with the option --blobs.
 `)
@@ -3727,7 +3729,7 @@ func (rs *Reposurgeon) HelpExpunge() {
 
 Expunge files from the selected portion of the repo history; the
 default is the entire history.  The arguments to this command is a
-delimited regular expressions matching paths; if surrounded.
+pattern expressions matching paths.
 
 The option --not inverts this; all file paths other than those
 selected by the remaining arguments to be expunged.  You may use
@@ -3756,10 +3758,12 @@ not entirely deleted, false on all other events.
 }
 
 func delimitedRegexp(in string) (out string, re bool) {
-	isRe := in[0] == in[len(in)-1] && in[0:1] != `"` && unicode.IsPunct(rune(in[0]))
-	if isRe {
+	leader := in[0]
+	delimited := in[0] == in[len(in)-1] && unicode.IsPunct(rune(in[0]))
+	if delimited {
 		in = in[1 : len(in)-1]
 	}
+	isRe := delimited && leader != 39 // ASCII single quote
 	return in, isRe
 }
 
@@ -4090,14 +4094,14 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 }
 
 // HelpPath says "Shut up, golint!"
-// FIXME: Odd syntax. Make first argument a delimited regexp
+// FIXME: Odd syntax.
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
-path {REGEXP} rename [--force] {TARGET}
+path {PATTERN} rename [--force] {TARGET}
 
 Rename a path in every fileop of every selected commit.  The default
 selection set is all commits. The first argument is interpreted as a
-delimited regexp to match against paths; the second may contain
+pattern expression to match against paths; the second may contain
 backreference syntax (\1 etc.). See "help regexp" for more information about
 regular expressions.
 
@@ -4199,15 +4203,15 @@ func (rs *Reposurgeon) DoPaths(line string) bool {
 // HelpManifest says "Shut up, golint!"
 func (rs *Reposurgeon) HelpManifest() {
 	rs.helpOutput(`
-[SELECTION] manifest [/REGEXP/] [>OUTFILE]
+[SELECTION] manifest [PATTERN] [>OUTFILE]
 
 Print commit path lists. Takes an optional selection set argument
-defaulting to all commits, and an optional delimited Go regular
-expression.  For each commit in the selection set, print the mapping
-of all paths in that commit tree to the corresponding blob marks,
-mirroring what files would be created in a checkout of the commit. If
-a regular expression is given, only print "path -> mark" lines for
-paths matching it. See "help regexp" for more information about regular
+defaulting to all commits, and an optional pattern expression. For
+each commit in the selection set, print the mapping of all paths
+in that commit tree to the corresponding blob marks, mirroring what
+files would be created in a checkout of the commit. If a regular
+expression is given, only print "path -> mark" lines forpaths
+matching it. See "help regexp" for more information about regular
 expressions.
 `)
 }
@@ -4219,11 +4223,11 @@ func (rs *Reposurgeon) DoManifest(line string) bool {
 	var filterFunc = func(s string) bool { return true }
 	line = strings.TrimSpace(parse.line)
 	if line != "" {
-		if len(line) >= 2 && line[0] != line[len(line)-1] {
-			croak("regular expression requires matching start and end delimiters")
-			return false
+		pattern, isRe := delimitedRegexp(line)
+		if !isRe {
+			pattern = "^" + regexp.QuoteMeta(pattern) + "$"
 		}
-		filterRE, err := regexp.Compile(line[1 : len(line)-1])
+		filterRE, err := regexp.Compile(pattern)
 		if err != nil {
 			if logEnable(logWARN) {
 				logit("invalid regular expression: %v", err)
@@ -4634,23 +4638,17 @@ func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
 branch {BRANCH-PATTERN} {rename|delete} [NEW-NAME]
 
-Rename or delete a branch (also any associated annotated tags and resets). 
-For purpoes of this command a Gut lightweight tag is simply a branch in
-the tags/ namespace.
+Rename or delete all branches matching the pattern expression BRANCH-PATTERN
+(also any associated annotated tags and resets). For purpoes of this command
+a Git lightweight tag is simply a branch in the tags/ namespace.
 
-First argument must be an existing branch name or a regular expression
-matching branch names; second argument must one of the verbs 'rename' or
-'delete'.
+Second argument must one of the verbs 'rename' or 'delete'.
 
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
 begin with "refs/", then "refs/" is prepended; you should supply "heads/"
-or "tags/" yourself.
-
-If the first argument is a delimited regular expression (that is, begun
-and ended by the same delimiter character, unless the delimiter is a double 
-quote) all branches with names matching the regexp are renamed or deleted,
-and ARG may contain pattern references to be expanded.
+or "tags/" yourself.  In it, eferences to match parts in BRANCH-PATTERN will
+be expanded.
 `)
 }
 
@@ -4685,7 +4683,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		var newname string
 		newname, line = popToken(line)
 		if newname == "" {
-			croak("new branch name must be nonempty.")
+			croak("branch name must be nonempty.")
 			return false
 		}
 		newname = removeBranchPrefix(newname)
@@ -4754,7 +4752,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 // HelpTag says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
-[SELECTION] tag {TAG-PATTERN} {create|move|rename|delete} [NEW-NAME]
+[SELECTION] tag {NAME|TAG-PATTERN} {create|move|rename|delete} [NEW-NAME]
 
 Create, move, rename, or delete annotated taga.
 
@@ -4766,22 +4764,21 @@ commit if there are no tags).  The tagger, committish, and comment
 fields are copied from the commit's committer, mark, and comment
 fields.
 
-Otherwise, the TAG-PATTERN argument must be an existing name referring
-to an annotated tag; alternatively it may be a delimited regexp matching
+Otherwise, the TAG-PATTERN argument is a pattern expression matching
 a set of tags.  The second argument must be one of the verbs 'move',
 'rename', or 'delete'.
 
 For a 'move', a third argument must be a singleton selection set. For
 a 'rename', the third argument may be any token that is a syntactically
 valid tag name (but not the name of an existing tag).  When TAG-PATTERN
-is a delimited regexp, the rename ARG may contain references to portions
-of the match for the TAG-PATTERN.
+is a regexp, NEW-NAME may contain references to portions of the match.
+Errors are thrown for wildcarding that would produce name collisions
 
-For a 'delete', no third argument is required.  If the TAG-PATTERN of a
-delete may be a delimited regexp annotated tags with names matching the
-regexp are deleted.  This is useful for mass deletion of junk tags
-such as those derived from CVS branch-root tags. Such deletions can be
-restricted by a selection set in the normal way.
+For a 'delete', no third argument is required.  Annotated tags with names
+matching the pattern are deleted.  Giving a regular expression rather than
+a plain string is useful for mass deletion of junk tags such as those derived
+from CVS branch-root tags. Such deletions can be restricted by a selection
+set in the normal way.
 `)
 }
 
@@ -6310,19 +6307,19 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 // HelpChangelogs says "Shut up, golint!"
 func (rs *Reposurgeon) HelpChangelogs() {
 	rs.helpOutput(`
-[SELECTION] changelogs
+[SELECTION] changelogs [BASENAME-PATTERN]
 
 Mine ChangeLog files for authorship data.
 
 Takes a selection set.  If no set is specified, process all changelogs.
-An optional following argument is a delimited regular expression to
-match the basename of files that should be treated as changelogs; the
-default is "/^ChangeLog$/". See "help regexp" for more information
-about regular expressions.
+An optional following argument is a pattern expression to match the 
+basename of files that should be treated as changelogs; the default
+is "/^ChangeLog$/". See "help regexp" for more information about
+regular expressions.
 
-This command assumes that changelogs are in the format used by FSF projects:
-entry header lines begin with YYYY-MM-DD and are followed by a
-fullname/address.
+This command assumes that changelogs are in the format used by FSF
+projects: entry header lines begin with YYYY-MM-DD and are followed by
+a fullname/address.
 
 When a ChangeLog file modification is found in a clique, the entry
 header at or before the section changed since its last revision is
@@ -6752,21 +6749,22 @@ functions are defined:
 // HelpRegexp says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRegexp() {
 	rs.helpOutputMisc(`
-The regular expressions used in event selections and various commands
-(attribution, branchmap, expunge, filter, msgout, path) are those of
-the Go language, with one exception. Due to a conflict with the use
-of $ for arguments in the "script" command, we retain Python's use of
+The pattern expressions used in event selections and various commands
+(attribution, expunge, filter, msgout, path) are those of the Go 
+language, with one exception. Due to a conflict with the use of $
+for arguments in the "script" command, we retain Python's use of
 backslashes as a leader for references to group matches.
 
-Command syntax examples are usually given as /REGEXP/, but any punctuation
-character other than double quote will work as a delimiter in place of
-the /; this makes it easier to use an actual / in patterns.  Matched
-double quote delimiters mean the literal should be interpreeted as plain
-text, suppressing interpretation of regexp special characters and requiring
-an abchored, entire match.
+Normally patterns intnded to be interpreted as regular ex[ressions are 
+wreapped in slashes (e.g. /foobar/ matches any text containing the string
+"foobar"), but any punctuation character other than single quote will work
+as a delimiter in place of the /; this makes it easier to use an actual /
+in patterns.  Matched single quote delimiters mean the literal should be
+interpreted as plain text, suppressing interpretation of regexp special
+characters and requiring an anchored, entire match.
 
-Delimited regular expressions following the command verb may not
-contain literal whitespace; use \s or \t if you need to. Event-selection
+Pattern expressions following the command verb may not contain literal
+whitespace; use \s or \t if you need to. Event-selection
 regexps may contain literal whitespace.
 
 Regular expressions are not anchored.  Use ^ and $ to anchor them
