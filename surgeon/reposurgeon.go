@@ -399,6 +399,28 @@ func (lp *LineParse) respond(msg string, args ...interface{}) {
 	control.baton.printLogString(content + control.lineSep)
 }
 
+func delimitedRegexp(in string) (out string, re bool) {
+	leader := in[0]
+	delimited := in[0] == in[len(in)-1] && unicode.IsPunct(rune(in[0]))
+	if delimited {
+		in = in[1 : len(in)-1]
+	}
+	isRe := delimited && leader != 39 // ASCII single quote
+	return in, isRe
+}
+
+func getPattern(sourcepattern string) *regexp.Regexp {
+	sourcepattern, isRe := delimitedRegexp(sourcepattern)
+	if !isRe {
+		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
+	}
+	sourceRE, err := regexp.Compile(sourcepattern)
+	if err != nil {
+		panic(throw("command", err.Error()+"in command pattern argument"))
+	}
+	return sourceRE
+}
+
 // Reposurgeon tells Kommandant what our local commands are
 type Reposurgeon struct {
 	cmd          *kommandant.Kmdt
@@ -2499,18 +2521,7 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 	var filterRegexp *regexp.Regexp
 	s, present := parse.OptVal("--filter")
 	if present {
-		payload, ok := delimitedRegexp(s)
-		if ok {
-			var err error
-			filterRegexp, err = regexp.Compile(payload)
-			if err != nil {
-				croak("malformed filter option %q in msgout\n", payload)
-				return false
-			}
-		} else {
-			croak("malformed filter option %q in msgout\n", s)
-			return false
-		}
+		filterRegexp = getPattern(s)
 	}
 	f := func(p *LineParse, i int, e Event) string {
 		// this is pretty stupid; pretend you didn't see it
@@ -3757,16 +3768,6 @@ not entirely deleted, false on all other events.
 `)
 }
 
-func delimitedRegexp(in string) (out string, re bool) {
-	leader := in[0]
-	delimited := in[0] == in[len(in)-1] && unicode.IsPunct(rune(in[0]))
-	if delimited {
-		in = in[1 : len(in)-1]
-	}
-	isRe := delimited && leader != 39 // ASCII single quote
-	return in, isRe
-}
-
 // DoExpunge expunges files from the chosen repository.
 func (rs *Reposurgeon) DoExpunge(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, nil)
@@ -3776,16 +3777,10 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 		croak("required argument is missing.")
 		return false
 	}
-	pattern, isRe := delimitedRegexp(fields[0])
-	if !isRe {
-		pattern = "^" + regexp.QuoteMeta(pattern) + "$"
-	}
 	// FIXME: expunge with --not and --notagify needs tests
-	expunge, err := regexp.Compile(pattern)
-	if err == nil {
-		err = rs.chosen().expunge(rs.selection, expunge,
-			!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
-	}
+	expunge := getPattern(fields[0])
+	err := rs.chosen().expunge(rs.selection, expunge,
+		!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
 	if err != nil {
 		respond(err.Error())
 	}
@@ -4152,17 +4147,7 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		croak("wrong number of fields in path rename command")
 		return false
 	}
-	var sourcePattern string
-	sourcePattern, isRe := delimitedRegexp(fields[0])
-	if !isRe {
-		sourcePattern = "^" + regexp.QuoteMeta(sourcePattern) + "$"
-	}
-	sourceRE, err1 := regexp.Compile(sourcePattern)
-	if err1 != nil {
-		croak("path rename regexp compilation failed: %v", err1)
-		return false
-	}
-	var verb string
+	sourceRE := getPattern(fields[0])
 	if fields[1] == "rename" {
 		force := parse.options.Contains("--force")
 		targetPattern := fields[2]
@@ -4172,7 +4157,7 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		}
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
 	} else {
-		croak("unknown verb '%s' in path command.", verb)
+		croak("unknown verb '%s' in path command.", fields[1])
 	}
 	return false
 }
@@ -4223,17 +4208,7 @@ func (rs *Reposurgeon) DoManifest(line string) bool {
 	var filterFunc = func(s string) bool { return true }
 	line = strings.TrimSpace(parse.line)
 	if line != "" {
-		pattern, isRe := delimitedRegexp(line)
-		if !isRe {
-			pattern = "^" + regexp.QuoteMeta(pattern) + "$"
-		}
-		filterRE, err := regexp.Compile(pattern)
-		if err != nil {
-			if logEnable(logWARN) {
-				logit("invalid regular expression: %v", err)
-			}
-			return false
-		}
+		filterRE := getPattern(line)
 		filterFunc = func(s string) bool {
 			return filterRE.MatchString(s)
 		}
@@ -4687,16 +4662,8 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return false
 		}
 		newname = removeBranchPrefix(newname)
-		sourcepattern, isRe := delimitedRegexp(sourcepattern)
 		sourcepattern = removeBranchPrefix(sourcepattern)
-		if !isRe {
-			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
-		}
-		sourceRE, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak(err.Error())
-			return false
-		}
+		sourceRE := getPattern(sourcepattern)
 		for _, branch := range repo.branchset() {
 			branch := removeBranchPrefix(branch)
 			if !sourceRE.MatchString(branch) {
