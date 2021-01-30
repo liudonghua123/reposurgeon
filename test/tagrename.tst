@@ -1,4 +1,4 @@
 ## Tag renaming test
 read <sample1.fi
-tag annotated rename foobar
+tag rename annotated foobar
 write -

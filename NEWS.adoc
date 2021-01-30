@@ -10,7 +10,8 @@ Repository head::
      The syntax of the expunge command has been simplified.
      The "paths [sub|sup]" command have been replaced by "path rename".
      The =Q set now provides a way to inspect recently modified events.
-     The "edit" and "reverences edit" commands gave been retired.
+     The "edit" and "references edit" commands gave been retired.
+     Subcommand moves to before first argument in branch/path/tag/reset commands.
 
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).

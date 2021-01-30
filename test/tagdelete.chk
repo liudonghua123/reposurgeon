@@ -1,5 +1,5 @@
 read <snarl.svn
-branch /INITIAL_IMPORT/ delete
+branch delete /INITIAL_IMPORT/
 write -
 #reposurgeon sourcetype svn
 blob

@@ -1,4 +1,4 @@
 ## Lightweight tag renaming test
 read <lighttag.fi
-branch tags/first-tag rename tags/foobar
+branch rename tags/first-tag tags/foobar
 write -

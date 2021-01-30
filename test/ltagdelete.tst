@@ -1,4 +1,4 @@
 ## Test for correct side effects of lightweight tag deletion.
 read <lighttag.fi
-branch tags/first-tag delete
+branch delete tags/first-tag
 write -

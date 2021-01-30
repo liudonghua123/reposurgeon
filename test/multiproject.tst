@@ -2,8 +2,8 @@
 set testmode
 read <multigen.svn \
     --branchify=project1/trunk:project1/branches/*:project1/tags:*
-branch heads/project1/trunk rename heads/master
-branch :heads/project1/branches/(.*): rename heads/\1
-branch heads/project2 delete
+branch rename heads/project1/trunk heads/master
+branch rename :heads/project1/branches/(.*): heads/\1
+branch delete heads/project2
 prefer git
 write -

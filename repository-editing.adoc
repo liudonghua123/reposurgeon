@@ -3353,6 +3353,10 @@ incompatibly different; it did not require a "heads/" or "tags/"
 prefix on its operand and, because of that, could only operate on
 heads/ branches and not lightweight tags.
 
+In versions 4.23 and earlier, several commands tha now had the form
+"object verb selection" had the form "object selection verb".  This
+includes branch, tag, reset, and path.
+
 In versions 4.23 and earlier, the syntax of the expunge command
 was different; it use  "~" instad of "--not" and took multiple
 patterns.

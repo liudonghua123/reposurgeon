@@ -1,5 +1,5 @@
 ## Test of tag deletion by regexp
 set echo
 read <snarl.svn
-branch /INITIAL_IMPORT/ delete
+branch delete /INITIAL_IMPORT/
 write -

@@ -1,4 +1,4 @@
 ## Test the branch delete command with a regexp argument
 read <deleteall.fi
-branch /branch2/ delete
+branch delete /branch2/
 write -

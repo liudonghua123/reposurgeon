@@ -3,21 +3,21 @@ set echo
 set relax
 read <be-bookmarks.fi
 =R index
-reset D move :6
-reset A delete
-reset B rename Z
-27 reset default move :10
+reset move D :6
+reset delete A
+reset rename B Z
+27 reset move default :10
 =R index
 
 # error: unknown reset name
-reset X delete
+reset delete X
 # error: move multiple resets
-reset default move :15
+reset move default :15
 # error: non-singleton target
-reset D move :6,:10,:15
+reset move D :6,:10,:15
 # error: empty new name
-reset C rename
+reset rename C 
 # error: reference collision
-reset C rename D
+reset rename C D
 # error: bogus verb
-reset C fizzle
+reset fizzle C 

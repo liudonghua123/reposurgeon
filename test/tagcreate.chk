@@ -1,4 +1,4 @@
-tag newtag create :15
+tag create newtag :15
 write -
 blob
 mark :1

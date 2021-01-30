@@ -3081,8 +3081,6 @@ outside the selection range, depending on policy flags.
 The default selection set for this command is empty.  Blobs cannot be
 directly affected by this command; they move or are deleted only when
 removal of fileops associated with commits requires this.
-
-Clears all Q bits.
 `)
 }
 
@@ -3739,7 +3737,7 @@ func (rs *Reposurgeon) HelpExpunge() {
 [SELECTION] expunge [--not|--notagify] {PATH-PATTERN}
 
 Expunge files from the selected portion of the repo history; the
-default is the entire history.  The arguments to this command is a
+default is the entire history.  The argument to this command is a
 pattern expressions matching paths.
 
 The option --not inverts this; all file paths other than those
@@ -4092,7 +4090,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 // FIXME: Odd syntax.
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
-path {PATTERN} rename [--force] {TARGET}
+path rename {PATTERN} [--force] {TARGET}
 
 Rename a path in every fileop of every selected commit.  The default
 selection set is all commits. The first argument is interpreted as a
@@ -4108,7 +4106,7 @@ Example:
 
 ----
 # move all content into docs/ subdir
-path /.+/ rename docs/\0
+path rename /.+/ docs/\0
 ----
 
 This command sets commit Q bits; true if the commit was modified.
@@ -4137,7 +4135,6 @@ func (pa pathAction) String() string {
 }
 
 // DoPath renames paths in the history.
-// FIXME: Odd syntax
 func (rs *Reposurgeon) DoPath(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, nil)
 	defer parse.Closem()
@@ -4147,8 +4144,8 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		croak("wrong number of fields in path rename command")
 		return false
 	}
-	sourceRE := getPattern(fields[0])
-	if fields[1] == "rename" {
+	if fields[0] == "rename" {
+		sourceRE := getPattern(fields[1])
 		force := parse.options.Contains("--force")
 		targetPattern := fields[2]
 		if targetPattern == "" {
@@ -4611,7 +4608,7 @@ func (rs *Reposurgeon) DoReorder(line string) bool {
 // HelpBranch says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
-branch {BRANCH-PATTERN} {rename|delete} [NEW-NAME]
+branch {rename|delete} {BRANCH-PATTERN} [NEW-NAME]
 
 Rename or delete all branches matching the pattern expression BRANCH-PATTERN
 (also any associated annotated tags and resets). For purpoes of this command
@@ -4646,15 +4643,16 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		return branch
 	}
 
-	sourcepattern, line := popToken(line)
-	var err error
-	if err != nil {
-		croak("while selecting branch: %v", err)
-		return false
-	}
 	var verb string
 	verb, line = popToken(line)
 	if verb == "rename" {
+		sourcepattern, line := popToken(line)
+		var err error
+		if err != nil {
+			croak("while selecting branch: %v", err)
+			return false
+		}
+
 		var newname string
 		newname, line = popToken(line)
 		if newname == "" {
@@ -4693,6 +4691,13 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			}
 		}
 	} else if verb == "delete" {
+		sourcepattern, _ := popToken(line)
+		var err error
+		if err != nil {
+			croak("while selecting branch: %v", err)
+			return false
+		}
+
 		var shouldDelete func(string) bool
 		sourcepattern, isRe := delimitedRegexp(sourcepattern)
 		if !isRe {
@@ -4719,11 +4724,11 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 // HelpTag says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
-[SELECTION] tag {NAME|TAG-PATTERN} {create|move|rename|delete} [NEW-NAME]
+[SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [NEW-NAME]
 
 Create, move, rename, or delete annotated taga.
 
-Creation is a special case.  First argument is a name, which must not
+Creation is a special case.  First argument is NEW-NAME, which must not
 be an existing tag. Takes a singleton event second argument which must
 point to a commit.  A tag event pointing to the commit is created and
 inserted just after the last tag in the repo (or just after the last
@@ -4732,16 +4737,16 @@ fields are copied from the commit's committer, mark, and comment
 fields.
 
 Otherwise, the TAG-PATTERN argument is a pattern expression matching
-a set of tags.  The second argument must be one of the verbs 'move',
+a set of tags.  The subcommand must be one of the verbs 'move',
 'rename', or 'delete'.
 
-For a 'move', a third argument must be a singleton selection set. For
+For a 'move', a second argument must be a singleton selection set. For
 a 'rename', the third argument may be any token that is a syntactically
 valid tag name (but not the name of an existing tag).  When TAG-PATTERN
 is a regexp, NEW-NAME may contain references to portions of the match.
 Errors are thrown for wildcarding that would produce name collisions
 
-For a 'delete', no third argument is required.  Annotated tags with names
+For a 'delete', no second argument is required.  Annotated tags with names
 matching the pattern are deleted.  Giving a regular expression rather than
 a plain string is useful for mass deletion of junk tags such as those derived
 from CVS branch-root tags. Such deletions can be restricted by a selection
@@ -4751,29 +4756,20 @@ set in the normal way.
 
 // DoTag moves a tag to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoTag(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	rs.newLineParse(line, parseALLREPO, nil)
 	repo := rs.chosen()
-	selection := rs.selection
-	if rs.selection == nil {
-		selection = repo.all()
-	}
-
-	var tagname string
-	tagname, line = popToken(line)
-	if len(tagname) == 0 {
-		croak("missing tag name")
-		return false
-	}
-	sourcepattern, isRe := delimitedRegexp(tagname)
-	var err error
 	var verb string
 	verb, line = popToken(line)
+	if verb == "" {
+		croak("tag command requires a verb.")
+		return false
+	}
+
 	if verb == "create" {
-		if isRe {
-			croak("tag create cannot operate on a rgexp")
+		var tagname string
+		tagname, line = popToken(line)
+		if len(tagname) == 0 {
+			croak("missing tag name")
 			return false
 		}
 		var ok bool
@@ -4815,6 +4811,12 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		return false
 	}
 
+	sourcepattern, line := popToken(line)
+	if len(sourcepattern) == 0 {
+		croak("missing tag pattern")
+		return false
+	}
+	sourcepattern, isRe := delimitedRegexp(sourcepattern)
 	if !isRe {
 		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
 	}
@@ -4826,7 +4828,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 
 	// Collect all matching tags in the selection set
 	tags := make([]*Tag, 0)
-	for _, idx := range selection {
+	for _, idx := range rs.selection {
 		event := repo.events[idx]
 		if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) {
 			tags = append(tags, tag)
@@ -4892,18 +4894,18 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 // HelpReset says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReset() {
 	rs.helpOutput(`
-[SELECTION] reset {RESET-NAME} {create|move|rename|delete} [NEW-NAME]
+[SELECTION] reset {create|move|rename|delete} {RESET-NAME} [NEW-NAME|SINGLETON]
 
 Create, move, rename, or delete a reset. Create is a special case; it
 requires a singleton selection which is the associated commit for the
 reset, takes as a first argument the name of the reset (which must not
 exist), and ends with the keyword create.
 
-In the other modes, the first argument must match an existing reset
+In the other modes, the RESET-NAME argument must match an existing reset
 name with the selection; second argument must be one of the verbs
 'move', 'rename', or 'delete'. The default selection is all events.
 
-For a 'move', a third argument must be a singleton selection set. For
+For a 'move', a SINGLETON argument must be a singleton selection set. For
 a 'rename', the third argument may be any token that can be interpreted
 as a valid reset name (but not the name of an existing
 reset). For a 'delete', no third argument is required.
@@ -4926,11 +4928,16 @@ moved, no branch fields are changed.
 
 // DoReset moves a reset to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoReset(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
+	rs.newLineParse(line, parseREPO, nil)
+	repo := rs.chosen()
+
+	var verb string
+	verb, line = popToken(line)
+	if verb == "" {
+		croak("reset command requires a verb.")
 		return false
 	}
-	repo := rs.chosen()
+
 	var resetname string
 	var err error
 	resetname, line = popToken(line)
@@ -4945,6 +4952,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	if !strings.HasPrefix(resetname, "refs/") {
 		resetname = "refs/" + resetname
 	}
+
 	resets := make([]*Reset, 0)
 	selection := rs.selection
 	if selection == nil {
@@ -4956,8 +4964,6 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			resets = append(resets, reset)
 		}
 	}
-	var verb string
-	verb, line = popToken(line)
 	if verb == "create" {
 		var target *Commit
 		var ok bool

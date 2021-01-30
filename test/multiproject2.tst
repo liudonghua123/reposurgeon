@@ -126,5 +126,5 @@ Revision is 1, file path is App_C/trunk/foo_C.txt.
 branch App_A delete
 branch App_B delete
 EOF
-branch heads/App_C/trunk rename heads/trunk
+branch rename heads/App_C/trunk heads/trunk
 write -
