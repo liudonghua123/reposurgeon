@@ -1,4 +1,4 @@
-## Test filter --dedos
+## Test filter dedos
 read <<EOF
 blob
 mark :1
@@ -27,6 +27,6 @@ M 100644 :3 README
 
 EOF
 set interactive
-1..$ filter --dedos
+1..$ filter dedos
 clear interactive
 write -

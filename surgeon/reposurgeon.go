@@ -721,7 +721,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 //
 // If a command has a pattern-expression argument, it has exactly one
 // and it is the first (it may be optional).  There is a half-exception to
-// this rule: filter, with a first argument that may be either a bareword
+// this rule: filter, with a first argument that may be either a string
 // or a pattern expression
 //
 // All optional arguments and keywords follow any required arguments
@@ -2608,16 +2608,15 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 }
 
 // HelpFilter says "Shut up, golint!"
-//FIXME: Move dedos to transcode?
 func (rs *Reposurgeon) HelpFilter() {
 	rs.helpOutput(`
-[SELECTION] filter [--dedos|--shell|--regexp|--replace] [TEXT-OR-REGEXP]
+[SELECTION] filter {dedos|shell|regexp|replace} [TEXT-OR-REGEXP]
 
 Run blobs, commit comments and committer/author names, or tag comments
 and tag committer names in the selection set through the filter
 specified on the command line.
 
-With any mode other than --dedos, attempting to specify a selection
+With any verb other than dedos, attempting to specify a selection
 set including both blobs and non-blobs (that is, commits or tags)
 throws an error. Inline content in commits is filtered when the
 selection set contains (only) blobs and the commit is within the range
@@ -2627,12 +2626,12 @@ When filtering blobs, if the command line contains the magic cookie
 '%PATHS%' it is replaced with a space-separated list of all paths
 that reference the blob.
 
-With --shell, the remainder of the line specifies a filter as a
+With the verb shell, the remainder of the line specifies a filter as a
 shell command. Each blob or comment is presented to the filter on
 standard input; the content is replaced with whatever the filter emits
 to standard output.
 
-With --regex, the remainder of the line is expected to be a Go regular
+With the verb regex, the remainder of the line is expected to be a Go regular
 expression substitution written as /from/to/ with Go-style backslash
 escapes interpreted in 'to' as well as 'from'.  Python-style
 backreferences (\1, \2 etc.) rather than Go-style $1, $2...  are
@@ -2646,10 +2645,10 @@ substitution scope - 'c' for comment text only, 'C' for committer name
 only, 'a' for author names only. See "help regexp" for more information
 about regular expressions.
 
-With --replace, the behavior is like --regexp but the expressions are
+With the verb replace, the behavior is like regexp but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
 
-With --dedos, DOS/Windows-style \r\n line terminators are replaced with \n.
+With the verb dedos, DOS/Windows-style \r\n line terminators are replaced with \n.
 
 All variants of this command set Q bits; events actually modified by
 thw command get true, all other events get false
@@ -2691,10 +2690,10 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 	// Must not use LineParse here as it would try to strip options
 	// in shell commands.
 	flagRe := regexp.MustCompile(`[0-9]*g?`)
-	if strings.HasPrefix(filtercmd, "--shell") {
-		fc.filtercmd = strings.TrimSpace(filtercmd[7:])
+	if strings.HasPrefix(filtercmd, "shell") {
+		fc.filtercmd = strings.TrimSpace(filtercmd[5:])
 		fc.attributes = newOrderedStringSet("c", "a", "C")
-	} else if strings.HasPrefix(filtercmd, "--regex") || strings.HasPrefix(filtercmd, "--replace") {
+	} else if strings.HasPrefix(filtercmd, "regex") || strings.HasPrefix(filtercmd, "replace") {
 		firstspace := strings.Index(filtercmd, " ")
 		if firstspace == -1 {
 			croak("missing filter specification")
@@ -2729,7 +2728,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 			if len(fc.attributes) == 0 {
 				fc.attributes = newOrderedStringSet("c", "a", "C")
 			}
-			if strings.HasPrefix(filtercmd, "--regex") {
+			if strings.HasPrefix(filtercmd, "regex") {
 				pattern := parts[1]
 				var err error
 				fc.regexp, err = regexp.Compile(pattern)
@@ -2751,13 +2750,16 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 					}
 					return fc.regexp.ReplaceAllStringFunc(s, replacer)
 				}
-			} else if strings.HasPrefix(filtercmd, "--replace") {
+			} else if strings.HasPrefix(filtercmd, "replace") {
 				fc.sub = func(s string) string {
 					return strings.Replace(s, parts[1], parts[2], subcount)
 				}
+			} else {
+				croak("unexpected verb in filter command")
+				return nil
 			}
 		}
-	} else if strings.HasPrefix(filtercmd, "--dedos") {
+	} else if strings.HasPrefix(filtercmd, "dedos") {
 		if len(fc.attributes) == 0 {
 			fc.attributes = newOrderedStringSet("c", "a", "C")
 		}
@@ -2766,7 +2768,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 			return out
 		}
 	} else {
-		croak("--shell or --regex or --dedos required")
+		croak("missing required command verb")
 		return nil
 	}
 	return fc
@@ -2799,7 +2801,6 @@ func (fc *filterCommand) do(content string, substitutions map[string]string) str
 }
 
 // DoFilter is the handler for the "filter" command.
-// FIXME: Odd syntax
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
 	rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	if line == "" {
@@ -2813,7 +2814,7 @@ func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
 			rs.selection,
 			filterhook.do,
 			filterhook.attributes,
-			!strings.HasPrefix(line, "--dedos"),
+			!strings.HasPrefix(line, "dedos"),
 			rs.inScript(), control.baton)
 	}
 	return false
@@ -3786,7 +3787,7 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 }
 
 // HelpSplit says "Shut up, golint!"
-//FIXME: Odd syntax
+// FIXME: Odd syntax
 func (rs *Reposurgeon) HelpSplit() {
 	rs.helpOutput(`
 [SELECTION] split [ at {M} | by {PREFIX} ]
@@ -4087,7 +4088,6 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 }
 
 // HelpPath says "Shut up, golint!"
-// FIXME: Odd syntax.
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
 path rename {PATTERN} [--force] {TARGET}
@@ -4645,6 +4645,11 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 
 	var verb string
 	verb, line = popToken(line)
+	if verb == "" {
+		croak("branch command requires a verb.")
+		return false
+	}
+
 	if verb == "rename" {
 		sourcepattern, line := popToken(line)
 		var err error
@@ -5301,7 +5306,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 }
 
 // HelpAttribution says "Shut up, golint!"
-//FIXME: Odd syntax
+// FIXME: Odd syntax
 func (rs *Reposurgeon) HelpAttribution() {
 	rs.helpOutput(`
 [SELECTION] attribution {SUBCOMMAND}
@@ -5599,7 +5604,6 @@ func (rs *Reposurgeon) DoLegacy(line string) bool {
 }
 
 // HelpReferences says "Shut up, golint!"
-// FIXME: Odd syntax
 func (rs *Reposurgeon) HelpReferences() {
 	rs.helpOutput(`
 [SELECTION] references [list|lift]

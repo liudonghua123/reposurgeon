@@ -2040,7 +2040,7 @@ func TestWalkManifests(t *testing.T) {
 
 func TestFilterRegex(t *testing.T) {
 
-	// test 'filter --regex /orig/replace/[flags]'
+	// test 'filter regex /orig/replace/[flags]'
 
 	// Repo repeats string 'o123' twice in each occurrence of
 	// filename, blob, tagger, tag-name, tag-comment, author,
@@ -2223,7 +2223,7 @@ TAG o123-o123
 			rs.setSelectionSet(test.ss)
 
 			// all tests have valid --regex lines, not checking nil
-			fhook := newFilterCommand(repo, fmt.Sprint("--regex ", test.regex))
+			fhook := newFilterCommand(repo, fmt.Sprint("regex ", test.regex))
 
 			rs.chosen().dataTraverse("", rs.selection, fhook.do, fhook.attributes, test.safety, true, control.baton)
 
