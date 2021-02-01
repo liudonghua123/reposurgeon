@@ -2841,7 +2841,7 @@ must use context to identify which particular encodings were used in
 particular event spans and compose appropriate transcode commands
 to fix them up.
 
-This command sets Q bits; onjects actually modified by thw command
+This command sets Q bits; objects actually modified by thw command
 get true, all other events get false.
 `)
 }
@@ -4103,7 +4103,7 @@ path rename /.+/ docs/\0
 
 This command sets commit Q bits; true if the commit was modified.
 
-The path command has no other verbs as yet. More might be added in the future 
+The path command has no other verbs as yet. More might be added in the future.
 `)
 }
 
