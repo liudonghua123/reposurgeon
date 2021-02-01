@@ -1347,15 +1347,19 @@ func (attr *Attribution) who() string {
 }
 
 // Remap changes the attribution fullname/email according to a map of author entries.
-func (attr *Attribution) remap(authors map[string]Contributor) {
+func (attr *Attribution) remap(authors map[string]Contributor) bool {
 	matches := func(attr *Attribution, local string, ae Contributor) bool {
 		nlower := strings.ToLower(attr.fullname)
 		elower := strings.ToLower(attr.email)
 		return strings.HasPrefix(elower, local+"@") || elower == local || (attr.email == "" && nlower == local)
 	}
 
+	changed := false
 	for local, ae := range authors {
 		if matches(attr, local, ae) {
+			if attr.fullname != ae.fullname || attr.email != ae.email {
+				changed = true
+			}
 			attr.fullname = ae.fullname
 			attr.email = ae.email
 			if ae.timezone != "" {
@@ -1364,6 +1368,7 @@ func (attr *Attribution) remap(authors map[string]Contributor) {
 			break
 		}
 	}
+	return changed
 }
 
 /*
@@ -5527,13 +5532,16 @@ func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) err
 		}
 	}
 
+	repo.clrDelFlags()
 	repo.walkEvents(selection, func(idx int, event Event) {
 		switch event.(type) {
 		case *Commit:
 			c := event.(*Commit)
 			c.committer.remap(repo.authormap)
 			for ai := range c.authors {
-				c.authors[ai].remap(repo.authormap)
+				if c.authors[ai].remap(repo.authormap) {
+					c.setDelFlag(true)
+				}
 			}
 		case *Tag:
 			event.(*Tag).tagger.remap(repo.authormap)

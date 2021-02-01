@@ -5526,10 +5526,10 @@ if the local ID is the entire address, this is also considered a match
 specified in the map entry, that person's author and committer dates
 are mapped to it.
 
-With the 'read' modifier, or no modifier, apply author mapping data
-(from standard input or a <-redirected input file).  May be useful if
-you are editing a repo or dump created by cvs2git or by
-cvs-fast-export or git-svn invoked without -A.
+With the 'read' modifier, apply author mapping data (from standard input
+or a <-redirected input file).  Q bits are set: true on each commit event 
+with  attributions actually modified by the mapping, false on all other
+events.
 
 With the 'write' modifier, write a mapping file that could be
 interpreted by 'authors read', with entries for each unique committer,
@@ -5743,7 +5743,7 @@ won't be touched.
 
 Takes a selection set, defaulting to all commits and tags.
 
-Sets Q bits: true for each commit and tag with a commemt modified by this
+Sets Q bits: true for each commit and tag with a comment modified by this
 command, false on all other events.
 `)
 }
