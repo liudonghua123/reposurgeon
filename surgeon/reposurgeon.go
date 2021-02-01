@@ -1302,10 +1302,9 @@ func (rs *Reposurgeon) DoBench(line string) bool {
 // HelpStats says "Shut up, golint!"
 func (rs *Reposurgeon) HelpStats() {
 	rs.helpOutput(`
-sizes [>OUTFILE]
+stats {REPO-NAME...} [>OUTFILE]
 
-Report size statistics and import/export method information of the
-currently chosen repository.
+Report object counts for the nmed repositories.
 `)
 }
 
