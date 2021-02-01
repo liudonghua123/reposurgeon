@@ -1924,9 +1924,9 @@ repos loaded from standard input are 'unnamed'. The program will add
 a disambiguating suffix if there have been multiple reads from the
 same source.
 
-With no argument, lists the names of the currently stored repositories
-and their load times.  The second column is '*' for the currently selected
-repository, '-' for others.
+With no argument, lists the names of the currently stored repositories.  
+The second column is '*' for the currently selected repository, '-'
+for others.
 
 With an argument, the command tab-completes on the above list.
 `)
@@ -2455,12 +2455,12 @@ which to do the rebuild; if the repository read was from a repo
 directory (and not a git-import stream), it defaults to that
 directory.  If the target directory is nonempty its contents are
 backed up to a save directory.  Files and directories on the
-repository's _preserve list_ are copied back from the backup directory
+repository's preservation list are copied back from the backup directory
 after repo rebuild. The default preserve list depends on the
 repository type, and can be displayed with the "stats" command.
 
 If reposurgeon has a nonempty legacy map, it will be written to a file
-named _legacy-map_ in the repository subdirectory as though by a
+named "legacy-map" in the repository subdirectory as though by a
 "legacy write" command. (This will normally be the case for
 Subversion and CVS conversions.)
 `)

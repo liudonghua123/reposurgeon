@@ -760,7 +760,7 @@ on how fix up Subversion and CVS changeset references in comments so
 they're still meaningful.
 
 The command `=L <<msgout_cmd>>` is good for extacting commits with
-multi-line comments in a form that cann be deited and merged nacl in
+multi-line comments in a form that cann be deited and merged back in
 with the msgin command.
 
 The reposurgeon command `<<inspect_cmd>> =H` will show you tip commits
@@ -774,7 +774,7 @@ to spot when one has been attached to the wrong commit, something that
 can be manually fixed by editing its "from" field.
 
 The command `=I` will select all commits that don't decode to UTF-8 in
-both the commit comment and attribution parts.  You eyeball those to
+both the commit comment and attribution parts.  You can eyeball those to
 figure out what the encoding is and apply the `<<transcode_cmd>>`
 command to fix things.
 
@@ -1542,8 +1542,9 @@ rules.
   expressions. In this context, they still require start and end
   delimiters as they do when used in a selection prefix, but if you
   need to have a / in the expression the delimiters can be any
-  printable character.  As a reminder, these are described in the
-  embedded help as "delimited" regular expressions.
+  punctuation character other than an ASCII single quote.  As a
+  reminder, these are described in the embedded help as pattern
+  expressions.
 
 * Also note that following-argument regular expressions may not contain
   whitespace; if you need to specify whitespace or a non-printable
@@ -1936,6 +1937,7 @@ original parent links are removed.  Examples:
 # is commit 15, second parent is 17, and third parent is 22
 22,33,15,17 reparent
 -----
++
 The option `--use-order` says to use the selection order to determine
 which selected commit is the commit to modify and which are the
 parents (and if there are multiple parents, their order).  The last
