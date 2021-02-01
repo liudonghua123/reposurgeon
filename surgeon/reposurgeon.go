@@ -1302,46 +1302,39 @@ func (rs *Reposurgeon) DoBench(line string) bool {
 // HelpStats says "Shut up, golint!"
 func (rs *Reposurgeon) HelpStats() {
 	rs.helpOutput(`
-stats {REPO-NAME...} [>OUTFILE]
+stats [>OUTFILE]
 
-Report object counts for the nmed repositories.
+Report object counts for the loaded repository.
 `)
 }
 
 // DoStats reports information on repositories.
 func (rs *Reposurgeon) DoStats(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	for _, name := range parse.Tokens() {
-		repo := rs.repoByName(name)
-		if repo == nil {
-			croak("no such repo as %s", name)
-			return false
+	repo := rs.chosen()
+	var blobs, commits, tags, resets, passthroughs int
+	for _, i := range rs.selection {
+		event := repo.events[i]
+		switch event.(type) {
+		case *Blob:
+			blobs++
+		case *Tag:
+			tags++
+		case *Reset:
+			resets++
+		case *Passthrough:
+			passthroughs++
+		case *Commit:
+			commits++
 		}
-		var blobs, commits, tags, resets, passthroughs int
-		for _, event := range repo.events {
-			switch event.(type) {
-			case *Blob:
-				blobs++
-			case *Tag:
-				tags++
-			case *Reset:
-				resets++
-			case *Passthrough:
-				passthroughs++
-			case *Commit:
-				commits++
-			}
-		}
-		fmt.Fprintf(parse.stdout, "%s: %.0fK, %d events, %d blobs, %d commits, %d tags, %d resets, %s.\n",
-			repo.name, float64(repo.size())/1000.0, len(repo.events),
-			blobs, commits, tags, resets,
-			rfc3339(repo.readtime))
-		if repo.sourcedir != "" {
-			fmt.Fprintf(parse.stdout, "  Loaded from %s\n", repo.sourcedir)
-		}
-		//if repo.vcs {
-		//    parse.stdout.WriteString(polystr(repo.vcs) + control.lineSep)
+	}
+	fmt.Fprintf(parse.stdout, "%s: %.0fK, %d events, %d blobs, %d commits, %d tags, %d resets, %s.\n",
+		repo.name, float64(repo.size())/1000.0, len(repo.events),
+		blobs, commits, tags, resets,
+		rfc3339(repo.readtime))
+	if repo.sourcedir != "" {
+		fmt.Fprintf(parse.stdout, "  Loaded from %s\n", repo.sourcedir)
 	}
 	return false
 }

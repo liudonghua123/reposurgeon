@@ -3340,6 +3340,9 @@ seems possible.  But just in case, such changes are recorded here.
 Filter syntax now subcommand vers rather than the options of 4.23 and
 earlier.
 
+In versions 4.23 and earlier, the stts command operated on named
+repositories rather tan the currently-selected one.
+
 In versions 4.23 and earlier, it was possible to redirect output from
 msgin to capture a mailbox of changed entries. This feature has been
 removed; msgin now sets =Q bits which can be used to generatew the
