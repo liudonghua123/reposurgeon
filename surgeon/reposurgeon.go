@@ -739,7 +739,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 // keywords), except for those ending with string/bareword lists.
 //
 // All uses of alternation in the BNF are a choice of keywords, except
-// in the "add", "attrbution", and "split" commands.
+// in the "add", "attribution", and "split" commands.
 
 // DoEOF is the handler for end of command input.
 func (rs *Reposurgeon) DoEOF(lineIn string) bool {
@@ -998,7 +998,7 @@ func (rs *Reposurgeon) HelpIndex() {
 [SELECTION] index [>OUTFILE]
 
 Display four columns of info on selected events: their number, their
-type, the associate mark (or '-' if no mark) and a summary field
+type, the associated mark (or '-' if no mark) and a summary field
 varying by type.  For a branch or tag it's the reference; for a commit
 it's the commit branch; for a blob it's the repository path of the
 file in the blob.
