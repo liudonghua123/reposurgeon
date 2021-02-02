@@ -727,7 +727,10 @@ func (commit *Commit) findSuccessors(path string) []string {
 // All optional arguments and keywords follow any required arguments
 // and keywords.  There are two exceptions to this rule, in
 // the "attribution" and "remove" commands; these sometimes have
-// required arguments following optionsls
+// required arguments following optionsls.  Also, "tag" and "reset"
+// have two different sequences not very well expressed in the BNF -
+// the create case requires one string or bareword newname, while move
+// and rename require two arguments.
 //
 // All unbounded lists of arguments are final in their
 // command syntax.
@@ -2546,7 +2549,7 @@ Accept a file of messages in RFC822 format representing the
 contents of the metadata in selected commits and annotated tags. 
 If there is an argument, it will be taken as the name of a message-box
 file to read from; if no argument, or one of '-', reads from standard
-input. Supports < redirection.  Ordinariy takes no selextion set.
+input. Supports < redirection.  Ordinariy takes no selection set.
 
 Users should be aware that modifying an Event-Number or Event-Mark field
 will change which event the update from that message is applied to.  This
@@ -2559,7 +2562,7 @@ updates on the events you intend.
 
 If the --create modifier is present, new tags and commits will be
 appended to the repository.  In this case it is an error for a tag
-name to match any exting tag name. Commit events are created with no
+name to match any existing tag name. Commit events are created with no
 fileops.  If Committer-Date or Tagger-Date fields are not present they
 are filled in with the time at which this command is executed. If
 Committer or Tagger fields are not present, reposurgeon will attempt
@@ -2643,7 +2646,7 @@ not interpreted as regular expressions. (This is slightly faster).
 With the verb dedos, DOS/Windows-style \r\n line terminators are replaced with \n.
 
 All variants of this command set Q bits; events actually modified by
-thw command get true, all other events get false
+the command get true, all other events get false
 `)
 }
 
@@ -3731,7 +3734,7 @@ func (rs *Reposurgeon) HelpExpunge() {
 
 Expunge files from the selected portion of the repo history; the
 default is the entire history.  The argument to this command is a
-pattern expressions matching paths.
+pattern expression matching paths.
 
 The option --not inverts this; all file paths other than those
 selected by the remaining arguments to be expunged.  You may use
@@ -4184,7 +4187,7 @@ defaulting to all commits, and an optional pattern expression. For
 each commit in the selection set, print the mapping of all paths
 in that commit tree to the corresponding blob marks, mirroring what
 files would be created in a checkout of the commit. If a regular
-expression is given, only print "path -> mark" lines forpaths
+expression is given, only print "path -> mark" lines for paths
 matching it. See "help regexp" for more information about regular
 expressions.
 `)
@@ -4603,7 +4606,7 @@ func (rs *Reposurgeon) HelpBranch() {
 branch {rename|delete} {BRANCH-PATTERN} [NEW-NAME]
 
 Rename or delete all branches matching the pattern expression BRANCH-PATTERN
-(also any associated annotated tags and resets). For purpoes of this command
+(also any associated annotated tags and resets). For purposes of this command
 a Git lightweight tag is simply a branch in the tags/ namespace.
 
 Second argument must one of the verbs 'rename' or 'delete'.
@@ -4611,7 +4614,7 @@ Second argument must one of the verbs 'rename' or 'delete'.
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
 begin with "refs/", then "refs/" is prepended; you should supply "heads/"
-or "tags/" yourself.  In it, eferences to match parts in BRANCH-PATTERN will
+or "tags/" yourself.  In it, references to match parts in BRANCH-PATTERN will
 be expanded.
 `)
 }
@@ -4723,7 +4726,7 @@ func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
 [SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [NEW-NAME]
 
-Create, move, rename, or delete annotated taga.
+Create, move, rename, or delete annotated tags.
 
 Creation is a special case.  First argument is NEW-NAME, which must not
 be an existing tag. Takes a singleton event second argument which must
@@ -4891,7 +4894,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 // HelpReset says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReset() {
 	rs.helpOutput(`
-[SELECTION] reset {create|move|rename|delete} {RESET-NAME} [NEW-NAME|SINGLETON]
+[SELECTION] reset {create|move|rename|delete} [RESET-NAME] [NEW-NAME|SINGLETON]
 
 Create, move, rename, or delete a reset. Create is a special case; it
 requires a singleton selection which is the associated commit for the
@@ -6665,13 +6668,13 @@ An optional command argument prefixed by "<" indicates that the command
 accepts input redirection; an optional argument prefixed by ">"
 indicates that the command accepts output redirection. There
 must be whitespace before the "<" or ">" so that the command parser
-won't falsely mnatch uses of these chracters in regular expressions.
+won't falsely match uses of these characters in regular expressions.
 
 Commands that support output redirection can also be followed by a
 pipe bar and a normal Unix command.  For example, "list | more"
 directs the output of a list command to more(1).  Some whitespace
-around te pipe bar is required to distibguish it from uses
-of the same chaacter as the alternation operator in regular
+around the pipe bar is required to distinguish it from uses
+of the same character as the alternation operator in regular
 expressions.
 
 The command line following the first pipe bar, if present, is
@@ -6724,8 +6727,8 @@ language, with one exception. Due to a conflict with the use of $
 for arguments in the "script" command, we retain Python's use of
 backslashes as a leader for references to group matches.
 
-Normally patterns intnded to be interpreted as regular ex[ressions are 
-wreapped in slashes (e.g. /foobar/ matches any text containing the string
+Normally patterns intended to be interpreted as regular ex[ressions are 
+wrapped in slashes (e.g. /foobar/ matches any text containing the string
 "foobar"), but any punctuation character other than single quote will work
 as a delimiter in place of the /; this makes it easier to use an actual /
 in patterns.  Matched single quote delimiters mean the literal should be
@@ -7061,7 +7064,7 @@ func (rs *Reposurgeon) HelpHash() {
 Report Git event hashes.  This command simulates Git hash generation.
 
 Takes a selection set, defaulting to all.  For each eligible event in the set,
-returns its index  and the same hash that Git would generate for its
+returns its index and the same hash that Git would generate for its
 representation of the event. Eligible events are blobs and commits.
 
 With the option --bare, omit the event number; list only the hash.

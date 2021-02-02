@@ -137,7 +137,7 @@ gitify
 tag emptycommit-23 noteworthy
 tag /emptycommit/ delete
 
-# Delete remnant _.cvsignore_ files from a past life as CVS.
+# Delete remnant .cvsignore files from a past life as CVS.
 expunge /.cvsignore$/ 
 
 # Often, your Subversion repository was a CVS repository in a past
@@ -495,8 +495,8 @@ other modern VCSes.
 ==== CVS
 
 Reposurgeon can read CVS repositories.  You must have a copy of the
-repository madter directory, and run reposurgeon pointed at that
-director or one of its submodules; a checkout directory won't do.
+repository master directory, and run reposurgeon pointed at that
+directory or one of its submodules; a checkout directory won't do.
 
 If you are exporting from CVS, it may be a good idea to run some trial
 conversions with cvsconvert, a wrapper script shipped with
@@ -759,8 +759,8 @@ See the documentation of the `<<references_cmd>>` command, for details
 on how fix up Subversion and CVS changeset references in comments so
 they're still meaningful.
 
-The command `=L <<msgout_cmd>>` is good for extacting commits with
-multi-line comments in a form that cann be deited and merged back in
+The command `=L <<msgout_cmd>>` is good for extracting commits with
+multi-line comments in a form that can be deleted and merged back in
 with the msgin command.
 
 The reposurgeon command `<<inspect_cmd>> =H` will show you tip commits
@@ -2954,7 +2954,7 @@ repository happens.
 The following branch renames transform these branches into a
 standard layout.  Tag creations do not need to be mapped separately,
 as the generated gitspace tags are moved when their base branch is.
-Following the rebames, the unneeded project2 branch can be dropped.
+Following the renames, the unneeded project2 branch can be dropped.
 
 Of course we could have done the same thing with project2 and dropped
 project1.  Repeat this as many times as required to turn each partial
@@ -3080,10 +3080,9 @@ repository malformation or a bug in cvs-fast-export (or possibly
 both). Any such situation should be reported as a bug.
 
 Conversion bugs are disproportionately likely to occur on older
-branches or tags made with CVS version before before CVS got commit
-IDs in 2006 (version 2.12). Often the most efficient remedy is simply
-to delete junk branches and tags; reposurgeon(1) makes this easy to
-do.
+branches or tags made with CVS version before CVS got commit IDs in
+2006 (version 2.12). Often the most efficient remedy is simply to
+delete junk branches and tags; reposurgeon(1) makes this easy to do.
 
 [[troubleshooting]]
 == Troubleshooting and bug reports
@@ -3347,7 +3346,7 @@ repositories rather tan the currently-selected one.
 
 In versions 4.23 and earlier, it was possible to redirect output from
 msgin to capture a mailbox of changed entries. This feature has been
-removed; msgin now sets =Q bits which can be used to generatew the
+removed; msgin now sets =Q bits which can be used to generate the
 same report.
 
 In versions 4.23 and earlier, "<<branchify_opt>>" read
@@ -3366,7 +3365,7 @@ In versions 4.23 and earlier, several commands tha now had the form
 includes branch, tag, reset, and path.
 
 In versions 4.23 and earlier, the syntax of the expunge command
-was different; it use  "~" instad of "--not" and took multiple
+was different; it used "~" instead of "--not" and took multiple
 patterns.
 
 The "paths sup" and "paths sub" commands of versions 4.23 and earlier
