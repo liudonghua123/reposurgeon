@@ -3338,7 +3338,10 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
-Filter syntax now subcommand vers rather than the options of 4.23 and
+The blob command now takes an explict mark, rather than creating a new
+blob :1 and renumbering all others as in 4.23 and earlier.
+
+Filter syntax now uses subcommand verbs rather than the options of 4.23 and
 earlier.
 
 In versions 4.23 and earlier, the stts command operated on named

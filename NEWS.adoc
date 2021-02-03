@@ -13,6 +13,7 @@ Repository head::
      The "edit" and "references edit" commands gave been retired.
      Subcommand moves to before first argument in branch/path/tag/reset commands.
      Filter syntax now uses subcommands rather than options.
+     Blob command now takes an explicit mark.
 
 4.23: 2021-01-13::
      Branch rename can take a regexp and do substitutions on the new name(s).

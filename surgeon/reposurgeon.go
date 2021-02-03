@@ -3172,11 +3172,15 @@ func (rs *Reposurgeon) HelpAdd() {
 In a specified commit, add a specified fileop.
 
 For a D operation to be valid there must be an M operation for the path
-in the commit's ancestry.  For an M operation to be valid, the 'perm'
-part must be a token ending with 755 or 644 and the 'mark' must
-refer to a blob that precedes the commit location.  For an R or C
-operation to be valid, there must be an M operation for the source
 in the commit's ancestry.
+
+For an M operation to be valid, PERM must be a token ending with 755
+or 644 and the MARK must refer to a blob that precedes the commit
+location.  If the MARK is nonexistent or names something other than
+a blob, attempting to rebuild a live repository will throw a fatal error.
+
+For an R or C operation to be valid, there must be an M operation
+for the SOURCE path in the commit's ancestry.
 
 Some examples:
 
@@ -3184,12 +3188,14 @@ Some examples:
 # At commit :15, stop .gitignore from being checked out in later revisions 
 :15 add D .gitignore
 
-# At commit :17, add modify or creation of a file named "hello" with
-# its content in blob :9.  Make it check out with 755 (-rwxr-xr-x)
-# permissions rather than the normal 644 (-rw-r--r--). Note, if event 
-# :9 is nonexistent or something other than a blob, attempting to rebuild
-# a live repository will throw a fatal error.
-:17 add M 100755 :9 hello
+# Create a new blob :2317 with specified content. At commit :17, add modify 
+# or creation of a file named "spaulding>" with its content in the new blob.
+# Make it check out with 755 (-rwxr-xr-x) permissions rather than the
+# normal 644 (-rw-r--r--). 
+blob :2317 <<EOF
+Hello, I must be going.
+EOF
+:17 add M 100755 :2317 spaulding
 ---
 `)
 }
@@ -3233,7 +3239,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			croak("garbled mark %s in add command", mark)
 			return false
 		}
-		markval, err1 := strconv.Atoi(mark[1:])
+		_, err1 := strconv.Atoi(mark[1:])
 		if err1 != nil {
 			croak("non-numeric mark %s in add command", mark)
 			return false
@@ -3242,7 +3248,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 		if !ok {
 			croak("mark %s in add command does not refer to a blob", mark)
 			return false
-		} else if markval >= rs.selection.Min() {
+		} else if repo.eventToIndex(blob) >= rs.selection.Min() {
 			croak("mark %s in add command is after add location", mark)
 			return false
 		}
@@ -3293,22 +3299,52 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 // HelpBlob says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBlob() {
 	rs.helpOutput(`
-blob
+blob [MARK-NUMBER] {<INFILE|>OUTFILE] 
 
-Create a blob at mark :1 after renumbering other marks starting from
-:2.  Data is taken from stdin, which may be a here-doc.  This can be
-used with the add command to patch data into a repository.
+Given an argumeent, create a blob with the specified mark name, which must not
+already exist. The new blob is inserted at the front of the repository event
+sequence, after options but before previously-existing blobs. The blob data is
+taken from standard input, which may be a redirect frpm a file or a here-doc.
+
+Without an argument return a legal blob name that is not in use, having
+a numeric part just one greater than the highest-numbered existing blob in 
+the repository.  This output may be redirected, but is intended for interactive
+use when developing a script.
+
+These commands can be used with the add command to patch new data into a repository.
 `)
 }
 
 // DoBlob adds a fileop to a specified commit.
 func (rs *Reposurgeon) DoBlob(line string) bool {
-	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, orderedStringSet{"stdin"})
+	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, orderedStringSet{"stdin", "stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	repo.renumber(2, nil)
+
+	if parse.line == "" {
+		var markmax int
+		for _, event := range repo.events {
+			m := event.getMark()
+			if m == "" {
+				continue
+			}
+			v, err := strconv.Atoi(m[1:len(m)])
+			if err == nil && v > markmax {
+				markmax = v
+			}
+		}
+		fmt.Fprintf(parse.stdout, ":%d\n", markmax+1)
+		return false
+	} else if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(parse.line) {
+		croak("The mark number (%s) must begin with a colon and contain only numerics.", parse.line)
+		return false
+	} else if repo.markToEvent(parse.line) != nil {
+		croak("Cannot bind blob to existing mark.")
+		return false
+	}
+
 	blob := newBlob(repo)
-	blob.setMark(":1")
+	blob.setMark(parse.line)
 	repo.insertEvent(blob, len(repo.frontEvents()), "adding blob")
 	content, err := ioutil.ReadAll(parse.stdin)
 	if err != nil {
