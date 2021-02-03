@@ -1000,8 +1000,8 @@ func (rs *Reposurgeon) HelpIndex() {
 Display four columns of info on selected events: their number, their
 type, the associated mark (or '-' if no mark) and a summary field
 varying by type.  For a branch or tag it's the reference; for a commit
-it's the commit branch; for a blob it's the repository path of the
-file in the blob.
+it's the commit branch; for a blob it's a space-separated list of the 
+repository path of the files with the blob as content.
 `)
 }
 
@@ -3169,7 +3169,7 @@ func (rs *Reposurgeon) HelpAdd() {
 	rs.helpOutput(`
 {SELECTION} add { "D" {PATH} | "M" {PERM} {MARK} {PATH} | "R" {SOURCE} {TARGET} | "C" {SOURCE} {TARGET} }
 
-From a specified commit, add a specified fileop.
+In a specified commit, add a specified fileop.
 
 For a D operation to be valid there must be an M operation for the path
 in the commit's ancestry.  For an M operation to be valid, the 'perm'
@@ -3177,6 +3177,20 @@ part must be a token ending with 755 or 644 and the 'mark' must
 refer to a blob that precedes the commit location.  For an R or C
 operation to be valid, there must be an M operation for the source
 in the commit's ancestry.
+
+Some examples:
+
+---
+# At commit :15, stop .gitignore from being checked out in later revisions 
+:15 add D .gitignore
+
+# At commit :17, add modify or creation of a file named "hello" with
+# its content in blob :9.  Make it check out with 755 (-rwxr-xr-x)
+# permissions rather than the normal 644 (-rw-r--r--). Note, if event 
+# :9 is nonexistent or something other than a blob, attempting to rebuild
+# a live repository will throw a fatal error.
+:17 add M 100755 :9 hello
+---
 `)
 }
 
