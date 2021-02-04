@@ -4740,11 +4740,14 @@ func (rs *Reposurgeon) DoReorder(line string) bool {
 // HelpBranch says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
-branch {rename|delete} {BRANCH-PATTERN} [NEW-NAME]
+branch {rename|delete} {BRANCH-PATTERN} [--not] [NEW-NAME]
 
 Rename or delete all branches matching the pattern expression BRANCH-PATTERN
 (also any associated annotated tags and resets). For purposes of this command
 a Git lightweight tag is simply a branch in the tags/ namespace.
+
+The --not option inversts a selection for deletion, deleting all branches other
+than those matched.
 
 Second argument must one of the verbs 'rename' or 'delete'.
 
@@ -4758,7 +4761,7 @@ be expanded.
 
 // DoBranch renames a branch or deletes it.
 func (rs *Reposurgeon) DoBranch(line string) bool {
-	rs.newLineParse(line, parseNOSELECT, nil)
+	parse := rs.newLineParse(line, parseNOSELECT, nil)
 
 	repo := rs.chosen()
 
@@ -4846,7 +4849,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return false
 		}
 		shouldDelete = func(branch string) bool {
-			return branchRE.MatchString(branch)
+			return branchRE.MatchString(branch) == !parse.options.Contains("--not")
 		}
 		before := len(repo.branchset())
 		repo.deleteBranch(shouldDelete, control.baton)
