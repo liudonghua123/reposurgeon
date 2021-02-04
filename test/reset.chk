@@ -22,7 +22,7 @@ reset rename B Z
 
 # error: unknown reset name
 reset delete X
-reposurgeon: no such reset as refs/heads/X
+reposurgeon: no resets match ^refs/heads/X$
 # error: move multiple resets
 reset move default :15
 reposurgeon: can't move multiple resets

@@ -4864,7 +4864,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 // HelpTag says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
-[SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME]
+[SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME|SINGLETON]
 
 Create, move, rename, or delete annotated tags.
 
@@ -4959,6 +4959,9 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	sourcepattern, isRe := delimitedRegexp(sourcepattern)
 	if !isRe {
 		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
+	} else if verb == "create" {
+		croak("cannot reset create from a regular expression")
+		return false
 	}
 	sourceRE, err := regexp.Compile(sourcepattern)
 	if err != nil {
@@ -5034,29 +5037,30 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 // HelpReset says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReset() {
 	rs.helpOutput(`
-[SELECTION] reset {create|move|rename|delete} [RESET-NAME] [NEW-NAME|SINGLETON]
+[SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
 
-Create, move, rename, or delete a reset. Create is a special case; it
+Create, move, rename, or delete resets. Create is a special case; it
 requires a singleton selection which is the associated commit for the
 reset, takes as a first argument the name of the reset (which must not
-exist), and ends with the keyword create.
+exist), and ends with the keyword create. In this case the name must be 
+fully qualified, with a refs/heads or refs/tags/ prefix.
 
-In the other modes, the RESET-NAME argument must match an existing reset
-name with the selection; second argument must be one of the verbs
-'move', 'rename', or 'delete'. The default selection is all events.
+In the other modes, the RESET-PATTERN finds by text match existing resets 
+within the selection.  If RESET-PATTERN is a delimited regexp, the match is
+to the regexp (--not inverts this, selecting all non-matching resets). 
+
+If RESET-PATTERN is a text literal, each reset's name is matched if RESET-PATTERN
+is either the entire reference (refs/heads/FOO or refs/tags/FOO for some some value
+of FOO) or the basename (e.g. FOO), or a suffix of the form heads/FOO or tags/FOO.
+An unqualified basename is assumed to refer to a branch in refs/heads/.
+
+The second argument must be one of the verbs 'move', 'rename', or 'delete'.
+The default selection is all events.
 
 For a 'move', a SINGLETON argument must be a singleton selection set. For
 a 'rename', the third argument may be any token that can be interpreted
 as a valid reset name (but not the name of an existing
 reset). For a 'delete', no third argument is required.
-
-Reset names may use backslash escapes interpreted by the Go
-string-escape codec, such as \s.
-
-An argument matches a reset's name if it is either the entire
-reference (refs/heads/FOO or refs/tags/FOO for some some value of FOO)
-or the basename (e.g. FOO), or a suffix of the form heads/FOO or tags/FOO.
-An unqualified basename is assumed to refer to a head.
 
 When a reset is renamed, commit branch fields matching the tag are
 renamed with it to match.  When a reset is deleted, matching branch
@@ -5068,7 +5072,7 @@ moved, no branch fields are changed.
 
 // DoReset moves a reset to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoReset(line string) bool {
-	rs.newLineParse(line, parseREPO, nil)
+	parse := rs.newLineParse(line, parseREPO, nil)
 	repo := rs.chosen()
 
 	var verb string
@@ -5078,19 +5082,32 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		return false
 	}
 
-	var resetname string
 	var err error
-	resetname, line = popToken(line)
-	resetname, err = stringEscape(resetname)
-	if err != nil {
-		croak("in reset command: %v", err)
+
+	resetname, line := popToken(line)
+	if len(resetname) == 0 {
+		croak("missing reset pattern")
 		return false
 	}
-	if !strings.Contains(resetname, "/") {
-		resetname = "heads/" + resetname
+	sourcepattern, isRe := delimitedRegexp(resetname)
+	if isRe {
+		if verb == "create" {
+			croak("cannot reset create from a regular expression")
+			return false
+		}
+	} else {
+		if !strings.Contains(sourcepattern, "/") {
+			sourcepattern = "heads/" + sourcepattern
+		}
+		if !strings.HasPrefix(sourcepattern, "refs/") {
+			sourcepattern = "refs/" + sourcepattern
+		}
+		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
 	}
-	if !strings.HasPrefix(resetname, "refs/") {
-		resetname = "refs/" + resetname
+	sourceRE, err := regexp.Compile(sourcepattern)
+	if err != nil {
+		croak(err.Error())
+		return false
 	}
 
 	resets := make([]*Reset, 0)
@@ -5100,7 +5117,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	}
 	for _, ei := range selection {
 		reset, ok := repo.events[ei].(*Reset)
-		if ok && reset.ref == resetname {
+		if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
 			resets = append(resets, reset)
 		}
 	}
@@ -5108,7 +5125,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		var target *Commit
 		var ok bool
 		if len(resets) > 0 {
-			croak("one or more resets match %s", resetname)
+			croak("one or more resets match %s", sourcepattern)
 			return false
 		}
 		if len(rs.selection) != 1 {
@@ -5126,7 +5143,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		var target *Commit
 		var ok bool
 		if len(resets) == 0 {
-			croak("no such reset as %s", resetname)
+			croak("no such reset as %s", sourcepattern)
 		}
 		if len(resets) == 1 {
 			reset = resets[0]
@@ -5148,7 +5165,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	} else if verb == "rename" {
 		var newname string
 		if len(resets) == 0 {
-			croak("no such reset as %s", resetname)
+			croak("no resets match %s", sourcepattern)
 			return false
 		}
 		newname, line = popToken(line)
@@ -5184,18 +5201,18 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			reset.ref = newname
 		}
 		for _, commit := range repo.commits(nil) {
-			if commit.Branch == resetname {
+			if sourceRE.MatchString(commit.Branch) {
 				commit.Branch = newname
 			}
 		}
 	} else if verb == "delete" {
 		if len(resets) == 0 {
-			croak("no such reset as %s", resetname)
+			croak("no resets match %s", sourcepattern)
 			return false
 		}
 		var tip *Commit
 		for _, commit := range repo.commits(nil) {
-			if commit.Branch == resetname {
+			if sourceRE.MatchString(commit.Branch) {
 				tip = commit
 			}
 		}
@@ -5203,7 +5220,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			successor := tip.children()[0]
 			if cSuccessor, ok := successor.(*Commit); ok {
 				for _, commit := range repo.commits(nil) {
-					if commit.Branch == resetname {
+					if sourceRE.MatchString(commit.Branch) {
 						commit.Branch = cSuccessor.Branch
 					}
 				}
