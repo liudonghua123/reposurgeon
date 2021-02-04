@@ -862,6 +862,14 @@ if the selection set is not a singleton.
 
 Use this to optimize out location and selection computations
 that would otherwise be performed repeatedly, e.g. in macro calls.
+
+Example:
+
+----
+# Assign toi the name "cvsjunk" the selection set of all commits with a
+# boilerplate CVS empty log message in the comment. 
+/empty log message/ assign cvsjunk
+----
 `)
 }
 
@@ -1253,7 +1261,7 @@ memory [>OUTFILE]
 
 Report memory usage.  Runs a garbage-collect before reporting so the
 figure will better reflect storage currently held in loaded repositories;
-this will not affect the reported high-water    mark.
+this will not affect the reported high-water mark.
 `)
 }
 
@@ -1821,7 +1829,7 @@ sourcetype [VCS-NAME]
 Report (with no arguments) or select (with one argument) the current
 repository's source type.  This type is normally set at
 repository-read time, but may remain unset if the source was a stream
-file. The argument tab-completes in the list of supported systems.
+file. The argument tab-completes using the list of supported systems.
 
 The source type affects the interpretation of legacy IDs (for
 purposes of the =N visibility set and the 'references' command) by
@@ -1886,7 +1894,7 @@ func (rs *Reposurgeon) HelpGc() {
 gc [GOGC]
 
 Trigger a garbage collection. Scavenges and removes all blob events
-that no longer have references, e.g. as a result of delete operqtions
+that no longer have references, e.g. as a result of delete operations
 on repositories. This is followed by a Go-runtime garbage collection.
 
 The optional argument, if present, is passed as a
@@ -2125,7 +2133,8 @@ Subversion dump from standard input (this will be useful in filters
 constructed with command-line arguments).
 
 Various options and special features of this command are described in
-the long-form manual. See "help branchify" and "help branchmap" in particular.
+the long-form manual. See "help branchify"  for one of the more
+important ones.
 `)
 }
 
@@ -2228,7 +2237,12 @@ An asterisk at the end of a path in the set means 'all immediate
 subdirectories of this path, unless they are part of another (longer)
 path in the branchify set'.
 
-See "help read" for other options to the read command.
+----
+# This is what the branchify option would look like
+# If you needed to specify the default set of branch patterns.
+rwad  --branchify=trunk:tags/*:branches/*:* <example.svn
+----
+
 `)
 }
 
@@ -2505,6 +2519,13 @@ of the option must be a pattern expression. See "help regexp"
 for information on the regexp syntax.
 
 Blobs may be included in the output with the option --blobs.
+
+The following example produces a mailbox of commit comments in a
+decluttered form that is convenuent for editiing:
+
+----
+=C msgout --filter=/Event-Number:|Committer:|Author|Check-Text:/
+----
 `)
 }
 
@@ -2647,6 +2668,16 @@ With the verb dedos, DOS/Windows-style \r\n line terminators are replaced with \
 
 All variants of this command set Q bits; events actually modified by
 the command get true, all other events get false
+
+Some examples:
+
+----
+# In all blobs, expand tabs to 8-space tab stops
+=B filter shell expand --tabs=8
+
+# Text replacement in comments
+=C filter replace /Telperion/Laurelin/c
+----
 `)
 }
 
@@ -2830,8 +2861,9 @@ in commits is filtered when the selection set contains (only) blobs
 and the commit is within the range bounded by the earliest and latest
 blob in the specification.
 
-The encoding argument must name one of the codecs known to the Go
-standard codecs library. In particular, 'latin-1' is a valid codec name.
+The ENCODING argument must name one of the codecs listed at 
+https://www.iana.org/assignments/character-sets/character-sets.xhtml
+and known to the Go standard codecs library. 
 
 Errors in this command force the repository to be dropped, because an
 error may leave repository events in a damaged state.
@@ -2844,8 +2876,14 @@ must use context to identify which particular encodings were used in
 particular event spans and compose appropriate transcode commands
 to fix them up.
 
-This command sets Q bits; objects actually modified by thw command
+This command sets Q bits; objects actually modified by the command
 get true, all other events get false.
+
+---
+# In all commit comments containing non-ASCII bytes, transcode from Latin-1.
+=I transcode latin1
+---
+
 `)
 }
 
@@ -3809,6 +3847,13 @@ path set are not deleted.
 
 This command sets Q bits: true on any commit which lost fileops but was
 not entirely deleted, false on all other events.
+
+Example:
+
+---
+# Delete all PDFs from the loaded repository.
+expunge /[.]pdf$/
+---
 `)
 }
 
@@ -3856,6 +3901,46 @@ Finally, some file operations - starting at the one matched or indexed
 by the split argument - are moved forward from the original commit
 into the new one.  Legal indices are 2-n, where n is the number of
 file operations in the original commit.
+
+----
+reposurgeon% :3 inspect
+Event 4 =================================================================
+commit refs/heads/master
+#legacy-id 2
+mark :3
+committer brooksd <brooksd> 1353813663 +0000
+data 33
+add a new file in each directory
+M 100644 :1 .gitignore
+M 100644 :2 bar/src
+M 100644 :2 baz/src
+M 100644 :2 foo/src
+
+reposurgeon% :3 split by bar
+reposurgeon: new commits are events 4 and 5.
+
+reposurgeon% 4,5 inspect
+Event 4 =================================================================
+commit refs/heads/master
+#legacy-id 2
+mark :3
+committer brooksd <brooksd> 1353813663 +0000
+data 33
+add a new file in each directory
+M 100644 :1 .gitignore
+M 100644 :2 baz/src
+M 100644 :2 foo/src
+
+Event 5 =================================================================
+commit refs/heads/master
+#legacy-id 2.split
+mark :7
+committer brooksd <brooksd> 1353813663 +0000
+data 33
+add a new file in each directory
+from :3
+M 100644 :2 bar/src
+----
 `)
 }
 
@@ -6414,7 +6499,7 @@ func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 // HelpIncorporate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpIncorporate() {
 	rs.helpOutput(`
-{SELECTION} incorporate [--date|--after|--firewall] [TARBALL...]
+{SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 
 Insert the contents of specified tarballs as commit.  The tarball
 names are given as arguments; if no arguments, a list is read from
