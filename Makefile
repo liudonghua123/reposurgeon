@@ -132,7 +132,6 @@ BNF_TOPICS = \
 	msgout \
 	names \
 	path \
-	paths \
 	prefer \
 	preserve \
 	print \

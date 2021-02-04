@@ -4,9 +4,9 @@ read <simple.fi
 ~=B index
 :76 tip
 tags
-paths
+path list
 1..$ expunge theory.txt
-paths
+path list
 116 checkout foobar
 !ls foobar
 !rm -fr foobar

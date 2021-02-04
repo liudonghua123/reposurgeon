@@ -65,7 +65,7 @@ tags
    114	commit	refs/tags/annotated-sample
    130	reset	refs/heads/master
    131	tag	annotated-sample
-paths
+path list
 .gitignore
 Makefile
 READ[ME].txt
@@ -76,7 +76,7 @@ test/Makefile
 test/simple.dump
 theory.txt
 1..$ expunge theory.txt
-paths
+path list
 .gitignore
 Makefile
 READ[ME].txt

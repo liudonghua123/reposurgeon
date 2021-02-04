@@ -127,22 +127,22 @@ M 100644 :16 f1
 reset refs/heads/master
 from :17
 
-:17 paths
+:17 path list
 f1
-:15 paths
+:15 path list
 f2
-:13 paths
+:13 path list
 alternate/f2
-:11 paths
+:11 path list
 alternate/f1
-:9 paths
+:9 path list
 alternate/f1
 alternate/f2
-:6 paths
+:6 path list
 f2
-:4 paths
+:4 path list
 f2
-:2 paths
+:2 path list
 f1
 :9 inspect
 Event 10 ================================================================

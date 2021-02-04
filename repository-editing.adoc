@@ -2099,11 +2099,9 @@ include::docinclude/gitify.adoc[]
 include::docinclude/filter.adoc[]
 
 [[paths]]
-=== Path modifications
+=== Path reports and modifications
 
 include::docinclude/path.adoc[]
-
-include::docinclude/paths.adoc[]
 
 include::docinclude/setperm.adoc[]
 

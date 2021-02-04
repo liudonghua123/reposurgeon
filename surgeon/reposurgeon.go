@@ -741,7 +741,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 // keywords), except for those ending with string/bareword lists.
 //
 // All uses of alternation in the BNF are a choice of keywords, except
-// in the "add", "attribution", and "split" commands.
+// in the "add", "attribution", "path", and "split" commands.
 
 // DoEOF is the handler for end of command input.
 func (rs *Reposurgeon) DoEOF(lineIn string) bool {
@@ -4222,13 +4222,16 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 // HelpPath says "Shut up, golint!"
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
-path rename {PATTERN} [--force] {TARGET}
+path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
 
-Rename a path in every fileop of every selected commit.  The default
-selection set is all commits. The first argument is interpreted as a
-pattern expression to match against paths; the second may contain
-backreference syntax (\1 etc.). See "help regexp" for more information about
-regular expressions.
+With the verb "list", list all paths touched by fileops in the selection
+set (which defaults to the entire repo). This command does > redirection.
+
+With the verb "rename", rename a path in every fileop of every selected 
+commit.  The default selection set is all commits. The first argument is
+interpreted as apattern expression to match against paths; the second may
+containbackreference syntax (\1 etc.). See "help regexp" for more 
+information about regular expressions.
 
 Ordinarily, if the target path already exists in the fileops, or is visible
 in the ancestry of the commit, this command throws an error.  With the
@@ -4242,8 +4245,6 @@ path rename /.+/ docs/\0
 ----
 
 This command sets commit Q bits; true if the commit was modified.
-
-The path command has no other verbs as yet. More might be added in the future.
 `)
 }
 
@@ -4268,15 +4269,15 @@ func (pa pathAction) String() string {
 
 // DoPath renames paths in the history.
 func (rs *Reposurgeon) DoPath(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	fields := parse.Tokens()
-	if len(fields) != 3 {
-		croak("wrong number of fields in path rename command")
-		return false
-	}
 	if fields[0] == "rename" {
+		if len(fields) != 3 {
+			croak("wrong number of fields in path rename command")
+			return false
+		}
 		sourceRE := getPattern(fields[1])
 		force := parse.options.Contains("--force")
 		targetPattern := fields[2]
@@ -4285,32 +4286,16 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 			return false
 		}
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
+	} else if fields[0] == "list" {
+		allpaths := newOrderedStringSet()
+		for _, commit := range rs.chosen().commits(rs.selection) {
+			allpaths = allpaths.Union(commit.paths(nil))
+		}
+		sort.Strings(allpaths)
+		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
 	} else {
 		croak("unknown verb '%s' in path command.", fields[1])
 	}
-	return false
-}
-
-// HelpPaths says "Shut up, golint!"
-func (rs *Reposurgeon) HelpPaths() {
-	rs.helpOutput(`
-paths [DIRECTORY] [>OUTFILE]
-
-List all paths touched by fileops in the selection set (which defaults
-to the entire repo). This command does > redirection.
-`)
-}
-
-// DoPaths is the command handler for the "paths" command.
-func (rs *Reposurgeon) DoPaths(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	allpaths := newOrderedStringSet()
-	for _, commit := range rs.chosen().commits(rs.selection) {
-		allpaths = allpaths.Union(commit.paths(nil))
-	}
-	sort.Strings(allpaths)
-	fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
 	return false
 }
 
@@ -5038,6 +5023,10 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 func (rs *Reposurgeon) HelpReset() {
 	rs.helpOutput(`
 [SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
+
+Note: While this command is provided for the sake of completeness, think
+twice before actually using it.  Normally a reset should only be deleted
+or renamed when its associated branch is, and the branch command does this.
 
 Create, move, rename, or delete resets. Create is a special case; it
 requires a singleton selection which is the associated commit for the

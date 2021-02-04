@@ -22,14 +22,14 @@ read <debranch3.fi
 debranch alternate master
 write -
 set echo
-:17 paths
-:15 paths
-:13 paths
-:11 paths
-:9 paths
-:6 paths
-:4 paths
-:2 paths
+:17 path list
+:15 path list
+:13 path list
+:11 path list
+:9 path list
+:6 path list
+:4 path list
+:2 path list
 :9 inspect
 :15 inspect
 :6 inspect
