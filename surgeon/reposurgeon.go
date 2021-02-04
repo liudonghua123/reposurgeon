@@ -4864,7 +4864,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 // HelpTag says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
-[SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [NEW-NAME]
+[SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME]
 
 Create, move, rename, or delete annotated tags.
 
@@ -4896,7 +4896,7 @@ set in the normal way.
 
 // DoTag moves a tag to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoTag(line string) bool {
-	rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseALLREPO, nil)
 	repo := rs.chosen()
 	var verb string
 	verb, line = popToken(line)
@@ -4970,7 +4970,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	tags := make([]*Tag, 0)
 	for _, idx := range rs.selection {
 		event := repo.events[idx]
-		if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) {
+		if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) == !parse.options.Contains("--not") {
 			tags = append(tags, tag)
 		}
 	}
