@@ -226,12 +226,14 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 
 	var err error
 	// Input redirection
-	match := regexp.MustCompile("<[^ ]+").FindStringIndex(lp.line)
+	// The reason for the < in the regexp is to prevent false matches
+	// on legacy IDs in singleton-selection literals.
+	match := regexp.MustCompile("<[^> ]+ ").FindStringIndex(lp.line + " ")
 	if match != nil {
 		if !caps["stdin"] {
 			panic(throw("command", "no support for < redirection"))
 		}
-		lp.infile = lp.line[match[0]+1 : match[1]]
+		lp.infile = lp.line[match[0]+1 : match[1]-1]
 		if lp.infile != "" && lp.infile != "-" {
 			lp.stdin, err = os.Open(lp.infile)
 			if err != nil {
@@ -239,7 +241,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 			}
 			lp.closem = append(lp.closem, lp.stdin)
 		}
-		lp.line = lp.line[:match[0]] + lp.line[match[1]:]
+		lp.line = lp.line[:match[0]] + lp.line[match[1]-1:]
 		lp.redirected = true
 	}
 	// Output redirection
@@ -4915,7 +4917,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		}
 		rs.setSelectionSet(line)
 		if rs.selection == nil {
-			croak("usage: tag <name> create <singleton-selection>")
+			croak("usage: tag create <name> <singleton-selection>")
 			return false
 		} else if len(rs.selection) != 1 {
 			croak("tag create requires a singleton commit set.")
