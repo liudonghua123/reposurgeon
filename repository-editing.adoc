@@ -2035,7 +2035,7 @@ the email address.
 With the exception of '```show```', all actions require an
 explicit event selection upon which to operate. Available actions are:
 +
-[ATTR-SELECTION] [show] [>OUTFILE]:::
+[ATTR-SELECTION] show [>OUTFILE]:::
    Inspect the selected attributions of the specified events (commits and
    tags).  The '```show```' keyword is optional.  If no attribution
    selection expression is given, defaults to all attributions. If no event
