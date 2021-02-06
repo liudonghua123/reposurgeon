@@ -203,7 +203,8 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 		./reposurgeon "set asciidoc" "help $${1}" | \
 			sed -e 's/help regexp/<<regular_expressions,help regexp>>/g' \
 			    -e 's/help read/<<read_cmd,help read>>/g' \
-			    -e 's/help branchify/<<branchify_opt,help branchify>>/g'; \
+			    -e 's/help branchify/<<branchify_opt,help branchify>>/g' \
+			    -e 's/#/+#+/'; \
 	}; \
 	for topic in $(BNF_TOPICS); \
 	do \

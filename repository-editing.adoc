@@ -1551,7 +1551,7 @@ rules.
   character use a standard C-style escape such as `\s` for space.
 
 [[redirection]]
-== Redirection and shell-like features
+=== Redirection and shell-like features
 
 include::docinclude/redirection.adoc[]
 
@@ -2499,7 +2499,7 @@ include::docinclude/readlimit.adoc[]
 include::docinclude/memory.adoc[]
 
 [[profile_cmd,profile]]
-`profile` [ `live` | `start` | `save` ] [ _args..._ ]::
+profile [live|start|save] [PORT | SUBJECT [FILENAME]]::
     Profiling is enabled by default, but viewing the profile data
     requires either starting the HTTP server with '```profile live```', or
     saving it to a file with '```profile save```'. When no arguments are
