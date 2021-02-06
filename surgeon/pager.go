@@ -12,21 +12,23 @@ import (
 	terminal "golang.org/x/crypto/ssh/terminal"
 )
 
+// NewPager returnns a new pager instance.
 func NewPager(ti *terminfo.Terminfo) (io.WriteCloser, error) {
 	externalPager, err := NewExternalPager()
 	if err != nil {
 		return NewInternalPager(ti)
-	} else {
-		return externalPager, nil
 	}
+	return externalPager, nil
 }
 
+// ExternalPager describes an outboard symbiont for paging documentatiomn.
 type ExternalPager struct {
 	w io.WriteCloser
 	c chan error
 	o sync.Once
 }
 
+// NewExternalPager returnns a new instance of an external pager such as more(1).
 func NewExternalPager() (*ExternalPager, error) {
 	cmd := os.Getenv("PAGER")
 	if cmd == "" {
@@ -62,24 +64,26 @@ func NewExternalPager() (*ExternalPager, error) {
 	return &writer, nil
 }
 
-func (w *ExternalPager) Write(p []byte) (n int, err error) {
-	return w.w.Write(p)
+func (pager *ExternalPager) Write(p []byte) (n int, err error) {
+	return pager.w.Write(p)
 }
 
-func (w *ExternalPager) close() error {
+func (pager *ExternalPager) close() error {
 	var err error
-	w.o.Do(func() {
-		err = w.w.Close()
+	pager.o.Do(func() {
+		err = pager.w.Close()
 	})
 	return err
 }
 
-func (w *ExternalPager) Close() error {
-	w.close()
-	err := <-w.c
+// Close finalizes an external pager
+func (pager *ExternalPager) Close() error {
+	pager.close()
+	err := <-pager.c
 	return err
 }
 
+// InternalPager uses no symbiont, going directly through terminfo
 type InternalPager struct {
 	h     int
 	b     []byte
@@ -87,6 +91,7 @@ type InternalPager struct {
 	done  chan struct{}
 }
 
+// NewInternalPager returns a internal pager instances using terminfo.
 func NewInternalPager(ti *terminfo.Terminfo) (io.WriteCloser, error) {
 	_, height, err := terminal.GetSize(0)
 	if err != nil {
@@ -122,31 +127,34 @@ func NewInternalPager(ti *terminfo.Terminfo) (io.WriteCloser, error) {
 	return &writer, nil
 }
 
-func (self *InternalPager) Write(b []byte) (n int, err error) {
-	self.b = append(self.b, b...)
-	lines := bytes.SplitAfter(self.b, []byte("\n"))
+func (pager *InternalPager) Write(b []byte) (n int, err error) {
+	pager.b = append(pager.b, b...)
+	lines := bytes.SplitAfter(pager.b, []byte("\n"))
 	for _, line := range lines {
 		if bytes.HasSuffix(line, []byte("\n")) {
-			self.lines <- line
+			pager.lines <- line
 		} else {
-			self.b = line
-			return len(b) - len(self.b), nil
+			pager.b = line
+			return len(b) - len(pager.b), nil
 		}
 	}
-	self.b = []byte{}
+	pager.b = []byte{}
 	return len(b), nil
 }
 
-func (self *ExternalPager) WriteString(s string) (n int, err error) {
-	return self.Write([]byte(s))
+// WriteString ships a string to an external pager for viewing
+func (pager *ExternalPager) WriteString(s string) (n int, err error) {
+	return pager.Write([]byte(s))
 }
 
-func (self *InternalPager) Close() error {
-	close(self.lines)
-	<-self.done
+// Close closes out an internal pager instance.
+func (pager *InternalPager) Close() error {
+	close(pager.lines)
+	<-pager.done
 	return nil
 }
 
-func (self *InternalPager) WriteString(s string) (n int, err error) {
-	return self.Write([]byte(s))
+// WriteString ships a string to an internal pager for viewing
+func (pager *InternalPager) WriteString(s string) (n int, err error) {
+	return pager.Write([]byte(s))
 }
