@@ -61,6 +61,7 @@ type Control struct {
 	profileNames map[string]string
 	startTime    time.Time
 	baton        *Baton
+	ti           *terminfo.Terminfo
 }
 
 func (ctx *Control) isInteractive() bool {
@@ -68,10 +69,23 @@ func (ctx *Control) isInteractive() bool {
 }
 
 func (ctx *Control) init() {
+	var err error
 	ctx.flagOptions = make(map[string]bool)
 	ctx.listOptions = make(map[string]orderedStringSet)
 	ctx.signals = make(chan os.Signal, 1)
 	ctx.logmask = (logWARN << 1) - 1
+	ctx.ti, err = terminfo.LoadFromEnv()
+	if err != nil {
+		logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
+		ctx.ti, err = terminfo.Load("xterm")
+		if err != nil {
+			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "xterm", err).Error())
+			ctx.ti, err = terminfo.Load("dumb")
+			if err != nil {
+				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
+			}
+		}
+	}
 	batonLogFunc := func(s string) {
 		// it took me about an hour to realize that the
 		// percent sign inside s was breaking this
@@ -79,7 +93,7 @@ func (ctx *Control) init() {
 			logit("%s", s)
 		}
 	}
-	baton := newBaton(control.isInteractive(), batonLogFunc)
+	baton := newBaton(control.isInteractive(), batonLogFunc, ctx.ti)
 	var b interface{} = baton
 	ctx.logfp = b.(io.Writer)
 	ctx.baton = baton
@@ -439,7 +453,6 @@ type Reposurgeon struct {
 	startTime    time.Time
 	logHighwater int
 	ignorename   string
-	ti           *terminfo.Terminfo
 }
 
 var unclean = regexp.MustCompile("^[^\n]*\n[^\n]")
@@ -455,19 +468,6 @@ func newReposurgeon() *Reposurgeon {
 		control.listOptions[option[0]] = newOrderedStringSet()
 	}
 
-	var err error
-	rs.ti, err = terminfo.LoadFromEnv()
-	if err != nil {
-		logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
-		rs.ti, err = terminfo.Load("xterm")
-		if err != nil {
-			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "xterm", err).Error())
-			rs.ti, err = terminfo.Load("dumb")
-			if err != nil {
-				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
-			}
-		}
-	}
 	return rs
 }
 
@@ -514,7 +514,7 @@ func (rs *Reposurgeon) helpOutput(help string) {
 			}
 		}
 	} else if terminal.IsTerminal(1) && control.isInteractive() {
-		pager, err := NewPager(rs.ti)
+		pager, err := NewPager(control.ti)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, fmt.Errorf("Unable to start a pager: %w", err).Error())
 		} else {

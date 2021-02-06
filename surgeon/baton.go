@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	terminal "golang.org/x/crypto/ssh/terminal"
+	terminfo "github.com/xo/terminfo"
 )
 
 // Baton is the overall state of the output
@@ -31,6 +31,7 @@ type Baton struct {
 	counter         Counter
 	progress        Progress
 	process         Process
+	ti              *terminfo.Terminfo
 }
 
 // Twirly is the state of a twirly indefinite progress meter that ships indications to stdout.
@@ -94,37 +95,16 @@ type Message struct {
 const twirlInterval = 100 * time.Millisecond // Rate-limit baton twirls
 const progressInterval = 1 * time.Second     // Rate-limit progress messages
 
-type _terminfo struct {
-	ColZero       []byte
-	ClrEol        []byte
-	ScrollForward []byte
-	Rev           []byte
-	Sgr0          []byte
-	Cuu1          []byte
-}
-
-var ti _terminfo
-
-func init() {
-	if terminal.IsTerminal(1) {
-		ti.ColZero = getTerminfoBytes("hpa", "0")
-		ti.ClrEol = getTerminfoBytes("el")
-		ti.ScrollForward = getTerminfoBytes("ind")
-		ti.Rev = getTerminfoBytes("rev")
-		ti.Sgr0 = getTerminfoBytes("sgr0")
-		ti.Cuu1 = getTerminfoBytes("cuu", "1")
-	}
-}
-
 // newBaton creates a new Baton object, allowing the caller to control
 // the interactivity hint and to provide a function which the baton
 // must call when it generates a log message of its own.
-func newBaton(interactive bool, logFunc func(string)) *Baton {
+func newBaton(interactive bool, logFunc func(string), ti *terminfo.Terminfo) *Baton {
 	me := new(Baton)
 	me.start = time.Now()
 	me.channel = make(chan Message)
 	me.progressEnabled = interactive
 	me.logFunc = logFunc
+	me.ti = ti
 	go func() {
 		lastProgress := &[]byte{}
 		for {
@@ -134,13 +114,13 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 			} else if me.stream != nil {
 				if msg.ty == LOG {
 					if me.progressEnabled {
-						me.stream.Write(ti.ColZero)
-						me.stream.Write(ti.ClrEol)
+						me.ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+						me.ti.Fprintf(me.stream, terminfo.ClrEol)
 						me.stream.Write(msg.str)
-						if !bytes.HasSuffix(msg.str, ti.ScrollForward) {
-							me.stream.Write(ti.ScrollForward)
+						if !bytes.HasSuffix(msg.str, ti.Strings[terminfo.ScrollForward]) {
+							me.ti.Fprintf(me.stream, terminfo.ScrollForward)
 						}
-						me.stream.Write(ti.ColZero)
+						me.ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
 						me.stream.Write(*lastProgress)
 					} else {
 						if len(msg.str) != 0 {
@@ -151,8 +131,8 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 						}
 					}
 				} else if msg.ty == PROGRESS {
-					me.stream.Write(ti.ColZero)
-					me.stream.Write(ti.ClrEol)
+					me.ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+					me.ti.Fprintf(me.stream, terminfo.ClrEol)
 					me.stream.Write(msg.str)
 					lastProgress = &msg.str
 				}
