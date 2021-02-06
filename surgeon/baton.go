@@ -94,7 +94,7 @@ type Message struct {
 const twirlInterval = 100 * time.Millisecond // Rate-limit baton twirls
 const progressInterval = 1 * time.Second     // Rate-limit progress messages
 
-type terminfo struct {
+type _terminfo struct {
 	ColZero       []byte
 	ClrEol        []byte
 	ScrollForward []byte
@@ -103,7 +103,7 @@ type terminfo struct {
 	Cuu1          []byte
 }
 
-var ti terminfo
+var ti _terminfo
 
 func init() {
 	if terminal.IsTerminal(1) {

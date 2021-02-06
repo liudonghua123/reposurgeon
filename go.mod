@@ -19,6 +19,7 @@ require (
 	github.com/spf13/cobra v0.0.6 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/termie/go-shutil v0.0.0-20140729215957-bcacb06fecae
+	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778
 	gitlab.com/esr/fqme v0.1.0
 	gitlab.com/ianbruene/kommandant v0.6.1
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect

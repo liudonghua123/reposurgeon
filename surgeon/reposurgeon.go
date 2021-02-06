@@ -39,6 +39,7 @@ import (
 
 	shlex "github.com/anmitsu/go-shlex"
 	difflib "github.com/ianbruene/go-difflib/difflib"
+	terminfo "github.com/xo/terminfo"
 	kommandant "gitlab.com/ianbruene/kommandant"
 	terminal "golang.org/x/crypto/ssh/terminal"
 	ianaindex "golang.org/x/text/encoding/ianaindex"
@@ -438,6 +439,7 @@ type Reposurgeon struct {
 	startTime    time.Time
 	logHighwater int
 	ignorename   string
+	ti           *terminfo.Terminfo
 }
 
 var unclean = regexp.MustCompile("^[^\n]*\n[^\n]")
@@ -451,6 +453,20 @@ func newReposurgeon() *Reposurgeon {
 	// These are globals and should probably be set in init().
 	for _, option := range optionFlags {
 		control.listOptions[option[0]] = newOrderedStringSet()
+	}
+
+	var err error
+	rs.ti, err = terminfo.LoadFromEnv()
+	if err != nil {
+		logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
+		rs.ti, err = terminfo.Load("xterm")
+		if err != nil {
+			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "xterm", err).Error())
+			rs.ti, err = terminfo.Load("dumb")
+			if err != nil {
+				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
+			}
+		}
 	}
 	return rs
 }
@@ -497,37 +513,14 @@ func (rs *Reposurgeon) helpOutput(help string) {
 				os.Stdout.WriteString(line + "\n")
 			}
 		}
-	} else if terminal.IsTerminal(1) {
-		pager := os.Getenv("PAGER")
-		if pager != "" {
-			tp, cls, err := writeToProcess(pager)
-			if err != nil {
-				os.Stderr.WriteString("Your $PAGER value seems bogus.\n")
-			} else {
-				tp.Write([]byte(help))
-				tp.Close()
-				cls.Wait()
-				return
-			}
-		}
-		_, height, err := terminal.GetSize(0)
+	} else if terminal.IsTerminal(1) && control.isInteractive() {
+		pager, err := NewPager(rs.ti)
 		if err != nil {
-			log.Fatal(err)
-		}
-		lines := strings.Split(help, "\n")
-		for len(lines) > height-1 {
-			for i := 0; i < height-1; i++ {
-				os.Stdout.WriteString(lines[0] + "\n")
-				lines = lines[1:]
-			}
-			os.Stdout.WriteString(string(ti.Rev) + "-- Press Enter for more--" + string(ti.Sgr0))
-			fmt.Scanln()
-			os.Stdout.Write(ti.Cuu1)
-			os.Stdout.Write(ti.ClrEol)
-		}
-		for len(lines) > 0 {
-			os.Stdout.WriteString(lines[0] + "\n")
-			lines = lines[1:]
+			fmt.Fprintln(os.Stderr, fmt.Errorf("Unable to start a pager: %w", err).Error())
+		} else {
+			io.WriteString(pager, help)
+			pager.Close()
+			return
 		}
 	} else {
 		// Dump as plain text
