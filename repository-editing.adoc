@@ -1185,7 +1185,7 @@ development should be treated as a serious project with its
 own change tracking.
 
 [[wayfinding]]
-== Finding your way around
+=== Finding your way around
 
 In the remainder of this document, individual commands are described
 by hanging paragraphs led by the command syntax in a simple dialect of
