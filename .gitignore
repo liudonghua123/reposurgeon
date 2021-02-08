@@ -18,3 +18,4 @@ pkg
 *.log
 *.svg
 *.dat
+/surgeon/help-index.go

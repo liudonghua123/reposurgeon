@@ -1622,7 +1622,7 @@ repositories.
 Note: this command does not take a selection set.
 
 [[write_cmd,write]]
-[ SELECTION ] write [ --legacy ] [ --format=fossil ] [ --noincremental] [ --callout ] [ >OUTFILE | `-` | DIR]::
+[SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout] [>OUTFILE | `-` | DIR]::
    Dump selected events as a fast-import stream representing the
    edited repository; the default selection set is all events. Where to
    dump to is standard output if there is no argument or the argument is
@@ -1832,7 +1832,7 @@ to support.
 === Commit deletion
 
 [[squash_cmd,squash]]
-[ SELECTION ] squash [ POLICY... ]::
+[SELECTION] squash [POLICY...]::
    Combine or delete commits in a selection set of events. The
    default selection set for this command is empty. Has no effect on
    events other than commits unless the `--delete` policy is selected;
@@ -1910,7 +1910,7 @@ include::docinclude/merge.adoc[]
 include::docinclude/unmerge.adoc[]
 
 [[reparent_cmd,reparent]]
-[ SELECTIONS ] reparent [ OPTIONS... ] [ POLICY ]::
+[SELECTIONS] reparent [OPTIONS...] [POLICY]::
    Changes the parent list of a commit.  Takes a selection set,
    zero or more option arguments, and an optional policy argument.
 +
@@ -1984,7 +1984,7 @@ include::docinclude/tagify.adoc[]
 include::docinclude/reorder.adoc[]
 
 [[branch-tag-reset]]
-=== Branches, tag, and resets
+=== Branches, tags, and resets
 
 include::docinclude/branch.adoc[]
 

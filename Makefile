@@ -31,7 +31,7 @@ all: build $(MANPAGES) $(HTMLFILES)
 
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
-build:
+build: surgeon/help-index.go
 	sh extractversion.sh -g <NEWS.adoc >surgeon/version.go
 	go build $(GOFLAGS) -o repocutter ./cutter
 	go build $(GOFLAGS) -o repomapper ./mapper
@@ -235,6 +235,9 @@ helpcheck:
 # Report most grammar summary lines. Missing: the SHORTFORM and EXCEPTION topics.
 summary:
 	@for topic in $(BNF_TOPICS); do head -2 "docinclude/$${topic}.adoc"; done | grep -v '^\[\[' | sed '/::$$/s///'
+
+surgeon/help-index.go: help-index.awk repository-editing.adoc
+	awk -f $^ >$@
 
 #
 # Auxillary Go tooling productions
