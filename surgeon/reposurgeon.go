@@ -74,18 +74,6 @@ func (ctx *Control) init() {
 	ctx.listOptions = make(map[string]orderedStringSet)
 	ctx.signals = make(chan os.Signal, 1)
 	ctx.logmask = (logWARN << 1) - 1
-	ctx.ti, err = terminfo.LoadFromEnv()
-	if err != nil {
-		logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
-		ctx.ti, err = terminfo.Load("xterm")
-		if err != nil {
-			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "xterm", err).Error())
-			ctx.ti, err = terminfo.Load("dumb")
-			if err != nil {
-				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
-			}
-		}
-	}
 	batonLogFunc := func(s string) {
 		// it took me about an hour to realize that the
 		// percent sign inside s was breaking this
@@ -107,6 +95,18 @@ func (ctx *Control) init() {
 	}()
 	ctx.startTime = time.Now()
 	control.lineSep = "\n"
+	ctx.ti, err = terminfo.LoadFromEnv()
+	if err != nil {
+		logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
+		ctx.ti, err = terminfo.Load("xterm")
+		if err != nil {
+			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "xterm", err).Error())
+			ctx.ti, err = terminfo.Load("dumb")
+			if err != nil {
+				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
+			}
+		}
+	}
 }
 
 var control Control
