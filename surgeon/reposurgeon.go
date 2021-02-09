@@ -2516,7 +2516,7 @@ for information on the regexp syntax.
 Blobs may be included in the output with the option --blobs.
 
 The following example produces a mailbox of commit comments in a
-decluttered form that is convenuent for editiing:
+decluttered form that is convenient for editiing:
 
 ----
 =C msgout --filter=/Event-Number:|Committer:|Author|Check-Text:/
@@ -2565,7 +2565,7 @@ Accept a file of messages in RFC822 format representing the
 contents of the metadata in selected commits and annotated tags. 
 If there is an argument, it will be taken as the name of a message-box
 file to read from; if no argument, or one of '-', reads from standard
-input. Supports < redirection.  Ordinariy takes no selection set.
+input. Supports < redirection.  Ordinarily takes no selection set.
 
 Users should be aware that modifying an Event-Number or Event-Mark field
 will change which event the update from that message is applied to.  This
@@ -2594,8 +2594,8 @@ If the option --empty-only is given, this command will throw a recoverable error
 if it tries to alter a message body that is neither empty nor consists of the
 CVS empty-comment marker.
 
-This operation sets Q bits; true where an abject was modified by it, false 
-otherwise. 
+This operation sets Q bits; true where an object was modified by it, false 
+otherwise.
 `)
 }
 
@@ -3332,15 +3332,15 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 // HelpBlob says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBlob() {
 	rs.helpOutput(`
-blob [MARK-NUMBER] {<INFILE|>OUTFILE] 
+blob [MARK-NUMBER] {<INFILE|>OUTFILE]
 
-Given an argumeent, create a blob with the specified mark name, which must not
+Given an argument, create a blob with the specified mark name, which must not
 already exist. The new blob is inserted at the front of the repository event
 sequence, after options but before previously-existing blobs. The blob data is
-taken from standard input, which may be a redirect frpm a file or a here-doc.
+taken from standard input, which may be a redirect from a file or a here-doc.
 
 Without an argument return a legal blob name that is not in use, having
-a numeric part just one greater than the highest-numbered existing blob in 
+a numeric part just one greater than the highest-numbered existing blob in
 the repository.  This output may be redirected, but is intended for interactive
 use when developing a script.
 
@@ -4220,10 +4220,10 @@ path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
 With the verb "list", list all paths touched by fileops in the selection
 set (which defaults to the entire repo). This command does > redirection.
 
-With the verb "rename", rename a path in every fileop of every selected 
+With the verb "rename", rename a path in every fileop of every selected
 commit.  The default selection set is all commits. The first argument is
-interpreted as apattern expression to match against paths; the second may
-containbackreference syntax (\1 etc.). See "help regexp" for more 
+interpreted as a pattern expression to match against paths; the second may
+contain back-reference syntax (\1 etc.). See "help regexp" for more
 information about regular expressions.
 
 Ordinarily, if the target path already exists in the fileops, or is visible
@@ -4724,10 +4724,10 @@ Rename or delete all branches matching the pattern expression BRANCH-PATTERN
 (also any associated annotated tags and resets). For purposes of this command
 a Git lightweight tag is simply a branch in the tags/ namespace.
 
-The --not option inversts a selection for deletion, deleting all branches other
+The --not option inverts a selection for deletion, deleting all branches other
 than those matched.
 
-Second argument must one of the verbs 'rename' or 'delete'.
+Second argument must be one of the verbs 'rename' or 'delete'.
 
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
@@ -5025,7 +5025,7 @@ Create, move, rename, or delete resets. Create is a special case; it
 requires a singleton selection which is the associated commit for the
 reset, takes as a first argument the name of the reset (which must not
 exist), and ends with the keyword create. In this case the name must be 
-fully qualified, with a refs/heads or refs/tags/ prefix.
+fully qualified, with a refs/heads/ or refs/tags/ prefix.
 
 In the other modes, the RESET-PATTERN finds by text match existing resets 
 within the selection.  If RESET-PATTERN is a delimited regexp, the match is
@@ -5670,7 +5670,7 @@ are mapped to it.
 
 With the 'read' modifier, apply author mapping data (from standard input
 or a <-redirected input file).  Q bits are set: true on each commit event 
-with  attributions actually modified by the mapping, false on all other
+with attributions actually modified by the mapping, false on all other
 events.
 
 With the 'write' modifier, write a mapping file that could be
@@ -6866,7 +6866,7 @@ language, with one exception. Due to a conflict with the use of $
 for arguments in the "script" command, we retain Python's use of
 backslashes as a leader for references to group matches.
 
-Normally patterns intended to be interpreted as regular ex[ressions are 
+Normally patterns intended to be interpreted as regular expressions are 
 wrapped in slashes (e.g. /foobar/ matches any text containing the string
 "foobar"), but any punctuation character other than single quote will work
 as a delimiter in place of the /; this makes it easier to use an actual /

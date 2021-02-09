@@ -2972,7 +2972,7 @@ this:
 read --nobranch <multiproject.svn
 branchlift master branches/release-1.0
 branchlift master branches/release-2.0
-paths sup trunk
+path rename "trunk/(.*)" "\1"
 --------
 
 This will turn two subdirectories into branches named "release-1.0"
@@ -3342,7 +3342,7 @@ blob :1 and renumbering all others as in 4.23 and earlier.
 Filter syntax now uses subcommand verbs rather than the options of 4.23 and
 earlier.
 
-In versions 4.23 and earlier, the stts command operated on named
+In versions 4.23 and earlier, the stats command operated on named
 repositories rather tan the currently-selected one.
 
 In versions 4.23 and earlier, it was possible to redirect output from
