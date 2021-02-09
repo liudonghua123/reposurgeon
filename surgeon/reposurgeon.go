@@ -55,13 +55,14 @@ type Control struct {
 	signals    chan os.Signal
 	logmutex   sync.Mutex
 	// The abort flag
-	abortScript  bool
-	abortLock    sync.Mutex
-	listOptions  map[string]orderedStringSet
-	profileNames map[string]string
-	startTime    time.Time
-	baton        *Baton
-	ti           *terminfo.Terminfo
+	abortScript          bool
+	abortLock            sync.Mutex
+	listOptions          map[string]orderedStringSet
+	profileNames         map[string]string
+	startTime            time.Time
+	baton                *Baton
+	_ti                  *terminfo.Terminfo
+	_terminfoUnavailable bool
 }
 
 func (ctx *Control) isInteractive() bool {
@@ -69,7 +70,6 @@ func (ctx *Control) isInteractive() bool {
 }
 
 func (ctx *Control) init() {
-	var err error
 	ctx.flagOptions = make(map[string]bool)
 	ctx.listOptions = make(map[string]orderedStringSet)
 	ctx.signals = make(chan os.Signal, 1)
@@ -81,7 +81,7 @@ func (ctx *Control) init() {
 			logit("%s", s)
 		}
 	}
-	baton := newBaton(control.isInteractive(), batonLogFunc, ctx.ti)
+	baton := newBaton(control.isInteractive(), batonLogFunc)
 	var b interface{} = baton
 	ctx.logfp = b.(io.Writer)
 	ctx.baton = baton
@@ -95,18 +95,36 @@ func (ctx *Control) init() {
 	}()
 	ctx.startTime = time.Now()
 	control.lineSep = "\n"
-	ctx.ti, err = terminfo.LoadFromEnv()
+}
+
+func (ctx *Control) ti() *terminfo.Terminfo {
+	if ctx._ti != nil {
+		return ctx._ti
+	}
+	if ctx._terminfoUnavailable {
+		panic("no terminfo database available")
+	}
+	var err error
+	ctx._ti, err = terminfo.LoadFromEnv()
 	if err != nil {
-		logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
-		ctx.ti, err = terminfo.Load("xterm")
+		if !control.flagOptions["testmode"] {
+			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
+		}
+		ctx._ti, err = terminfo.Load("ctxterm")
 		if err != nil {
-			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "xterm", err).Error())
-			ctx.ti, err = terminfo.Load("dumb")
+			if !control.flagOptions["testmode"] {
+				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "ctxterm", err).Error())
+			}
+			ctx._ti, err = terminfo.Load("dumb")
 			if err != nil {
-				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
+				if !control.flagOptions["testmode"] {
+					logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
+				}
+				ctx._terminfoUnavailable = true
 			}
 		}
 	}
+	return ctx._ti
 }
 
 var control Control
@@ -514,7 +532,7 @@ func (rs *Reposurgeon) helpOutput(help string) {
 			}
 		}
 	} else if terminal.IsTerminal(1) && control.isInteractive() {
-		pager, err := NewPager(control.ti)
+		pager, err := NewPager(control.ti())
 		if err != nil {
 			fmt.Fprintln(os.Stderr, fmt.Errorf("Unable to start a pager: %w", err).Error())
 		} else {

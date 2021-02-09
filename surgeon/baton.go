@@ -98,13 +98,12 @@ const progressInterval = 1 * time.Second     // Rate-limit progress messages
 // newBaton creates a new Baton object, allowing the caller to control
 // the interactivity hint and to provide a function which the baton
 // must call when it generates a log message of its own.
-func newBaton(interactive bool, logFunc func(string), ti *terminfo.Terminfo) *Baton {
+func newBaton(interactive bool, logFunc func(string)) *Baton {
 	me := new(Baton)
 	me.start = time.Now()
 	me.channel = make(chan Message)
 	me.progressEnabled = interactive
 	me.logFunc = logFunc
-	me.ti = ti
 	go func() {
 		lastProgress := &[]byte{}
 		for {
@@ -114,13 +113,13 @@ func newBaton(interactive bool, logFunc func(string), ti *terminfo.Terminfo) *Ba
 			} else if me.stream != nil {
 				if msg.ty == LOG {
 					if me.progressEnabled {
-						me.ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
-						me.ti.Fprintf(me.stream, terminfo.ClrEol)
+						control.ti().Fprintf(me.stream, terminfo.ColumnAddress, 0)
+						control.ti().Fprintf(me.stream, terminfo.ClrEol)
 						me.stream.Write(msg.str)
-						if !bytes.HasSuffix(msg.str, ti.Strings[terminfo.ScrollForward]) {
-							me.ti.Fprintf(me.stream, terminfo.ScrollForward)
+						if !bytes.HasSuffix(msg.str, control.ti().Strings[terminfo.ScrollForward]) {
+							control.ti().Fprintf(me.stream, terminfo.ScrollForward)
 						}
-						me.ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+						control.ti().Fprintf(me.stream, terminfo.ColumnAddress, 0)
 						me.stream.Write(*lastProgress)
 					} else {
 						if len(msg.str) != 0 {
@@ -131,8 +130,8 @@ func newBaton(interactive bool, logFunc func(string), ti *terminfo.Terminfo) *Ba
 						}
 					}
 				} else if msg.ty == PROGRESS {
-					me.ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
-					me.ti.Fprintf(me.stream, terminfo.ClrEol)
+					control.ti().Fprintf(me.stream, terminfo.ColumnAddress, 0)
+					control.ti().Fprintf(me.stream, terminfo.ClrEol)
 					me.stream.Write(msg.str)
 					lastProgress = &msg.str
 				}
