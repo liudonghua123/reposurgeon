@@ -638,7 +638,7 @@ func (rs *Reposurgeon) DoHelp(ctx context.Context, argIn string) (stopOut bool) 
 			if err == nil {
 				maxWidth = width - 4
 			}
-			pager, err := NewPager(control.ti)
+			pager, err := NewPager(control.ti())
 			if err != nil {
 				fmt.Fprintln(os.Stderr, fmt.Errorf("Unable to start a pager: %w", err).Error())
 				return false
@@ -649,14 +649,14 @@ func (rs *Reposurgeon) DoHelp(ctx context.Context, argIn string) (stopOut bool) 
 		}
 		longest := 43
 		for _, h := range _Helps {
-			hasUL := control.ti != nil && len(control.ti.Strings[terminfo.EnterUnderlineMode]) != 0
+			hasUL := control.ti() != nil && len(control.ti().Strings[terminfo.EnterUnderlineMode]) != 0
 			lines := wrap(h.commands, maxWidth-longest)
 			for idx, line := range lines {
 				if idx == 0 {
 					if hasUL && !strings.HasPrefix(h.title, " ") {
-						control.ti.Fprintf(out, terminfo.EnterUnderlineMode)
+						control.ti().Fprintf(out, terminfo.EnterUnderlineMode)
 						io.WriteString(out, h.title)
-						control.ti.Fprintf(out, terminfo.ExitUnderlineMode)
+						control.ti().Fprintf(out, terminfo.ExitUnderlineMode)
 						fmt.Fprintf(out, "%*s%s\n", longest-len(h.title), " ", line)
 					} else {
 						fmt.Fprintf(out, "%s%*s%s\n", h.title, longest-len(h.title), " ", line)
