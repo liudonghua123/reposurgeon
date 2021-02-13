@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.24: 2021-02-13::
      Retire the read --cvsignores option; best to use an expunge instead.
      Subversion proerties discarded during read are logged, not shouted.
      In branch/tag rename and expunge, be more flexible about RE delimiters.
