@@ -2394,39 +2394,6 @@ include::docinclude/do.adoc[]
 
 include::docinclude/undefine.adoc[]
 
-Here's an example to illustrate how you might use this.  In CVS
-repositories of projects that use the GNU ChangeLog convention, a very
-common pre-conversion artifact is a commit with the comment "```++*** empty
-log message ***++```" that modifies only a ChangeLog entry explaining the
-commit immediately previous to it. The following
-
---------
-define changelog <{0}> & /empty log message/ squash --pushback
-do changelog 2012-08-14T21:51:35Z
-do changelog 2012-08-08T22:52:14Z
-do changelog 2012-08-07T04:48:26Z
-do changelog 2012-08-08T07:19:09Z
-do changelog 2012-07-28T18:40:10Z
---------
-
-is equivalent to the more verbose
-
---------
-<2012-08-14T21:51:35Z> & /empty log message/ squash --pushback
-<2012-08-08T22:52:14Z> & /empty log message/ squash --pushback
-<2012-08-07T04:48:26Z> & /empty log message/ squash --pushback
-<2012-08-08T07:19:09Z> & /empty log message/ squash --pushback
-<2012-07-28T18:40:10Z> & /empty log message/ squash --pushback
---------
-
-but you are less likely to make difficult-to-notice errors typing the
-first version.
-
-(Also note how the text regexp acts as a failsafe against the
-possibility of typing a wrong date that doesn't refer to a commit with
-an empty comment. This was a real-world example from the CVS-to-git
-conversion of groff.)
-
 include::docinclude/script.adoc[]
 
 include::docinclude/print.adoc[]
@@ -3081,6 +3048,80 @@ Conversion bugs are disproportionately likely to occur on older
 branches or tags made with CVS version before CVS got commit IDs in
 2006 (version 2.12). Often the most efficient remedy is simply to
 delete junk branches and tags; reposurgeon(1) makes this easy to do.
+
+[[tipsntricks]]
+== Tips and Tricks
+
+=== Use the Q set to check your work
+
+When you're experimenting with mass changes based on pattern matching
+(as in filter, transcode, changelogs, or even msgin) bear in mind that
+commits and other objects actually modified get their Q bits set. You
+can use this as a selection with "list" or "inspect" commands to check
+your work.
+
+=== Use macros to avoid repeating boilerplate
+
+In CVS repositories of projects that use the GNU ChangeLog convention,
+a very common pre-conversion artifact is a commit with the comment
+"```++*** empty log message ***++```" that modifies only a ChangeLog
+entry explaining the commit immediately previous to it. The following
+
+--------
+define changelog <{0}> & /empty log message/ squash --pushback
+do changelog 2012-08-14T21:51:35Z
+do changelog 2012-08-08T22:52:14Z
+do changelog 2012-08-07T04:48:26Z
+do changelog 2012-08-08T07:19:09Z
+do changelog 2012-07-28T18:40:10Z
+--------
+
+is equivalent to the more verbose
+
+--------
+<2012-08-14T21:51:35Z> & /empty log message/ squash --pushback
+<2012-08-08T22:52:14Z> & /empty log message/ squash --pushback
+<2012-08-07T04:48:26Z> & /empty log message/ squash --pushback
+<2012-08-08T07:19:09Z> & /empty log message/ squash --pushback
+<2012-07-28T18:40:10Z> & /empty log message/ squash --pushback
+--------
+
+but you are less likely to make difficult-to-notice errors typing the
+first version.
+
+(Also note how the text regexp acts as a failsafe against the
+possibility of typing a wrong date that doesn't refer to a commit with
+an empty comment. This was a real-world example from the CVS-to-git
+conversion of groff.)
+
+=== Handling username collisions
+
+Occasionally when processing a CVS or Subversion repository you will
+encounter a case where, during two different spans of time, the
+same user ID was used by two different people for which you have
+full name-and-email attributions you want to apply.
+
+As an example, suppose your history has two committers named
+"fred", one active before March 15 2010 and one after.  The name and
+email fields in their commit attributions all look like "fred <fred>"
+with variable datas following.
+
+There's no way you can dicriminate by time in an authors file.
+But there's a different technique that will work.  Like this:
+
+----
+1..<2010-90-15T00:00:00Z> & /^fred$/C attribution =C|=A set "Fred Foonly" "fred1@foonly.org"
+<2010-90-15T00:00:00Z>..$ & /^fred$/C attribution =C|=A set "Fred J. Muggs" "fred2@foonly.org"
+----
+
+Part of the trick here is knowing that if you only set name and email
+fields with an attribution command the date field is left unchanged.
+
+=== Use reposurgeon.el to cut down on repetitive handwork
+
+An Emacs mode for editing msgout dumps ships with the reposurgeon
+distribution.  It includes various useful commands for Gitifying
+comments abd reference-lifting.
 
 [[troubleshooting]]
 == Troubleshooting and bug reports
