@@ -6866,7 +6866,7 @@ in {}, optional in [], and ... says the element just before it may be repeated.
 Parts in ALL-CAPS are expected to be filled in by the user.
 
 Commands are distinguished by a command keyword.  Most take a selection set
-immediately before it; see 'help selection' for details.  Some
+immediately before it; see "help selection" for details.  Some
 commands take additional modifier arguments after the command keyword.
 
 Most report-generation commands support output redirection. When

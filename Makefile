@@ -58,7 +58,7 @@ current-golang:
 	go version
 
 helpers:
-	sudo apt-get install asciidoctor cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync
+	sudo apt-get install asciidoctor cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync awk
 
 test-helpers: 
 	sudo apt install golint shellcheck
@@ -201,9 +201,10 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 	@rm -fr docinclude; mkdir docinclude
 	@get_help() { \
 		./reposurgeon "set asciidoc" "help $${1}" | \
-			sed -e 's/help regexp/<<regular_expressions,help regexp>>/g' \
-			    -e 's/help read/<<read_cmd,help read>>/g' \
+			sed \
 			    -e 's/help branchify/<<branchify_opt,help branchify>>/g' \
+			    -e 's/help regexp/<<regular_expressions,help regexp>>/g' \
+			    -e 's/help read/<<read_cmd,help read>>/g' \
 			    -e 's/#/+#+/'; \
 	}; \
 	for topic in $(BNF_TOPICS); \
