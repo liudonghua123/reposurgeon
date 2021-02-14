@@ -3112,16 +3112,37 @@ But there's a different technique that will work.  Like this:
 ----
 1..<2010-90-15T00:00:00Z> & /^fred$/C attribution =C|=A set "Fred Foonly" "fred1@foonly.org"
 <2010-90-15T00:00:00Z>..$ & /^fred$/C attribution =C|=A set "Fred J. Muggs" "fred2@foonly.org"
+/fred[12]/C inspect
 ----
+
+The third command allows you to check that the previous two produced
+a sane-looking result.
 
 Part of the trick here is knowing that if you only set name and email
 fields with an attribution command the date field is left unchanged.
+
+If you needed to handle more than one of these collisions, you
+might consider a slightly different approach that illustrates
+how to write and use a multiline macro:
+
+----
+define splitAttribution {
+1..<$2> & /^$1$/C attribution =C|=A set "$3" "$3"
+<$2>..$ & /^$1$/C attribution =C|=A set "$4" "$4"
+}
+splitAttribution fred 2010-90-15T00:00:00Z fred1 fred2
+----
+
+This depends on the fact that the the script arguments $1 and $2 get
+substituted before the regular-expression compiler interprets $.
+You'd follow it by applying an attribution file containing entries
+for fred1 and fred2.
 
 === Use reposurgeon.el to cut down on repetitive handwork
 
 An Emacs mode for editing msgout dumps ships with the reposurgeon
 distribution.  It includes various useful commands for Gitifying
-comments abd reference-lifting.
+comments and reference-lifting.
 
 [[troubleshooting]]
 == Troubleshooting and bug reports
