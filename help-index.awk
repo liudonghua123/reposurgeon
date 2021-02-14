@@ -1,6 +1,21 @@
 #!/bin/awk -f
 
+# If you change the number or order of the chapters in the manual,
+# this script needs to be updated to match.
+
 BEGIN {
+    # Currently Chapter 6 General command syntax has no commands in it,
+    # but there are some relevant help topics that we should include. It
+    # gets a special case with hand-written TOC entries.
+    GENERAL_COMMAND_SYNTAX = 6
+
+    # Chapters 7 through 12 currently document all the commands, while
+    # chapters before and after this section use definition lists for
+    # other purposes. Since we don't currently want those to show up in
+    # the TOC, we simply don't print anything out for them.
+    START_TOC = 7
+    END_TOC = 12
+
     print "package main"
     print ""
     print "type help struct {"
@@ -12,14 +27,14 @@ BEGIN {
 }
 
 /^=+/ {
-    if (counters[2] == 7 && counters[3] == "") { # chapter 7 has no commands, but it does have documentation
+    if (counters[2] == GENERAL_COMMAND_SYNTAX && counters[3] == "") {
         print ""
-        print "\thelp{\"7. General command syntax\", nil},"
+        print "\thelp{\"6. General command syntax\", nil},"
         print "\thelp{\"  1. Regular Expressions\", []string{\"regexp\"}},"
         print "\thelp{\"  2. Selection syntax\", []string{\"selection\", \"functions\"}},"
         print "\thelp{\"  3. Command syntax\", []string{\"syntax\"}},"
         print "\thelp{\"  4. Redirection and shell-like features\", []string{\"redirection\"}},"
-    } else if (counters[2] > 5 && counters[2] < 14 && counters[2] != 7) { # chapters 6 through 13 have commands
+    } else if (counters[2] >= START_TOC && counters[2] <= END_TOC) {
         if (counters[3] == "" && counters[2] > 6) { # put a blank line after every chapter
             print ""
         }
