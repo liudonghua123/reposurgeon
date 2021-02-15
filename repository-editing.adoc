@@ -3130,7 +3130,7 @@ define splitAttribution {
 1..<$2> & /^$1$/C attribution =C|=A set "$3" "$3"
 <$2>..$ & /^$1$/C attribution =C|=A set "$4" "$4"
 }
-splitAttribution fred 2010-90-15T00:00:00Z fred1 fred2
+do splitAttribution fred 2010-90-15T00:00:00Z fred1 fred2
 ----
 
 This depends on the fact that the the script arguments $1 and $2 get
