@@ -8923,6 +8923,7 @@ func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Bato
 	// Actually delete the commits only reachable from wrong branches.
 	// --no-preserve-refs is to avoid creating new resets on wrong branches
 	repo.delete(orderedIntSet(deletia), orderedStringSet{"--no-preserve-refs"}, baton)
+	repo._buildNamecache()
 }
 
 // readMessageBox modifies repo metadata by reading/merging in a mailbox stream.
