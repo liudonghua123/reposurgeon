@@ -103,6 +103,7 @@ lift on a repository named _project_ just under the current directory.
 Note that these are given as though typed to the interactive command
 prompt, which is not shown.
 
+[source,bash]
 --------
 # Load the project into main memory
 # Warning: this command is slow because Subversion is slow.
