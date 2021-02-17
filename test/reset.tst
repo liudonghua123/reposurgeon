@@ -6,13 +6,13 @@ read <be-bookmarks.fi
 reset move D :6
 reset delete A
 reset rename B Z
-27 reset move default :10
+27 reset move master :10
 =R index
 
 # error: unknown reset name
 reset delete X
 # error: move multiple resets
-reset move default :15
+reset move master :15
 # error: non-singleton target
 reset move D :6,:10,:15
 # error: empty new name

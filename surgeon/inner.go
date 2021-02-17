@@ -4711,7 +4711,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 			if bytes.HasPrefix(line, []byte("from")) {
 				referent = string(bytes.TrimSpace(line[5:]))
 			} else {
-				sp.error(fmt.Sprintf("missing 'from' field in tag %s", tagname))
+				sp.error(fmt.Sprintf("missing 'from' field in tag %q", tagname))
 			}
 			line = sp.fiReadline()
 			if bytes.HasPrefix(line, []byte("tagger")) {
@@ -5226,15 +5226,8 @@ func (repo *Repository) size() int {
 func (repo *Repository) branchset() orderedStringSet {
 	// branchset returns a set of all branchnames appearing in this repo.
 	branches := newOrderedStringSet()
-	for _, e := range repo.events {
-		switch e.(type) {
-		case *Reset:
-			if e.(*Reset).committish != "" {
-				branches.Add(e.(*Reset).ref)
-			}
-		case *Commit:
-			branches.Add(e.(*Commit).Branch)
-		}
+	for _, commit := range repo.commits(nil) {
+		branches.Add(commit.Branch)
 	}
 	return branches
 }
@@ -5311,6 +5304,9 @@ func (repo *Repository) _buildNamecache() {
 		case *Reset:
 			reset := event.(*Reset)
 			repo._namecache["reset@"+filepath.Base(reset.ref)] = []int{i}
+			if reset.committish != "" {
+				repo._namecache[filepath.Base(reset.ref)] = []int{repo.markToIndex(reset.committish)}
+			}
 			if reset.legacyID != "" {
 				repo._namecache[reset.legacyID] = []int{i}
 			}

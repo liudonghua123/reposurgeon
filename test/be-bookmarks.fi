@@ -3,8 +3,8 @@ mark :1
 data 5
 tail
 
-reset refs/heads/default
-commit refs/heads/default
+reset refs/heads/master
+commit refs/heads/master
 mark :2
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -17,7 +17,7 @@ mark :3
 data 2
 a
 
-commit refs/heads/default
+commit refs/heads/master
 mark :4
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -31,7 +31,7 @@ mark :5
 data 3
 aa
 
-commit refs/heads/default
+commit refs/heads/master
 mark :6
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -45,7 +45,7 @@ mark :7
 data 2
 b
 
-commit refs/heads/default
+commit refs/heads/master
 mark :8
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -59,7 +59,7 @@ mark :9
 data 3
 bb
 
-commit refs/heads/default
+commit refs/heads/master
 mark :10
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -73,7 +73,7 @@ mark :11
 data 2
 c
 
-commit refs/heads/default
+commit refs/heads/master
 mark :12
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -87,7 +87,7 @@ mark :13
 data 3
 cc
 
-commit refs/heads/default
+commit refs/heads/master
 mark :14
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -96,7 +96,7 @@ Tail 2 of C
 from :2
 M 100644 :13 cc
 
-commit refs/heads/default
+commit refs/heads/master
 mark :15
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -111,7 +111,7 @@ mark :16
 data 7
 master
 
-commit refs/heads/default
+commit refs/heads/master
 mark :17
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -125,7 +125,7 @@ mark :18
 data 8
 master1
 
-commit refs/heads/default
+commit refs/heads/master
 mark :19
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -139,7 +139,7 @@ mark :20
 data 2
 d
 
-commit refs/heads/default
+commit refs/heads/master
 mark :21
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -148,7 +148,7 @@ Tail of D
 from :17
 M 100644 :20 d
 
-commit refs/heads/default
+commit refs/heads/master
 mark :22
 author J. Random Hacker <jrh@foobar.com> 1456976347 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976347 -0500
@@ -170,7 +170,7 @@ from :15
 reset refs/heads/master
 from :19
 
-reset refs/heads/default
+reset refs/heads/master
 from :22
 
 reset refs/heads/D

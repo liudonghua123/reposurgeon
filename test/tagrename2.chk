@@ -2,11 +2,9 @@ Before tag-branch rename
 branch refs/heads/master
 branch refs/heads/vendor/current
 branch refs/heads/vendor/5.8
-branch refs/heads/vendor/5.4
 tag    vendor/5.4-root
 After tag-branch rename
 branch refs/heads/master
 branch refs/heads/vendor/current
 branch refs/heads/vendor/5.8
-branch refs/heads/vendor/5.4
 tag    vendor/5.4

@@ -1,30 +1,30 @@
 set relax
 read <be-bookmarks.fi
 =R index
-     2 branch      -    refs/heads/default
+     2 branch      -    refs/heads/master
     24 branch     :6    refs/heads/A
     25 branch    :10    refs/heads/B
     26 branch    :15    refs/heads/C
     27 branch    :19    refs/heads/master
-    28 branch    :22    refs/heads/default
+    28 branch    :22    refs/heads/master
     29 branch    :22    refs/heads/D
 reset move D :6
 reset delete A
 reset rename B Z
-27 reset move default :10
+27 reset move master :10
 =R index
-     2 branch      -    refs/heads/default
+     2 branch      -    refs/heads/master
     24 branch    :10    refs/heads/Z
     25 branch    :15    refs/heads/C
     26 branch    :19    refs/heads/master
-    27 branch    :10    refs/heads/default
+    27 branch    :10    refs/heads/master
     28 branch     :6    refs/heads/D
 
 # error: unknown reset name
 reset delete X
 reposurgeon: no resets match ^refs/heads/X$
 # error: move multiple resets
-reset move default :15
+reset move master :15
 reposurgeon: can't move multiple resets
 # error: non-singleton target
 reset move D :6,:10,:15

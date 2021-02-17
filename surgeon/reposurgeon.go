@@ -4881,13 +4881,44 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 					if reset.ref == addBranchPrefix(branch) {
 						reset.ref = addBranchPrefix(subst)
 					}
-				} else if tag, ok := event.(*Tag); ok {
-					// Special weird hack to map Subversion root tags.
-					behead := func(s string) string { return s[len("heads/"):] }
-					if tag.tagname == behead(removeBranchPrefix(branch))+"-root" {
-						tag.tagname = behead(subst) + "-root"
-					}
 				}
+			}
+		}
+		// Things get a little weird and kludgy here. It's the
+		// price we gave to pay for deferring Subversion
+		// branch remapping to be done in gitspace rather than
+		// as a phase in the Subversion reader.
+		//
+		// What we're coping with is the possibility of tags
+		// and resets that were made from Subversion
+		// branch-copy commits. We The name and ref fields of
+		// such things are branch IDs with the suffix "-root",
+		// but without a refs/heads leader, and we need tp
+		// put the prefix part through the the same
+		// transformation as branch names.
+		//
+		// This pass depends on the fact that we've already done
+		// collision checks for all branch renames.
+		for _, event := range repo.events {
+			if tag, ok := event.(*Tag); ok {
+				if !strings.HasSuffix(tag.tagname, "-root") {
+					continue
+				}
+				tagname := removeBranchPrefix(tag.tagname)
+				tagname = tagname[:len(tagname)-5]
+				tagname = "heads/" + tagname
+				if !sourceRE.MatchString(tagname) {
+					continue
+				}
+				subst := GoReplacer(sourceRE, tagname, newname)
+				tag.tagname = subst[6:] + "-root"
+			} else if reset, ok := event.(*Reset); ok {
+				resetname := removeBranchPrefix(reset.ref)
+				if !sourceRE.MatchString(resetname) {
+					continue
+				}
+				subst := GoReplacer(sourceRE, resetname, newname)
+				reset.ref = addBranchPrefix(subst)
 			}
 		}
 	} else if verb == "delete" {
