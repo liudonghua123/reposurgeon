@@ -200,9 +200,7 @@ EXCEPTIONS = \
 repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
 	@rm -fr docinclude; mkdir docinclude
 	@get_help() { \
-		./reposurgeon "set asciidoc" "help $${1}" | \
-			sed \
-			    -e 's/#/+#+/'; \
+		./reposurgeon "set asciidoc" "help $${1}" | awk -f poundsign.awk; \
 	}; \
 	for topic in $(BNF_TOPICS); \
 	do \

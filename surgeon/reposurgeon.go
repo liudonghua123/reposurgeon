@@ -2965,10 +2965,10 @@ to fix them up.
 This command sets Q bits; objects actually modified by the command
 get true, all other events get false.
 
----
+----
 # In all commit comments containing non-ASCII bytes, transcode from Latin-1.
 =I transcode latin1
----
+----
 
 `)
 }
@@ -3308,7 +3308,7 @@ for the SOURCE path in the commit's ancestry.
 
 Some examples:
 
----
+----
 # At commit :15, stop .gitignore from being checked out in later revisions 
 :15 add D .gitignore
 
@@ -3320,7 +3320,7 @@ blob :2317 <<EOF
 Hello, I must be going.
 EOF
 :17 add M 100755 :2317 spaulding
----
+----
 `)
 }
 
@@ -3936,10 +3936,10 @@ not entirely deleted, false on all other events.
 
 Example:
 
----
+----
 # Delete all PDFs from the loaded repository.
 expunge /[.]pdf$/
----
+----
 `)
 }
 
