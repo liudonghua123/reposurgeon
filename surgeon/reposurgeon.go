@@ -5092,6 +5092,10 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			croak("new tag name must be nonempty.")
 			return false
 		}
+		if repo.named(newname) != nil {
+			croak("something is already named %s", newname)
+			return false
+		}
 	} else if verb != "delete" {
 		croak("unknown verb '%s' in tag command.", verb)
 		return false
