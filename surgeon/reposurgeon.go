@@ -504,6 +504,11 @@ func (rs *Reposurgeon) SetCore(k *kommandant.Kmdt) {
 	}
 }
 
+var helpLinks = [][]string{
+	{"options", "control-options"},
+	{"regexp", "regular_expressions"},
+}
+
 // helpOutput handles Go multiline literals that may have a leading \n
 // to make them more readable in source. It just clips off any leading \n.
 func (rs *Reposurgeon) helpOutput(help string) {
@@ -525,6 +530,10 @@ func (rs *Reposurgeon) helpOutput(help string) {
 				os.Stdout.WriteString("+\n")
 				indent = false
 			} else {
+				// turn "help foo" in the prose into a link in asciidoctor syntax
+				for _, link := range helpLinks {
+					line = strings.ReplaceAll(line, "help "+link[0], "<<"+link[1]+",help "+link[0]+">>")
+				}
 				if indent {
 					os.Stdout.WriteString("   ")
 				}
