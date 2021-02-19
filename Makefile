@@ -177,6 +177,7 @@ UNANCHORED_TOPICS = \
 	options \
 	redirection \
 	regexp \
+	selection \
 	syntax
 READ_OPTION_TOPICS = \
 	branchify
@@ -192,9 +193,7 @@ EXCEPTIONS = \
 	attribution \
 	lint \
 	profile \
-	reparent \
-	selection
-
+	reparent
 # Most othe command descriptions in Repositpory editing are reposurgeon's embedded
 # help, lightly massaged into asciidoc format.
 repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc

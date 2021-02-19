@@ -1,7 +1,8 @@
 #!/bin/awk -f
 
-# If you change the number or order of the chapters in the manual,
-# this script needs to be updated to match.
+# This scrit relies ON START-TOC and END-TOC being used to delimit portions of the
+# input that should be scanned for sectioin headers, command definitions, and
+# inclusiins.  One wart is that "options.adoc" is treated specially here.
 
 function flush_chapter_toc() {
     if (intoc) {
@@ -38,10 +39,6 @@ BEGIN {
     print "}"
     print ""
     print "var _Helps = []help{"
-    print ""
-    print "\thelp{\"6. General command syntax\", nil},"
-    print "\thelp{\"  1. Regular Expressions\", []string{\"regexp\"}},"
-    print "\thelp{\"  2. Selection syntax\", []string{\"selection\", \"functions\"}},"
 }
 
 /^=+/ {
@@ -75,7 +72,7 @@ BEGIN {
 }
 /include::/ {
     split($1, parts, "/")
-    split(parts[2], parts, ".")
+    split(parts[length(parts)], parts, ".")
     if (parts[1] != "options") { # we include options.adoc, but it's not a command
         commands[maxcommand] = parts[1]
         maxcommand += 1

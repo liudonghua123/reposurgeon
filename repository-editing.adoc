@@ -1185,44 +1185,16 @@ while the conversion recipe is under development. Recipe
 development should be treated as a serious project with its
 own change tracking.
 
-[[wayfinding]]
-=== Finding your way around
+// START-TOC
 
-In the remainder of this document, individual commands are described
-by hanging paragraphs led by the command syntax in a simple dialect of
-BNF.  Metavariables and substitutable text are capitalized, []
-surrounds optional arguments, and {} surrounds mandatory ones.
+== The Command Interpreter
 
-Help is always available.
+[[command-syntax]]
+=== Command syntax
 
-include::docinclude/help.adoc[]
+Ip give you the flavor of the command language, here
+are some simple examples:
 
-History is always available.
-
-include::docinclude/history.adoc[]
-
-You don't need to exit the interpreter to run quick shell commands.
-
-include::docinclude/shell.adoc[]
-
-[[general]]
-== General command syntax
-
-Commands to reposurgeon consist of a command keyword, usually preceded
-by a selection set, sometimes followed by whitespace-separated
-arguments. It is often possible to omit the selection-set argument and
-have it default to something reasonable.  For commands that are
-considered safe (no side effects) the default is all events; for risky
-commands the default is no events.
-
-When a command changes repository state, it will usually so indicate
-in a response.
-
-Here are some motivating examples.  The commands will be
-explained in more detail after the description of selection
-syntax.
-
-// bad end/
 --------
 29..71 list            ;; list summary index of events 29..71.
 
@@ -1262,14 +1234,47 @@ syntax.
                        ;; ignores.
 --------
 
+include::docinclude/syntax.adoc[]
+
+When a command changes repository state, it will usually so indicate
+in a response.
+
+[[wayfinding]]
+=== Finding your way around
+
+Help is always available.
+
+include::docinclude/help.adoc[]
+
+Command history is always available.
+
+include::docinclude/history.adoc[]
+
+You don't need to exit the interpreter to run quick shell commands.
+
+include::docinclude/shell.adoc[]
+
 [[regular_expressions]]
 === Regular Expressions
+
+Regular expressions are an important building block of
+the command language, used both in evebt selections and
+various command arguments.
 
 [[regexp]]
 include::docinclude/regexp.adoc[]
 
 [[selections]]
 === Selection syntax
+
+// END-TOC
+
+Commands to reposurgeon consist of a command keyword, usually preceded
+by a selection set, sometimes followed by whitespace-separated
+arguments. It is often possible to omit the selection-set argument and
+have it default to something reasonable.  For commands that are
+considered safe (no side effects) the default is all events; for risky
+commands the default is no events.
 
 A selection set is ordered; that is, any given element may occur
 only once, and the set is ordered by when its members were first added.
@@ -1475,6 +1480,15 @@ If you need to embed '```[^/]```' into your regular expression (e.g. to
 express "all characters but a slash") you can use a C-like string
 escape such as `\x2f`.
 
+// START-TOC
+
+///
+// FIXME: Why does this line have to be repeated twice
+// to create a "selection" entry in the TOC?
+include::docinclude/selection.adoc[]
+include::docinclude/selection.adoc[]
+///
+
 include::docinclude/functions.adoc[]
 
 Set expressions may be combined with the operators '```|```' and '```&```'
@@ -1493,12 +1507,6 @@ sorted so the result is in ascending order.
 Do set negation with prefix '```~```'; it has higher precedence than
 `&` and `|` but lower than `?`.
 
-// START-TOC
-
-[[command-syntax]]
-=== Command syntax
-
-include::docinclude/syntax.adoc[]
 
 [[redirection]]
 === Redirection and shell-like features
