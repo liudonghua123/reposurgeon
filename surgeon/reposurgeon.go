@@ -6837,21 +6837,26 @@ A quick example-centered reference for selection-set syntax.
 
 First, these ways of constructing singleton sets:
 
+----
 123        event numbered 123 (1-origin)
 :345       event with mark 345
 <456>      commit with legacy-ID 456 (probably a Subversion revsion)
 <foo>      the tag named 'foo', or failing that the tip commit of branch foo
+----
 
 You can select commits and tags by date, or by date and committer:
 
+----
 <2011-05-25>                  all commits and tags with this date
 <2011-05-25!esr>              all with this date and committer
 <2011-05-25T07:30:37Z>        all commits and tags with this date and time
 <2011-05-25T07:30:37Z!esr>    all with this date and time and committer
 <2011-05-25T07:30:37Z!esr#2>  event #2 (1-origin) in the above set
+----
 
 More ways to construct event sets:
 
+----
 /foo/      all commits and tags containing the string 'foo' in text or metadata
            suffix letters: a=author, b=branch, c=comment in commit or tag,
                            C=committer, r=committish, p=text, t=tagger, n=name,
@@ -6882,13 +6887,16 @@ More ways to construct event sets:
 
 @min()     create singleton set of the least element in the argument
 @max()     create singleton set of the greatest element in the argument
+----
 
 Other special functions are available: do 'help functions' for more.
 
 You can compose sets as follows:
 
+----
 :123,<foo>     the event marked 123 and the event referenced by 'foo'.
 :123..<foo>    the range of events from mark 123 to the reference 'foo'
+----
 
 Selection sets are ordered: elements remain in the order they were added,
 unless sorted by the ? suffix.
