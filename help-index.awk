@@ -24,25 +24,23 @@ BEGIN {
 
 /^=+|START_TOC|END-TOC/ {
     if (intoc) {
-	if (intoc) {
-	    if (counters[3] == "" && counters[2] > 6) { # put a blank line after every chapter
-		print ""
-	    }
-	    if (maxcommand == 1) { # if there are no commands, the generated command list will be nil
-		temp = "nil"
-	    } else { # otherwise, it'll be a comma-separated list of strings
-		temp = "[]string{"
-		for (i = 1; i < maxcommand; i++) {
-		    if (i > 1) {
-			temp = temp ", "
-		    }
-		    temp = temp "\"" commands[i] "\""
+	if (counters[3] == "" && counters[2] > 6) { # put a blank line after every chapter
+	    print ""
+	}
+	if (maxcommand == 1) { # if there are no commands, the generated command list will be nil
+	    temp = "nil"
+	} else { # otherwise, it'll be a comma-separated list of strings
+	    temp = "[]string{"
+	    for (i = 1; i < maxcommand; i++) {
+		if (i > 1) {
+		    temp = temp ", "
 		}
-		temp = temp "}"
+		temp = temp "\"" commands[i] "\""
 	    }
-	    if (counters[3] == "" || (counters[3] != "" && maxcommand > 1)) { # only print chapter headings or sections with commands
-		print "\thelp{\"" indentation counters[depth] "." title "\", " temp "},"
-	    }
+	    temp = temp "}"
+	}
+	if (counters[3] == "" || (counters[3] != "" && maxcommand > 1)) { # only print chapter headings or sections with commands
+	    print "\thelp{\"" indentation counters[depth] "." title "\", " temp "},"
 	}
     }
     maxcommand = 1
