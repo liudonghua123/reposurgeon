@@ -232,7 +232,7 @@ summary:
 	@for topic in $(BNF_TOPICS); do head -2 "docinclude/$${topic}.adoc"; done | grep -v '^\[\[' | sed '/::$$/s///'
 
 surgeon/help-index.go: help-index.awk repository-editing.adoc
-	awk -f $^ >$@
+	awk --posix -f $^ >$@
 
 #
 # Auxillary Go tooling productions

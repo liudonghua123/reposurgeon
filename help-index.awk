@@ -72,7 +72,7 @@ BEGIN {
 }
 /include::/ {
     split($1, parts, "/")
-    split(parts[length(parts)], parts, ".")
+    split(parts[2], parts, ".")
     commands[maxcommand] = parts[1]
     maxcommand += 1
 }
