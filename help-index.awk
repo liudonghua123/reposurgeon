@@ -2,7 +2,7 @@
 
 # This scrit relies ON START-TOC and END-TOC being used to delimit portions of the
 # input that should be scanned for sectioin headers, command definitions, and
-# inclusiins.  One wart is that "options.adoc" is treated specially here.
+# inclusions.
 
 function flush_chapter_toc() {
     if (intoc) {
@@ -73,10 +73,8 @@ BEGIN {
 /include::/ {
     split($1, parts, "/")
     split(parts[length(parts)], parts, ".")
-    if (parts[1] != "options") { # we include options.adoc, but it's not a command
-        commands[maxcommand] = parts[1]
-        maxcommand += 1
-    }
+    commands[maxcommand] = parts[1]
+    maxcommand += 1
 }
 /START-TOC/ {
     maxcommand = 0
