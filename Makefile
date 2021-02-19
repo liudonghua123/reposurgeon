@@ -26,6 +26,13 @@ SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES)
 .PHONY: all fullinstall build stable-golang current-golang helpers test-helpers \
 		get test lint fmt clean install uninstall dist release refresh
 
+awk_supports_posix_arg = $(shell awk --posix "" >/dev/null 2>&1; echo $$?)
+ifeq ($(awk_supports_posix_arg), 0)
+AWK = awk --posix
+else
+AWK = awk
+endif
+
 # Binaries need to be built before generated documentation parts can be made.
 all: build $(MANPAGES) $(HTMLFILES)
 
@@ -232,7 +239,7 @@ summary:
 	@for topic in $(BNF_TOPICS); do head -2 "docinclude/$${topic}.adoc"; done | grep -v '^\[\[' | sed '/::$$/s///'
 
 surgeon/help-index.go: help-index.awk repository-editing.adoc
-	awk --posix -f $^ >$@
+	$(AWK) -f $^ >$@
 
 #
 # Auxillary Go tooling productions
