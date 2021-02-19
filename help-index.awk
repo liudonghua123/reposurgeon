@@ -3,26 +3,7 @@
 # If you change the number or order of the chapters in the manual,
 # this script needs to be updated to match.
 
-BEGIN {
-    intoc = 0
-
-    print "package main"
-    print ""
-    print "type help struct {"
-    print "	title    string"
-    print "	commands []string"
-    print "}"
-    print ""
-    print "var _Helps = []help{"
-    print ""
-    print "\thelp{\"6. General command syntax\", nil},"
-    print "\thelp{\"  1. Regular Expressions\", []string{\"regexp\"}},"
-    print "\thelp{\"  2. Selection syntax\", []string{\"selection\", \"functions\"}},"
-    print "\thelp{\"  3. Command syntax\", []string{\"syntax\"}},"
-    print "\thelp{\"  4. Redirection and shell-like features\", []string{\"redirection\"}},"
-}
-
-/^=+|END-TOC/ {
+function flush_chapter_toc() {
     if (intoc) {
 	if (counters[3] == "") { # put a blank line after every chapter
 	    print ""
@@ -43,6 +24,30 @@ BEGIN {
 	    print "\thelp{\"" indentation counters[depth] "." title "\", " temp "},"
 	}
     }
+}
+
+
+BEGIN {
+    intoc = 0
+
+    print "package main"
+    print ""
+    print "type help struct {"
+    print "	title    string"
+    print "	commands []string"
+    print "}"
+    print ""
+    print "var _Helps = []help{"
+    print ""
+    print "\thelp{\"6. General command syntax\", nil},"
+    print "\thelp{\"  1. Regular Expressions\", []string{\"regexp\"}},"
+    print "\thelp{\"  2. Selection syntax\", []string{\"selection\", \"functions\"}},"
+    print "\thelp{\"  3. Command syntax\", []string{\"syntax\"}},"
+    print "\thelp{\"  4. Redirection and shell-like features\", []string{\"redirection\"}},"
+}
+
+/^=+/ {
+    flush_chapter_toc()
     maxcommand = 1
     delete commands
     depth = length($1)
@@ -82,6 +87,7 @@ BEGIN {
     intoc = 1
 }
 /END-TOC/ {
+    flush_chapter_toc()
     intoc = 0
 }
 
