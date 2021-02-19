@@ -61,6 +61,7 @@ type Control struct {
 	profileNames         map[string]string
 	startTime            time.Time
 	baton                *Baton
+	GCPercent            int
 	_ti                  *terminfo.Terminfo
 	_terminfoUnavailable bool
 }
@@ -95,6 +96,7 @@ func (ctx *Control) init() {
 	}()
 	ctx.startTime = time.Now()
 	control.lineSep = "\n"
+	control.GCPercent = 100 // Golang's starting value
 }
 
 func (ctx *Control) ti() *terminfo.Terminfo {
@@ -1977,7 +1979,7 @@ func (rs *Reposurgeon) DoSourcetype(line string) bool {
 // HelpGc says "Shut up, golint!"
 func (rs *Reposurgeon) HelpGc() {
 	rs.helpOutput(`
-gc [GOGC]
+gc [GOGC] [>OUTFILE]
 
 Trigger a garbage collection. Scavenges and removes all blob events
 that no longer have references, e.g. as a result of delete operations
@@ -1989,6 +1991,9 @@ call to the Go runtime. The initial value is 100; setting it lower
 causes more frequent garbage collection and may reduces maximum
 working set, while setting it higher causes less frequent garbage
 collection and will raise maximum working set.
+
+The current GC percentage (after setting it, if an argument was given)
+is reported.
 `)
 }
 
@@ -2005,8 +2010,9 @@ func (rs *Reposurgeon) DoGc(line string) bool {
 			croak("ill-formed numeric argument")
 			return false
 		}
-		debug.SetGCPercent(v)
+		control.GCPercent = debug.SetGCPercent(v)
 	}
+	respond("%d", control.GCPercent)
 	return false
 }
 
