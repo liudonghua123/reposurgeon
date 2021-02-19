@@ -4,12 +4,6 @@
 # this script needs to be updated to match.
 
 BEGIN {
-    # Chapters 7 through 12 currently document all the commands, while
-    # chapters before and after this section use definition lists for
-    # other purposes. Since we don't currently want those to show up in
-    # the TOC, we simply don't print anything out for them.
-    START_TOC = 7
-
     intoc = 0
 
     print "package main"
@@ -30,7 +24,7 @@ BEGIN {
 
 /^=+|START_TOC|END-TOC/ {
     if (intoc) {
-	if (counters[2] >= START_TOC) {
+	if (intoc) {
 	    if (counters[3] == "" && counters[2] > 6) { # put a blank line after every chapter
 		print ""
 	    }

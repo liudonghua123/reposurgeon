@@ -1205,8 +1205,6 @@ You don't need to exit the interpreter to run quick shell commands.
 
 include::docinclude/shell.adoc[]
 
-// START-TOC
-
 [[general]]
 == General command syntax
 
@@ -1558,8 +1556,11 @@ rules.
 
 include::docinclude/redirection.adoc[]
 
+
 [[import-export]]
 == Import and Export
+
+// START-TOC
 
 reposurgeon can hold multiple repository states in core.  Each has a
 name.  At any given time, one may be selected for editing. Commands in
