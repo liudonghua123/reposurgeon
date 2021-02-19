@@ -1254,6 +1254,10 @@ You don't need to exit the interpreter to run quick shell commands.
 
 include::docinclude/shell.adoc[]
 
+Here's how to bail out:
+
+include::docinclude/quit.adoc[]
+
 [[regular_expressions]]
 === Regular Expressions
 
@@ -1762,6 +1766,8 @@ include::docinclude/graph.adoc[]
 
 include::docinclude/lint.adoc[]
 
+include::docinclude/when.adoc[]
+
 [[statistics]]
 === Statistics
 
@@ -1941,16 +1947,25 @@ include::docinclude/tagify.adoc[]
 
 include::docinclude/reorder.adoc[]
 
-[[branch-tag-reset]]
-=== Branches, tags, and resets
+[[branches]]
+=== Branches
 
 include::docinclude/branch.adoc[]
+
+include::docinclude/branchlift.adoc[]
+
+include::docinclude/debranch.adoc[]
+
+[[tag-reset-blob]]
+=== Tags, resets, and blobs
 
 include::docinclude/tag.adoc[]
 
 include::docinclude/reset.adoc[]
 
-include::docinclude/branchlift.adoc[]
+include::docinclude/blob.adoc[]
+
+include::docinclude/dedup.adoc[]
 
 [[splitmerge]]
 === Repository splitting and merging
@@ -2095,19 +2110,9 @@ sections that predate the era of ubiquitous NTP time.
 [[misc-surgical]]
 === Miscellanea
 
-include::docinclude/quit.adoc[]
-
-include::docinclude/blob.adoc[]
-
 include::docinclude/renumber.adoc[]
 
-include::docinclude/dedup.adoc[]
-
 include::docinclude/transcode.adoc[]
-
-include::docinclude/debranch.adoc[]
-
-include::docinclude/strip.adoc[]
 
 [[artifact-removal]]
 == Artifact handling
@@ -2387,30 +2392,32 @@ as many commands as possible support redirects.
 
 include::docinclude/gc.adoc[]
 
-include::docinclude/when.adoc[]
+[[diagnostics]]
+=== Diagnostics
 
-[[instrumentation]]
-=== Debugging and diagnostics
+These commands control the level and destination
+of diagnostic logging.
+
+include::docinclude/log.adoc[]
+
+include::docinclude/logfile.adoc[]
+
+[[debugging]]
+=== Debugging
 
 A few commands have been implemented primarily for debugging and
 regression-testing purposes, but may be useful in unusual
 circumstances.
 
-The output of most of these commands can individually be redirected to
-a named output file. Where indicated in the syntax, you can prefix the
-output filename with '```>```' and give it as a following argument.
-
 include::docinclude/resolve.adoc[]
-
-include::docinclude/log.adoc[]
-
-include::docinclude/logfile.adoc[]
 
 include::docinclude/version.adoc[]
 
 include::docinclude/hash.adoc[]
 
 include::docinclude/sizeof.adoc[]
+
+include::docinclude/strip.adoc[]
 
 [[profiling]]
 === Profiling

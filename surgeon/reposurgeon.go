@@ -1986,7 +1986,7 @@ on repositories. This is followed by a Go-runtime garbage collection.
 The optional argument, if present, is passed as a
 https://golang.org/pkg/runtime/debug/#SetGCPercent[SetPercentGC]
 call to the Go runtime. The initial value is 100; setting it lower
-causes more frequwent garbage collection and may reduces maximum
+causes more frequent garbage collection and may reduces maximum
 working set, while setting it higher causes less frequent garbage
 collection and will raise maximum working set.
 `)
@@ -3778,7 +3778,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 // HelpWhen says "Shut up, golint!"
 func (rs *Reposurgeon) HelpWhen() {
 	rs.helpOutput(`
-when TIMESTAMP
+when {TIMESTAMP}
 
 Interconvert between git timestamps (integer Unix time plus TZ) and
 RFC3339 format.  Takes one argument, autodetects the format.  Useful
