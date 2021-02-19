@@ -22,9 +22,9 @@ BEGIN {
     print "\thelp{\"  4. Redirection and shell-like features\", []string{\"redirection\"}},"
 }
 
-/^=+|START_TOC|END-TOC/ {
+/^=+|END-TOC/ {
     if (intoc) {
-	if (counters[3] == "" && counters[2] > 6) { # put a blank line after every chapter
+	if (counters[3] == "") { # put a blank line after every chapter
 	    print ""
 	}
 	if (maxcommand == 1) { # if there are no commands, the generated command list will be nil
