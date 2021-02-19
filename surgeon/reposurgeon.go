@@ -6910,19 +6910,59 @@ in {}, optional in [], and ... says the element just before it may be repeated.
 Parts in ALL-CAPS are expected to be filled in by the user.
 
 Commands are distinguished by a command keyword.  Most take a selection set
-immediately before it; see "help selection" for details.  Some
-commands take additional modifier arguments after the command keyword.
+immediately before it; see "help selection" for details.  Some commands
+have a following subcommand verb. Many commands take additional modifier
+arguments after the command keyword(s).
 
-Most report-generation commands support output redirection. When
-arguments for these are parsed, any argument beginning with '>' is
-extracted and interpreted as the name of a file to which command
-output should be redirected.  Any remaining arguments are available to
-the command logic.
+The syntax of following arguments is variable according to the
+requirements of individual commands, but there are a couple of general
+rules.
 
-Some commands support input redirection. When arguments for these are
-parsed, any argument beginning with '<' is extracted and interpreted
-as the name of a file from which command output should be taken.  Any
-remaining arguments are available to the command logic.
+* You can have comments in a script, led by the character "#".  Both
+  whole-line and "winged" comments following command arguments are
+  supported.  Note that reposurgeon's command parser is fairly
+  primitive and will be confused by a literal # in a command argument.
+
+* Many commands interpret C/Go style backslash escapes like \n in
+  arguments.  You can usually, for example, get around having to
+  include a literal # in an argument by writing "\x23".
+
+* Some commands support option flags.  These are led with a --, so if
+  there is an option flag named "foo" you would write it as "--foo".
+  Option flags are parsed out of the command line before any other
+  interpretation is performed, and can be anywhere on the line.  The
+  order of option flags is never significant.
+
+* When an option flag "foo" sets a value, the syntax is --foo=xxx
+  with no spaces around the equal sign.
+
+* All commands that expect data to be presented on standard input support
+  input redirection.  You may write "<myfile" to take input from the
+  file named "myfile".  Redirections are parsed out early, before
+  the command arguments proper are interpreted, and can be anywhere
+  on the line
+
+* All commands that expect data to be presented on standard input also
+  accept a here-document, just the shell syntax for here-documents
+  with a leading "<<". There are two here-documents in the quick-start
+  example.
+
+* Most commands that normally ship data to standard output accept
+  output redirection.  As in the shell, you can write ">outfile" to
+  send the command output to "outfile", and ">>outfile2" to append
+  to outfile2.
+
+* Some commands take following arguments that are regular
+  expressions. In this context, they still require start and end
+  delimiters as they do when used in a selection prefix, but if you
+  need to have a / in the expression the delimiters can be any
+  punctuation character other than an ASCII single quote.  As a
+  reminder, these are described in the embedded help as pattern
+  expressions.
+
+* Also note that following-argument regular expressions may not contain
+  whitespace; if you need to specify whitespace or a non-printable
+  character use a standard C-style escape such as "\s" for space.
 `)
 }
 

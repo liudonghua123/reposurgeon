@@ -176,7 +176,8 @@ UNANCHORED_TOPICS = \
 	functions \
 	options \
 	redirection \
-	regexp
+	regexp \
+	syntax
 READ_OPTION_TOPICS = \
 	branchify
 TOPICS = $(BNF_TOPICS) $(UNANCHORED_TOPICS) $(READ_OPTION_TOPICS)
@@ -192,8 +193,7 @@ EXCEPTIONS = \
 	lint \
 	profile \
 	reparent \
-	selection \
-	syntax
+	selection
 
 # Most othe command descriptions in Repositpory editing are reposurgeon's embedded
 # help, lightly massaged into asciidoc format.

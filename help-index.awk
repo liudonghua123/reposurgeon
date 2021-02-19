@@ -42,7 +42,6 @@ BEGIN {
     print "\thelp{\"6. General command syntax\", nil},"
     print "\thelp{\"  1. Regular Expressions\", []string{\"regexp\"}},"
     print "\thelp{\"  2. Selection syntax\", []string{\"selection\", \"functions\"}},"
-    print "\thelp{\"  3. Command syntax\", []string{\"syntax\"}},"
 }
 
 /^=+/ {
@@ -83,6 +82,7 @@ BEGIN {
     }
 }
 /START-TOC/ {
+    maxcommand = 0
     intoc = 1
 }
 /END-TOC/ {
