@@ -1486,12 +1486,7 @@ escape such as `\x2f`.
 
 // START-TOC
 
-///
-// FIXME: Why does this line have to be repeated twice
-// to create a "selection" entry in the TOC?
 include::docinclude/selection.adoc[]
-include::docinclude/selection.adoc[]
-///
 
 include::docinclude/functions.adoc[]
 

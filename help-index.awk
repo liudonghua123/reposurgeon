@@ -77,7 +77,7 @@ BEGIN {
     maxcommand += 1
 }
 /START-TOC/ {
-    maxcommand = 0
+    maxcommand = 1
     intoc = 1
 }
 /END-TOC/ {
