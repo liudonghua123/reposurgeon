@@ -1038,8 +1038,6 @@ Good comment practice produces more readable output from `git
 log` and `hg log`, and makes it easy to take in
 whole sequences of changes at a glance.
 
-// START-TOC
-
 [[theory]]
 == Theory of Operation
 
@@ -3150,8 +3148,6 @@ for fred1 and fred2.
 An Emacs mode for editing msgout dumps ships with the reposurgeon
 distribution.  It includes various useful commands for Gitifying
 comments and reference-lifting.
-
-// END-TOC
 
 [[troubleshooting]]
 == Troubleshooting and bug reports
