@@ -43,7 +43,6 @@ BEGIN {
     print "\thelp{\"  1. Regular Expressions\", []string{\"regexp\"}},"
     print "\thelp{\"  2. Selection syntax\", []string{\"selection\", \"functions\"}},"
     print "\thelp{\"  3. Command syntax\", []string{\"syntax\"}},"
-    print "\thelp{\"  4. Redirection and shell-like features\", []string{\"redirection\"}},"
 }
 
 /^=+/ {
