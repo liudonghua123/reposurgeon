@@ -5354,7 +5354,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 // HelpBranchlift says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranchlift() {
 	rs.helpOutput(`
-branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]
+branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
 
 Every commit on SOURCEBRANCH with fileops matching the PATHPREFIX is examined;
 all commits with every fileop matching the PATH are moved to a new branch; if
