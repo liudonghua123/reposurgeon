@@ -1,8 +1,9 @@
 = reposurgeon project news =
 
 Repository head::
-     New manual section, ?"Tips and tricks".
+     New manual section, "Tips and tricks".
      Tag rename checks that it won't step on an existing name.
+     "help" without topic now ermits a custom TOC with command groupings.
 
 4.24: 2021-02-13::
      Retire the read --cvsignores option; best to use an expunge instead.
@@ -51,7 +52,7 @@ Repository head::
      Fix for a bug that produced incorrect splits of mixed Subversion commits.
 
 4.18: 2020-08-26::
-     Repocutter now has a "replace" commant for replacing text in blobs.
+     Repocutter now has a "replace" command for replacing text in blobs.
      repotool now shows closed Mercurial branches.
      The extractor logic creates all resets for multiply-tagged commits.
      Compiler optimizations are enabled for increased performance.
@@ -66,7 +67,7 @@ Repository head::
      Support property deletions from version 3 dump file format in repocutter.
      Performance of repocutter renumber is greatly improved.
      Add notes on how to support AccuRev.
-     The sizeof command is now documemted.
+     The sizeof command is now documented.
 
 4.15: 2020-07-18::
      Documentation polishing.

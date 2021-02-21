@@ -2614,7 +2614,7 @@ for information on the regexp syntax.
 Blobs may be included in the output with the option --blobs.
 
 The following example produces a mailbox of commit comments in a
-decluttered form that is convenient for editiing:
+decluttered form that is convenient for editing:
 
 ----
 =C msgout --filter=/Event-Number:|Committer:|Author|Check-Text:/
@@ -2944,7 +2944,7 @@ func (rs *Reposurgeon) HelpTranscode() {
 	rs.helpOutput(`
 [SELECTION] transcode {ENCODING}
 
-Transcode blobs, commit comments and committer/author names, or tag
+Transcode blobs, commit comments, committer/author names, tag
 comments and tag committer names in the selection set to UTF-8 from
 the character encoding specified on the command line.
 
@@ -4151,16 +4151,16 @@ func (rs *Reposurgeon) DoUnite(line string) bool {
 // HelpGraft says "Shut up, golint!"
 func (rs *Reposurgeon) HelpGraft() {
 	rs.helpOutput(`
-[SELECTION] graft [--prune] REPO-NAME
+[SELECTION] graft [--prune] {REPO-NAME}
 
 For when unite doesn't give you enough control. This command may have
-either of two forms, selected by the size of the selection set.  The
+either of two forms, distinguished by the size of the selection set.  The
 first argument is always required to be the name of a loaded repo.
 
 If the selection set is of size 1, it must identify a single commit in
 the currently chosen repo; in this case the named repo's root will
 become a child of the specified commit. If the selection set is
-empty, the named repo must contain one or more callouts matching a
+empty, the named repo must contain one or more callouts matching
 commits in the currently chosen repo.
 
 Labels and branches in the named repo are prefixed with its name; then

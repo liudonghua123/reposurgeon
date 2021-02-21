@@ -1392,7 +1392,7 @@ func (attr *Attribution) remap(authors map[string]Contributor) bool {
  * computations back to the root.
  *
  * Finally, whenever a blob or commit is modified its hash slot is
- * invalidated.  This is easy to guaranteed with blobs because there
+ * invalidated.  This is easy to guarantee with blobs because there
  * is only one method through which their content is altered. Commits
  * are a different matter; in practice it's not easy to be sure of all
  * the places where a commit is modified, and if we ever see buggy
