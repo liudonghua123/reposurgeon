@@ -4102,6 +4102,7 @@ union repo will be selected.
 
 The root of each repo (other than the oldest repo) will be grafted as
 a child to the last commit in the dump with a preceding commit date.
+
 This will produce a union repository with one branch for each part.
 Running last to first, tag and branch duplicate names will be
 disambiguated using the source repository name (thus, recent
@@ -4110,7 +4111,7 @@ will be renumbered.
 
 The name of the new repo will be the names of all parts concatenated,
 separated by '+'. It will have no source directory; if all factors 
-have the same type it will be inehrited, otherwise no type will be set.
+have the same type it will be inherited, otherwise no type will be set.
 
 With the option --prune, at each join generate D ops for every
 file that doesn't have a modify operation in the root commit of the
