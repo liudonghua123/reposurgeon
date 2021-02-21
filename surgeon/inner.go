@@ -9912,17 +9912,16 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	// commits.
 	commits := union.commits(nil)
 	for _, root := range roots[1:] {
-		// Get last commit such that it and all before it are
-		// earlier than the root.  Never raises IndexError since
+		// Get last commit that is earlier or the same time
+		// as the root.  Never raises IndexError since
 		// union.earliestCommit() is root[0] which satisfies
 		// earlier() thanks to factors sorting.
 		mostRecent := union.earliestCommit()
-		for idx, event := range commits {
-			if root.when().After(event.when()) {
-				mostRecent = event
-				continue
-			} else if idx > 0 {
+		for _, event := range commits {
+			if event.when().After(root.when()) {
 				break
+			} else {
+				mostRecent = event
 			}
 		}
 		root.addParentByMark(mostRecent.mark)
