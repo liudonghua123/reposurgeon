@@ -3,6 +3,13 @@
 # This scrit relies ON START-TOC and END-TOC being used to delimit portions of the
 # input that should be scanned for sectioin headers, command definitions, and
 # inclusions.
+#
+# Things it knows about:
+# * Asciidoc section headers
+# * Asciidoc file inclusions (each one becomes a topic)
+# * Asciidoc hanging-definition syntax (each one becomes a topic)
+# * START-TOC/END-TOC begfins or ends a span in which topic should be s anned for
+# * TOPIC marks a following topic that is not a reposurgeon command.
 
 function flush_chapter_toc() {
     if (intoc) {
@@ -63,28 +70,37 @@ BEGIN {
     for (i = 2; i < depth; i++) {
         indentation = indentation "  "
     }
+    #topicsuffix = ""
+}
+/TOPIC/ {
+    topicsuffix = "*"
 }
 /[^:]::$/ {
     name = ($1 ~ /SELECTION/) ? $2 : $1
     sub(/[^a-z]+/, "", name)
-    commands[maxcommand] = name
+    commands[maxcommand] = name topicsuffix
     maxcommand += 1
+    topicsuffix = ""
 }
 /include::/ {
     split($1, parts, "/")
     split(parts[2], parts, ".")
-    commands[maxcommand] = parts[1]
+    commands[maxcommand] = parts[1] topicsuffix
     maxcommand += 1
+    topicsuffix = ""
 }
 /START-TOC/ {
     maxcommand = 1
     intoc = 1
+    topicsuffix = ""
 }
 /END-TOC/ {
     flush_chapter_toc()
     intoc = 0
+    topicsuffix = ""
 }
 
 END {
+    print "  help{\"Starred topics are not commands.\", nil},"
     print "}"
 }

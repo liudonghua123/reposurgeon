@@ -1234,6 +1234,7 @@ are some simple examples:
                        ;; ignores.
 --------
 
+// TOPIC
 include::docinclude/syntax.adoc[]
 
 When a command changes repository state, it will usually so indicate
@@ -1265,6 +1266,7 @@ Regular expressions are an important building block of
 the command language, used both in evebt selections and
 various command arguments.
 
+// TOPIC
 [[regexp]]
 include::docinclude/regexp.adoc[]
 
@@ -1486,8 +1488,10 @@ escape such as `\x2f`.
 
 // START-TOC
 
+// TOPIC
 include::docinclude/selection.adoc[]
 
+// TOPIC
 include::docinclude/functions.adoc[]
 
 Set expressions may be combined with the operators '```|```' and '```&```'
@@ -1510,6 +1514,7 @@ Do set negation with prefix '```~```'; it has higher precedence than
 [[redirection]]
 === Redirection and shell-like features
 
+// TOPIC
 include::docinclude/redirection.adoc[]
 
 [[import-export]]
@@ -2316,6 +2321,7 @@ include::docinclude/coalesce.adoc[]
 
 The following options change reposurgeon's behavior:
 
+// TOPIC
 include::docinclude/options.adoc[]
 
 Most options are described in conjunction with the specific

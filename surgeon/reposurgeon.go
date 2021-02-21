@@ -662,9 +662,10 @@ func (rs *Reposurgeon) DoHelp(ctx context.Context, argIn string) (stopOut bool) 
 		for _, h := range _Helps {
 			hasUL := control.ti() != nil && len(control.ti().Strings[terminfo.EnterUnderlineMode]) != 0
 			lines := wrap(h.commands, maxWidth-longest)
+			isdigit := func(b byte) bool { return unicode.IsDigit(rune(b)) }
 			for idx, line := range lines {
 				if idx == 0 {
-					if hasUL && !strings.HasPrefix(h.title, " ") {
+					if hasUL && isdigit(h.title[0]) {
 						control.ti().Fprintf(out, terminfo.EnterUnderlineMode)
 						io.WriteString(out, h.title)
 						control.ti().Fprintf(out, terminfo.ExitUnderlineMode)
