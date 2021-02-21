@@ -45,7 +45,7 @@ author repo3 <sample-repo3@example.com> 1510100174 -0500
 committer repo3 <sample-repo3@example.com> 1510100174 -0500
 data 22
 initial revision of 3
-from :4
+from :2
 M 100644 :5 hello.txt
 
 reset refs/heads/master

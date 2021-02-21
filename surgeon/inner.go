@@ -9860,6 +9860,7 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	for _, x := range factors {
 		uname += "+" + x.name
 	}
+
 	union := newRepository(uname[1:])
 	os.Mkdir(union.subdir(""), userReadWriteSearchMode)
 	factorOrder := func(i, j int) bool {
@@ -9881,6 +9882,24 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	for _, x := range factors {
 		roots = append(roots, x.earliestCommit())
 	}
+	// Calculate commits in the first repo that will be
+	// parents for subsequent repos.
+	commits := factors[0].commits(nil)
+	parents := []*Commit{}
+	for _, root := range roots[1:] {
+		// Get last commit from the first repo that is earlier
+		// or the same time as root from the second repo.
+		mostRecent := roots[0]
+		for _, event := range commits {
+			if event.when().After(root.when()) {
+				break
+			} else {
+				mostRecent = event
+			}
+		}
+		parents = append(parents, mostRecent)
+	}
+
 	for _, factor := range factors {
 		union.absorb(factor)
 		rl.removeByName(factor.name)
@@ -9900,33 +9919,9 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	//	}
 	//	return out
 	//}
-	// Renumber all events
-	union.renumber(1, nil)
-	// Sort out the root grafts. The way we used to do this
-	// involved sorting the union commits by timestamp, but this
-	// fails because in real-world repos timestamp order may not
-	// coincide with mark order - leading to "mark not defined"
-	// errors from the importer at rebuild time. Instead we graft
-	// each root just after the last commit in the dump sequence
-	// with a date prior to it.  This method gives less intuitive
-	// results, but at least means we never need to reorder
-	// commits.
-	commits := union.commits(nil)
-	for _, root := range roots[1:] {
-		// Get last commit such that it and all before it are
-		// earlier than the root.  Never raises IndexError since
-		// union.earliestCommit() is root[0] which satisfies
-		// earlier() thanks to factors sorting.
-		mostRecent := union.earliestCommit()
-		for idx, event := range commits {
-			if root.when().After(event.when()) {
-				mostRecent = event
-				continue
-			} else if idx > 0 {
-				break
-			}
-		}
-		root.addParentByMark(mostRecent.mark)
+	// Graft each root to corresponding parent commit.
+	for idx, root := range roots[1:] {
+		root.addParentByMark(parents[idx].mark)
 		// We may not want files from the
 		// ancestral stock to persist in the
 		// grafted branch unless they have
@@ -9938,6 +9933,8 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 			root.canonicalize()
 		}
 	}
+	// Renumber all events
+	union.renumber(1, nil)
 	// Put the result on the load list
 	rl.repolist = append(rl.repolist, union)
 	rl.choose(union)
