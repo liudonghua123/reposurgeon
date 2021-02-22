@@ -4090,22 +4090,22 @@ func (rs *Reposurgeon) HelpUnite() {
 	rs.helpOutput(`
 unite [--prune] [REPO-NAME...]
 
-Unite repositories. Name any number of loaded repositories; they will
-be united into one union repo and removed from the load list.  The
-union repo will be selected.
+Unite named repositories into one.  Repos need to be loaded (read) first.
+They will be procesed and removed from the load list.  The union repo
+will be selected.
 
-The root of each repo (other than the oldest repo) will be grafted as
-a child to the last commit in the dump with a preceding commit date.
+All repos are grafted as branches to the oldest repo.  The branch point
+will be the last commit in that repo with a timestamp that is less or
+equal to the earliest commit on a grafted branch.
 
-This will produce a union repository with one branch for each part.
 Running last to first, tag and branch duplicate names will be
 disambiguated using the source repository name (thus, recent
 duplicates will get priority over older ones). After all grafts, marks
 will be renumbered.
 
-The name of the new repo will be the names of all parts concatenated,
-separated by '+'. It will have no source directory; if all factors 
-have the same type it will be inherited, otherwise no type will be set.
+The name of the new repo is composed from names of united repos joined
+by '+'. It will have no source directory. The type of repo will be
+inherited if all repos share the same ty[e, otherwise no type will be set.
 
 With the option --prune, at each join generate D ops for every
 file that doesn't have a modify operation in the root commit of the
