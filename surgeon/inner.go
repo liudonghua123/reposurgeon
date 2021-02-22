@@ -4824,6 +4824,7 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 		// Beginning of Subversion dump parsing
 		sp.parseSubversion(ctx, &options, baton, filesize)
 		// End of Subversion dump parsing
+		sp.repo.vcs = svntype
 		if control.flagOptions["progress"] && baton.progressEnabled {
 			baton.printLogString(fmt.Sprintf("%d svn revisions%s",
 				sp.repo.legacyCount, rate(sp.repo.legacyCount*1000)))

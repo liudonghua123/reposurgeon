@@ -65,7 +65,7 @@ const suffixNumeric = `[0-9]+(\s|[.]\n)`
 const tokenNumeric = `\s` + suffixNumeric
 const dottedNumeric = `\s[0-9]+(\.[0-9]+)`
 
-// manages tells us if a directory might be managed by theis VCS
+// manages tells us if a directory might be managed by this VCS
 func (vcs VCS) manages(dirname string) bool {
 	if vcs.subdirectory != "" {
 		subdir := filepath.Join(dirname, vcs.subdirectory)
@@ -138,6 +138,7 @@ func (vcs VCS) hasReference(comment []byte) bool {
 }
 
 var vcstypes []VCS
+var svntype *VCS
 
 // This one is special because it's used directly in the Subversion
 // dump parser, as well as in the VCS capability table.
@@ -576,6 +577,8 @@ core
 			notes: "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
 		},
 	}
+
+	svntype = &vcstypes[5]
 }
 
 // Import and export filter methods for VCSes that use magic files rather

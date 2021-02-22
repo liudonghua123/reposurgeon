@@ -1,6 +1,6 @@
 // Reposurgeon is an editor/converter for version-control histories.
 //
-// This file incliudes the program main and defines the syntax for the DSL.
+// This file includes the program main and defines the syntax for the DSL.
 //
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause
@@ -4826,13 +4826,18 @@ a Git lightweight tag is simply a branch in the tags/ namespace.
 The --not option inverts a selection for deletion, deleting all branches other
 than those matched.
 
-Second argument must be one of the verbs 'rename' or 'delete'.
+Second argument must be one of the verbs 'rename' or 'delete'.  Deletion also 
+removes all tags and resets associated with deleted branches.
 
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
 begin with "refs/", then "refs/" is prepended; you should supply "heads/"
 or "tags/" yourself.  In it, references to match parts in BRANCH-PATTERN will
 be expanded.
+
+Branch rename has some special behavior when the repository source type is
+Subversion. It recognizes tags and resets made from branch-copy commits
+and transforms their names as though they were branch fields in commits.
 `)
 }
 
@@ -4908,7 +4913,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		//
 		// What we're coping with is the possibility of tags
 		// and resets that were made from Subversion
-		// branch-copy commits. We The name and ref fields of
+		// branch-copy commits. The name and ref fields of
 		// such things are branch IDs with the suffix "-root",
 		// but without a refs/heads leader, and we need tp
 		// put the prefix part through the the same
@@ -4916,26 +4921,28 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		//
 		// This pass depends on the fact that we've already done
 		// collision checks for all branch renames.
-		for _, event := range repo.events {
-			if tag, ok := event.(*Tag); ok {
-				if !strings.HasSuffix(tag.tagname, "-root") {
-					continue
+		if repo.vcs != nil && repo.vcs.name == "svn" {
+			for _, event := range repo.events {
+				if tag, ok := event.(*Tag); ok {
+					if !strings.HasSuffix(tag.tagname, "-root") {
+						continue
+					}
+					tagname := removeBranchPrefix(tag.tagname)
+					tagname = tagname[:len(tagname)-5]
+					tagname = "heads/" + tagname
+					if !sourceRE.MatchString(tagname) {
+						continue
+					}
+					subst := GoReplacer(sourceRE, tagname, newname)
+					tag.tagname = subst[6:] + "-root"
+				} else if reset, ok := event.(*Reset); ok {
+					resetname := removeBranchPrefix(reset.ref)
+					if !sourceRE.MatchString(resetname) {
+						continue
+					}
+					subst := GoReplacer(sourceRE, resetname, newname)
+					reset.ref = addBranchPrefix(subst)
 				}
-				tagname := removeBranchPrefix(tag.tagname)
-				tagname = tagname[:len(tagname)-5]
-				tagname = "heads/" + tagname
-				if !sourceRE.MatchString(tagname) {
-					continue
-				}
-				subst := GoReplacer(sourceRE, tagname, newname)
-				tag.tagname = subst[6:] + "-root"
-			} else if reset, ok := event.(*Reset); ok {
-				resetname := removeBranchPrefix(reset.ref)
-				if !sourceRE.MatchString(resetname) {
-					continue
-				}
-				subst := GoReplacer(sourceRE, resetname, newname)
-				reset.ref = addBranchPrefix(subst)
 			}
 		}
 	} else if verb == "delete" {
