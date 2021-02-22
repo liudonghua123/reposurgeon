@@ -4,7 +4,7 @@ feature multiple-authors
 feature commit-properties
 feature empty-directories
 feature multiple-authors
-commit refs/heads/master-foo
+commit refs/heads/master
 mark :1
 committer Eric S. Raymond <esr@thyrsus.com> 1289147634 -0500
 data 14
@@ -15,7 +15,7 @@ data 41
 This is a test file in a dummy bzr repo.
 
 
-commit refs/heads/master-foo
+commit refs/heads/master
 mark :2
 committer Eric S. Raymond <esr@thyrsus.com> 1289147718 -0500
 data 32
@@ -28,7 +28,7 @@ This is a modification of that test file.
 
 
 
-commit refs/heads/master
+commit refs/heads/master-bar
 mark :3
 committer Eric S. Raymond <esr@thyrsus.com> 1289147634 -0500
 data 14
@@ -40,7 +40,7 @@ data 41
 This is a test file in a dummy bzr repo.
 
 
-commit refs/heads/master
+commit refs/heads/master-bar
 mark :4
 committer Eric S. Raymond <esr@thyrsus.com> 1289147718 -0500
 data 32
