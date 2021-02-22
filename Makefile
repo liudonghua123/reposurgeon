@@ -94,7 +94,6 @@ BNF_TOPICS = \
 	append \
 	authors \
 	assign \
-	bench \
 	blob \
 	branch \
 	branchlift \

@@ -2432,16 +2432,15 @@ include::docinclude/readlimit.adoc[]
 include::docinclude/memory.adoc[]
 
 [[profile_cmd,profile]]
-profile [live|start|save] [PORT | SUBJECT [FILENAME]]::
+profile [live|start|save|bench] [PORT | SUBJECT [FILENAME]]::
     Profiling is enabled by default, but viewing the profile data
     requires either starting the HTTP server with '```profile live```', or
     saving it to a file with '```profile save```'. When no arguments are
-    given it prints out the available types of profiles.  There is
-    more detailed documentation on this command in the embedded help.
+    given it prints out the available types of profiles.  '```profile
+    bench```' jas an internal helper for the repobench script. There
+    is more detailed documentation on this command in the embedded help.
 
 include::docinclude/exit.adoc[]
-
-include::docinclude/bench.adoc[]
 
 // END-TOC
 

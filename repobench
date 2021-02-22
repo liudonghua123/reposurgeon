@@ -38,7 +38,7 @@ then
 			 "readlimit ${readlimit}" \
 			 "${command}" \
 			 "read <${dump}" \
-			 "bench" >>"${datfile}"
+			 "profile bench" >>"${datfile}"
     }
 
     dump="${1}"

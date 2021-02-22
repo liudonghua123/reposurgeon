@@ -816,7 +816,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 // All optional arguments and keywords follow any required arguments
 // and keywords.  There are two exceptions to this rule, in
 // the "attribution" and "remove" commands; these sometimes have
-// required arguments following optionsls.  Also, "tag" and "reset"
+// required arguments following optionals.  Also, "tag" and "reset"
 // have two different sequences not very well expressed in the BNF -
 // the create case requires one string or bareword newname, while move
 // and rename require two arguments.
@@ -1209,7 +1209,7 @@ func stopTracing() {
 // HelpProfile says "Shut up, golint!"
 func (rs *Reposurgeon) HelpProfile() {
 	rs.helpOutput(`
-profile [live|start|save] [PORT | SUBJECT [FILENAME]]
+profile [live|start|save|bench] [PORT | SUBJECT [FILENAME]]
 
 Manages data collection for profiling.
 
@@ -1238,10 +1238,23 @@ Corresponding subcommands are these:
 	will be overwritten. If no filename is specified, this will fall
 	back to the filename previously stored by 'profile start'.
 
-For a list of available profile subjects, call the profile command without arguments.
-The list is in part extracted from the Go runtime and is subject to change.
+    profile bench
 
-For documentation, see https://github.com/google/pprof/blob/master/doc/README.md
+	Report elapsed time and memory usage in the format expected by 
+	repobench. Note: this comment is not intended for interactive
+	use or to be used by scripts other than repobench.  The output
+	format may change as repobench does.
+
+	Runs a garbage-collect before reporting so the figure will
+	better reflect storage currently held in loaded repositories;
+	this will not affect the reported high-water mark.
+	For a list of available profile subjects, call the profile
+	command without arguments. The list is in part extracted from the
+	Go runtime and is subject to change.
+
+For documentation on the Go porofiler used by the live and start modes, see
+
+https://github.com/google/pprof/blob/master/doc/README.md
 `)
 }
 
@@ -1312,6 +1325,15 @@ func (rs *Reposurgeon) DoProfile(line string) bool {
 				saveProfile(subject, filename)
 				respond("%s profiling stopped.", subject)
 			}
+		case "bench":
+			rs.newLineParse(line, parseNOSELECT, nil)
+			var memStats runtime.MemStats
+			debug.FreeOSMemory()
+			runtime.ReadMemStats(&memStats)
+			const MB = 1e6
+			fmt.Printf("%d %.2f %.2f %.2f\n",
+				control.readLimit, time.Since(control.startTime).Seconds(),
+				float64(memStats.HeapAlloc)/MB, float64(memStats.TotalAlloc)/MB)
 		default:
 			croak("I don't know how to %s. Possible verbs are [live, start, save].", verb)
 		}
@@ -1364,34 +1386,6 @@ func (rs *Reposurgeon) DoMemory(line string) bool {
 	const MB = 1e6
 	fmt.Fprintf(parse.stdout, "Heap: %.2fMB  High water: %.2fMB\n",
 		float64(memStats.HeapAlloc)/MB, float64(memStats.TotalAlloc)/MB)
-	return false
-}
-
-// HelpBench says "Shut up, golint!"
-func (rs *Reposurgeon) HelpBench() {
-	rs.helpOutput(`
-bench
-
-Report elapsed time and memory usage in the format expected by 
-repobench. Note: this comment is not intended for interactive
-use or to be used by scripts other than repobench.  The output
-format may change as repobench does.
-
-Runs a garbage-collect before reporting so the figure will
-better reflect storage currently held in loaded repositories;
-this will not affect the reported high-water mark.
-`)
-}
-
-// DoBench is the command ghandler for the "bench" command.
-func (rs *Reposurgeon) DoBench(line string) bool {
-	rs.newLineParse(line, parseNOSELECT, nil)
-	var memStats runtime.MemStats
-	debug.FreeOSMemory()
-	runtime.ReadMemStats(&memStats)
-	const MB = 1e6
-	fmt.Printf("%d %.2f %.2f %.2f\n",
-		control.readLimit, time.Since(control.startTime).Seconds(), float64(memStats.HeapAlloc)/MB, float64(memStats.TotalAlloc)/MB)
 	return false
 }
 
