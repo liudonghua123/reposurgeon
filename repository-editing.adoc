@@ -3365,6 +3365,10 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
+In versions 4.24 ans earlier the behavior of the "unite" command
+was incompatibly differentl it didn't produce a union repo with
+a vaild master branch.
+
 The blob command now takes an explict mark, rather than creating a new
 blob :1 and renumbering all others as in 4.23 and earlier.
 

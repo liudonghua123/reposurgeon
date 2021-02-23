@@ -4098,9 +4098,8 @@ All repos are grafted as branches to the oldest repo.  The branch point
 will be the last commit in that repo with a timestamp that is less or
 equal to the earliest commit on a grafted branch.
 
-Running last to first, tag and branch duplicate names will be
-disambiguated using the source repository name (thus, recent
-duplicates will get priority over older ones). After all grafts, marks
+In all repositories but the first, tag and branch duplicate names will be
+disambiguated using the source repository name. After all grafts, marks
 will be renumbered.
 
 The name of the new repo is composed from names of united repos joined
@@ -4110,10 +4109,6 @@ inherited if all repos share the same ty[e, otherwise no type will be set.
 With the option --prune, at each join generate D ops for every
 file that doesn't have a modify operation in the root commit of the
 branch being grafted on.
-
-Note that the union repo will not have a single master branch.
-You must rename one of its branches before the result can be fed to git
-without throwing a "fatal: You are on a branch yet to be born" error.
 `)
 }
 
