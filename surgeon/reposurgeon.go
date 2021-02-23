@@ -2543,6 +2543,7 @@ const graphCaptionLength = 32
 // https://gitlab.com/techtonik/repodraw/-/blob/master/plotrepo.rb
 // https://github.com/gto76/ascii-git-graph-to-png
 // https://github.com/hoduche/git-graph
+// https://github.com/bast/gitink/
 // https://fosdem.org/2021/schedule/event/git_learning_game/
 
 // DoGraph dumps a commit graph.
