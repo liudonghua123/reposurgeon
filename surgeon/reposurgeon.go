@@ -2618,7 +2618,7 @@ The following example produces a mailbox of commit comments in a
 decluttered form that is convenient for editing:
 
 ----
-=C msgout --filter=/Event-Number:|Committer:|Author|Check-Text:/
+=C msgout --filter=/Event-Number:|Committer:|Author:|Check-Text:/
 ----
 `)
 }

@@ -1998,6 +1998,21 @@ func (t *Tag) tags(modifiers orderedStringSet, eventnum int, _cols int) string {
 	return fmt.Sprintf("%6d\ttag\t%s", eventnum+1, t.tagname)
 }
 
+// safetrunc safely truncates a string containing multibyte UTF-8 characters
+func safetrunc(s string, maxlen int) string {
+	if len(s) <= maxlen {
+		return s
+	}
+	out := ""
+	for _, c := range s {
+		if len(out) >= maxlen {
+			break
+		}
+		out += string(c)
+	}
+	return out
+}
+
 // emailOut enables DoMsgout() to report tag metadata
 func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 	filterRegexp *regexp.Regexp) string {
@@ -2012,10 +2027,7 @@ func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 		msg.setHeader("Legacy-ID", t.legacyID)
 	}
 	check, _ := splitRuneFirst(t.Comment, '\n')
-	if len(check) > 64 {
-		check = check[0:64]
-	}
-	msg.setHeader("Check-Text", check)
+	msg.setHeader("Check-Text", safetrunc(check, 64))
 	msg.setPayload(t.Comment)
 	if t.Comment != "" && !strings.HasSuffix(t.Comment, "\n") && logEnable(logWARN) {
 		logit("in tag %s, comment was not LF-terminated.", t.tagname)
@@ -2123,12 +2135,12 @@ func branchname(tagname string) string {
 	return fulltagname
 }
 
-// stamp enables do_stamp() to report action stamps
+// stamp enables DoStamp() to report action stamps
 func (t *Tag) stamp(_modifiers orderedStringSet, _eventnum int, cols int) string {
 	firstLine, _ := splitRuneFirst(t.Comment, '\n')
 	report := "<" + t.tagger.actionStamp() + "> " + firstLine
 	if cols > 0 && len(report) > cols {
-		report = report[0:cols]
+		report = report[:cols]
 	}
 	return report
 }
@@ -2920,7 +2932,7 @@ func (commit *Commit) lister(_modifiers orderedStringSet, eventnum int, cols int
 	}
 	report := summary + topline
 	if cols > 0 && len(report) > cols {
-		report = report[:cols]
+		report = safetrunc(report, cols)
 	}
 	return report
 }
@@ -3959,7 +3971,7 @@ func (commit *Commit) tip(_modifiers orderedStringSet, eventnum int, cols int) s
 		eventnum+1, commit.date().rfc3339(), commit.mark)
 	report := summary + commit.head()
 	if cols > 0 && len(report) > cols {
-		report = report[:cols]
+		report = safetrunc(report, cols)
 	}
 	return report
 }
