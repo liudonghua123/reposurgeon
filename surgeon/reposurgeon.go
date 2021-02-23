@@ -2538,6 +2538,13 @@ You can substitute in your own preferred image viewer, of course.
 // Most comment characters we want to fit in a commit box
 const graphCaptionLength = 32
 
+// Some links to reopository viewers to look at for styling ideas:
+//
+// https://gitlab.com/techtonik/repodraw/-/blob/master/plotrepo.rb
+// https://github.com/gto76/ascii-git-graph-to-png
+// https://github.com/hoduche/git-graph
+// https://fosdem.org/2021/schedule/event/git_learning_game/
+
 // DoGraph dumps a commit graph.
 func (rs *Reposurgeon) DoGraph(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
