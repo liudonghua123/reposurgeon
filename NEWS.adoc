@@ -4,7 +4,7 @@ Repository head::
      New manual section, "Tips and tricks".
      Tag rename checks that it won't step on an existing name.
      "help" without topic now ermits a custom TOC with command groupings.
-     Unite now produces union repositotries with a valid master branch.
+     Unite now produces union repositories with a valid master branch.
 
 4.24: 2021-02-13::
      Retire the read --cvsignores option; best to use an expunge instead.
