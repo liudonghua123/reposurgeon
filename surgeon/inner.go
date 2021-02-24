@@ -7585,7 +7585,6 @@ func (repo *Repository) absorb(other *Repository) {
 const invalidGraftIndex = -1
 
 // Graft a repo on to this one at a specified point.
-// FIXME: Prevent extra done markers (and fix the help to reflect this)
 func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options stringSet) error {
 	var persist map[string]string
 	var anchor *Commit
