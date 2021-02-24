@@ -311,9 +311,9 @@ check: lint build test
 
 fixme:
 	@if command -v rg; then \
-		rg FIXME; \
+		rg --no-heading FIX''ME; \
 	else \
-		find . -type f -exec grep -n FIXME {} /dev/null \; | grep -v "[.]git"; \
+		find . -type f -exec grep -n FIX''ME {} /dev/null \; | grep -v "[.]git"; \
 	fi
 
 #
