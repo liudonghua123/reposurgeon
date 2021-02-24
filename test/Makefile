@@ -119,15 +119,15 @@ $(RULES_ROUNDTRIP_COMPRESS): roundtrip-compress-%: %
 RULES_MESSAGE_BOX=$(patsubst %,messagebox-%,$(wildcard *.fi))
 messagebox:
 	@echo "=== Testing msgout/msgin roundtripping:"
-	@$(PARALLEL_MAKE) $(RULES_ROUNDTRIP_COMPRESS)
+	@$(PARALLEL_MAKE) $(RULES_MESSAGE_BOX)
 
 $(RULES_MESSAGE_BOX): messagebox-%: %
-	@echo "  $${file}";\
-	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "edit echo>/dev/null" "write -" \
+	@echo "  $<";\
+	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" \
 	>/tmp/regress-a$$$$ || exit $(STOPOUT); \
 	[ -s /tmp/regress-a$$$$ ] && diff --text -u $< /tmp/regress-a$$$$ \
 	|| { rm -f /tmp/regress-a$$$$; exit $(STOPOUT); }; \
-	rm -f /tmp/regress-a$$$$
+	rm -f /tmp/regress-a$$$$ /tmp/msgbox$$$$
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.

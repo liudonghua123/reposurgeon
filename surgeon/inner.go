@@ -2994,13 +2994,13 @@ func (commit *Commit) emailOut(modifiers orderedStringSet,
 		for _, name := range commit.properties.keys {
 			hdr := ""
 			for _, s := range strings.Split(name, "-") {
-				hdr += strings.Title(s)
+				hdr += "-" + strings.Title(s)
 			}
 			value := commit.properties.get(name)
 			value = strings.Replace(value, "\n", `\n`, -1)
 			value = strings.Replace(value, "\r", `\r`, -1)
 			value = strings.Replace(value, "\t", `\t`, -1)
-			msg.setHeader("Property-"+hdr, value)
+			msg.setHeader("Property"+hdr, value)
 		}
 	}
 	check, _ := splitRuneFirst(commit.Comment, '\n')
@@ -3174,7 +3174,8 @@ func (commit *Commit) emailIn(msg *MessageBlock, fill bool) bool {
 		if propval == "True" || propval == "False" {
 			newprops.set(propkey, propval)
 		} else {
-			newprops.set(propkey, strconv.Quote(propval))
+			quoted := strconv.Quote(propval)
+			newprops.set(propkey, quoted[1:len(quoted)-1])
 		}
 	}
 	propsModified := (!commit.hasProperties() && newprops.Len() == 0) || !reflect.DeepEqual(newprops, commit.properties)
