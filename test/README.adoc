@@ -257,11 +257,6 @@ After conversion the tag named '1.0' referred to the first commit with
 the first tagging message 'Release 1.0', rather than the second commit
 with the second tagging message 'Fixed release 1.0'.
 
-== The nesting.svn test case ==
-
-FIXME: Generation of the extra reset is harmless but may reveal a
-minor problem in the SVN reader, or possibly the squash code.
-
 == A note about nut.svn ==
 
 This was produced from the NUT Subversion repo as follows:
