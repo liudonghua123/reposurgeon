@@ -2942,7 +2942,7 @@ func (commit *Commit) stamp(modifiers orderedStringSet, _eventnum int, cols int)
 	firstLine, _ := splitRuneFirst(commit.Comment, '\n')
 	report := "<" + commit.actionStamp() + "> " + firstLine
 	if cols > 0 && len(report) > cols {
-		report = report[:cols]
+		report = utf8trunc(report, cols)
 	}
 	return report
 }
@@ -9207,7 +9207,7 @@ func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
 		if commit, ok := event.(*Commit); ok {
 			firstline, _ := splitRuneFirst(commit.Comment, '\n')
 			if len(firstline) > 42 {
-				firstline = firstline[:42]
+				firstline = utf8trunc(firstline, 42)
 			}
 			summary := html.EscapeString(firstline)
 			cid := commit.mark

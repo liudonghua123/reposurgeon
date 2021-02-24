@@ -2429,7 +2429,7 @@ func (rs *Reposurgeon) DoInspect(line string) bool {
 	for _, eventid := range selection {
 		event := repo.events[eventid]
 		header := fmt.Sprintf("Event %d %s\n", eventid+1, strings.Repeat("=", 72))
-		fmt.Fprintln(parse.stdout, header[:73])
+		fmt.Fprintln(parse.stdout, utf8trunc(header, 73))
 		fmt.Fprint(parse.stdout, event.String())
 	}
 
