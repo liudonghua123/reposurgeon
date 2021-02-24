@@ -7724,13 +7724,9 @@ func (repo *Repository) splitCommitByPrefix(where int, prefix string) error {
 			var with []*FileOp
 			err := fmt.Errorf("couldn't find '%s' in a fileop path", prefix)
 			for _, op := range ops {
-				// In Python: lambda ops: ([op for op
-				// in ops if
-				// !strings.HasPrefix(op.Path,
-				// prefix)],
-				// [op for op in ops if (op.Path || op.Path)
-				// and (op.Path || op.Path).startswith(prefix)]))
-				// FIXME: Should error out on C or R ops
+				if op.op == opC || op.op == opR {
+					return without, with, errors.New("cannot split a commit containing C or R ops")
+				}
 				if strings.HasPrefix(op.Path, prefix) {
 					with = append(with, op)
 					err = nil
