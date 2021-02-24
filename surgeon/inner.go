@@ -1998,8 +1998,8 @@ func (t *Tag) tags(modifiers orderedStringSet, eventnum int, _cols int) string {
 	return fmt.Sprintf("%6d\ttag\t%s", eventnum+1, t.tagname)
 }
 
-// safetrunc safely truncates a string containing multibyte UTF-8 characters
-func safetrunc(s string, maxlen int) string {
+// utf8trunc safely truncates a string containing multibyte UTF-8 characters
+func utf8trunc(s string, maxlen int) string {
 	if len(s) <= maxlen {
 		return s
 	}
@@ -2027,7 +2027,7 @@ func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 		msg.setHeader("Legacy-ID", t.legacyID)
 	}
 	check, _ := splitRuneFirst(t.Comment, '\n')
-	msg.setHeader("Check-Text", safetrunc(check, 64))
+	msg.setHeader("Check-Text", utf8trunc(check, 64))
 	msg.setPayload(t.Comment)
 	if t.Comment != "" && !strings.HasSuffix(t.Comment, "\n") && logEnable(logWARN) {
 		logit("in tag %s, comment was not LF-terminated.", t.tagname)
@@ -2932,7 +2932,7 @@ func (commit *Commit) lister(_modifiers orderedStringSet, eventnum int, cols int
 	}
 	report := summary + topline
 	if cols > 0 && len(report) > cols {
-		report = safetrunc(report, cols)
+		report = utf8trunc(report, cols)
 	}
 	return report
 }
@@ -3004,10 +3004,7 @@ func (commit *Commit) emailOut(modifiers orderedStringSet,
 		}
 	}
 	check, _ := splitRuneFirst(commit.Comment, '\n')
-	if len(check) > 54 {
-		check = check[0:54]
-	}
-	msg.setHeader("Check-Text", check)
+	msg.setHeader("Check-Text", utf8trunc(check, 54))
 	msg.setPayload(commit.Comment)
 	if commit.Comment != "" && !strings.HasSuffix(commit.Comment, "\n") && logEnable(logWARN) {
 		logit("in commit %s, comment was not LF-terminated.", commit.mark)
@@ -3971,7 +3968,7 @@ func (commit *Commit) tip(_modifiers orderedStringSet, eventnum int, cols int) s
 		eventnum+1, commit.date().rfc3339(), commit.mark)
 	report := summary + commit.head()
 	if cols > 0 && len(report) > cols {
-		report = safetrunc(report, cols)
+		report = utf8trunc(report, cols)
 	}
 	return report
 }
