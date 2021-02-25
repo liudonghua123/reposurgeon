@@ -4816,15 +4816,15 @@ func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
 branch {rename|delete} BRANCH-PATTERN [--not] [NEW-NAME]
 
-Rename or delete all branches matching the pattern expression BRANCH-PATTERN
-(also any associated annotated tags and resets). For purposes of this command
-a Git lightweight tag is simply a branch in the tags/ namespace.
+Rename or delete matching branches. BRANCH-PATTERN can be a string or a regexp.
+If it is a string, it should be full reference name like "refs/heads/master".
+
+The command also operates on any associated annotated tags and resets. Git
+lightweight tag here is simply a branch in the tags/ namespace.
 
 The --not option inverts a selection for deletion, deleting all branches other
-than those matched.
-
-Second argument must be one of the verbs 'rename' or 'delete'.  Deletion also 
-removes all tags and resets associated with deleted branches.
+than those matched. Deletion also removes all tags and resets associated with
+deleted branches.
 
 For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
