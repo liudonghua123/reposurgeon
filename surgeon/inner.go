@@ -700,10 +700,10 @@ var optionFlags = [...][2]string{
 		`Dump help items using asciiidoc definition markup.
 `},
 	{"canonicalize",
-		`If set, import stream reads and msgin and edit will canonicalize
-comments by replacing CR-LF with LF, stripping leading and trailing whitespace,
-and then appending a LF. This behavior inverts if the crlf option is on - LF is
-replaced with Cr-LF and CR-LF is appended.
+		`If set, import stream reads and msgin will canonicalize comments
+by replacing CR-LF with LF, stripping leading and trailing whitespace, and then
+appending a LF. This behavior inverts if the crlf option is on - LF is replaced
+with Cr-LF and CR-LF is appended.
 `},
 	{"crlf",
 		`If set, expect CR-LF line endings on text input and emit them on
@@ -4088,9 +4088,11 @@ func (commit *Commit) Save(w io.Writer) {
 		comment += fmt.Sprintf("Legacy-ID: %s\n", commit.legacyID)
 	}
 	fmt.Fprintf(w, "data %d\n%s", len(comment), comment)
-	if len(comment) > 0 && comment[len(comment)-1] != '\n' {
-		w.Write([]byte{'\n'})
-	}
+	// Don't do this - this means streams where comments don't have
+	// trailing newlines won't round-trip.
+	//if len(comment) > 0 && comment[len(comment)-1] != '\n' {
+	//	w.Write([]byte{'\n'})
+	//}
 	if commit.repo.exportStyle().Contains("nl-after-comment") {
 		w.Write([]byte{'\n'})
 	}
