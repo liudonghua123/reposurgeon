@@ -1754,6 +1754,8 @@ include::docinclude/list.adoc[]
 
 include::docinclude/index.adoc[]
 
+include::docinclude/names.adoc[]
+
 include::docinclude/stamp.adoc[]
 
 include::docinclude/tip.adoc[]
@@ -2349,8 +2351,6 @@ forms of named variables and macro expansion.
 include::docinclude/assign.adoc[]
 
 include::docinclude/unassign.adoc[]
-
-include::docinclude/names.adoc[]
 
 include::docinclude/define.adoc[]
 
