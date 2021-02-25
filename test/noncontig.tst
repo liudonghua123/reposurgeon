@@ -1,4 +1,4 @@
- ## Demonstrate that revision numbers need not be contiguous
+## Demonstrate that revision numbers need not be contiguous
 read <<EOF
 SVN-fs-dump-format-version: 2
 

@@ -1,4 +1,4 @@
-## Test Windows10/WSL line terminaltion in message boxes
+## Test Windows10/WSL line termination in message boxes
 # This was Florian Eßer's tag create case that core dumped.
 # There should be a CR on the header delimiter line. 
 read <min.fi

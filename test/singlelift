@@ -24,7 +24,7 @@ do
 	*) cat <<EOF
 singlelift - run a single Subversion conversion test
 
-With -b, rebuild the checjfile
+With -b, rebuild the checkfile
 
 With -h, display this option summary.
 
@@ -46,6 +46,7 @@ done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
 
+# Display usage and exit if no arguments
 if [ -z "$1" ]
 then
     exec "$0" -h

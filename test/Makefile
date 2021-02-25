@@ -477,8 +477,6 @@ $(patsubst %,liftcheck-regress-%,$(wildcard *.svn)): liftcheck-regress-%: %
 	esac; \
 	rm -f /tmp/diff$$$
 
-# This is not part of the normal test sequence becausr the reposurgeon tools are very slow.
-# Put references.svn first because it is the longest one to run.
 LOADS_LIFTCHECK_FULLREGRESS = nut.svn $(filter-out nut.svn,$(wildcard *.svn))
 RULE_LIFTCHECK_FULLREGRESS = $(LOADS_LIFTCHECK_FULLREGRESS:%=liftcheck-regress-full-%)
 liftcheck-fullregress:
