@@ -1,5 +1,6 @@
 SVN-fs-dump-format-version: 2
  ## Test prefix stripping for creation/modification of symlink
+ # reposurgeon-read-options: --nobranch
 
 UUID: d5796581-90f8-4bc1-bd66-6d98df38c23e
 

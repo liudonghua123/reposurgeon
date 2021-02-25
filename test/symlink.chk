@@ -1,4 +1,3 @@
-reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -31,7 +30,7 @@ mark :3
 data 38
 This file exists to be a link target.
 
-commit refs/heads/unbranched
+commit refs/heads/master
 #legacy-id 1
 mark :4
 committer esr <esr> 1589620681 +0000
@@ -45,7 +44,7 @@ blob
 mark :5
 data 3
 foo
-commit refs/heads/unbranched
+commit refs/heads/master
 #legacy-id 2
 mark :6
 committer esr <esr> 1589620774 +0000
@@ -58,7 +57,7 @@ blob
 mark :7
 data 3
 bar
-commit refs/heads/unbranched
+commit refs/heads/master
 #legacy-id 3
 mark :8
 committer esr <esr> 1589620887 +0000
