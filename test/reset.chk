@@ -30,11 +30,12 @@ reposurgeon: can't move multiple resets
 reset move D :6,:10,:15
 reposurgeon: reset move requires a singleton commit set.
 # error: empty new name
-reset rename C
+reset rename Z
 reposurgeon: new reset name must be nonempty.
 # error: reference collision
-reset rename C D
+reset rename Z D
 reposurgeon: reset reference collision, not renaming.
 # error: bogus verb
-reset fizzle C
+reset fizzle Z
 reposurgeon: unknown verb 'fizzle' in reset command.
+reposurgeon: no reset names matched ^refs/heads/Z$

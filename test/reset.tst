@@ -16,8 +16,8 @@ reset move master :15
 # error: non-singleton target
 reset move D :6,:10,:15
 # error: empty new name
-reset rename C 
+reset rename Z 
 # error: reference collision
-reset rename C D
+reset rename Z D
 # error: bogus verb
-reset fizzle C 
+reset fizzle Z 

@@ -4835,6 +4835,8 @@ be expanded.
 Branch rename has some special behavior when the repository source type is
 Subversion. It recognizes tags and resets made from branch-copy commits
 and transforms their names as though they were branch fields in commits.
+
+Branch rename sets Q bits; true on every object modified, false otherwise.
 `)
 }
 
@@ -4881,6 +4883,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		newname = removeBranchPrefix(newname)
 		sourcepattern = removeBranchPrefix(sourcepattern)
 		sourceRE := getPattern(sourcepattern)
+		repo.clrDelFlags()
 		for _, branch := range repo.branchset() {
 			branch := removeBranchPrefix(branch)
 			if !sourceRE.MatchString(branch) {
@@ -4895,10 +4898,12 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 				if commit, ok := event.(*Commit); ok {
 					if commit.Branch == addBranchPrefix(branch) {
 						commit.setBranch(addBranchPrefix(subst))
+						commit.setDelFlag(true)
 					}
 				} else if reset, ok := event.(*Reset); ok {
 					if reset.ref == addBranchPrefix(branch) {
 						reset.ref = addBranchPrefix(subst)
+						reset.setDelFlag(true)
 					}
 				}
 			}
@@ -4932,6 +4937,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 					}
 					subst := GoReplacer(sourceRE, tagname, newname)
 					tag.tagname = subst[6:] + "-root"
+					tag.setDelFlag(true)
 				} else if reset, ok := event.(*Reset); ok {
 					resetname := removeBranchPrefix(reset.ref)
 					if !sourceRE.MatchString(resetname) {
@@ -4939,8 +4945,14 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 					}
 					subst := GoReplacer(sourceRE, resetname, newname)
 					reset.ref = addBranchPrefix(subst)
+					reset.setDelFlag(true)
 				}
 			}
+		}
+		if n := repo.countDelFlags(); n == 0 {
+			croak("no branch fields matched %s", sourceRE)
+		} else {
+			respond("%d objects modified", n)
 		}
 	} else if verb == "delete" {
 		sourcepattern, _ := popToken(line)
@@ -4970,6 +4982,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		croak("unknown verb '%s' in branch command.", verb)
 		return false
 	}
+
 	return false
 }
 
@@ -5003,6 +5016,9 @@ matching the pattern are deleted.  Giving a regular expression rather than
 a plain string is useful for mass deletion of junk tags such as those derived
 from CVS branch-root tags. Such deletions can be restricted by a selection
 set in the normal way.
+
+All Q bits are cleared; then any tags made by create or touched by move or
+rename, get their Q bit set.
 `)
 }
 
@@ -5017,6 +5033,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		return false
 	}
 
+	repo.clrDelFlags()
 	if verb == "create" {
 		var tagname string
 		tagname, line = popToken(line)
@@ -5059,6 +5076,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			lasttag = lastcommit
 		}
 		repo.insertEvent(tag, lasttag+1, "tag creation")
+		tag.setDelFlag(true)
 		control.baton.twirl()
 		return false
 	}
@@ -5128,6 +5146,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		if verb == "move" {
 			tag.forget()
 			tag.remember(repo, target.mark)
+			tag.setDelFlag(true)
 		} else if verb == "rename" {
 			possible := GoReplacer(sourceRE, tag.tagname, newname)
 			if i > 0 && possible == tags[i-1].tagname {
@@ -5135,12 +5154,20 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 				return false
 			}
 			tag.tagname = possible
+			tag.setDelFlag(true)
 		} else if verb == "delete" {
 			// the order here in important
 			repo.delete([]int{tag.index()}, nil, control.baton)
 			tag.forget()
 		}
 		control.baton.twirl()
+	}
+	if verb != "delete" {
+		if n := repo.countDelFlags(); n == 0 {
+			croak("no tag names matched %s", sourceRE)
+		} else {
+			respond("%d objects modified", n)
+		}
 	}
 	control.baton.endProcess()
 	if verb == "delete" {
@@ -5169,10 +5196,11 @@ In the other modes, the RESET-PATTERN finds by text match existing resets
 within the selection.  If RESET-PATTERN is a delimited regexp, the match is
 to the regexp (--not inverts this, selecting all non-matching resets). 
 
-If RESET-PATTERN is a text literal, each reset's name is matched if RESET-PATTERN
-is either the entire reference (refs/heads/FOO or refs/tags/FOO for some some value
-of FOO) or the basename (e.g. FOO), or a suffix of the form heads/FOO or tags/FOO.
-An unqualified basename is assumed to refer to a branch in refs/heads/.
+If RESET-PATTERN is a text literal, each reset's name is matched if 
+RESET-PATTERN is either the entire reference (refs/heads/FOO or refs/tags/FOO
+for some some valueof FOO) or the basename (e.g. FOO), or a suffix of the form
+heads/FOO or tags/FOO. An unqualified basename is assumed to refer to a branch
+in refs/heads/.
 
 The second argument must be one of the verbs 'move', 'rename', or 'delete'.
 The default selection is all events.
@@ -5187,6 +5215,9 @@ renamed with it to match.  When a reset is deleted, matching branch
 fields are changed to match the branch of the unique descendant of the
 tip commit of the associated branch, if there is one.  When a reset is
 moved, no branch fields are changed.
+
+All Q bits are cleared; then any resets made by create, or touched by move
+or rename, get their Q bit set.
 `)
 }
 
@@ -5230,6 +5261,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		return false
 	}
 
+	repo.clrDelFlags()
 	resets := make([]*Reset, 0)
 	selection := rs.selection
 	if selection == nil {
@@ -5256,6 +5288,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			return false
 		}
 		reset := newReset(repo, resetname, target.mark, target.legacyID)
+		reset.setDelFlag(true)
 		repo.addEvent(reset)
 		repo.declareSequenceMutation("reset create")
 	} else if verb == "move" {
@@ -5281,6 +5314,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		}
 		reset.forget()
 		reset.remember(repo, target.mark)
+		reset.setDelFlag(true)
 		repo.declareSequenceMutation("reset move")
 	} else if verb == "rename" {
 		var newname string
@@ -5319,10 +5353,12 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 
 		for _, reset := range resets {
 			reset.ref = newname
+			reset.setDelFlag(true)
 		}
 		for _, commit := range repo.commits(nil) {
 			if sourceRE.MatchString(commit.Branch) {
 				commit.Branch = newname
+				commit.setDelFlag(true)
 			}
 		}
 	} else if verb == "delete" {
@@ -5353,6 +5389,13 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		repo.declareSequenceMutation("reset delete")
 	} else {
 		croak("unknown verb '%s' in reset command.", verb)
+	}
+	if verb != "delete" {
+		if n := repo.countDelFlags(); n == 0 {
+			croak("no reset names matched %s", sourceRE)
+		} else {
+			respond("%d objects modified", n)
+		}
 	}
 	return false
 }
