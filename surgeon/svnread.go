@@ -1568,8 +1568,13 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 					})
 				}
 			} else if node.kind == sdFILE {
-				if strings.HasSuffix(node.path, ".cvsignore") && logEnable(logWARN) {
-					logit("r%d~%s: fossil .cvsignore.", node.revision, node.path)
+				// All .cvsignores should be ignored as remnants from
+				// a previous up-conversion to Subversion.
+				// This is a philosophical choice; we're taking the
+				// users' Subversion settings as authoritative
+				// rather than trying to mimic the exact CVS behavior.
+				if strings.HasSuffix(node.path, ".cvsignore") && !options.Contains("--cvsignores") {
+					continue
 				}
 				// We may need to ignore and complain
 				// about explicit .gitignores created,

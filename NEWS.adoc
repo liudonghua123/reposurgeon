@@ -7,6 +7,7 @@ Repository head::
      Unite now produces union repositories with a valid master branch.
      repocutter errors out if presented with unexpected extra arguments.
      "tip" has been removed; what it was computing is not well defined.
+     Revert removal of --cvsignores.
 
 4.24: 2021-02-13::
      Retire the read --cvsignores option; best to use an expunge instead.
