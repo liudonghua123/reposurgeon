@@ -24,7 +24,7 @@ trap 'rm -rf /tmp/test-export-repo$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
-toolmeta "$mode" /tmp/out$$
+toolmeta "$mode" /tmp/out$$ export
 
 #end
 

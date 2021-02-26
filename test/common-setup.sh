@@ -12,13 +12,17 @@ toolmeta() {
     stem=$(echo "$0" | sed -e 's/.sh//')
     case $1 in
        --regress)
-           # This line is a kludge to deal with the fact that the git version
-           # running the tests may be old enough to not DTRT
-           #grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>/tmp/out$$
+	   if [ "$3" = "export" ]
+	   then
+               grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>/tmp/out$$
+	   fi
 	   diff --text -u "${stem}.chk" /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
        --rebuild)
-           # grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>/tmp/out$$
-           cat "$2" >"$(stem).chk";;
+           cat "$2" >"$(stem).chk"
+	   if [ "$3" = "export" ]
+	   then
+               grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>"${stem.chk}"
+	   fi;;
        --view)
            cat "$2";;
        *)

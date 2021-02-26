@@ -13,6 +13,6 @@ cp -r hack1.repo/ /tmp/test-export-repo$$
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
-toolmeta "$1" /tmp/out$$
-	      
+toolmeta "$1" /tmp/out$$ export
+
 #end
