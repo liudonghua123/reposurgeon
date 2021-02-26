@@ -169,7 +169,6 @@ BNF_TOPICS = \
 	timeoffset \
 	timequake \
 	timing \
-	tip \
 	transcode \
 	unassign \
 	undefine \

@@ -3932,48 +3932,6 @@ func (commit *Commit) checkout(directory string) string {
 	return directory
 }
 
-// head returns the branch to which this commit belongs.
-func (commit *Commit) head() string {
-	if strings.HasPrefix(commit.Branch, "refs/heads/") || !commit.hasChildren() {
-		return commit.Branch
-	}
-	rank := 0
-	var child Event
-	for rank, child = range commit.children() {
-		switch child.(type) {
-		case *Commit:
-			if child.(*Commit).Branch == commit.Branch {
-				return child.(*Commit).head()
-			}
-		case *Callout:
-			croak("internal error: callouts do not have branches: %s",
-				child.idMe())
-		}
-	}
-	if rank == 0 {
-		switch child.(type) {
-		case *Commit:
-			return child.(*Commit).head() // there was only one child
-		case *Callout:
-			croak("internal error: callouts do not have branches: %s",
-				child.idMe())
-		}
-	}
-	croak("Can't deduce a branch head for %s", commit.mark)
-	return ""
-}
-
-// tip enables do_tip() to report deduced branch tips.
-func (commit *Commit) tip(_modifiers orderedStringSet, eventnum int, cols int) string {
-	summary := fmt.Sprintf("%6d %s %6s ",
-		eventnum+1, commit.date().rfc3339(), commit.mark)
-	report := summary + commit.head()
-	if cols > 0 && len(report) > cols {
-		report = utf8trunc(report, cols)
-	}
-	return report
-}
-
 // reference answers whether this commit references a specified blob mark.
 func (commit *Commit) references(mark string) bool {
 	for _, fileop := range commit.operations() {

@@ -1480,40 +1480,6 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 	return false
 }
 
-// HelpTip says "Shut up, golint!"
-func (rs *Reposurgeon) HelpTip() {
-	rs.helpOutput(`
-[SELECTION] tip [>OUTFILE]
-
-Display the branch tip names associated with commits in the selection
-set.  These will not necessarily be the same as their branch fields
-(which will often be tag names if the repo contains either annotated
-or lightweight tags).
-
-If a commit is at a branch tip, its tip is its branch name.  If it has
-only one child, its tip is the child's tip.  If it has multiple children,
-then if there is a child with a matching branch name its tip is the
-child's tip.  Otherwise this function throws a recoverable error.
-`)
-}
-
-// DoTip generates a human-friendly listing of events.
-func (rs *Reposurgeon) DoTip(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	w := screenwidth()
-	modifiers := orderedStringSet{}
-	f := func(p *LineParse, i int, e Event) string {
-		c, ok := e.(*Commit)
-		if ok {
-			return c.tip(modifiers, i, w)
-		}
-		return ""
-	}
-	rs.reportSelect(parse, f)
-	return false
-}
-
 // HelpTags says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTags() {
 	rs.helpOutput(`

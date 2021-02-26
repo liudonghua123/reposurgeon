@@ -1203,8 +1203,6 @@ func TestParentChildMethods(t *testing.T) {
 	}
 
 	commit3.setBranch("refs/heads/master")
-	assertEqual(t, commit3.head(), "refs/heads/master")
-
 	assertBool(t, commit1.references(":6"), false)
 	assertBool(t, commit3.references(":6"), true)
 

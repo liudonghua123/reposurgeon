@@ -2,7 +2,6 @@
 set echo
 read <simple.fi
 ~=B index
-:76 tip
 tags
 path list
 1..$ expunge theory.txt
