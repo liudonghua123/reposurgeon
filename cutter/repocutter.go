@@ -1885,8 +1885,16 @@ func main() {
 		}
 	}
 
+	assertNoArgs := func() {
+		if len(flag.Args()) != 1 {
+			fmt.Fprintf(os.Stderr, "repocutter: extra arguments detected after command keyword!\n")
+			os.Exit(1)
+		}
+	}
+
 	switch flag.Arg(0) {
 	case "deselect":
+		assertNoArgs()
 		deselect(NewDumpfileSource(input, baton), selection)
 	case "expunge":
 		expunge(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
@@ -1902,12 +1910,15 @@ func main() {
 		fmt.Fprintf(os.Stderr, "repocutter: no such command\n")
 		os.Exit(1)
 	case "log":
+		assertNoArgs()
 		log(NewDumpfileSource(input, baton), selection)
 	case "obscure":
+		assertNoArgs()
 		obscure(NewNameSequence(), NewDumpfileSource(input, baton), selection)
 	case "pathrename":
 		pathrename(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "pop":
+		assertNoArgs()
 		pop(NewDumpfileSource(input, baton), selection)
 	case "propdel":
 		propdel(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
@@ -1927,12 +1938,15 @@ func main() {
 		}
 		reduce(NewDumpfileSource(f, baton))
 	case "renumber":
+		assertNoArgs()
 		renumber(NewDumpfileSource(input, baton))
 	case "replace":
 		replace(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "see":
+		assertNoArgs()
 		see(NewDumpfileSource(input, baton), selection)
 	case "select":
+		assertNoArgs()
 		sselect(NewDumpfileSource(input, baton), selection)
 	case "setlog":
 		if logentries == "" {
@@ -1945,10 +1959,13 @@ func main() {
 	case "strip":
 		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "swap":
+		assertNoArgs()
 		swap(NewDumpfileSource(input, baton), selection)
 	case "testify":
+		assertNoArgs()
 		testify(NewDumpfileSource(input, baton))
 	case "version":
+		assertNoArgs()
 		fmt.Println(version)
 	default:
 		fmt.Fprintf(os.Stderr, "repocutter: \"%s\": unknown subcommand\n", flag.Arg(0))
