@@ -18,13 +18,8 @@ trap 'rm -rf /tmp/test-svn-git-repo$$-svn /tmp/test-svn-git-repo$$-svn-checkout 
 reposurgeon "read <${stem}.svn" "prefer git" "rebuild /tmp/test-svn-git-repo$$-git" >/tmp/out$$ 2>&1
 ${REPOTOOL:-repotool} compare ${cmpmode} ${cmploc} /tmp/test-svn-git-repo$$-svn-checkout /tmp/test-svn-git-repo$$-git | sed -e "s/$$/\$\$/"g >>/tmp/out$$ 2>&1
 
-
-case $1 in
-    --regress)
-        diff --text -u repotool-compare-branch-svn-git.chk /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-compare-branch-svn-git.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$1" /tmp/out$$
 	      
+# end

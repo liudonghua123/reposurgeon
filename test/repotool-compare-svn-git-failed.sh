@@ -24,13 +24,8 @@ reposurgeon "read <${stem}.svn" "msgin --blobs </tmp/altered$$" "prefer git" "re
 # shellcheck disable=SC2086
 ${REPOTOOL:-repotool} compare ${TESTOPT} /tmp/test-repo$$-svn-checkout /tmp/test-repo$$-git 2>&1 | sed -e "s/$$/\$\$/"g >>/tmp/out$$
 
-
-case $1 in
-    --regress)
-        diff --text -u repotool-compare-svn-git-failed.chk /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-compare-svn-git-failed.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$1" /tmp/out$$
 	      
+# end

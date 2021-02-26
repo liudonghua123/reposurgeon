@@ -11,13 +11,8 @@ cp -r hack1.repo/ /tmp/test-cvs-repo$$
 rm -rf /tmp/target$$/CVS/	# CVS internal use, and contents are different every time
 ./dir-md5 /tmp/target$$  >>/tmp/out$$
 
-case $1 in
-    --regress)
-        diff --text -u repotool-checkout-cvs.chk /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-checkout-cvs.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$1" /tmp/out$$
 
 #end

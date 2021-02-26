@@ -1,3 +1,4 @@
+## Test robustness in the face of an ill-formed merginfo
 read <<SVNDUMP-EOF
 SVN-fs-dump-format-version: 2
  ##  Check that bogus mergeinfo doesn't crash reposurgeon

@@ -22,14 +22,9 @@ trap 'rm -rf /tmp/test-export-repo$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 ./fi-to-fi -n /tmp/test-export-repo$$ < simple.fi
 (cd /tmp/test-export-repo$$ >/dev/null || (echo "$0: cd failed" >&2; exit 1); ${REPOTOOL:-repotool} export 2>&1) >/tmp/out$$ 2>&1
 
-case $mode in
-    --regress)
-        diff --text -u --label expected --label "seen ($version)" repotool-export-git.chk /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-export-git.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$mode" /tmp/out$$
 
 #end
 

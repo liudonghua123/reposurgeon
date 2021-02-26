@@ -16,14 +16,9 @@ trap 'rm -rf /tmp/test-export-repo$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 # > version 1.8.10.
 (cd /tmp/test-export-repo$$ >/dev/null || (echo "$0: cd failed" >&2; exit 1); ${REPOTOOL:-repotool} export) >/tmp/out$$
 
-case $1 in
-    --regress)
-        diff --text -u repotool-export-svn.chk /tmp/out$$  || (echo "$0: cd failed" >&2; exit 1) || (echo "$0: FAILED"; exit 1); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-export-svn.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$1" /tmp/out$$
 
 #end
 

@@ -16,12 +16,8 @@ command -v hg >/dev/null 2>&1 || { echo "    Skipped, hg missing."; exit 0; }
 ./hg-to-fi -n /tmp/test-repo$$-hg <${stem}.fi
 ${REPOTOOL:-repotool} compare-tags /tmp/test-repo$$-git /tmp/test-repo$$-hg 2>&1 | sed -e "s/$$/\$\$/"g >/tmp/out$$ 2>&1
 
-case $1 in
-    --regress)
-        diff --text -u "repotool-compare-tags-git-hg.chk" /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >"repotool-compare-tags-git-hg.chk";;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$1" /tmp/out$$
 	      
+# end

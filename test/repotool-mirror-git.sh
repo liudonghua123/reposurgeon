@@ -13,7 +13,7 @@ version="$3"
 if version_gt "2.25.1" "$version" && [ "$mode" = "--regress" ]
 then
     # 2.20.1 emits terminal resets that 2.25.1 does not.
-    echo "SKIPPED - sensitive to Git version skew, seeing unsupported $version"
+    echo "not ok - sensitive to Git version skew, seeing unsupported $version # SKIP"
     exit 0
 fi
 
@@ -25,19 +25,11 @@ trap 'rm -rf /tmp/test-mirror-repo$$ /tmp/mirror$$ /tmp/out$$' EXIT HUP INT QUIT
 ${REPOTOOL:-repotool} mirror "file://tmp/test-mirror-repo$$" /tmp/mirror$$
 (cd /tmp/mirror$$ >/dev/null || (echo "$0: cd failed" >&2; exit 1); ${REPOTOOL:-repotool} export) >/tmp/out$$ 2>&1
 
-case $mode in
-    --regress)
-	# This line is a kludge to deal with the fact that the git version
-	# running the tests may be old enough to not DTRT
-	grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>/tmp/out$$
-        diff --text -u repotool-mirror-git.chk /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-mirror-git.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$mode" /tmp/out$$
 	      
-#end
+# end
 
 
 

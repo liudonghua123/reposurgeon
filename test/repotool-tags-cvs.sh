@@ -11,12 +11,8 @@ cp -r hack1.repo/ /tmp/test-tags-cvs-repo$$
 (cd /tmp/test-tags-cvs-repo$$ >/dev/null || ( echo "$0: cd failed" >&2; exit 1 ); ${REPOTOOL:-repotool} tags /tmp/target$$) >/tmp/out$$ 2>&1
 echo Return code: $? >>/tmp/out$$
 
-case $1 in
-    --regress)
-        diff --text -u repotool-tags-cvs.chk /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-tags-cvs.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$1" /tmp/out$$
 	      
+# end

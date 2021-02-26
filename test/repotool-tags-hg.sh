@@ -10,13 +10,8 @@ trap 'rm -rf /tmp/test-tags-hg-repo$$ /tmp/target$$ /tmp/out$$' EXIT HUP INT QUI
 (cd /tmp/test-tags-hg-repo$$ >/dev/null || ( echo "$0: cd failed" >&2; exit 1 ); ${REPOTOOL:-repotool} tags /tmp/target$$) >/tmp/out$$ 2>&1
 echo Return code: $? >>/tmp/out$$
 
-case $1 in
-    --regress)
-        diff --text -u repotool-tags-hg.chk /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
-    --rebuild)
-	cat /tmp/out$$ >repotool-tags-hg.chk;;
-    --view)
-	cat /tmp/out$$;;
-esac
+# shellcheck disable=SC1091
+. ./common-setup.sh
+toolmeta "$1" /tmp/out$$
 	      
-#end
+# end
