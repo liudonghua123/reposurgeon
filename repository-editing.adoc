@@ -3381,7 +3381,7 @@ Filter syntax now uses subcommand verbs rather than the options of 4.23 and
 earlier.
 
 In versions 4.23 and earlier, the stats command operated on named
-repositories rather tan the currently-selected one.
+repositories rather than the currently-selected one.
 
 In versions 4.23 and earlier, it was possible to redirect output from
 msgin to capture a mailbox of changed entries. This feature has been
@@ -3409,6 +3409,11 @@ patterns.
 
 The "paths sup" and "paths sub" commands of versions 4.23 and earlier
 have been retired and replaced by the enhanced path rename command.
+
+As of 4.23, branch references as used in "branch rename" and elswhere
+now require a namespace prefix - heads/ or tags/.  This was done to
+eliminate a number of special cases that were difficult to document
+and remember.
 
 In versions before 4.10, the "reduce" and "blob" options of the
 "<<strip_cmd>>" command were bare keywords. Also the options of the
