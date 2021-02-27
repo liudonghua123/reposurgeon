@@ -87,6 +87,23 @@ listcheck:
 	    if ( head -3 $$f | grep --text -q '^ *##' ); then :; else echo "$$f needs a description" >&2; exit $(STOPOUT); fi;  \
 	done
 
+# The way these test productions work is kind of hairy, so the
+# constraints and assumptions are documented here.  The biggest
+# constraint is that we need a test failure to pass out a status that
+# terminates make - this is required for CI to notice the failure, as
+# it does not patthern-match on the output of the tests.
+#
+# These productions generally come in pairs. The outer one, meant to
+# be invoked, issues a banner and invokes parallel make on a distimctive
+# set of target pattern names.  The inner one is a pattern rule that
+# describes how to reach a target matching the pattern.
+#
+# A consequence of this organization is that in order to force
+# iermination of the outer rule with error status 1, an inner rule
+# cannot merely return $?=1, it has to do an explicit exit 1. A
+# significant amount of the complexity in these rules is the
+# gymnastics required to make that exit value conditional on STOPOUT.
+
 # Test that all stream files round-trip properly
 RULES_ROUNDTRIP=$(patsubst %,roundtrip-%,$(wildcard *.fi))
 roundtrip:
