@@ -1,7 +1,10 @@
 #!/bin/sh
 ## Test repotool mirror of git repo
 
-command -v git >/dev/null 2>&1 || { echo "    Skipped, git missing."; exit 0; }
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
+need git
 
 mode=${1:---regress}
 
@@ -23,10 +26,8 @@ trap 'rm -rf /tmp/test-mirror-repo$$ /tmp/mirror$$ /tmp/out$$' EXIT HUP INT QUIT
 ./fi-to-fi -n /tmp/test-mirror-repo$$ < simple.fi
 # Then exercise the mirror code to make a copy of it, and dump it.
 ${REPOTOOL:-repotool} mirror "file://tmp/test-mirror-repo$$" /tmp/mirror$$
-(cd /tmp/mirror$$ >/dev/null || (echo "$0: cd failed" >&2; exit 1); ${REPOTOOL:-repotool} export) >/tmp/out$$ 2>&1
+(tapcd /tmp/mirror$$ >/dev/null; ${REPOTOOL:-repotool} export) >/tmp/out$$ 2>&1
 
-# shellcheck disable=SC1091
-. ./common-setup.sh
 toolmeta "$mode" /tmp/out$$
 	      
 # end

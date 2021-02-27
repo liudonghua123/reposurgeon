@@ -7,8 +7,10 @@ stem=vanilla
 
 # No user-serviceable parts below this line
 
-command -v svn >/dev/null 2>&1 || { echo "    Skipped, svn missing."; exit 0; }
-command -v git >/dev/null 2>&1 || { echo "    Skipped, git missing."; exit 0; }
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
+need svn git
 
 trap 'rm -rf /tmp/test-repo$$-svn /tmp/test-repo$$-git /tmp/test-repo$$-svn-checkout /tmp/out$$' EXIT HUP INT QUIT TERM
 
@@ -16,8 +18,6 @@ trap 'rm -rf /tmp/test-repo$$-svn /tmp/test-repo$$-git /tmp/test-repo$$-svn-chec
 reposurgeon "read <${stem}.svn" "prefer git" "rebuild /tmp/test-repo$$-git" >/tmp/out$$ 2>&1
 ${REPOTOOL:-repotool} compare /tmp/test-repo$$-svn-checkout /tmp/test-repo$$-git | sed -e "s/$$/\$\$/"g >>/tmp/out$$ 2>&1
 
-# shellcheck disable=SC1091
-. ./common-setup.sh
 toolmeta "$1" /tmp/out$$
 	      
 # end

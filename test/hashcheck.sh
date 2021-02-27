@@ -6,7 +6,7 @@ repo=${PWD}/hashcheck-git-$$
 
 trap 'rm -fr ${repo}' EXIT HUP INT QUIT TERM
 
-command -v git >/dev/null 2>&1 || ( echo "$0: git is not installed"; exit 1 )
+command -v git >/dev/null 2>&1 || ( echo "not ok - $0: git is not installed # SKIP"; exit 1 )
 
 version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
@@ -17,7 +17,7 @@ if version_gt "2.25.1" "$version";
 then
     # This script will have mysterious failures if the local git chokes
     # on --show-original-ids.
-    echo "SKIPPED - sensitive to Git version skew, seeing unsupported $version"
+    echo "not ok - $0: sensitive to Git version skew, seeing unsupported $version # SKIP"
     exit 0
 fi
 
@@ -56,7 +56,7 @@ set -- $(reposurgeon 'read .' ':1 hash')
 
 if [ "${filehash}" != "$2" ]
 then
-    echo "hashcheck: FAILED - file and synthetic hash for some/file.txt do not match ($filehash != $2)." >&2
+    echo "not ok - $0: file and synthetic hash for some/file.txt do not match ($filehash != $2)."
     exit 1
 fi
 
@@ -90,7 +90,7 @@ set -- $(reposurgeon 'read .' ':2 hash --tree')
 
 if [ "${treehash}" != "$2" ]
 then
-    echo "hashcheck: FAILED - tree and synthetic hashes do not match." >&2
+    echo "not ok - $0: tree and synthetic hashes do not match."
     exit 1
 fi
 
@@ -115,7 +115,7 @@ set -- $(reposurgeon 'read .' ':2 hash')
 
 if [ "${commithash}" != "$2" ]
 then
-    echo "hashcheck: FAILED - commit ${commithash} at :2 and synthetic ${2} hashes do not match." >&2
+    echo "not ok - $0: commit ${commithash} at :2 and synthetic ${2} hashes do not match."
     exit 1
 fi
 
@@ -128,9 +128,11 @@ set -- $(reposurgeon 'read .' ':4 hash')
 
 if [ "${commithash}" != "$2" ]
 then
-    echo "hashcheck: FAILED - commit ${commithash} at :4 and synthetic ${2} hashes do not match." >&2
+    echo "not ok - $0: commit ${commithash} at :4 and synthetic ${2} hashes do not match."
     exit 1
 fi
+
+echo "ok - $0: succeeded"; exit 0
 
 # > Some notes:
 # > 

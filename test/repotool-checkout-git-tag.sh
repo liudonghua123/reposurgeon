@@ -1,19 +1,20 @@
 #!/bin/sh
 ## Test repotool checkout of git repo at tag
 
-command -v git >/dev/null 2>&1 || { echo "    Skipped, git missing."; exit 0; }
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
+need git
 
 trap 'rm -rf /tmp/test-git-tag-repo$$ /tmp/target$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 
 ./fi-to-fi -n /tmp/test-git-tag-repo$$ < simple.fi
-cd /tmp/test-git-tag-repo$$ >/dev/null || ( echo "$0: cd failed"; exit 1 )
+tapcd /tmp/test-git-tag-repo$$
 ${REPOTOOL:-repotool} checkout -t lightweight-sample /tmp/target$$
 echo Return code: $? >/tmp/out$$
-cd - >/dev/null || ( echo "$0: cd failed"; exit 1 )
+tapcd -
 ./dir-md5 /tmp/target$$ >>/tmp/out$$
 
-# shellcheck disable=SC1091
-. ./common-setup.sh
 toolmeta "$1" /tmp/out$$
 	      
 #end

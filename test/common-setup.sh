@@ -16,7 +16,8 @@ toolmeta() {
 	   then
                grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>/tmp/out$$
 	   fi
-	   diff --text -u "${stem}.chk" /tmp/out$$ || ( echo "$0: FAILED"; exit 1 ); ;;
+           legend=$(sed -n '/^## /s///p' <"$0" 2>/dev/null);
+           QUIET=${QUIET} ./tapdiffer <"$2" "${legend}" "${stem}.chk"; ;;
        --rebuild)
            cat "$2" >"$(stem).chk"
 	   if [ "$3" = "export" ]
@@ -28,6 +29,18 @@ toolmeta() {
        *)
            echo "toolmeta: unknown mode $1 in $0" >&2;; 
     esac
+}
+
+need () {
+    # shellcheck disable=SC2068
+    for tool in $@
+    do
+	command -v "${tool}" >/dev/null 2>&1 || ( echo "not ok: ${tool} missing. | SKIP"; exit 0; )
+    done
+}
+
+tapcd () {
+    cd "$1" >/dev/null || ( echo "not ok: $0: cd failed"; exit 1 )
 }
 
 # Boilerplate ends 

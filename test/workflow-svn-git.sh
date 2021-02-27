@@ -1,10 +1,10 @@
 #!/bin/sh
 ## Test standard SVN to Git workflow
 
-command -v svn >/dev/null 2>&1 || { echo "    Skipped, SVN missing."; exit 0; }
-command -v svnadmin >/dev/null 2>&1 || { echo "    Skipped, svnadmin."; exit 0; }
+# shellcheck disable=SC1091
+. ./common-setup.sh
 
-set -e
+need svn svnadmin
 
 TMPDIR=${TMPDIR:-/tmp}
 
@@ -13,18 +13,20 @@ trap 'rm -rf ${TMPDIR}/scratch$$ ${TMPDIR}/ref$$ ${TMPDIR}/out$$' EXIT HUP INT Q
 # Go to our sandbox
 testdir=$(realpath .)
 mkdir "${TMPDIR}/scratch$$"
-cd "${TMPDIR}/scratch$$" >/dev/null || (echo "$0: cd failed" >&2; exit 1)
+tapcd "${TMPDIR}/scratch$$"
 
 # Make a repository from a sample stream.
 "${testdir}/svn-to-svn" -q -n vanilla-prime <"${testdir}/vanilla.svn"
 
 # Make the workflow file.
-repotool initialize -q vanilla-secundus svn git
+repotool initialize -q vanilla-secundus svn git || ( echo "not ok - $0: initialization failed"; exit 1)
 
 # Mirror vanilla-prime into vanilla-secundus and invoke standard workflow
-make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" 2>&1
+make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" >/dev/null 2>&1  || ( echo "not ok - $0: mirror and conversion failed"; exit 1)
 
 # Compare the results
-repotool compare-all vanilla-secundus-mirror vanilla-secundus-git || echo "FAILED: Repositories do not compare equal."
+repotool compare-all vanilla-secundus-mirror vanilla-secundus-git || ( echo "not ok - $0: repositories do not compare equal."; exit 1 )
+
+echo "ok - $0: repositories compared equal"; exit 0
 
 #end

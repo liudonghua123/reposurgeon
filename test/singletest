@@ -12,9 +12,10 @@ experimental=""
 serial=""
 mode=diffing
 log=""
-while getopts bhl:nosx opt
+while getopts a:bhl:nosx opt
 do
     case $opt in
+	a) arg=$OPTARG;;
 	b) mode=build;; 
 	l) log="log $OPTARG" ;;
 	n) mode=errs;;
@@ -26,6 +27,8 @@ singletest - run a single regression test
 
 The REPOSURGEON environment variable can be used to substitute in a
 different implementation.
+
+With -a, pass an argument for the script
 
 With -b. regenerate the corresponding check file
 
@@ -40,12 +43,19 @@ With -o, dump the test output rather than diffing against the checkfile
 With -s, set the serial flag to disable parallelism
 
 With -x, set the experimental flag.
+
+Otherwise, run the test and emit a report in TAP format.
+If the test generated a nonempty diff it is displayed as
+a detail message. QUIET=1 suppresses diff output, shipping
+only the TAP not-ok line.
 EOF
 	   exit 0;;
     esac
 done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
+
+trap 'rm -f /tmp/tapdiff$$' EXIT HUP INT QUIT TERM
 
 # shellcheck disable=SC2068
 for x in $@;
@@ -69,13 +79,26 @@ do
 	echo "No script matching ${what} found"
 	exit 1
     fi
-    # This redirect to stderr is so this script can be used to rebuild checkfiles
-    (grep '^##' "${tst}" 2>/dev/null) 1>&2
+    legend=$(grep '^##' "${tst}" 2>/dev/null || echo "## (no description)")
     case $mode in
-    build) ${REPOSURGEON:-reposurgeon} "set serial" "$experimental" "script ${tst}" >"${chk}" 2>&1 ;;
-    view)  ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "script ${tst}" 2>&1 ;;
-    errs)  ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst}" >/dev/null ;;
-    *)     ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst}" 2>&1 | diff -u "${chk}" - ;;
+    build) echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set serial" "$experimental" "script ${tst}" >"${chk}" 2>&1 ;;
+    view)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "script ${tst}" 2>&1 ;;
+    errs)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst}" >/dev/null ;;
+    *)     legend=$(echo "${legend}" | sed -e 's/## //')
+	   cat </dev/null >/tmp/tapdiff$$
+	   if ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst} ${arg}" 2>&1 | diff -u "${chk}" -  >/tmp/tapdiff$$ 2>&1 && [ ! -s /tmp/tapdiff$$ ]
+	   then
+	       echo "ok - ${legend}"
+	       exit 0
+	   else
+	       echo "not ok - ${x}: ${legend}"
+	       if [ ! "${QUIET}" = 1 ]
+	       then
+		   sed </tmp/tapdiff$$ -e 's/^/ /'
+	       fi
+	       exit 1
+	   fi	   
+	   ;;
     esac
 done
 

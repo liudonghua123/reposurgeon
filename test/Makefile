@@ -103,6 +103,10 @@ listcheck:
 # cannot merely return $?=1, it has to do an explicit exit 1. A
 # significant amount of the complexity in these rules is the
 # gymnastics required to make that exit value conditional on STOPOUT.
+#
+# Some pattern rules look like this: (GENERATOR | FILTER) || exit $(STOPOUT)
+# The GENERATOR part pushers test output to a FILTER which compares it to
+# a corresponding checkfile. If this pipeline fails the exit is called.
 
 # Test that all stream files round-trip properly
 RULES_ROUNDTRIP=$(patsubst %,roundtrip-%,$(wildcard *.fi))
@@ -111,11 +115,7 @@ roundtrip:
 	@$(PARALLEL_MAKE) $(RULES_ROUNDTRIP)
 
 $(RULES_ROUNDTRIP): roundtrip-%: %
-	@echo "  $<"; \
-	$(REPOSURGEON) "$(TESTOPT)" "read -;write -" <$< >/tmp/rs$$$$ || exit $(STOPOUT); \
-	[ -s /tmp/rs$$$$ ] && diff --text -u $< /tmp/rs$$$$ \
-		|| exit $(STOPOUT); \
-	rm -f /tmp/rs$$$$ || exit $(STOPOUT)
+	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< roundtrip" $<) || exit $(STOPOUT)
 
 # Test that all stream files round-trip properly with compression
 RULES_ROUNDTRIP_COMPRESS=$(patsubst %,roundtrip-compress-%,$(wildcard *.fi))
@@ -124,12 +124,7 @@ roundtrip-compress:
 	@$(PARALLEL_MAKE) $(RULES_ROUNDTRIP_COMPRESS)
 
 $(RULES_ROUNDTRIP_COMPRESS): roundtrip-compress-%: %
-	@echo "  $<"; \
-	$(REPOSURGEON) "$(TESTOPT)" "set compress" "read -;write -" \
-		<$< >/tmp/rs$$$$ || exit $(STOPOUT); \
-	[ -s /tmp/rs$$$$ ] && diff --text -u $< /tmp/rs$$$$ \
-		|| exit $(STOPOUT); \
-	rm -f /tmp/rs$$$$ || exit $(STOPOUT)
+	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< compressed roundtrip" $<) || exit $(STOPOUT)
 
 # Test that dumping metadata to msgbox form and updating from the message-box
 # is idempotent if you make no changes to the message-box.
@@ -139,12 +134,7 @@ messagebox:
 	@$(PARALLEL_MAKE) $(RULES_MESSAGE_BOX)
 
 $(RULES_MESSAGE_BOX): messagebox-%: %
-	@echo "  $<";\
-	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" \
-	>/tmp/regress-a$$$$ || exit $(STOPOUT); \
-	[ -s /tmp/regress-a$$$$ ] && diff --text -u $< /tmp/regress-a$$$$ \
-	|| { rm -f /tmp/regress-a$$$$; exit $(STOPOUT); }; \
-	rm -f /tmp/regress-a$$$$ /tmp/msgbox$$$$
+	@$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | QUIET=$(QUIET) tapdiffer "$< message roundtripping" $< || exit $(STOPOUT)
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
@@ -155,10 +145,6 @@ fi-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
 		2>&1 || exit $(STOPOUT); \
 	done
-
-fi-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
-	@echo "=== Running general tests:"
-	@$(PARALLEL_MAKE) $(TESTLOADS:%=fi-regress-%)
 
 # Generated test loads
 multigen.svn: multigen.sh
@@ -176,18 +162,12 @@ tagdoublet.svn: tagdoubletgen.sh
 mixedbranchlift.svn: branchliftgen.sh
 	sh branchliftgen.sh >mixedbranchlift.svn
 
+fi-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
+	@echo "=== Running general tests:"
+	@$(PARALLEL_MAKE) $(TESTLOADS:%=fi-regress-%)
+
 $(TESTLOADS:%=fi-regress-%): fi-regress-%: %.tst
-	@file=$(<:.tst=); \
-	( $(ECHO) -n "  $${file} "; grep --text '##' $${file}.tst  || echo ' ## (no description)' ) | sed -e '/ ##/s//:/' ; \
-	    $(REPOSURGEON) "$(TESTOPT)" "script $${file}.tst testing123" >/tmp/regress-b$$$$ 2>&1 \
-		|| (echo "*** Nonzero return status on $${file}!"; exit $(STOPOUT) ); \
-	    diff --text -u $${file}.chk /tmp/regress-b$$$$ >/tmp/diff$$$$; \
-	    case $$? in \
-	    0) ;; \
-	    1) if [ $(QUIET) = 1 ]; then echo FAILED; else cat /tmp/diff$$$$; fi; if [ $(STOPOUT) = 1 ]; then { rm -f /tmp/regress-b$$$$ .tmp/diff$$$$; exit 1; }; fi;; \
-	    *) echo "*** diff had trouble, status $$?"; { rm -f /tmp/regress-b$$$$ /tmp/diff$$$$; exit $(STOPOUT); };; \
-	    esac ; \
-	rm -f /tmp/regress-b$$$$ /tmp/diff$$$$
+	@QUIET=$(QUIET) singletest -a testing123 $< || exit $(STOPOUT)
 
 # Test the git extractor
 GITLOADS = bs
@@ -235,11 +215,8 @@ RULES_GIT_REGRESS=$(patsubst %,git-regress-test-%, \
 $(RULES_GIT_REGRESS): git-regress-test-%: %.fi
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	test=$(<:.fi=); \
-		if (echo "  $${test}.fi" >&2; \
-		./fi-to-fi) <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-c$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-c$$$$ || { rm -f /tmp/regress-c$$$$; exit $(STOPOUT); }; \
-		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-c$$$$; exit $(STOPOUT); }; fi; \
-	rm -f /tmp/regress-c$$$$
+		./fi-to-fi <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' \
+		| QUIET=$(QUIET) tapdiffer "$<: git extractor" $${test}.fi \
 
 
 # Test the hg extractor
@@ -250,10 +227,8 @@ hg-regress:
 	if command -v hg >/dev/null 2>&1 && command -v git >/dev/null 2>&1 ; \
 	then \
 	    for test in $(HGLOADS); do \
-		if (echo "  $${test}.fi" >&2; \
-		./hg-to-fi) <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >/tmp/regress-d$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-d$$$$ || { rm -f /tmp/regress-d$$$$; exit $(STOPOUT); }; \
-		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-d$$$$; exit $(STOPOUT); }; fi \
+		./hg-to-fi <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' \
+		| QUIET=$(QUIET) tapdiffer "$${test}: hg extractor" $${test}.fi; \
 	    done; \
 	else echo "    Skipped, hg or git missing."; exit 0; \
 	fi; \
@@ -275,10 +250,8 @@ hg-regress-branches:
 	if command -v hg >/dev/null 2>&1 ; \
 	then \
 	    for test in $(HGBRANCHES); do \
-		if (echo "  $${test}" >&2; \
-		./hg-$${test}-test) | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-e$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-e$$$$ || { rm -f /tmp/regress-e$$$$; exit $(STOPOUT); }; \
-		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-e$$$$; exit $(STOPOUT); }; fi \
+		./hg-$${test}-test | sed -e 1d -e '/^#legacy-id/d' \
+		| QUIET=$(QUIET) tapdiffer "$${test}: multiple hg branches" $${test}.fi; \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -299,10 +272,8 @@ hg-regress-merges:
 	if command -v hg >/dev/null 2>&1 ; \
 	then \
 	    for test in $(HGMERGES); do \
-		if (echo "  $${test}" >&2; \
-		./hg-$${test}-test) | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-f$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-f$$$$ || { rm -f /tmp/regress-f$$$$; exit $(STOPOUT); }; \
-		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-f$$$$; exit $(STOPOUT); }; fi \
+		./hg-$${test}-test | sed -e 1d -e '/^#legacy-id/d' \
+		| QUIET=$(QUIET) tapdiffer "$${test}: multiple hg branches" $${test}.fi; \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -323,10 +294,8 @@ hg-regress-tags:
 	if command -v hg >/dev/null 2>&1 ; \
 	then \
 	    for test in $(HGTAGS); do \
-		if (echo "  $${test}" >&2; \
-		./hg-$${test}-test) | sed -e 1d -e '/^#legacy-id/d' >/tmp/regress-g$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-g$$$$ || { rm -f /tmp/regress-g$$$$; exit $(STOPOUT); }; \
-		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-g$$$$; exit $(STOPOUT); }; fi \
+		./hg-$${test}-test | sed -e 1d -e '/^#legacy-id/d' \
+		| QUIET=$(QUIET) tapdiffer "$${test}: multiple hg branches" $${test}.fi; \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -347,10 +316,8 @@ hg-regress-patho:
 	if command -v hg >/dev/null 2>&1 ; \
 	then \
 	    for test in $(HGPATHO); do \
-		if (echo "  $${test}" >&2; \
-		./hg-$${test}-test 2>/dev/null) | sed -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >/tmp/regress-h$$$$; \
-		then diff --text -u $${test}.fi /tmp/regress-h$$$$ || { rm -f /tmp/regress-h$$$$; exit $(STOPOUT); }; \
-		else echo "*** Nonzero return status on $${test}!"; { rm -f /tmp/regress-h$$$$; exit $(STOPOUT); }; fi \
+		./hg-$${test}-test 2>/dev/null | sed -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' \
+		| QUIET=$(QUIET) tapdiffer "$${test}: pathological hg loads" $${test}.fi; \
 	    done; \
 	else echo "    Skipped, hg missing."; exit 0; \
 	fi; \
@@ -378,28 +345,21 @@ svnload-regress:
 
 $(SVNLOADS:%=svnload-regress-%): svnload-regress-%: %.svn
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
-	test=$(<:.svn=); \
-		{ $(ECHO) -n "  $${test}.svn"; grep --text '^ ##' $${test}.svn || echo ' ## (no description)'; } | sed -e '/ ##/s//:/' >&2; \
-		$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -" >/tmp/regress-i$$$$ 2>&1 \
-		    || (echo "*** Nonzero return status on $${file}!"; exit $(STOPOUT) ); \
-		diff --text -u $${test}.chk /tmp/regress-i$$$$ >/tmp/diff$$$$; \
-		case $$? in \
-		0) ;; \
-		1) if [ $(QUIET) = 1 ]; then echo FAILED; else cat /tmp/diff$$$$; fi; if [ $(STOPOUT) = 1 ]; then exit 1; fi;; \
-		*) echo "*** diff had trouble, status $$?"; exit $(STOPOUT);; \
-		esac; \
-		if command -v git >/dev/null 2>&1 ; \
-		then \
-		    mkdir /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
-		    (cd /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
-			git init --quiet || exit $(STOPOUT); \
-			grep --text -v 'reposurgeon:' /tmp/regress-i$$$$ | git fast-import --quiet) \
-			    || { rm -fr /tmp/reposurgeon$$$$ /tmp/regress-i$$$$ .tmp/diff$$$$; exit $(STOPOUT); }; \
-		    rm -fr /tmp/reposurgeon$$$$\
-		else \
-		    echo "    Skipped, git missing."; \
-	    fi; \
-	    rm -f /tmp/regress-i$$$$ /tmp/diff$$$$
+	test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
+	$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -"  >/tmp/stream$$$$ 2>&1; \
+	QUIET=$(QUIET) tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$; \
+	if command -v git >/dev/null 2>&1 ; \
+	then \
+	    mkdir /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
+	    (cd /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
+		git init --quiet || exit $(STOPOUT); \
+		grep --text -v 'reposurgeon:' /tmp/stream$$$$ | git fast-import --quiet) \
+		    || { rm -fr /tmp/reposurgeon$$$$ /tmp/stream$$$$; exit $(STOPOUT); }; \
+	    rm -fr /tmp/reposurgeon$$$$\
+	else \
+	    echo "    Skipped, git missing."; \
+	fi; \
+	rm -f /tmp/stream$$$$
 
 # Perform full regression on SVN streams that have clean conversions -
 # that is, no messages due to branch surgery or whatever.
@@ -485,14 +445,8 @@ liftcheck-regress:
 	fi
 
 $(patsubst %,liftcheck-regress-%,$(wildcard *.svn)): liftcheck-regress-%: %
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	liftcheck -e 'emptycommit|-root' $< >/tmp/diff$$$$; \
-	case $$? in \
-	    0) ;; \
-	    1) if [ $(QUIET) = 1 ]; then echo FAILED; else cat /tmp/diff$$$$; fi; if [ $(STOPOUT) = 1 ]; then exit 1; fi;; \
-	    *) echo "*** liftcheck had trouble, status $$?"; exit $(STOPOUT);; \
-	esac; \
-	rm -f /tmp/diff$$$
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
+	liftcheck -e 'emptycommit|-root' $< || exit $(STOPOUT)
 
 LOADS_LIFTCHECK_FULLREGRESS = nut.svn $(filter-out nut.svn,$(wildcard *.svn))
 RULE_LIFTCHECK_FULLREGRESS = $(LOADS_LIFTCHECK_FULLREGRESS:%=liftcheck-regress-full-%)
@@ -506,8 +460,8 @@ liftcheck-fullregress:
 	fi
 
 $(RULE_LIFTCHECK_FULLREGRESS): liftcheck-regress-full-%: %
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	liftcheck -q -r all $< || { echo "*** Failed on $< !"; exit $(STOPOUT); } \
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
+	liftcheck -q -r all $< || exit $(STOPOUT)
 
 # List Subversion streams that don't convert clean without -q -r all
 liftcheck-dirty:
@@ -527,15 +481,15 @@ legacy-buildregress:
 	done
 legacy-regress:
 	@echo "=== Testing legacy-map generation:"
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
+	status=0; \
 	for test in $(REFLOADS); \
 	do \
-	    if echo "  $${test}.svn" >&2; \
-	    $(REPOSURGEON) "$(TESTOPT)" "read <$${test}.svn" "legacy write -" | grep -v '^reposurgeon:' >/tmp/regress-j$$$$ 2>/dev/null; \
-	    then diff --text -u $${test}.map /tmp/regress-j$$$$ || { rm -f /tmp/regress-j$$$$; exit $(STOPOUT); }; \
-	    else echo "*** Nonzero return status on $${test}!"; rm -f /tmp/regress-j$$$$; exit $(STOPOUT); fi; \
+	    legend=$$(sed -n '/^ ## /s///p' <"$${test}.svn" 2>/dev/null || echo "(no description)"); \
+	    $(REPOSURGEON) "$(TESTOPT)" "read <$${test}.svn" "legacy write -" | grep -v '^reposurgeon:' 2>/dev/null \
+	    | QUIET=$(QUIT0E) tapdiffer "$${legend}" $${test}.map || status=1; \
 	done; \
-	rm -f /tmp/regress-j$$$$
+	exit $${status};
 
 # Regression-testing of repomapper; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
@@ -551,8 +505,8 @@ repomapper-regress:
 	@REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
 	status=0; \
 	for file in $(MAPPERTESTS); do \
-	    ( $(ECHO) -n "  $${file} "; grep --text '##' $${file}.sh  || echo ' ## (no description)') | sed -e '/ ##/s//:/'; \
-	    $(SHELL) $${file}.sh | diff --text -u $${file}.chk - || status=1; \
+	    legend=$$(sed -n '/^## /s///p' <"$${file}.sh" 2>/dev/null || echo "(no description)"); \
+	    $(SHELL) $${file}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${file}.chk || status=$(STOPOUT); \
 	done; \
 	exit $${status};
 
@@ -570,7 +524,6 @@ repotool-regress:
 	@REPOTOOL=$$REPOTOOL; export REPOTOOL; \
 	status=0; \
 	for file in $(TOOLTESTS); do \
-	    ( $(ECHO) -n "  $${file} "; grep '##' $${file}.sh  || echo ' ## (no description)') | sed -e '/ ##/s//:/'; \
 	    $(SHELL) $${file}.sh --regress || status=1; \
 	done; \
 	exit $${status};
@@ -590,8 +543,8 @@ repocutter-regress:
 	@REPOCUTTER=$$REPOCUTTER; export REPOCUTTER; \
 	status=0; \
 	for file in $(CUTTERTESTS); do \
-	    ( $(ECHO) -n "  $${file} "; grep --text '##' $${file}.sh  || echo ' ## (no description)') | sed -e '/ ##/s//:/'; \
-	    $(SHELL) $${file}.sh | diff --text -u $${file}.chk - || status=1; \
+	    legend=$$(sed -n '/^## /s///p' <"$${file}.sh" 2>/dev/null || echo "(no description)"); \
+	    $(SHELL) $${file}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${file}.chk || status=$(STOPOUT); \
 	done; \
 	exit $${status};
 
@@ -609,8 +562,8 @@ svncheck-regress:
 	if command -v svn >/dev/null 2>&1 ; \
 	then \
 	    for file in $(SVNCHECK); do \
-		( $(ECHO) -n "  $${file} "; grep --text '##' $${file}.sh  || echo ' ## (no description)' ) | sed -e '/ ##/s//:/'; \
-		$(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' | diff --text -u $${file}.chk - || status=1; \
+		legend=$$(sed -n '/^## /s///p' <"$${file}.sh" 2>/dev/null || echo "(no description)"); \
+		$(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' | tapdiffer "$${legend}" $${file}.chk || status=1; \
 	    done; \
 	else echo "    Skipped, svn missing."; exit 0; \
 	fi; \
@@ -621,8 +574,7 @@ sporadic:
 	@echo "=== Sporadic tests:"
 	@for file in $(SPORADIC); \
 	do \
-		( $(ECHO) -n "  $${file} "; grep --text '##' $${file}  || echo ' ## (no description)' ) | sed -e '/ ##/s//:/' ; \
-		sh $$file ; \
+		sh $$file || exit $(STATUS); \
 	done
 
 # Test productions end here.

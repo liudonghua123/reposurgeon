@@ -2,6 +2,10 @@
 #
 # liftcheck - compare reposurgeon lift of a Subversion repo with a checkout
 #
+# Produces an ok/not-ok line suitable for feeding to a TAP consumer.
+# If the environment variable is set, the detail-like part of a :nit ok" line,
+# which is normally a diff listing of discrepancies, is suppressed.
+#
 # The -v option reveals executed subcommands.
 # The -q option makes repotool extra quiet and reports only errors.
 # The -p option shows revision numbers when comparing multiple revisions
@@ -72,6 +76,8 @@ fi
 
 ENGINE=${ENGINE:=reposurgeon}
 
+rm -f /tmp/diff$$
+
 # shellcheck disable=SC2068
 for what in $@
 do
@@ -97,16 +103,15 @@ do
     if [ $debug = no ]
     then
 	# shellcheck disable=SC2064
-	trap "rm -fr ${stem} ${stem}-checkout ${stem}-git ${stem}.gfi ${stem}.info ${stem}*~ ${stem}-tmpdir" EXIT HUP INT QUIT TERM
+	trap "rm -fr ${stem} ${stem}-checkout ${stem}-git ${stem}.gfi ${stem}.info ${stem}*~ ${stem}-tmpdir /tmp/diff$$" EXIT HUP INT QUIT TERM
     fi
 
     TMPDIR=$(readlink -f ${stem}-tmpdir)
     export TMPDIR
     mkdir "${TMPDIR}"
 
-    # Notification
     # shellcheck disable=SC2039
-    { echo -n "  ${what}"; grep --text '^ ##' "${what}" || echo ' ## (no description)'; } | sed -e '/ ## /s//: /' >&2; \
+    description=$(sed -n <"${what}" -e '/ ## /s///p' || echo 'no description')
 
     # Make a Subversion repo from the dump
     # shellcheck disable=SC2086
@@ -222,7 +227,7 @@ do
 	    # shellcheck disable=2086
 	    ../${REPOTOOL:-repotool} compare ${repotoolopt} ${compareopt} \
 		-a ${refopt} -r ${intrev}:${sha} \
-		${stem}-checkout ${stem}-git
+		${stem}-checkout ${stem}-git >>/tmp/diff$$
 	done < "${stem}.info"
     else
 
@@ -237,10 +242,22 @@ do
 	# Compare the original with the lift
 	# shellcheck disable=SC2086
 	../${REPOTOOL:-repotool} compare-all ${repotoolopt} ${compareopt} ${nobranch} \
-					       ${stem}-checkout ${stem}-git
-
+					       ${stem}-checkout ${stem}-git  >>/tmp/diff$$
     fi
 
+    if [ ! -s /tmp/diff$$ ]
+    then
+	echo "ok - ${what}: ${description}"
+	exit 0
+    else
+	echo "not ok - ${what}: ${description}"
+	if [ ! "${QUIET}" = 1 ]
+	then
+	    sed </tmp/diff$$ -e 's/^/ /'
+	fi
+	exit 1
+    fi
+    
     if [ $debug != no ]
     then
 	ls -d liftcheck[0123456789]*

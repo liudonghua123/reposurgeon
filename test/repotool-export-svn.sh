@@ -1,7 +1,10 @@
 #!/bin/sh
 ## Test repotool export of svn repo
 
-command -v svn >/dev/null 2>&1 || { echo "    Skipped, svn missing."; exit 0; }
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
+need svn
 
 trap 'rm -rf /tmp/test-export-repo$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 
@@ -14,10 +17,8 @@ trap 'rm -rf /tmp/test-export-repo$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 # > 1.6.11 as the dump is sorted differently, moving svn:log before
 # > svn:author instead of after svn:date. It works fine on svnadmin,
 # > version 1.8.10.
-(cd /tmp/test-export-repo$$ >/dev/null || (echo "$0: cd failed" >&2; exit 1); ${REPOTOOL:-repotool} export) >/tmp/out$$
+(tapcd /tmp/test-export-repo$$; ${REPOTOOL:-repotool} export) >/tmp/out$$
 
-# shellcheck disable=SC1091
-. ./common-setup.sh
 toolmeta "$1" /tmp/out$$
 
 #end

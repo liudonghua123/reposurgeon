@@ -4,7 +4,7 @@
 tests. It's what "make check" in the main directory redirects to.
 
 If you get a failure on the repotool-initialize-cvs-git test, but
-nowgere else, try updating your versions of CVS and cvs-fast-export
+nowhere else, try updating your versions of CVS and cvs-fast-export
 and trying again.
 
 There are tools and makefile productions for finer-grained testing.  
@@ -56,35 +56,25 @@ A .svn extension means it's a Subversion repo dump.
 A .chk extension means it's expected output from a test.
 A .tst extension means it's a test driver script.
 
-The "singletest" script takes the stem of a .tst file name, captures
-stdout and stderr, and diffs the result against the corresponding
-check (.chk) file.
-
-The "singlelift" script normally takes the stem of a .svn file name,
-captures stdout and stderr, and diffs the result against the
-corresponding check (.chk) file.
-
-The "liftcheck" script takes a Subversion stream file, builds a Git
-repository from it, and checks for differences using repotool's
-compare-all function.
+All reports from test scripts are in the form of TAP (Test Amything Protocol).
 
 == The scripts ==
 
 === fi-to-fi ===
 
 Builds a git repo from a fast-import stream on stdin, or streams an
-existing repo to stdout.
+existing repo to stdout. No report.
 
 === hg-to-fi ===
 
 Builds an hg repo from a fast-import stream on stdin, or streams an
-existing repo to stdout.
+existing repo to stdout. No report.
 
 === svn-to-svn ===
 
 Build a Subversion repo from a Subversion stream dump on stdin, or
 dump an existing repo as a stream to stdout.  Can also be used to edit
-a Subversion test load, regenerating its checksums.
+a Subversion test load, regenerating its checksums. No report.
 
 === svn-to-git ===
 
@@ -92,7 +82,7 @@ Build a Subversion repo from a Subversion stream dump on stdin,
 convert it to a local git repository, and stream the result to
 standard output. Mainly a wrapper around git-svn, to be used
 for comparison tests.  Can also be used to test against agito
-and svn2git.
+and svn2git. No report.
 
 To add a new tool for comparison, do something like:
 
@@ -103,10 +93,29 @@ $ git update submodules
 
 from the repo root.
 
+=== singletest === 
+
+The "singletest" script takes the stem of a .tst file name, captures
+stdout and stderr, and diffs the result against the corresponding
+check (.chk) file.  It emits a TAP report.
+
+=== singlelift ===
+
+The "singlelift" script normally takes the stem of a .svn file name,
+captures stdout and stderr, and diffs the result against the
+corresponding check (.chk) file. It emits a TAP report.
+
 === liftcheck ===
 
-Takes a named Subversion dump and compare a checkout of it with
-its git conversion at all tags and branches.
+The "liftcheck" script takes a Subversion stream file, builds a Git
+repository from it, and checks for differences using repotool's
+compare-all function (all tags and branches). It emits a TAP report.
+
+=== tapdiffer ===
+
+Compares standard input with a check file and turns the diff into a
+TAP report.  If the diff is nonempty it is shipped ater the TAP
+"not OK" as a details message.
 
 === delver ===
 

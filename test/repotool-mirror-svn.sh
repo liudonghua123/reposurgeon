@@ -6,7 +6,10 @@
 # property.  If that changes on each run it's going to cause
 # spurious test failures
 
-command -v svn >/dev/null 2>&1 || { echo "    Skipped, svn missing."; exit 0; }
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
+need svn
 
 trap 'rm -rf /tmp/test-repo-fubar /tmp/out$$ /tmp/mirror$$' EXIT HUP INT QUIT TERM
 
@@ -21,17 +24,21 @@ ${REPOTOOL:-repotool} mirror file:///tmp/test-repo-fubar /tmp/mirror$$
 # > 1.6.11 as the dump is sorted differently, moving svn:log before
 # > svn:author instead of after svn:date. It works fine on svnadmin,
 # > version 1.8.10.
-(cd /tmp/mirror$$ >/dev/null || ( echo "$0: cd failed" >&2; exit 1 ); ${REPOTOOL:-repotool} export) >/tmp/out$$
+(tapcd /tmp/mirror$$; ${REPOTOOL:-repotool} export) >/tmp/out$$
 
 # This test generates randomly time-varying UUIDs.
+stem=$(echo "$0" | sed -e 's/.sh//')
 case $1 in
     --regress)
-        sed </tmp/out$$ -e '/UUID:/d' | diff --text -u repotool-mirror-svn.chk - || ( echo "$0: FAILED"; exit 1 ); ;;
+	legend=$(sed -n '/^## /s///p' <"$0" 2>/dev/null);
+        sed </tmp/out$$ -e '/UUID:/d' | QUIET=${QUIET} ./tapdiffer "${legend}" "${stem}.chk"; ;;
     --rebuild)
-	sed </tmp/out$$ -e '/UUID:/d' >repotool-mirror-svn.chk;;
+	sed </tmp/out$$ -e '/UUID:/d' >"${stem}.chk";;
     --view)
 	cat /tmp/out$$;;
+    *)
+        echo "not ok - $0: unknown mode $1 # SKIP";; 
 esac
 
-#end
+# end
 

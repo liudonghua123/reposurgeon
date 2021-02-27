@@ -1,7 +1,10 @@
 #!/bin/bash
 ## Test listing closed branches in hg repository
 
-command -v hg >/dev/null 2>&1 || { echo "    Skipped, hg missing."; exit 0; }
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
+need hg
 
 trap 'rm -rf /tmp/test-hg-closed-branches-repo$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 
@@ -22,11 +25,9 @@ create_repo() {
 
 repo=/tmp/test-hg-closed-branches-repo$$
 create_repo "$repo"
-(cd "$repo" || (echo "$0: cd failed" >&2; exit 1); ${REPOTOOL:-repotool} branches) >/tmp/out$$ 2>&1
+(tapcd "$repo"; ${REPOTOOL:-repotool} branches) >/tmp/out$$ 2>&1
 echo Return code: $? >>/tmp/out$$
 
-# shellcheck disable=SC1091
-. ./common-setup.sh
 toolmeta "$1" /tmp/out$$
 
 # end
