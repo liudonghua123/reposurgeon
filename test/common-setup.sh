@@ -19,10 +19,10 @@ toolmeta() {
            legend=$(sed -n '/^## /s///p' <"$0" 2>/dev/null);
            QUIET=${QUIET} ./tapdiffer <"$2" "${legend}" "${stem}.chk"; ;;
        --rebuild)
-           cat "$2" >"$(stem).chk"
+           cat "$2" >"${stem}.chk"
 	   if [ "$3" = "export" ]
 	   then
-               grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>"${stem.chk}"
+               grep "^done" /tmp/out$$ >/dev/null 2>&1 || echo "done" >>"${stem}.chk"
 	   fi;;
        --view)
            cat "$2";;
