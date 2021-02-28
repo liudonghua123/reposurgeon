@@ -3,11 +3,12 @@
 Repository head::
      New manual section, "Tips and tricks".
      Tag rename checks that it won't step on an existing name.
-     "help" without topic now ermits a custom TOC with command groupings.
+     "help" without topic now emits a custom TOC with command groupings.
      Unite now produces union repositories with a valid master branch.
      repocutter errors out if presented with unexpected extra arguments.
      "tip" has been removed; what it was computing is not well defined.
-     Revert removal of --cvsignores.
+     Revert removal of --cvsignores. Nay be revisyted in a future release
+     All test messages conform to TAP and results are shipped through tappy.
 
 4.24: 2021-02-13::
      Retire the read --cvsignores option; best to use an expunge instead.
@@ -17,7 +18,7 @@ Repository head::
      The --branchmap option is gone in favor of using branch rename.
      The behavior and interface of the tag command has been simplified.
      The syntax of the expunge command has been simplified.
-     The "paths [sub|sup]" command have been replaced by "path rename".
+     The "paths [sub|sup]" command has been replaced by "path rename".
      The =Q set now provides a way to inspect recently modified events.
      The "edit" and "references edit" commands gave been retired.
      Subcommand moves to before first argument in branch/path/tag/reset commands.
