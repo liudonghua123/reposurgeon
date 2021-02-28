@@ -343,19 +343,7 @@ $(SVNLOADS:%=svnload-regress-%): svnload-regress-%: %.svn
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
 	test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -"  >/tmp/stream$$$$ 2>&1; \
-	QUIET=$(QUIET) tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$; \
-	if $(call AVAILABLE git) ; \
-	then \
-	    mkdir /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
-	    (cd /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
-		git init --quiet || exit $(STOPOUT); \
-		grep --text -v 'reposurgeon:' /tmp/stream$$$$ | git fast-import --quiet) \
-		    || { rm -fr /tmp/reposurgeon$$$$ /tmp/stream$$$$; exit $(STOPOUT); }; \
-	    rm -fr /tmp/reposurgeon$$$$\
-	else \
-	    echo "    Skipped, git missing."; \
-	fi; \
-	rm -f /tmp/stream$$$$
+	QUIET=$(QUIET) tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$;
 
 LOADS_LIFTCHECK_REGRESS = $(wildcard *.svn)
 RULE_LIFTCHECK_REGRESS = $(LOADS_LIFTCHECK_REGRESS:%=liftcheck-regress-full-%)
