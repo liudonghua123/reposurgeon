@@ -70,7 +70,7 @@ fi
 if [ $stream = True ]
 then
     # shellcheck disable=SC2086
-    try "${BIN}/${REPOSURGEON:-reposurgeon}" ${BUILDOPT} ${TESTOPT} "read $testrepo" "sourcetype git" "[.hgtags] & =C remove .hgtags" "gc" "write -"
+    "${BIN}/${REPOSURGEON:-reposurgeon}" "${BUILDOPT}" ${TESTOPT} "read $testrepo" "sourcetype git" "[.hgtags] & =C remove .hgtags" "gc" "write -"
 fi
 
 # Should we clean up the test directory
