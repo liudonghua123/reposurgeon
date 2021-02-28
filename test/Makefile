@@ -35,10 +35,10 @@ export TZ=UTC
 ECHO := /bin/echo
 
 # Define test groups
-BASIC = listcheck roundtrip roundtrip-compress messagebox fi-regress
+BASIC = listcheck roundtrip messagebox fi-regress
 SUBVERSION = svnload-regress liftcheck-regress legacy-regress svncheck-regress
 FULLSUBVERSION = $(SUBVERSION) liftcheck-fullregress
-GIT_EXTRACTOR = git-regress git-regress-branches git-regress-merges git-regress-tags
+GIT_EXTRACTOR = git-regress
 HG_EXTRACTOR = hg-regress hg-regress-branches hg-regress-merges hg-regress-tags \
 	hg-regress-patho
 AUXTOOLS = repocutter-regress repomapper-regress repotool-regress
@@ -240,14 +240,16 @@ $(TESTLOADS:%=fi-regress-%): fi-regress-%: %.tst
 # of our original list of {filestem, description} pairs to a parallel make
 # and the right thubgs will happen,
 #
-# To explore the following worked example, do "make -n super" to see
-# the parallel-make cpmmand that gets generated; the interesting part
-# is the kist if targets.  Then do "make -n
-# super-regress-test-be2.with_merges" tio see how a target in the list
-# expands to a generared rule.  Finally do "make TAPCONSUMER=cat super" to see what
-# execution of the generated targets looks like.
-# 
-SUPER_EXTRACTOR_LOADS= \
+# To explore the following worked example, do "make -n git-regress" to
+# see the parallel-make cpmmand that gets generated; the interesting
+# part is the kist if targets.  Then do "make -n
+# git-regress-test-be2.with_merges" tio see how a target in the list
+# expands to a generared rule.  Finally do "make TAPCONSUMER=cat
+# git-regress" to see what execution of the generated targets looks
+# like.
+
+# Test the git extractor
+GIT_EXTRACTOR_LOADS= \
 	bs.basic \
 	be.with_multiple_git_branches \
 	bs.with_multiple_git_branches \
@@ -258,71 +260,19 @@ SUPER_EXTRACTOR_LOADS= \
 	bt.with_tags \
 	bt2.with_tags \
 	bt3.with_tags
-super-extractor-test-%:
+git-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(basename $(subst super-extractor-test-,,$@))"; \
-	description="$(subst _, ,$(subst .,,$(suffix $(subst super-extractor-test-,,$@))))"; \
+	filestem="$(basename $(subst git-extractor-test-,,$@))"; \
+	description="$(subst _, ,$(subst .,,$(suffix $(subst git-extractor-test-,,$@))))"; \
 	./fi-to-fi <$${filestem}.fi | sed -e 1d -e '/^#legacy-id/d' \
-	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: $${description}" $${filestem}.fi
-super:
-	@echo "=== Testing super-extractor:"
-	@if command -v git >/dev/null 2>&1 ; \
-	then \
-		$(call TAPOUT, $(SUPER_EXTRACTOR_LOADS:%=super-extractor-test-%)); \
-	else echo "    Skipped, git missing."; exit 0; \
-	fi
-
-### BIZARRE GACKERY END
-
-# Test the git extractor
-GITLOADS = bs
+	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi
 git-regress:
 	@echo "=== Testing git-extractor:"
 	@if command -v git >/dev/null 2>&1 ; \
 	then \
-		$(call TAPOUT, $(GITLOADS:%=git-regress-test-%)); \
+		$(call TAPOUT, $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)); \
 	else echo "    Skipped, git missing."; exit 0; \
 	fi
-
-# Test the git extractor with multiple git branches
-GITBRANCHES = be bb
-git-regress-branches:
-	@echo "=== Testing git-extractor with multiple git branches:"
-	@if command -v git >/dev/null 2>&1 ; \
-	then \
-		$(call TAPOUT, $(GITBRANCHES:%=git-regress-test-%)); \
-	else echo "    Skipped, git missing."; exit 0; \
-	fi
-
-# Test the git extractor with merges
-GITMERGES = be2 be3 be4 be5 be6
-git-regress-merges:
-	@echo "=== Testing git-extractor with merges:"
-	@if command -v git >/dev/null 2>&1 ; \
-	then \
-		$(call TAPOUT, $(GITMERGES:%=git-regress-test-%)); \
-	else echo "    Skipped, git missing."; exit 0; \
-	fi
-
-# Test the git extractor with tags
-GITTAGS = bt bt2 bt3
-git-regress-tags:
-	@echo "=== Testing git-extractor with tags:"
-	@if command -v git >/dev/null 2>&1 ; \
-	then \
-		$(call TAPOUT, $(GITTAGS:%=git-regress-test-%)); \
-	else echo "    Skipped, git missing."; exit 0; \
-	fi
-
-RULES_GIT_REGRESS=$(patsubst %,git-regress-test-%, \
-			$(GITLOADS) $(GITBRANCHES) $(GITTAGS) $(GITMERGES))
-
-$(RULES_GIT_REGRESS): git-regress-test-%: %.fi
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	test=$(<:.fi=); \
-		./fi-to-fi <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' \
-		| QUIET=$(QUIET) tapdiffer "$<: git extractor" $${test}.fi \
-
 
 # Test the hg extractor
 HGLOADS = testrepo2
