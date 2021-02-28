@@ -11,47 +11,58 @@ data 13
 First commit
 M 100644 :1 file
 
+commit refs/tags/tag4
+mark :4
+author J. Random Hacker <jrh@foobar.com> 1456976401 -0500
+committer J. Random Hacker <jrh@foobar.com> 1456976401 -0500
+data 42
+Added tag tag1 for changeset effd0fadefff
+from :2
+
+commit refs/tags/tag4
+mark :6
+author J. Random Hacker <jrh@foobar.com> 1456976402 -0500
+committer J. Random Hacker <jrh@foobar.com> 1456976402 -0500
+data 42
+Added tag tag2 for changeset effd0fadefff
+from :4
+
 blob
-mark :3
+mark :7
 data 7
 foobar
 
 commit refs/tags/tag3
-mark :4
+mark :8
 author J. Random Hacker <jrh@foobar.com> 1456976410 -0500
 committer J. Random Hacker <jrh@foobar.com> 1456976410 -0500
 data 19
 add some more data
-from :2
-M 100644 :3 file
-
-blob
-mark :5
-data 22
-foobar
-something else
+from :6
+M 100644 :7 file
 
 commit refs/heads/master
-mark :6
-author J. Random Hacker <jrh@foobar.com> 1456976420 -0500
-committer J. Random Hacker <jrh@foobar.com> 1456976420 -0500
-data 13
-more changes
-from :4
-M 100644 :5 file
+mark :10
+author J. Random Hacker <jrh@foobar.com> 1456976411 -0500
+committer J. Random Hacker <jrh@foobar.com> 1456976411 -0500
+data 42
+Added tag tag3 for changeset fb8bc2d981af
+from :8
+
+commit refs/heads/master
+mark :12
+author J. Random Hacker <jrh@foobar.com> 1456976412 -0500
+committer J. Random Hacker <jrh@foobar.com> 1456976412 -0500
+data 42
+Added tag tag4 for changeset fb8bc2d981af
+from :10
 
 reset refs/tags/tag2
 from :2
 
 reset refs/tags/tag4
-from :4
+from :8
 
 reset refs/heads/master
-from :6
-
-reset refs/tags/tag5
-from :6
-
-reset refs/tags/tag6
-from :6
+from :12
 

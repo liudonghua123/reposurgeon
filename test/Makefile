@@ -255,8 +255,7 @@ GIT_EXTRACTOR_LOADS= \
 	be4.with_merges \
 	be5.with_merges \
 	bt.with_tags \
-	bt2.with_tags \
-	bt3.with_tags
+	bt2.with_tags
 GIT_EXTRACTOR_TARGETS = $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)
 $(GIT_EXTRACTOR_TARGETS): git-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
@@ -293,8 +292,8 @@ HG_EXTRACTOR_LOADS= \
 	be6.with_merges \
 	bt.with_tags \
 	bt2.with_tags \
-	bt3-hg.with_tags \
-	bt3-hg-local.with_tags \
+	bt3.with_tags \
+	bt3-local.with_tags \
 	be-subrepo.with_pathological_loads \
 	be-subrepo2.with_pathological_loads
 hg-extractor-test-%:
@@ -310,7 +309,7 @@ hg-regress:
 		$(call TAPOUT,$(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_LOADS:%=hg-extractor-test-%)); \
 	else echo "    Skipped, hg or git missing."; exit 0; \
 	fi
-HGSCRIPTS = be be2 be3 bb-alt be-bookmarks be2 be3 be4 be5 be6 bt bt2 bt3-hg bt3-hg-local be-subrepo be-subrepo2
+HGSCRIPTS = $(subst -test,,$(subst hg-,,$(wildcard hg-*-test)))
 hg-buildregress:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
 	for item in $(HGSCRIPTS); do \
