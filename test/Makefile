@@ -36,7 +36,7 @@ ECHO := /bin/echo
 
 # Define test groups
 BASIC = listcheck roundtrip-regress command-regress
-SUBVERSION = svnload-regress liftcheck-regress legacy-regress svncheck-regress liftcheck-fullregress
+SUBVERSION = svnload-regress liftcheck-regress legacy-regress svncheck-regress liftcheck-regress
 GIT_EXTRACTOR = git-regress
 HG_EXTRACTOR = hg-regress hg-regress-branches hg-regress-merges hg-regress-tags \
 	hg-regress-patho
@@ -418,114 +418,20 @@ $(SVNLOADS:%=svnload-regress-%): svnload-regress-%: %.svn
 	fi; \
 	rm -f /tmp/stream$$$$
 
-# Perform full regression on SVN streams that have clean conversions -
-# that is, no messages due to branch surgery or whatever.
-# Empty-commit tags generated in gitspace corresponding to branch
-# copies are ignored.
-SVNCLEAN := \
-	nut.svn \
-	agito.svn \
-	attrws.svn \
-	authortz.svn \
-	bad-author.svn \
-	badattrib.svn \
-	badattrib2.svn \
-	binary.svn \
-	blob-id.svn \
-	branchreplace.svn \
-	branch-drop-add.svn \
-	cherry-pick.svn \
-	cvstag.svn \
-	debranch.svn \
-	deepdirs.svn \
-	delete-rename.svn \
-	deletion.svn \
-	delignore.svn \
-	delref.svn \
-	dircopyprop.svn \
-	emptycommit-merge.svn \
-	emptyfrom.svn \
-	executable.svn \
-	expunge.svn \
-	filecopy.svn \
-	fleetwood.svn \
-	format7.svn \
-	gitify.svn \
-	gitignore.svn \
-	ignore-blank.svn \
-	lint.svn \
-	mergeinfo-combine.svn \
-	mergeinfo-grandparent.svn \
-	mergeinfo-trunkstomp.svn \
-	mergeinfo-with-split.svn \
-	mergeinfo.svn \
-	mixedbranch.svn \
-	mkignore.svn \
-	myers1.svn \
-	node-kind-first.svn \
-	no-forward-merge.svn \
-	no-merge.svn \
-	nontipcopy.svn \
-	nullignores.svn \
-	pangram.svn \
-	permcopy1.svn \
-	permcopy2.svn \
-	permcopy3.svn \
-	permcopy4.svn \
-	replace-dir.svn \
-	rootfirst.svn \
-	samplebranch.svn \
-	simpletag.svn \
-	smallref.svn \
-	snarl.svn \
-	split-dir.svn \
-	squash-id.svn \
-	subclipse.svn \
-	subdir.svn \
-	svnignores.svn \
-	symlink.svn \
-	tagpollute.svn \
-	tagsimple.svn \
-	tagsimpledelete.svn \
-	treecontents.svn \
-	trunkstomp.svn \
-	vanilla.svn \
-	wrong-mergeinfo.svn \
-
+LOADS_LIFTCHECK_REGRESS = $(wildcard *.svn)
+RULE_LIFTCHECK_REGRESS = $(LOADS_LIFTCHECK_REGRESS:%=liftcheck-regress-full-%)
 liftcheck-regress:
-	@echo "== Testing conversion correctness of Subversion streams at head revision:"
+	@echo "== Testing conversion correctness of SVN histories:"
 	@if  $(call AVAILABLE git) &&  $(call AVAILABLE svn); \
 	then \
-		$(call TAPOUT, $(SVNCLEAN:%=liftcheck-regress-%)); \
+		$(call TAPOUT, $(RULE_LIFTCHECK_REGRESS)); \
 	else \
 		echo "     Skipped, either git or svn is missing"; \
 	fi
 
-$(patsubst %,liftcheck-regress-%,$(wildcard *.svn)): liftcheck-regress-%: %
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
-	liftcheck -e 'emptycommit|-root' $< || exit $(STOPOUT)
-
-LOADS_LIFTCHECK_FULLREGRESS = nut.svn $(filter-out nut.svn,$(wildcard *.svn))
-RULE_LIFTCHECK_FULLREGRESS = $(LOADS_LIFTCHECK_FULLREGRESS:%=liftcheck-regress-full-%)
-liftcheck-fullregress:
-	@echo "== Testing conversion correctness of all SVN revisions:"
-	@if  $(call AVAILABLE git) &&  $(call AVAILABLE svn); \
-	then \
-		$(call TAPOUT, $(RULE_LIFTCHECK_FULLREGRESS)); \
-	else \
-		echo "     Skipped, either git or svn is missing"; \
-	fi
-
-$(RULE_LIFTCHECK_FULLREGRESS): liftcheck-regress-full-%: %
+$(RULE_LIFTCHECK_REGRESS): liftcheck-regress-full-%: %
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
 	liftcheck -q -r all $< || exit $(STOPOUT)
-
-# List Subversion streams that don't convert clean without -q -r all
-liftcheck-dirty:
-	@for x in $(SVNCLEAN); do echo $${x} >>goodlist$$$$; done; \
-	sort -o goodlist$$$$ goodlist$$$$; \
-	ls *.svn | comm -23 - goodlist$$$$; \
-	rm goodlist$$$$
 
 REFLOADS=nut mergeinfo-with-split
 legacy-buildregress:

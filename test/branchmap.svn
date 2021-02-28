@@ -1,5 +1,5 @@
 SVN-fs-dump-format-version: 2
- ## Test load for branchify_map command.
+ ## Test load for --branchify option and branch rename.
 
 UUID: b5d452fa-748b-405f-b36e-1935885bc1be
 
