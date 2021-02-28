@@ -21,7 +21,7 @@
 #               You can use the "all" keyword or a range min-max to check multiple
 #               revisions in a row. Non-existing revisions are silently ignored,
 # The -R option sets a read limit to the dump parsing, for speed
-# The -e option sets exckude patterbs to ignore uninteresting tags and branches
+# The -e option sets exclude patterbs to ignore uninteresting tags and branches
 # The -B option makes liftcheck use --nobranch to compare against a flat repository.
 #               It is automatically applied if --nobranch is passed via a
 #               "#reposurgeon-read-options:" comment in the stream.
@@ -70,7 +70,7 @@ shift $(($OPTIND - 1))
 
 if [ -z "$1" ]
 then
-    echo "liftcheck: an argument file (a Subversion dump) is required."
+    echo "not ok - liftcheck: an argument file (a Subversion dump) is required."
     exit 1
 fi
 
@@ -86,7 +86,7 @@ do
 	what="${what}".svn
     elif [ ! -f "${what}" ]
     then
-	echo "No Subversion dumpfile matching ${what} found"
+	echo "not ok - liftcheck: no Subversion dumpfile matching ${what} found"
 	exit 1
     fi
 
@@ -117,11 +117,12 @@ do
     # shellcheck disable=SC2086
     ./svn-to-svn ${svnquiet} ${slimit} -c <${what} ${stem}
 
+    cat /dev/null >/tmp/warnings$$
     case ${ENGINE} in
 	 reposurgeon)
 	     # Make a git repo from the dump using reposurgeon
 	     ${REPOSURGEON:-../reposurgeon} "${TESTOPT}" "${rlimit}" "read ${nobranch} ${readopt} <${what}" \
-					    "prefer git" "rebuild ${stem}-git" "write >${stem}.gfi" >/dev/null
+					    "prefer git" "rebuild ${stem}-git" "write >${stem}.gfi" >/tmp/warnings$$
 	     ;;
 	 svn2git)
 	     # svn2git needs to be run in a scratch directory; it clobbers things
@@ -136,7 +137,7 @@ do
 	     (mkdir ${stem}-git; cd ${stem}-git >/dev/null; svn2git ${svnrepo} >/dev/${outdev};)
 	     ;;
 	 *)
-	     echo "liftcheck: unknown conversion engine ${ENGINE}" >&2; exit 1
+	     echo "not ok - liftcheck: unknown conversion engine ${ENGINE}" >&2; exit 1
 	     ;;
     esac
 
@@ -227,7 +228,7 @@ do
 	    # shellcheck disable=2086
 	    ../${REPOTOOL:-repotool} compare ${repotoolopt} ${compareopt} \
 		-a ${refopt} -r ${intrev}:${sha} \
-		${stem}-checkout ${stem}-git >>/tmp/diff$$
+		${stem}-checkout ${stem}-git >>/tmp/diff$$ 2>>/tmp/warnings$$
 	done < "${stem}.info"
     else
 
@@ -242,17 +243,22 @@ do
 	# Compare the original with the lift
 	# shellcheck disable=SC2086
 	../${REPOTOOL:-repotool} compare-all ${repotoolopt} ${compareopt} ${nobranch} \
-					       ${stem}-checkout ${stem}-git  >>/tmp/diff$$
+					       ${stem}-checkout ${stem}-git  >>/tmp/diff$$ 2>>/tmp/warnings$$
     fi
 
     if [ ! -s /tmp/diff$$ ]
     then
 	echo "ok - ${what}: ${description}"
+	if [ ! "${QUIET}" = 1 ]
+	then
+	    sed </tmp/warnings$$ -e 's/^/ /'
+	fi
 	exit 0
     else
 	echo "not ok - ${what}: ${description}"
 	if [ ! "${QUIET}" = 1 ]
 	then
+	    sed </tmp/warnings$$ -e 's/^/ /'
 	    sed </tmp/diff$$ -e 's/^/ /'
 	fi
 	exit 1
