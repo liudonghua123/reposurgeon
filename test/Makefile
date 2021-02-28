@@ -38,8 +38,7 @@ ECHO := /bin/echo
 BASIC = listcheck roundtrip-regress command-regress
 SUBVERSION = svnload-regress liftcheck-regress legacy-regress svncheck-regress liftcheck-regress
 GIT_EXTRACTOR = git-regress
-HG_EXTRACTOR = hg-regress hg-regress-branches hg-regress-merges hg-regress-tags \
-	hg-regress-patho
+HG_EXTRACTOR = hg-regress
 AUXTOOLS = repocutter-regress repomapper-regress repotool-regress
 
 # See https://stackoverflow.com/questions/6481005/how-to-obtain-the-number-of-cpus-cores-in-linux-from-the-command-line
@@ -84,10 +83,9 @@ disclose:
 .svn.map:
 	$(REPOSURGEON) "log -all" "read <$<" "legacy write -" >$@
 
-buildregress: fi-buildregress svnload-buildregress legacy-buildregress \
-	repomapper-buildregress repotool-buildregress hg-buildregress-branches \
-	svncheck-buildregress repocutter-buildregress repomapper-buildregress \
-	repotool-buildregress
+buildregress: command-buildregress svnload-buildregress legacy-buildregress \
+	hg-buildregress repomapper-buildregress repotool-buildregress repocutter-buildregress \
+	svncheck-buildregress 
 
 clean:
 	rm -fr .rs* test-repo test-checkout git-repo left-repo right-repo *~
@@ -209,7 +207,10 @@ command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 # because that will help us separate the parts later. We use the
 # standard dodge of encoding spaces as underscres.
 #
-# 2. Write a pattern rule with a distinguishing nanespace prefix
+# 4. Declare a target kist. This will be the list you declared in step 1
+# with a distingushing namespace prefix added to each member.
+#
+# 3. Write a pattern rule with that distinguishing nanespace prefix
 # before %.  The rule text will have one variable part - #@, the
 # target name.  Now the real fun starts: and to make it more fun,
 # we're going to use several of make's more obscure features to
@@ -221,23 +222,23 @@ command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 # executed.  Otherwise trying to debug and extend these rules would be
 # a fast path to insanity.
 #
-# 3. First, we need to the prefix off $@.  Then we need to break our 
-# {filestem, description} apart.  This is where it matters that we used
+# 4. First, we need to the prefix off $@.  Then we need to break our 
+# {filestem, description} cookie apart.  This is where it matters that we used
 # a period as a separator, because it turns out that the only functions in
 # make's string library that can split up a token are $(prefix) and $(suffix)
 # intended for strings like "foo.c".
 #
-# Complicating matters, expansion of user-defined variables is either
-# unreliable or has undocumented restrictions, so both of the
+# Complicating matters, expansion of user-defined make variables is
+# either unreliable or has undocumented restrictions, so both of the
 # part-extractor expressions have to be written in one fell swoop
 # starting from $@.
 #
 # 5. The payoff from all this is that we cn now feed a simple derivative
 # of our original list of {filestem, description} pairs to a parallel make
-# and the right thubgs will happen,
+# and the right things will happen,
 #
 # To explore the following worked example, do "make -n git-regress" to
-# see the parallel-make cpmmand that gets generated; the interesting
+# see the parallel-make command that gets generated; the interesting
 # part is the kist if targets.  Then do "make -n
 # git-regress-test-be2.with_merges" tio see how a target in the list
 # expands to a generared rule.  Finally do "make TAPCONSUMER=cat
@@ -256,7 +257,8 @@ GIT_EXTRACTOR_LOADS= \
 	bt.with_tags \
 	bt2.with_tags \
 	bt3.with_tags
-git-extractor-test-%:
+GIT_EXTRACTOR_TARGETS = $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)
+$(GIT_EXTRACTOR_TARGETS): git-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	filestem="$(basename $(subst git-extractor-test-,,$@))"; \
 	description="$(subst _, ,$(subst .,,$(suffix $(subst git-extractor-test-,,$@))))"; \
@@ -266,119 +268,56 @@ git-regress:
 	@echo "=== Testing git-extractor:"
 	@if $(call AVAILABLE git) ; \
 	then \
-		$(call TAPOUT, $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)); \
+		$(call TAPOUT,$(GIT_EXTRACTOR_TARGETS)); \
 	else echo "    Skipped, git missing."; exit 0; \
 	fi
 
-# Test the hg extractor
-HGLOADS = testrepo2
-hg-regress:
-	@echo "=== Testing hg-extractor:"
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if $(call AVAILABLE hg) && $(call AVAILABLE git) ; \
-	then \
-	    ($(call PLANLINE,$(HGLOADS)); \
-	    for test in $(HGLOADS); do \
-		./hg-to-fi <$${test}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' \
-		| QUIET=$(QUIET) tapdiffer "$${test}: hg extractor" $${test}.fi; \
-	    done) | $(TAPFILTER); \
-	else echo "    Skipped, hg or git missing."; exit 0; \
-	fi; \
-	rm -f /tmp/regress-d$$$$
-
-# Test the hg extractor with multiple hg branches
+# Test the hg supprt
+HGSTREAMS = testrepo2
+HGSTREAMS_EXTRACTOR_TARGETS = $(HGSTREAMS:%=hg-extractor-test-%)
+$(HGSTREAMS_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
+	./hg-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' \
+	| QUIET=$(QUIET) tapdiffer "$<: hg extractor" $<;
 # NOTE: the bb-alt test demonstrates an hg repo with coloring that git cannot reproduce
-HGBRANCHES = be be2 be3 bb-alt be-bookmarks
-hg-buildregress-branches:
+HG_EXTRACTOR_LOADS= \
+	be.with_multiple_hg_branches \
+	be2.with_multiple_hg_branches \
+	be3.with_multiple_hg_branches \
+	bb-alt.with_multiple_hg_branches_and_impossible_coloring \
+	be-bookmarks.with_multiple_hg_branches \
+	be2.with_merges \
+	be3.with_merges \
+	be4.with_merges \
+	be5.with_merges \
+	be6.with_merges \
+	bt.with_tags \
+	bt2.with_tags \
+	bt3-hg.with_tags \
+	bt3-hg-local.with_tags \
+	be-subrepo.with_pathological_loads \
+	be-subrepo2.with_pathological_loads
+hg-extractor-test-%:
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	filestem="$(basename $(subst hg-extractor-test-,,$@))"; \
+	description="$(subst _, ,$(subst .,,$(suffix $(subst hg-extractor-test-,,$@))))"; \
+	./hg-$${filestem}-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon sourcetype/d' \
+	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: hg extractor $${description}" $${filestem}.fi
+hg-regress:
+	@echo "=== Testing hg extractor:"
+	@if $(call AVAILABLE hg) && $(call AVAILABLE git) ; \
+	then \
+		$(call TAPOUT,$(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_LOADS:%=hg-extractor-test-%)); \
+	else echo "    Skipped, hg or git missing."; exit 0; \
+	fi
+HGSCRIPTS = be be2 be3 bb-alt be-bookmarks be2 be3 be4 be5 be6 bt bt2 bt3-hg bt3-hg-local be-subrepo be-subrepo2
+hg-buildregress:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
-	for file in $(HGBRANCHES); do \
-	    echo "Remaking $${file}.fi"; \
-	    ./hg-$${file}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${file}.fi \
+	for item in $(HGSCRIPTS); do \
+	    echo "Remaking $${item}.fi"; \
+	    ./hg-$${item}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${item}.fi \
 		2>&1 || exit $(STOPOUT); \
 	done
-hg-regress-branches:
-	@echo "=== Testing hg-extractor with multiple hg branches:"
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if $(call AVAILABLE hg); \
-	then \
-	    ($(call PLANLINE,$(HGBRANCHES)); \
-	    for test in $(HGBRANCHES); do \
-		./hg-$${test}-test | sed -e 1d -e '/^#legacy-id/d' \
-		| QUIET=$(QUIET) tapdiffer "$${test}: multiple hg branches" $${test}.fi; \
-	    done) | $(TAPFILTER); \
-	else echo "    Skipped, hg missing."; exit 0; \
-	fi; \
-	rm -f /tmp/regress-e$$$$
-
-# Test the hg extractor with merges
-HGMERGES = be2 be3 be4 be5 be6
-hg-buildregress-merges:
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	for file in $(HGMERGES); do \
-	    echo "Remaking $${file}.fi"; \
-	    ./hg-$${file}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${file}.fi \
-		2>&1 || exit $(STOPOUT); \
-	done
-hg-regress-merges:
-	@echo "=== Testing hg-extractor with merges:"
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if $(call AVAILABLE hg) ; \
-	then \
-	    ($(call PLANLINE,$(HGMERGES)); \
-	    for test in $(HGMERGES); do \
-		./hg-$${test}-test | sed -e 1d -e '/^#legacy-id/d' \
-		| QUIET=$(QUIET) tapdiffer "$${test}: multiple hg branches" $${test}.fi; \
-	    done) | $(TAPFILTER); \
-	else echo "    Skipped, hg missing."; exit 0; \
-	fi; \
-	rm -f /tmp/regress-f$$$$
-
-# Test the hg extractor with tags
-HGTAGS = bt bt2 bt3-hg bt3-hg-local
-hg-buildregress-tags:
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
-	for file in $(HGTAGS); do \
-	    echo "Remaking $${file}.fi"; \
-	    ./hg-$${file}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${file}.fi \
-		2>&1 || exit $(STOPOUT); \
-	done
-hg-regress-tags:
-	@echo "=== Testing hg-extractor with tags:"
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if $(call AVAILABLE hg) ; \
-	then \
-	    ($(call PLANLINE,$(HGTAGS)); \
-	    for test in $(HGTAGS); do \
-		./hg-$${test}-test | sed -e 1d -e '/^#legacy-id/d' \
-		| QUIET=$(QUIET) tapdiffer "$${test}: multiple hg branches" $${test}.fi; \
-	    done) | $(TAPFILTER); \
-	else echo "    Skipped, hg missing."; exit 0; \
-	fi; \
-	rm -f /tmp/regress-g$$$$
-
-# Test the hg extractor with pathological loads
-HGPATHO = be-subrepo be-subrepo2
-hg-buildregress-patho:
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
-        ($(call PLANLINE,$(HGPATHO)); \
-	for file in $(HGPATHO); do \
-	    echo "Remaking $${file}.fi"; \
-	    ./hg-$${file}-test 2>/dev/null | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${file}.fi \
-		2>&1 || exit $(STOPOUT); \
-	done
-hg-regress-patho:
-	@echo "=== Testing hg-extractor with pathological loads:"
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if $(call AVAILABLE hg) ; \
-	then \
-           ($(call PLANLINE,$(HGPATHO)); \
-	   for test in $(HGPATHO); do \
-		./hg-$${test}-test 2>/dev/null | sed -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' \
-		| QUIET=$(QUIET) tapdiffer "$${test}: pathological hg loads" $${test}.fi; \
-	    done) | $(TAPFILTER); \
-	else echo "    Skipped, hg missing."; exit 0; \
-	fi; \
-	rm -f /tmp/regress-h$$$$
 
 # Test loading from Subversion
 SVN_AND_TST_FILES := $(sort $(wildcard *.svn *.tst))
