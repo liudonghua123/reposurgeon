@@ -35,7 +35,7 @@ export TZ=UTC
 ECHO := /bin/echo
 
 # Define test groups
-BASIC = listcheck roundtrip fi-regress
+BASIC = listcheck roundtrip-regress command-regress
 SUBVERSION = svnload-regress liftcheck-regress legacy-regress svncheck-regress liftcheck-fullregress
 GIT_EXTRACTOR = git-regress
 HG_EXTRACTOR = hg-regress hg-regress-branches hg-regress-merges hg-regress-tags \
@@ -58,6 +58,9 @@ TAPFILTER=$(shell command -v $(TAPCONSUMER) || echo cat)
 
 # Run tests in parallel and ship their output to our TAP consumer after a plan header
 TAPOUT = (echo "1..$(words $(1))"; $(PARALLEL_MAKE) $(1)) | $(TAPFILTER)
+
+# Test whether we have a specified command
+AVAILABLE=command -v $(1) >/dev/null 2>&1
 
 # check-aux must not be run in parallel.
 check:
@@ -133,9 +136,7 @@ listcheck:
 RULES_ROUNDTRIP=$(patsubst %,roundtrip-%,$(wildcard *.fi))
 RULES_ROUNDTRIP_COMPRESS=$(patsubst %,roundtrip-compress-%,$(wildcard *.fi))
 RULES_MESSAGE_BOX=$(patsubst %,messagebox-%,$(wildcard *.fi))
-roundtrip:
-	@echo "=== Testing stream-file round-tripping:"
-	@$(call TAPOUT, $(RULES_ROUNDTRIP) $(RULES_ROUNDTRIP_COMPRESS) $(RULES_MESSAGE_BOX))
+
 $(RULES_ROUNDTRIP): roundtrip-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< roundtrip" $<) || exit $(STOPOUT)
 $(RULES_ROUNDTRIP_COMPRESS): roundtrip-compress-%: %
@@ -143,15 +144,13 @@ $(RULES_ROUNDTRIP_COMPRESS): roundtrip-compress-%: %
 $(RULES_MESSAGE_BOX): messagebox-%: %
 	@$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | QUIET=$(QUIET) tapdiffer "$< message-box roundtripping" $< || exit $(STOPOUT)
 
+roundtrip-regress:
+	@echo "=== Testing stream-file round-tripping:"
+	@$(call TAPOUT, $(RULES_ROUNDTRIP) $(RULES_ROUNDTRIP_COMPRESS) $(RULES_MESSAGE_BOX))
+
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
 TESTLOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
-fi-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn 
-	@for file in $(TESTLOADS); do \
-	    echo "Remaking $${file}.chk"; \
-	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
-		2>&1 || exit $(STOPOUT); \
-	done
 
 # Generated test loads
 multigen.svn: multigen.sh
@@ -169,22 +168,31 @@ tagdoublet.svn: tagdoubletgen.sh
 mixedbranchlift.svn: branchliftgen.sh
 	sh branchliftgen.sh >mixedbranchlift.svn
 
-fi-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
-	@echo "=== Running general tests:"
-	@$(call TAPOUT, $(TESTLOADS:%=fi-regress-%))
-
-$(TESTLOADS:%=fi-regress-%): fi-regress-%: %.tst
+$(TESTLOADS:%=command-regress-%): command-regress-%: %.tst
 	@QUIET=$(QUIET) singletest -a testing123 $< || exit $(STOPOUT)
+
+command-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
+	@echo "=== Running general tests:"
+	@$(call TAPOUT, $(TESTLOADS:%=command-regress-%))
+command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn 
+	@for file in $(TESTLOADS); do \
+	    echo "Remaking $${file}.chk"; \
+	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
+		2>&1 || exit $(STOPOUT); \
+	done
 
 # The goal of filtering with a TAP consumer is to keep the error
 # display small enough that when any one test gets broken it's
 # guaranteed not to get lost in a flood of routine messages or scroll
 # off the screen.  This puts a premium on having as few as possible
-# TAP output frames as possible; ideally we'd have only one big one,
-# and we may get there someday, but the friction cost of modifying
-# this file is a barrier.
+# TAP output frames (each correspomding to one invocation of the TAP
+# consumer) as possible.  On the other hand, long lag in the middle of
+# a test group makes for uncertainty about whether some test might be
+# hanging, which is bad. Choosing the optimal grouping requires some
+# sensitivity to the distribution of test running times and of failure
+# risk.
 #
-# Trying to cut down on the number of test productions leads us down 
+# Trying to cut down on the number of TAP reporting frames leads us down 
 # one serious rabbit hole.  The sticky case is when we want to supply both a
 # test-load name and a description of what case it excercises gor
 # generating a TAP status message, and we cam't mine the descrption
@@ -256,7 +264,7 @@ git-extractor-test-%:
 	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi
 git-regress:
 	@echo "=== Testing git-extractor:"
-	@if command -v git >/dev/null 2>&1 ; \
+	@if $(call AVAILABLE git) ; \
 	then \
 		$(call TAPOUT, $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)); \
 	else echo "    Skipped, git missing."; exit 0; \
@@ -267,7 +275,7 @@ HGLOADS = testrepo2
 hg-regress:
 	@echo "=== Testing hg-extractor:"
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if command -v hg >/dev/null 2>&1 && command -v git >/dev/null 2>&1 ; \
+	if $(call AVAILABLE hg) && $(call AVAILABLE git) ; \
 	then \
 	    ($(call PLANLINE,$(HGLOADS)); \
 	    for test in $(HGLOADS); do \
@@ -291,7 +299,7 @@ hg-buildregress-branches:
 hg-regress-branches:
 	@echo "=== Testing hg-extractor with multiple hg branches:"
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if command -v hg >/dev/null 2>&1 ; \
+	if $(call AVAILABLE hg); \
 	then \
 	    ($(call PLANLINE,$(HGBRANCHES)); \
 	    for test in $(HGBRANCHES); do \
@@ -314,7 +322,7 @@ hg-buildregress-merges:
 hg-regress-merges:
 	@echo "=== Testing hg-extractor with merges:"
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if command -v hg >/dev/null 2>&1 ; \
+	if $(call AVAILABLE hg) ; \
 	then \
 	    ($(call PLANLINE,$(HGMERGES)); \
 	    for test in $(HGMERGES); do \
@@ -337,7 +345,7 @@ hg-buildregress-tags:
 hg-regress-tags:
 	@echo "=== Testing hg-extractor with tags:"
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if command -v hg >/dev/null 2>&1 ; \
+	if $(call AVAILABLE hg) ; \
 	then \
 	    ($(call PLANLINE,$(HGTAGS)); \
 	    for test in $(HGTAGS); do \
@@ -361,7 +369,7 @@ hg-buildregress-patho:
 hg-regress-patho:
 	@echo "=== Testing hg-extractor with pathological loads:"
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	if command -v hg >/dev/null 2>&1 ; \
+	if $(call AVAILABLE hg) ; \
 	then \
            ($(call PLANLINE,$(HGPATHO)); \
 	   for test in $(HGPATHO); do \
@@ -397,7 +405,7 @@ $(SVNLOADS:%=svnload-regress-%): svnload-regress-%: %.svn
 	test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -"  >/tmp/stream$$$$ 2>&1; \
 	QUIET=$(QUIET) tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$; \
-	if command -v git >/dev/null 2>&1 ; \
+	if $(call AVAILABLE git) ; \
 	then \
 	    mkdir /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
 	    (cd /tmp/reposurgeon$$$$ || exit $(STOPOUT); \
@@ -486,7 +494,7 @@ SVNCLEAN := \
 
 liftcheck-regress:
 	@echo "== Testing conversion correctness of Subversion streams at head revision:"
-	@if  command -v git >/dev/null 2>&1 &&  command -v svn >/dev/null 2>&1; \
+	@if  $(call AVAILABLE git) &&  $(call AVAILABLE svn); \
 	then \
 		$(call TAPOUT, $(SVNCLEAN:%=liftcheck-regress-%)); \
 	else \
@@ -501,7 +509,7 @@ LOADS_LIFTCHECK_FULLREGRESS = nut.svn $(filter-out nut.svn,$(wildcard *.svn))
 RULE_LIFTCHECK_FULLREGRESS = $(LOADS_LIFTCHECK_FULLREGRESS:%=liftcheck-regress-full-%)
 liftcheck-fullregress:
 	@echo "== Testing conversion correctness of all SVN revisions:"
-	@if  command -v git >/dev/null 2>&1 &&  command -v svn >/dev/null 2>&1; \
+	@if  $(call AVAILABLE git) &&  $(call AVAILABLE svn); \
 	then \
 		$(call TAPOUT, $(RULE_LIFTCHECK_FULLREGRESS)); \
 	else \
@@ -611,7 +619,7 @@ svncheck-buildregress:
 svncheck-regress:
 	@echo "=== Running svncheck tests:"
 	@status=0; \
-	if command -v svn >/dev/null 2>&1 ; \
+	if $(call AVAILABLE svn) ; \
 	then \
 	    ($(call PLANLINE,$(SVNCHECK)); \
 	    for file in $(SVNCHECK); do \
