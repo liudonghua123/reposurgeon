@@ -96,6 +96,7 @@ fi
 # Should we stream the repo?
 if [ $stream = True ]
 then
+    echo "#reposurfeon description: from an hg repo with real hg branches; includes a merge and tags."
     # shellcheck disable=SC2086
     "${BIN}/${REPOSURGEON:-reposurgeon}" "${BUILDOPT}" ${TESTOPT} "set quiet" "read $testrepo" "sourcetype git" "write -"
 fi

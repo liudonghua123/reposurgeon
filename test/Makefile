@@ -261,7 +261,7 @@ $(GIT_EXTRACTOR_TARGETS): git-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	filestem="$(basename $(subst git-extractor-test-,,$@))"; \
 	description="$(subst _, ,$(subst .,,$(suffix $(subst git-extractor-test-,,$@))))"; \
-	./fi-to-fi <$${filestem}.fi | sed -e 1d -e '/^#legacy-id/d' \
+	./fi-to-fi <$${filestem}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
 	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi
 git-regress:
 	@echo "=== Testing git-extractor:"
@@ -276,7 +276,7 @@ HGSTREAMS = testrepo2
 HGSTREAMS_EXTRACTOR_TARGETS = $(HGSTREAMS:%=hg-extractor-test-%)
 $(HGSTREAMS_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
-	./hg-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' \
+	./hg-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
 	| QUIET=$(QUIET) tapdiffer "$<: hg extractor" $<;
 # NOTE: the bb-alt test demonstrates an hg repo with coloring that git cannot reproduce
 HG_EXTRACTOR_LOADS= \
@@ -300,7 +300,7 @@ hg-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	filestem="$(basename $(subst hg-extractor-test-,,$@))"; \
 	description="$(subst _, ,$(subst .,,$(suffix $(subst hg-extractor-test-,,$@))))"; \
-	./hg-$${filestem}-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon sourcetype/d' \
+	./hg-$${filestem}-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon/d' \
 	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: hg extractor $${description}" $${filestem}.fi
 hg-regress:
 	@echo "=== Testing hg extractor:"
