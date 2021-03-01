@@ -1755,8 +1755,6 @@ include::docinclude/names.adoc[]
 
 include::docinclude/stamp.adoc[]
 
-include::docinclude/tip.adoc[]
-
 include::docinclude/tags.adoc[]
 
 include::docinclude/inspect.adoc[]
