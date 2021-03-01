@@ -132,25 +132,21 @@ listcheck:
 # Test that all stream files round-trip properly: compressed, uncompressed,
 # and when passed through as message boxes by msgin/msgout.
 RULES_ROUNDTRIP=$(patsubst %,roundtrip-%,$(wildcard *.fi))
-RULES_ROUNDTRIP_COMPRESS=$(patsubst %,roundtrip-compress-%,$(wildcard *.fi))
+ROUNDTRIP_COMPRESS_TARGETS=$(patsubst %,roundtrip-compress-%,$(wildcard *.fi))
 RULES_MESSAGE_BOX=$(patsubst %,messagebox-%,$(wildcard *.fi))
 
-$(RULES_ROUNDTRIP): roundtrip-%: %
+# Stream riundtripping tests
+$(ROUNDTRIP_TARGETS): roundtrip-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< roundtrip" $<) || exit $(STOPOUT)
-$(RULES_ROUNDTRIP_COMPRESS): roundtrip-compress-%: %
+$(ROUNDTRIP_COMPRESS_TARGETS): roundtrip-compress-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< compressed roundtrip" $<) || exit $(STOPOUT)
 $(RULES_MESSAGE_BOX): messagebox-%: %
 	@$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | QUIET=$(QUIET) tapdiffer "$< message-box roundtripping" $< || exit $(STOPOUT)
-
 roundtrip-regress:
 	@echo "=== Testing stream-file round-tripping:"
-	@$(call TAPOUT, $(RULES_ROUNDTRIP) $(RULES_ROUNDTRIP_COMPRESS) $(RULES_MESSAGE_BOX))
+	@$(call TAPOUT, $(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(RULES_MESSAGE_BOX))
 
-# General regression testing of commands and output; look at the *.tst and
-# corresponding *.chk files to see which tests this runs.
-TESTLOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
-
-# Generated test loads
+# Generated command-test loads
 multigen.svn: multigen.sh
 	sh multigen.sh -d >multigen.svn
 ignore.svn: ignoregen.sh
@@ -166,18 +162,21 @@ tagdoublet.svn: tagdoubletgen.sh
 mixedbranchlift.svn: branchliftgen.sh
 	sh branchliftgen.sh >mixedbranchlift.svn
 
-$(TESTLOADS:%=command-regress-%): command-regress-%: %.tst
+# General regression testing of commands and output; look at the *.tst and
+# corresponding *.chk files to see which tests this runs.
+COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
+COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
+$(COMMAND_TARGETS): command-regress-%: %.tst
 	@QUIET=$(QUIET) singletest -a testing123 $< || exit $(STOPOUT)
-
-command-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
-	@echo "=== Running general tests:"
-	@$(call TAPOUT, $(TESTLOADS:%=command-regress-%))
 command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn 
-	@for file in $(TESTLOADS); do \
+	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
 		2>&1 || exit $(STOPOUT); \
 	done
+command-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
+	@echo "=== Running general tests:"
+	@$(call TAPOUT,$(COMMAND_TARGETS))
 
 # The goal of filtering with a TAP consumer is to keep the error
 # display small enough that when any one test gets broken it's
@@ -192,7 +191,7 @@ command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 #
 # Trying to cut down on the number of TAP reporting frames leads us down 
 # one serious rabbit hole.  The sticky case is when we want to supply both a
-# test-load name and a description of what case it excercises gor
+# test-load name and a description of what case it excercises for
 # generating a TAP status message, and we cam't mine the descrption
 # out of the test load.
 #
@@ -217,7 +216,7 @@ command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 # generate as much of the command text as possible early, rather than
 # using shell hackery at rule execution time.
 #
-# The reason we want this is simple: so that make -n wil show us
+# The reason we want this is simple: so that make -n will show us
 # something with a reasonably clear relationship to what's finally
 # executed.  Otherwise trying to debug and extend these rules would be
 # a fast path to insanity.
@@ -240,7 +239,7 @@ command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 # To explore the following worked example, do "make -n git-regress" to
 # see the parallel-make command that gets generated; the interesting
 # part is the kist if targets.  Then do "make -n
-# git-regress-test-be2.with_merges" tio see how a target in the list
+# git-regress-test-be2.with_merges" to see how a target in the list
 # expands to a generared rule.  Finally do "make TAPCONSUMER=cat
 # git-regress" to see what execution of the generated targets looks
 # like.
@@ -278,6 +277,14 @@ $(HGSTREAMS_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
 	./hg-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
 	| QUIET=$(QUIET) tapdiffer "$<: hg extractor" $<;
+HGSCRIPTS = $(subst -test,,$(subst hg-,,$(wildcard hg-*-test)))
+hg-buildregress:
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
+	for item in $(HGSCRIPTS); do \
+	    echo "Remaking $${item}.fi"; \
+	    ./hg-$${item}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${item}.fi \
+		2>&1 || exit $(STOPOUT); \
+	done
 # NOTE: the bb-alt test demonstrates an hg repo with coloring that git cannot reproduce
 HG_EXTRACTOR_LOADS= \
 	be.with_multiple_hg_branches \
@@ -296,6 +303,7 @@ HG_EXTRACTOR_LOADS= \
 	bt3-local.with_tags \
 	be-subrepo.with_pathological_loads \
 	be-subrepo2.with_pathological_loads
+HG_EXTRACTOR_TARGETS=$(HG_EXTRACTOR_LOADS:%=hg-extractor-test-%)
 hg-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	filestem="$(basename $(subst hg-extractor-test-,,$@))"; \
@@ -306,24 +314,16 @@ hg-regress:
 	@echo "=== Testing hg extractor:"
 	@if $(call AVAILABLE hg) && $(call AVAILABLE git) ; \
 	then \
-		$(call TAPOUT,$(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_LOADS:%=hg-extractor-test-%)); \
+		$(call TAPOUT,$(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_TARGETS)); \
 	else echo "    Skipped, hg or git missing."; exit 0; \
 	fi
-HGSCRIPTS = $(subst -test,,$(subst hg-,,$(wildcard hg-*-test)))
-hg-buildregress:
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
-	for item in $(HGSCRIPTS); do \
-	    echo "Remaking $${item}.fi"; \
-	    ./hg-$${item}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${item}.fi \
-		2>&1 || exit $(STOPOUT); \
-	done
 
 # Test loading from Subversion
 SVN_AND_TST_FILES := $(sort $(wildcard *.svn *.tst))
-SVNLOADS := $(shell echo $(SVN_AND_TST_FILES) | sed 's/\([^ ]*\)\.svn \1.tst//g; s/[^ ]*\.tst//g; s/\.svn//g')
+SVNLOAD_LOADS := $(shell echo $(SVN_AND_TST_FILES) | sed 's/\([^ ]*\)\.svn \1.tst//g; s/[^ ]*\.tst//g; s/\.svn//g')
 svnload-buildregress:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	for test in $(SVNLOADS); do \
+	for test in $(SVNLOAD_LOADS); do \
 	    if [ -f $${test}.tst ] ; \
 	    then \
 		    echo "BUG: $${test} should have been skipped: $${test}.tst exists"; \
@@ -333,134 +333,131 @@ svnload-buildregress:
 		rm -f $${test}.chk && $(MAKE) --quiet $${test}.chk \
 			|| exit $(STOPOUT); \
 	done
-
-svnload-regress:
-	@echo "== Testing loading of Subversion streams:"
-	@$(call TAPOUT, $(SVNLOADS:%=svnload-regress-%))
-
-$(SVNLOADS:%=svnload-regress-%): svnload-regress-%: %.svn
+SVN_LOAD_TARGETS=$(SVNLOAD_LOADS:%=svnload-regress-%)
+$(SVN_LOAD_TARGETS): svnload-regress-%: %.svn
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; BUILDOPT=$(BUILDOPT); export BUILDOPT;\
 	test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -"  >/tmp/stream$$$$ 2>&1; \
 	QUIET=$(QUIET) tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$;
+svnload-regress:
+	@echo "== Testing loading of Subversion streams:"
+	@$(call TAPOUT, $(SVN_LOAD_TARGETS))
 
-LOADS_LIFTCHECK_REGRESS = $(wildcard *.svn)
-RULE_LIFTCHECK_REGRESS = $(LOADS_LIFTCHECK_REGRESS:%=liftcheck-regress-full-%)
+# Test Subversuib conversion correctness
+LIFTCHECK_LOADS = $(wildcard *.svn)
+LIFTCHECK_TARGETS = $(LIFTCHECK_LOADS:%=liftcheck-regress-full-%)
+$(LIFTCHECK_TARGETS): liftcheck-regress-full-%: %
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
+	liftcheck -q -r all $< || exit $(STOPOUT)
 liftcheck-regress:
 	@echo "== Testing conversion correctness of SVN histories:"
 	@if  $(call AVAILABLE git) &&  $(call AVAILABLE svn); \
 	then \
-		$(call TAPOUT, $(RULE_LIFTCHECK_REGRESS)); \
+		$(call TAPOUT, $(LIFTCHECK_TARGETS)); \
 	else \
 		echo "     Skipped, either git or svn is missing"; \
 	fi
 
-$(RULE_LIFTCHECK_REGRESS): liftcheck-regress-full-%: %
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
-	liftcheck -q -r all $< || exit $(STOPOUT)
-
-REFLOADS=nut mergeinfo-with-split
+# Test legacy-map generation
+LEGACY_LOADS=nut mergeinfo-with-split
 legacy-buildregress:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	for test in $(REFLOADS); \
+	for test in $(LEGACY_LOADS); \
 	do \
 	    echo "Remaking $${test}.map"; \
 	    rm -f $${test}.map && $(MAKE) --quiet $${test}.map 2>/dev/null \
 		|| exit $(STOPOUT); \
 	done
+LEGACY_TARGETS = $(LEGACY_LOADS:%=legacy-test-%)
+$(LEGACY_TARGETS): legacy-test-%: %.svn
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
+	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "legacy write -" | grep -v '^reposurgeon:' 2>/dev/null \
+	| QUIET=$(QUIT0E) tapdiffer "$${legend}" $(basename $<).map
 legacy-regress:
 	@echo "=== Testing legacy-map generation:"
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
-	status=0; \
-	($(call PLANLINE,$(REFLOADS)); \
-	for test in $(REFLOADS); \
-	do \
-	    legend=$$(sed -n '/^ ## /s///p' <"$${test}.svn" 2>/dev/null || echo "(no description)"); \
-	    $(REPOSURGEON) "$(TESTOPT)" "read <$${test}.svn" "legacy write -" | grep -v '^reposurgeon:' 2>/dev/null \
-	    | QUIET=$(QUIT0E) tapdiffer "$${legend}" $${test}.map || status=1; \
-	done; \
-	exit $${status};) | $(TAPFILTER)
+	@$(call TAPOUT,$(LEGACY_TARGETS));
 
 # Regression-testing of repomapper; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
-MAPPERTESTS := $(shell ls -1 repomapper*.sh | sed '/.sh/s///')
+REPOMAPPER_LOADS := $(shell ls -1 repomapper*.sh | sed '/.sh/s///')
 repomapper-buildregress:
 	@REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
-	for file in $(MAPPERTESTS); do \
+	for file in $(MAPPER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh >$${file}.chk || exit $(STOPOUT); \
 	done
+REPOMAPPER_TARGETS = $(REPOMAPPER_LOADS:%=mapper-test-%)
+$(REPOMAPPER_TARGETS): mapper-test-%:
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	filestem="$(subst mapper-test-,,$@)"; \
+	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $${filestem}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${filestem}.chk || exit $(STOPOUT);
 repomapper-regress:
 	@echo "=== Running repomapper tests:"
-	@(REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
-	status=0; \
-	$(call PLANLINE,$(MAPPERTESTS)); \
-	for file in $(MAPPERTESTS); do \
-	    legend=$$(sed -n '/^## /s///p' <"$${file}.sh" 2>/dev/null || echo "(no description)"); \
-	    $(SHELL) $${file}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${file}.chk || status=$(STOPOUT); \
-	done; \
-	exit $${status};) | $(TAPFILTER)
+	@$(call TAPOUT,$(REPOMAPPER_TARGETS))
 
 # Regression-testing of repotool; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
-TOOLTESTS := $(shell ls -1 repotool*.sh | sed '/.sh/s///')
+REPOTOOL_LOADS := $(shell ls -1 repotool*.sh | sed '/.sh/s///')
 repotool-buildregress:
 	@REPOTOOL=$$REPOTOOL; export REPOTOOL; \
-	for file in $(TOOLTESTS); do \
+	for file in $(REPOTOOL_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh --rebuild || exit $(STOPOUT); \
 	done
+REPOTOOL_TARGETS = $(REPOTOOL_LOADS:%=repotool-test-%)
+$(REPOTOOL_TARGETS): repotool-test-%:
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	filestem="$(subst repotool-test-,,$@)"; \
+	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $${filestem}.sh --regress
 repotool-regress:
 	@echo "=== Running repotool tests:"
-	@(REPOTOOL=$$REPOTOOL; export REPOTOOL; \
-	status=0; \
-	$(call PLANLINE,$(TOOLTESTS)); \
-	for file in $(TOOLTESTS); do \
-	    $(SHELL) $${file}.sh --regress || status=1; \
-	done; \
-	exit $${status};) | $(TAPFILTER)
+	@$(call TAPOUT,$(REPOTOOL_TARGETS))
 
 # Regression-testing of repocutter; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
-CUTTERTESTS := $(shell ls -1 repocutter*.sh | sed '/.sh/s///')
+REPOCUTTER_LOADS := $(shell ls -1 repocutter*.sh | sed '/.sh/s///')
 repocutter-buildregress:
 	@REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
-	for file in $(CUTTERTESTS); do \
+	for file in $(REPOCUTTER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh >$${file}.chk || exit $(STOPOUT); \
 	done
+REPOCUTTER_TARGETS = $(REPOCUTTER_LOADS:%=repocutter-test-%)
+$(REPOCUTTER_TARGETS): repocutter-test-%:
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	filestem="$(subst repocutter-test-,,$@)"; \
+	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $${filestem}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${filestem}.chk || status=$(STOPOUT); 
 repocutter-regress:
 	@echo "=== Running repocutter tests:"
-	@(REPOCUTTER=$$REPOCUTTER; export REPOCUTTER; \
-	status=0; \
-	$(call PLANLINE,$(CUTTERTESTS)); \
-	for file in $(CUTTERTESTS); do \
-	    legend=$$(sed -n '/^## /s///p' <"$${file}.sh" 2>/dev/null || echo "(no description)"); \
-	    $(SHELL) $${file}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${file}.chk || status=$(STOPOUT); \
-	done; \
-	exit $${status};) | $(TAPFILTER)
+	@$(call TAPOUT,$(REPOCUTTER_TARGETS))
 
 # Regression-testing of Subversion permission-bit and other exceptional cases; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
-SVNCHECK := $(shell ls -1 svncheck*.sh | sed '/.sh/s///')
+SVNCHECK_LOADS := $(shell ls -1 svncheck*.sh | sed '/.sh/s///')
 svncheck-buildregress:
-	@for file in $(SVNCHECK); do \
+	@for file in $(SVNCHECK)KOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' >$${file}.chk || exit $(STOPOUT); \
 	done
+SVNCHECK_TARGETS = $(SVNCHECK_LOADS:%=svncheck-test-%)
+$(SVNCHECK_TARGETS): svncheck-test-%:
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	filestem="$(subst svncheck-test-,,$@)"; \
+	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $${filestem}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' \
+	| tapdiffer "$${filestem}: $${legend}" $${filestem}.chk || exit $(STOPOUT);
 svncheck-regress:
-	@echo "=== Running svncheck tests:"
-	@status=0; \
-	if $(call AVAILABLE svn) ; \
+	@echo "=== Testing svncheck-regress:"
+	@if $(call AVAILABLE svn) ; \
 	then \
-	    ($(call PLANLINE,$(SVNCHECK)); \
-	    for file in $(SVNCHECK); do \
-		legend=$$(sed -n '/^## /s///p' <"$${file}.sh" 2>/dev/null || echo "(no description)"); \
-		$(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' | tapdiffer "$${legend}" $${file}.chk || status=1; \
-	    done;) | $(TAPFILTER); \
+		$(call TAPOUT,$(SVNCHECK_TARGETS)); \
 	else echo "    Skipped, svn missing."; exit 0; \
-	fi; \
-	exit $${status};
+	fi
+
 
 SPORADIC = hashcheck.sh workflow-cvs-git.sh workflow-svn-git.sh
 sporadic:

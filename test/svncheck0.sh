@@ -1,6 +1,9 @@
 #!/bin/sh
 ## General test load for ancestry-chasing logic
 
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
 dump=no
 verbose=null
 while getopts dv opt
@@ -8,11 +11,11 @@ do
     case $opt in
 	d) dump=yes;;
 	v) verbose=stdout;;
-	*) echo "$0: unknown flag $opt" >&2; exit 1;;
+	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
     esac
 done
 
-trap 'rm -fr test-repo test-checkout' EXIT HUP INT QUIT TERM 
+trap 'rm -fr test-repo$$ test-checkout' EXIT HUP INT QUIT TERM 
 
 svnaction () {
     # This version of svnaction does filenames only 
@@ -36,28 +39,30 @@ svnaction () {
 }
 
 {
-set -e
-make svn-branchy
-cd test-checkout
-# Content operations start here
-svnaction "trunk/foo.txt" "Now is the time." "More example content" 
-svnaction "trunk/bar.txt" "For all good men." "Example content in different file" 
-svnaction "trunk/baz.txt" "to come to the aid of their country." "And in yet another file"
-svn up  # Without this, the next copy does file copies.  With it, a directory copy. 
-svn copy trunk branches/stable
-svn commit -m "First directory copy"
-svnaction "trunk/foo.txt" "Whether tis nobler in the mind." "Hamlet the Dane said this"
-svnaction "trunk/bar.txt" "or to take arms against a sea of troubles" "He continued"
-svnaction "trunk/baz.txt" "and by opposing end them" "The build-up"
-svnaction "trunk/foo.txt" "to be,"  "Famous soliloquy begins"
-svnaction "branches/foo.txt" "or not to be." "And continues"
-svn up
-svn copy trunk tags/1.0
-svn commit -m "First tag copy"
-# We're done
-cd ..
+    set -e
+    trap 'svnwrap' EXIT HUP INT QUIT TERM
+    svninit
+    # Content operations start here
+    svnaction "trunk/foo.txt" "Now is the time." "More example content" 
+    svnaction "trunk/bar.txt" "For all good men." "Example content in different file" 
+    svnaction "trunk/baz.txt" "to come to the aid of their country." "And in yet another file"
+    svn up  # Without this, the next copy does file copies.  With it, a directory copy. 
+    svn copy trunk branches/stable
+    svn commit -m "First directory copy"
+    svnaction "trunk/foo.txt" "Whether tis nobler in the mind." "Hamlet the Dane said this"
+    svnaction "trunk/bar.txt" "or to take arms against a sea of troubles" "He continued"
+    svnaction "trunk/baz.txt" "and by opposing end them" "The build-up"
+    svnaction "trunk/foo.txt" "to be,"  "Famous soliloquy begins"
+    svnaction "branches/foo.txt" "or not to be." "And continues"
+    svn up
+    svn copy trunk tags/1.0
+    svn commit -m "First tag copy"
+    # We're done
+    cd .. >/dev/null
 } >/dev/$verbose 2>&1
 if [ "$dump" = yes ]
 then
-    svnadmin dump -q test-repo
+    svnadmin dump -q test-repo$$
 fi
+
+# end

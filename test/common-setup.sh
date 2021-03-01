@@ -43,4 +43,23 @@ tapcd () {
     cd "$1" >/dev/null || ( echo "not ok: $0: cd failed"; exit 1 )
 }
 
+svninit() {
+        echo "Starting at ${PWD}"
+ 	# Note: this leaves you with the checkout directory current
+    	svnadmin create test-repo$$
+	    svn co "file://$(pwd)/test-repo$$" test-checkout$$ && \
+	    cd test-checkout$$ >/dev/null && \
+	    svn mkdir trunk && \
+	    svn mkdir tags && \
+	    svn mkdir branches && \
+	    echo "Directory layout." | svn commit -F - && \
+	    echo "This is a test Subversion repository" >trunk/README && \
+	    svn add trunk/README && \
+	    echo "Initial README content." | svn commit -F -
+}
+
+svnwrap() {
+    rm -fr test-repo$$ test-checkout$$
+}
+    
 # Boilerplate ends 
