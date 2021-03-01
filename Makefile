@@ -199,7 +199,7 @@ EXCEPTIONS = \
 	lint \
 	profile \
 	reparent
-# Most othe command descriptions in Repositpory editing are reposurgeon's embedded
+# Most of the command descriptions in Repositpory editing are reposurgeon's embedded
 # help, lightly massaged into asciidoc format.
 repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
 	@rm -fr docinclude; mkdir docinclude
@@ -305,7 +305,7 @@ version:
 # Code validation
 #
 
-check: lint build test
+check: lint all test
 	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
 
 fixme:
