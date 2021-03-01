@@ -15,7 +15,7 @@ REPOMAPPER := repomapper
 # Setting this to 0 allows tests to continue on error.
 STOPOUT=1
 
-# Setting this to 1 suppresses diffs in favor of a FAIL tag
+# Setting this to 1 suppresses detail sections in most TAP reportts.
 QUIET=0
 
 # The TAP filter. Only affects presentation of the test suite messages
@@ -31,12 +31,9 @@ BUILDOPT="set serial"
 # Force the timezone in case CI has a different idea
 export TZ=UTC
 
-# Defeat annoying behavior under Mac OS X - builtin echo doesn't do -n
-ECHO := /bin/echo
-
 # Define test groups
 BASIC = listcheck roundtrip-regress command-regress
-SUBVERSION = svnload-regress liftcheck-regress legacy-regress svncheck-regress liftcheck-regress
+SUBVERSION = svnload-regress liftcheck-regress legacy-regress svncheck-regress
 GIT_EXTRACTOR = git-regress
 HG_EXTRACTOR = hg-regress
 AUXTOOLS = repocutter-regress repomapper-regress repotool-regress
@@ -66,8 +63,6 @@ check-aux: clean disclose $(BASIC) $(SUBVERSION) $(GIT_EXTRACTOR) $(HG_EXTRACTOR
 disclose:
 	@echo "Running with $(CONCURRENT_JOBS) threads."
 
-# FIXME: is log -all really correct when regenerating the map checks?
-
 .SUFFIXES: .svn .chk .fi .map
 
 .svn.chk:
@@ -82,7 +77,7 @@ buildregress: command-buildregress svnload-buildregress legacy-buildregress \
 	svncheck-buildregress 
 
 clean:
-	rm -fr .rs* test-repo test-checkout git-repo left-repo right-repo *~
+	rm -fr .rs* test=repo test-checkout test-repo* test-checkout* git-repo left-repo right-repo *~
 
 options:
 	@echo "REPOSURGEON is '$(REPOSURGEON)'"
@@ -247,8 +242,7 @@ GIT_EXTRACTOR_LOADS= \
 GIT_EXTRACTOR_TARGETS = $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)
 $(GIT_EXTRACTOR_TARGETS): git-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(basename $(subst git-extractor-test-,,$@))"; \
-	description="$(subst _, ,$(subst .,,$(suffix $(subst git-extractor-test-,,$@))))"; \
+	filestem="$(basename $*)"; description="$(subst _, ,$*)"; \
 	./fi-to-fi <$${filestem}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
 	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi
 git-regress:
@@ -274,7 +268,6 @@ hg-buildregress:
 	    ./hg-$${item}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${item}.fi \
 		2>&1 || exit $(STOPOUT); \
 	done
-# NOTE: the bb-alt test demonstrates an hg repo with coloring that git cannot reproduce
 HG_EXTRACTOR_LOADS= \
 	be.with_multiple_hg_branches \
 	be2.with_multiple_hg_branches \
@@ -295,8 +288,7 @@ HG_EXTRACTOR_LOADS= \
 HG_EXTRACTOR_TARGETS=$(HG_EXTRACTOR_LOADS:%=hg-extractor-test-%)
 hg-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(basename $(subst hg-extractor-test-,,$@))"; \
-	description="$(subst _, ,$(subst .,,$(suffix $(subst hg-extractor-test-,,$@))))"; \
+	filestem="$(basename $*)"; description="$(subst _, ,$(subst .,,$(suffix $*)))"; \
 	./hg-$${filestem}-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon/d' \
 	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: hg extractor $${description}" $${filestem}.fi
 hg-regress:
@@ -332,7 +324,7 @@ svnload-regress:
 	@echo "== Testing loading of Subversion streams:"
 	@$(call TAPOUT, $(SVN_LOAD_TARGETS))
 
-# Test Subversuib conversion correctness
+# Test Subversion conversion correctness
 LIFTCHECK_LOADS = $(wildcard *.svn)
 LIFTCHECK_TARGETS = $(LIFTCHECK_LOADS:%=liftcheck-regress-full-%)
 $(LIFTCHECK_TARGETS): liftcheck-regress-full-%: %
@@ -362,7 +354,7 @@ $(LEGACY_TARGETS): legacy-test-%: %.svn
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "legacy write -" | grep -v '^reposurgeon:' 2>/dev/null \
-	| QUIET=$(QUIT0E) tapdiffer "$${legend}" $(basename $<).map
+	| QUIET=$(QUIET) tapdiffer "$${legend}" $(basename $<).map
 legacy-regress:
 	@echo "=== Testing legacy-map generation:"
 	@$(call TAPOUT,$(LEGACY_TARGETS));
@@ -372,16 +364,15 @@ legacy-regress:
 REPOMAPPER_LOADS := $(shell ls -1 repomapper*.sh | sed '/.sh/s///')
 repomapper-buildregress:
 	@REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
-	for file in $(MAPPER_LOADS); do \
+	for file in $(REPOMAPPER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh >$${file}.chk || exit $(STOPOUT); \
 	done
 REPOMAPPER_TARGETS = $(REPOMAPPER_LOADS:%=mapper-test-%)
 $(REPOMAPPER_TARGETS): mapper-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(subst mapper-test-,,$@)"; \
-	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $${filestem}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${filestem}.chk || exit $(STOPOUT);
+	legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $*.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $*.chk || exit $(STOPOUT);
 repomapper-regress:
 	@echo "=== Running repomapper tests:"
 	@$(call TAPOUT,$(REPOMAPPER_TARGETS))
@@ -398,15 +389,13 @@ repotool-buildregress:
 REPOTOOL_TARGETS = $(REPOTOOL_LOADS:%=repotool-test-%)
 $(REPOTOOL_TARGETS): repotool-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(subst repotool-test-,,$@)"; \
-	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $${filestem}.sh --regress
+	legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $*.sh --regress
 repotool-regress:
 	@echo "=== Running repotool tests:"
 	@$(call TAPOUT,$(REPOTOOL_TARGETS))
 
-# Regression-testing of repocutter; look at the *.sh and
-# corresponding *.chk files to see which tests this runs.
+# Regression-testing of repocutter
 REPOCUTTER_LOADS := $(shell ls -1 repocutter*.sh | sed '/.sh/s///')
 repocutter-buildregress:
 	@REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
@@ -417,28 +406,26 @@ repocutter-buildregress:
 REPOCUTTER_TARGETS = $(REPOCUTTER_LOADS:%=repocutter-test-%)
 $(REPOCUTTER_TARGETS): repocutter-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(subst repocutter-test-,,$@)"; \
-	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $${filestem}.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $${filestem}.chk || status=$(STOPOUT); 
+	legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $*.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $*.chk || status=$(STOPOUT); 
 repocutter-regress:
 	@echo "=== Running repocutter tests:"
 	@$(call TAPOUT,$(REPOCUTTER_TARGETS))
 
-# Regression-testing of Subversion permission-bit and other exceptional cases; look at the *.sh and
-# corresponding *.chk files to see which tests this runs.
+# Regression-testing of Subversion permission-bit and other exceptional cases.
+# These tests are actually here to check Subversion's behavior, in case something
+# poorly documented changes
 SVNCHECK_LOADS := $(shell ls -1 svncheck*.sh | sed '/.sh/s///')
 svncheck-buildregress:
-	@for file in $(SVNCHECK)KOADS); do \
+	@for file in $(SVNCHECK_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' >$${file}.chk || exit $(STOPOUT); \
 	done
 SVNCHECK_TARGETS = $(SVNCHECK_LOADS:%=svncheck-test-%)
 $(SVNCHECK_TARGETS): svncheck-test-%:
-	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(subst svncheck-test-,,$@)"; \
-	legend=$$(sed -n '/^## /s///p' <"$${filestem}.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $${filestem}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' \
-	| tapdiffer "$${filestem}: $${legend}" $${filestem}.chk || exit $(STOPOUT);
+	legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' \
+	| tapdiffer "$*: $${legend}" $*.chk || exit $(STOPOUT);
 svncheck-regress:
 	@echo "=== Testing svncheck-regress:"
 	@if $(call AVAILABLE svn) ; \
@@ -452,8 +439,7 @@ SPORADIC_LOADS := hashcheck workflow-cvs-git workflow-svn-git
 SPORADIC_TARGETS = $(SPORADIC_LOADS:%=super-test-%)
 $(SPORADIC_TARGETS): super-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
-	filestem="$(subst super-test-,,$@)"; \
-	$(SHELL) $${filestem}.sh;
+	$(SHELL) $*.sh;
 sporadic-regress:
 	@echo "=== Running super tests:"
 	@$(call TAPOUT,$(SPORADIC_TARGETS))
