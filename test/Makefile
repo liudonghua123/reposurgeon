@@ -66,7 +66,7 @@ check:
 	$(MAKE) -j1 check-aux
 
 # This should always be a full test
-check-aux: clean disclose $(BASIC) $(SUBVERSION) $(GIT_EXTRACTOR) $(HG_EXTRACTOR) $(AUXTOOLS) sporadic
+check-aux: clean disclose $(BASIC) $(SUBVERSION) $(GIT_EXTRACTOR) $(HG_EXTRACTOR) $(AUXTOOLS) sporadic-regress
 	@echo "=== No diff output is good news ==="
 
 disclose:
@@ -458,15 +458,18 @@ svncheck-regress:
 	else echo "    Skipped, svn missing."; exit 0; \
 	fi
 
-
-SPORADIC = hashcheck.sh workflow-cvs-git.sh workflow-svn-git.sh
-sporadic:
-	@echo "=== Sporadic tests:"
-	@($(call PLANLINE,$(SPORADIC)); \
-	for file in $(SPORADIC); \
-	do \
-		sh $$file || exit $(STATUS); \
-	done) | $(TAPFILTER)
+# Miscellaneous tests.
+# Without the magic "+" we get the obscure message
+#  warning: jobserver unavailable: using -j1
+SPORADIC_LOADS := hashcheck workflow-cvs-git workflow-svn-git
+SPORADIC_TARGETS = $(SPORADIC_LOADS:%=super-test-%)
+$(SPORADIC_TARGETS): super-test-%:
+	@+REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	filestem="$(subst super-test-,,$@)"; \
+	$(SHELL) $${filestem}.sh;
+sporadic-regress:
+	@echo "=== Running super tests:"
+	@$(call TAPOUT,$(SPORADIC_TARGETS))
 
 # Test productions end here.
 
