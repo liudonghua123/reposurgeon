@@ -44,19 +44,13 @@ AUXTOOLS = repocutter-regress repomapper-regress repotool-regress
 # See https://stackoverflow.com/questions/6481005/how-to-obtain-the-number-of-cpus-cores-in-linux-from-the-command-line
 CONCURRENT_JOBS=$(shell getconf _NPROCESSORS_ONLN || getconf NPROCESSORS_ONLN || echo 4)
 
-# Exploit make parallelism
-PARALLEL_MAKE=$(MAKE) --output-sync --no-print-directory -j $(CONCURRENT_JOBS)
-
-# Generate a TAP plan line for a list of names given as arguments 
-PLANLINE=echo "1..$(words $(1))"
-
 # Fall back to safety if our declared TAP consumer does not exist.
 # This is helpful in the CI environment, where it wiuld be better for
 # the logfiles to carry the raw TAP messages. 
 TAPFILTER=$(shell command -v $(TAPCONSUMER) || echo cat)
 
-# Run tests in parallel and ship their output to our TAP consumer after a plan header
-TAPOUT = (echo "1..$(words $(1))"; $(PARALLEL_MAKE) $(1)) | $(TAPFILTER)
+# Run specified tests in parallel and ship their output to our TAP consumer after a plan header
+TAPOUT = (echo "1..$(words $(1))"; $(MAKE) --output-sync --no-print-directory -j $(CONCURRENT_JOBS) $(1)) | $(TAPFILTER)
 
 # Test whether we have a specified command
 AVAILABLE=command -v $(1) >/dev/null 2>&1
@@ -115,7 +109,7 @@ listcheck:
 # describes how to reach a target matching the pattern.
 #
 # A consequence of this organization is that in order to force
-# iermination of the outer rule with error status 1, an inner rule
+# termination of the outer rule with error status 1, an inner rule
 # cannot merely return $?=1, it has to do an explicit exit 1. A
 # significant amount of the complexity in these rules is the
 # gymnastics required to make that exit value conditional on STOPOUT.
@@ -123,11 +117,6 @@ listcheck:
 # Some pattern rules look like this: (GENERATOR | FILTER) || exit $(STOPOUT)
 # The GENERATOR part pushers test output to a FILTER which compares it to
 # a corresponding checkfile. If this pipeline fails the exit is called.
-#
-# Other test groups are implemented eith loops in a rool body; these can't
-# use concurrency.  The difference is historical, not principled; all the
-# test groups used to be written this way until one of our contributors
-# got really interested in parallel make.
 
 # Test that all stream files round-trip properly: compressed, uncompressed,
 # and when passed through as message boxes by msgin/msgout.
@@ -459,12 +448,10 @@ svncheck-regress:
 	fi
 
 # Miscellaneous tests.
-# Without the magic "+" we get the obscure message
-#  warning: jobserver unavailable: using -j1
 SPORADIC_LOADS := hashcheck workflow-cvs-git workflow-svn-git
 SPORADIC_TARGETS = $(SPORADIC_LOADS:%=super-test-%)
 $(SPORADIC_TARGETS): super-test-%:
-	@+REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
+	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	filestem="$(subst super-test-,,$@)"; \
 	$(SHELL) $${filestem}.sh;
 sporadic-regress:
