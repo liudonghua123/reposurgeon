@@ -12,9 +12,6 @@ REPOCUTTER := repocutter
 REPOTOOL := repotool
 REPOMAPPER := repomapper
 
-# Setting this to 0 allows tests to continue on error.
-STOPOUT=1
-
 # Setting this to 1 suppresses detail sections in most TAP reportts.
 QUIET=0
 
@@ -89,7 +86,7 @@ testlist:
 	@grep --text '^ ##' *.svn
 listcheck:
 	@for f in *.tst *.svn; do \
-	    if ( head -3 $$f | grep --text -q '^ *##' ); then :; else echo "$$f needs a description" >&2; exit $(STOPOUT); fi;  \
+	    if ( head -3 $$f | grep --text -q '^ *##' ); then :; else echo "$$f needs a description" >&2; exit 1; fi;  \
 	done
 
 # The way these test productions work is kind of hairy, so the
@@ -105,13 +102,7 @@ listcheck:
 #
 # A consequence of this organization is that in order to force
 # termination of the outer rule with error status 1, an inner rule
-# cannot merely return $?=1, it has to do an explicit exit 1. A
-# significant amount of the complexity in these rules is the
-# gymnastics required to make that exit value conditional on STOPOUT.
-#
-# Some pattern rules look like this: (GENERATOR | FILTER) || exit $(STOPOUT)
-# The GENERATOR part pushers test output to a FILTER which compares it to
-# a corresponding checkfile. If this pipeline fails the exit is called.
+# cannot merely return $?=1, it has to do an explicit exit 1.
 
 # Test that all stream files round-trip properly: compressed, uncompressed,
 # and when passed through as message boxes by msgin/msgout.
@@ -121,11 +112,11 @@ RULES_MESSAGE_BOX=$(patsubst %,messagebox-%,$(wildcard *.fi))
 
 # Stream riundtripping tests
 $(ROUNDTRIP_TARGETS): roundtrip-%: %
-	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< roundtrip" $<) || exit $(STOPOUT)
+	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< roundtrip" $<)
 $(ROUNDTRIP_COMPRESS_TARGETS): roundtrip-compress-%: %
-	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< compressed roundtrip" $<) || exit $(STOPOUT)
+	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | QUIET=$(QUIET) tapdiffer "$< compressed roundtrip" $<)
 $(RULES_MESSAGE_BOX): messagebox-%: %
-	@$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | QUIET=$(QUIET) tapdiffer "$< message-box roundtripping" $< || exit $(STOPOUT)
+	@$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | QUIET=$(QUIET) tapdiffer "$< message-box roundtripping" $<
 roundtrip-regress:
 	@echo "=== Testing stream-file round-tripping:"
 	@$(call TAPOUT, $(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(RULES_MESSAGE_BOX))
@@ -151,12 +142,12 @@ mixedbranchlift.svn: branchliftgen.sh
 COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
 COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
 $(COMMAND_TARGETS): command-regress-%: %.tst
-	@QUIET=$(QUIET) singletest -a testing123 $< || exit $(STOPOUT)
+	@QUIET=$(QUIET) singletest -a testing123 $<;
 command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn 
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
-		2>&1 || exit $(STOPOUT); \
+		2>&1 || exit 1; \
 	done
 command-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
 	@echo "=== Running general tests:"
@@ -190,8 +181,8 @@ command-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn glob
 # because that will help us separate the parts later. We use the
 # standard dodge of encoding spaces as underscres.
 #
-# 4. Declare a target kist. This will be the list you declared in step 1
-# with a distingushing namespace prefix added to each member.
+# 4. Declare a target list. This will be the list you declared in step 1
+# with a distinguishing namespace prefix added to each member.
 #
 # 3. Write a pattern rule with that distinguishing nanespace prefix
 # before %.  The rule text will have one variable part - #@, the
@@ -244,7 +235,7 @@ $(GIT_EXTRACTOR_TARGETS): git-extractor-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	filestem="$(basename $*)"; description="$(subst _, ,$*)"; \
 	./fi-to-fi <$${filestem}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
-	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi
+	| QUIET=$(QUIET) tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi;
 git-regress:
 	@echo "=== Testing git-extractor:"
 	@if $(call AVAILABLE git) ; \
@@ -266,7 +257,7 @@ hg-buildregress:
 	for item in $(HGSCRIPTS); do \
 	    echo "Remaking $${item}.fi"; \
 	    ./hg-$${item}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${item}.fi \
-		2>&1 || exit $(STOPOUT); \
+		2>&1 || exit 1; \
 	done
 HG_EXTRACTOR_LOADS= \
 	be.with_multiple_hg_branches \
@@ -311,8 +302,7 @@ svnload-buildregress:
 		    exit 1; \
 		fi; \
 		echo "Remaking $${test}.chk"; \
-		rm -f $${test}.chk && $(MAKE) --quiet $${test}.chk \
-			|| exit $(STOPOUT); \
+		rm -f $${test}.chk && $(MAKE) --quiet $${test}.chk || exit 1; \
 	done
 SVN_LOAD_TARGETS=$(SVNLOAD_LOADS:%=svnload-regress-%)
 $(SVN_LOAD_TARGETS): svnload-regress-%: %.svn
@@ -329,7 +319,7 @@ LIFTCHECK_LOADS = $(wildcard *.svn)
 LIFTCHECK_TARGETS = $(LIFTCHECK_LOADS:%=liftcheck-regress-full-%)
 $(LIFTCHECK_TARGETS): liftcheck-regress-full-%: %
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT; \
-	liftcheck -q -r all $< || exit $(STOPOUT)
+	liftcheck -q -r all $<
 liftcheck-regress:
 	@echo "== Testing conversion correctness of SVN histories:"
 	@if  $(call AVAILABLE git) &&  $(call AVAILABLE svn); \
@@ -346,8 +336,7 @@ legacy-buildregress:
 	for test in $(LEGACY_LOADS); \
 	do \
 	    echo "Remaking $${test}.map"; \
-	    rm -f $${test}.map && $(MAKE) --quiet $${test}.map 2>/dev/null \
-		|| exit $(STOPOUT); \
+	    rm -f $${test}.map && $(MAKE) --quiet $${test}.map 2>/dev/null || exit 1; \
 	done
 LEGACY_TARGETS = $(LEGACY_LOADS:%=legacy-test-%)
 $(LEGACY_TARGETS): legacy-test-%: %.svn
@@ -366,13 +355,13 @@ repomapper-buildregress:
 	@REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
 	for file in $(REPOMAPPER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(SHELL) $${file}.sh >$${file}.chk || exit $(STOPOUT); \
+	    $(SHELL) $${file}.sh >$${file}.chk || exit 1; \
 	done
 REPOMAPPER_TARGETS = $(REPOMAPPER_LOADS:%=mapper-test-%)
 $(REPOMAPPER_TARGETS): mapper-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $*.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $*.chk || exit $(STOPOUT);
+	$(SHELL) $*.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $*.chk;
 repomapper-regress:
 	@echo "=== Running repomapper tests:"
 	@$(call TAPOUT,$(REPOMAPPER_TARGETS))
@@ -384,7 +373,7 @@ repotool-buildregress:
 	@REPOTOOL=$$REPOTOOL; export REPOTOOL; \
 	for file in $(REPOTOOL_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(SHELL) $${file}.sh --rebuild || exit $(STOPOUT); \
+	    $(SHELL) $${file}.sh --rebuild || exit 1; \
 	done
 REPOTOOL_TARGETS = $(REPOTOOL_LOADS:%=repotool-test-%)
 $(REPOTOOL_TARGETS): repotool-test-%:
@@ -401,13 +390,13 @@ repocutter-buildregress:
 	@REPOMAPPER=$$REPOMAPPER; export REPOMAPPER; \
 	for file in $(REPOCUTTER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(SHELL) $${file}.sh >$${file}.chk || exit $(STOPOUT); \
+	    $(SHELL) $${file}.sh >$${file}.chk || exit 1; \
 	done
 REPOCUTTER_TARGETS = $(REPOCUTTER_LOADS:%=repocutter-test-%)
 $(REPOCUTTER_TARGETS): repocutter-test-%:
 	@REPOSURGEON=$(REPOSURGEON); export REPOSURGEON; TESTOPT="$(TESTOPT)"; export TESTOPT;\
 	legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $*.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $*.chk || status=$(STOPOUT); 
+	$(SHELL) $*.sh | QUIET=$(QUIET) tapdiffer "$${legend}" $*.chk;
 repocutter-regress:
 	@echo "=== Running repocutter tests:"
 	@$(call TAPOUT,$(REPOCUTTER_TARGETS))
@@ -419,13 +408,13 @@ SVNCHECK_LOADS := $(shell ls -1 svncheck*.sh | sed '/.sh/s///')
 svncheck-buildregress:
 	@for file in $(SVNCHECK_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' >$${file}.chk || exit $(STOPOUT); \
+	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' >$${file}.chk || exit 1; \
 	done
 SVNCHECK_TARGETS = $(SVNCHECK_LOADS:%=svncheck-test-%)
 $(SVNCHECK_TARGETS): svncheck-test-%:
 	legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
 	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' \
-	| tapdiffer "$*: $${legend}" $*.chk || exit $(STOPOUT);
+	| tapdiffer "$*: $${legend}" $*.chk;
 svncheck-regress:
 	@echo "=== Testing svncheck-regress:"
 	@if $(call AVAILABLE svn) ; \
@@ -473,14 +462,14 @@ svn-flat: clean
 	svnadmin create test-repo
 	svn co file://${PWD}/test-repo test-checkout
 svn-branchy: svn-flat
-	@cd test-checkout || exit $(STOPOUT); set -x; \
-		svn mkdir trunk || exit $(STOPOUT); \
-		svn mkdir tags || exit $(STOPOUT); \
-		svn mkdir branches || exit $(STOPOUT); \
-		echo "Directory layout." | svn commit -F - || exit $(STOPOUT); \
+	@cd test-checkout || exit 1; set -x; \
+		svn mkdir trunk || exit 1; \
+		svn mkdir tags || exit 1; \
+		svn mkdir branches || exit 1; \
+		echo "Directory layout." | svn commit -F - || exit 1; \
 		echo "This is a test Subversion repository" >trunk/README; \
-		svn add trunk/README || exit $(STOPOUT); \
-		echo "Initial README content." | svn commit -F - || exit $(STOPOUT)
+		svn add trunk/README || exit 1; \
+		echo "Initial README content." | svn commit -F - || exit 1
 svn-dump:
 	@svnadmin dump test-repo 
 

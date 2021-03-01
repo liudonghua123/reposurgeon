@@ -15,16 +15,9 @@ REPOSURGEON: defaults to 'reposurgeon '
 TESTOPT: Use this to pass in a command or option setting, such
 as "set experimental",
 
-STOPOUT: 1 (the default) produces a bailout after the first failed
-test.  Set it to 0 to continue after failed tests - you have to do
-this on the make command line, e.g. "cd test; make STOPOUT=0
-fi-regress".  Note, the output from this may be voluminous and
-unuseful.
-
 QUIET: 0 (the default) allows display of a diff against the checkfile
-when a test fails. When QUIET=1 the duff is suppressed and te word
-FAILED appears instead.  This is usedul wuth STOPOUT to see a summary
-of success/fail status.
+when a test fails. When QUIET=1 the diff is suppressed; only the
+TAP report line appears.
 
 To run a single test:
 
