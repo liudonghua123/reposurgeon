@@ -42,9 +42,9 @@ TAPOUT = (echo "1..$(words $(1))"; $(MAKE) --output-sync --no-print-directory -j
 # Test whether we have a specified command
 AVAILABLE=command -v $(1) >/dev/null 2>&1
 
-# check-aux must not be run in parallel.
+# parallel-tap must not be run in parallel.
 check:
-	$(MAKE) -j1 check-aux
+	$(MAKE) -j1 parallel-tap
 
 .SUFFIXES: .svn .chk .fi .map
 
@@ -56,7 +56,7 @@ check:
 	$(REPOSURGEON) "log -all" "read <$<" "legacy write -" >$@
 
 clean:
-	rm -fr .rs* test=repo test-checkout test-repo* test-checkout* git-repo left-repo right-repo *~
+	@rm -fr .rs* test=repo test-checkout test-repo* test-checkout* git-repo left-repo right-repo *~
 
 options:
 	@echo "REPOSURGEON is '$(REPOSURGEON)'"
@@ -70,21 +70,6 @@ listcheck:
 	@for f in *.tst *.svn; do \
 	    if ( head -3 $$f | grep --text -q '^ *##' ); then :; else echo "$$f needs a description" >&2; exit 1; fi;  \
 	done
-
-# The way these test productions work is kind of hairy, so the
-# constraints and assumptions are documented here.  The biggest
-# constraint is that we need a test failure to pass out a status that
-# terminates make - this is required for CI to notice the failure, as
-# it does not patthern-match on the output of the tests.
-#
-# These productions generally come in pairs. The outer one, meant to
-# be invoked, issues a banner and invokes parallel make on a distimctive
-# set of target pattern names.  The inner one is a pattern rule that
-# describes how to reach a target matching the pattern.
-#
-# A consequence of this organization is that in order to force
-# termination of the outer rule with error status 1, an inner rule
-# cannot merely return $?=1, it has to do an explicit exit 1.
 
 # BEGINS: Tests that require only reposurgeon itself
 
@@ -101,9 +86,6 @@ $(ROUNDTRIP_COMPRESS_TARGETS): roundtrip-compress-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | tapdiffer "$< compressed roundtrip" $<)
 $(MESSAGEBOX_TARGETS): messagebox-%: %
 	@$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | tapdiffer "$< message-box roundtripping" $<
-roundtrip-regress:
-	@echo "=== Testing stream-file round-tripping:"
-	@$(call TAPOUT, $(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_TARGETS))
 
 # Generated command-test loads
 multigen.svn: multigen.sh
@@ -133,9 +115,6 @@ command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
 		2>&1 || exit 1; \
 	done
-command-regress: multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn mixedbranchlift.svn
-	@echo "=== Running general tests:"
-	@$(call TAPOUT,$(COMMAND_TARGETS))
 
 # Regression-yest loading from Subversion
 SVN_AND_TST_FILES := $(sort $(wildcard *.svn *.tst))
@@ -155,9 +134,6 @@ $(SVNLOAD_TARGETS): svnload-regress-%: %.svn
 	@test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -"  >/tmp/stream$$$$ 2>&1; \
 	tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$;
-svnload-regress:
-	@echo "== Testing loading of Subversion streams:"
-	@$(call TAPOUT, $(SVNLOAD_TARGETS))
 
 # Regression-testing of repocutter
 REPOCUTTER_LOADS := $(shell ls -1 repocutter*.sh | sed '/.sh/s///')
@@ -170,9 +146,6 @@ REPOCUTTER_TARGETS = $(REPOCUTTER_LOADS:%=repocutter-test-%)
 $(REPOCUTTER_TARGETS): repocutter-test-%:
 	@legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
 	$(SHELL) $*.sh | tapdiffer "$${legend}" $*.chk;
-repocutter-regress:
-	@echo "=== Running repocutter tests:"
-	@$(call TAPOUT,$(REPOCUTTER_TARGETS))
 
 # Regression-testing of repomapper; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
@@ -203,13 +176,12 @@ $(LEGACY_TARGETS): legacy-test-%: %.svn
 	@legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "legacy write -" | grep -v '^reposurgeon:' 2>/dev/null \
 	| tapdiffer "$${legend}" $(basename $<).map
-legacy-regress:
-	@echo "=== Testing legacy-map generation:"
-	@$(call TAPOUT,$(LEGACY_TARGETS));
 
 # ENDS: Tests that require only reposurgeon itself
 
 # BEGINS: Tests requiring svn but not git
+
+ifneq ($(call AVAILABLE svn),)
 
 # Regression-testing of Subversion permission-bit and other exceptional cases.
 # These tests are actually here to check Subversion's behavior, in case something
@@ -225,50 +197,41 @@ $(SVNCHECK_TARGETS): svncheck-test-%:
 	@legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
 	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' \
 	| tapdiffer "$*: $${legend}" $*.chk;
-svncheck-regress:
-	@echo "=== Testing svncheck-regress:"
-	@if $(call AVAILABLE svn) ; \
-	then \
-		$(call TAPOUT,$(SVNCHECK_TARGETS)); \
-	else echo "    Skipped, svn missing."; exit 0; \
-	fi
+
+endif # if svn
 
 # ENDS: Tests requiring svn but not git
 
 # All tests past this point reqire Git
 
+ifneq ($(call AVAILABLE git),)
+
 # BEGINS: Tests requiring svn and git
+
+ifneq ($(call AVAILABLE svn),)
 
 # Test Subversion conversion correctness
 LIFTCHECK_LOADS = $(wildcard *.svn)
 LIFTCHECK_TARGETS = $(LIFTCHECK_LOADS:%=liftcheck-regress-full-%)
 $(LIFTCHECK_TARGETS): liftcheck-regress-full-%: %
 	@liftcheck -q -r all $<
-liftcheck-regress:
-	@echo "== Testing conversion correctness of SVN histories:"
-	@if  $(call AVAILABLE git) &&  $(call AVAILABLE svn); \
-	then \
-		$(call TAPOUT, $(LIFTCHECK_TARGETS)); \
-	else \
-		echo "     Skipped, either git or svn is missing"; \
-	fi
+
+endif # if svn
 
 # ENDS: Tests requiring svn and git
 
 # BEGINS: Tests requiring git only
 
+# FIXME: Abolish this thing now that we're down to one TAP frame.
+#
 # The goal of filtering with a TAP consumer is to keep the error
 # display small enough that when any one test gets broken it's
 # guaranteed not to get lost in a flood of routine messages or scroll
 # off the screen.  This puts a premium on having as few as possible
 # TAP output frames (each correspomding to one invocation of the TAP
-# consumer) as possible.  On the other hand, long lag in the middle of
-# a test group makes for uncertainty about whether some test might be
-# hanging, which is bad. Choosing the optimal grouping requires some
-# sensitivity to the distribution of test running times and of failure
-# risk.
+# consumer) as possible.
 #
-# Trying to cut down on the number of TAP reporting frames leads us down 
+# Trying to cut down on the number of TAP reporting frames led us down 
 # one serious rabbit hole.  The sticky case is when we want to supply both a
 # test-load name and a description of what case it excercises for
 # generating a TAP status message, and we cam't mine the descrption
@@ -339,17 +302,12 @@ $(GIT_EXTRACTOR_TARGETS): git-extractor-test-%:
 	@filestem="$(basename $*)"; description="$(subst _, ,$*)"; \
 	./fi-to-fi <$${filestem}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
 	| tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi;
-git-regress:
-	@echo "=== Testing git-extractor:"
-	@if $(call AVAILABLE git) ; \
-	then \
-		$(call TAPOUT,$(GIT_EXTRACTOR_TARGETS)); \
-	else echo "    Skipped, git missing."; exit 0; \
-	fi
 
 # ENDS: Tests requiring git only
 
 # BEGINS: Tests requiring hg
+
+ifneq ($(call AVAILABLE hg),)
 
 # Test the hg supprt
 HGSTREAMS = testrepo2
@@ -386,15 +344,12 @@ hg-extractor-test-%:
 	@filestem="$(basename $*)"; description="$(subst _, ,$(subst .,,$(suffix $*)))"; \
 	./hg-$${filestem}-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon/d' \
 	| tapdiffer "$${filestem}.fi: hg extractor $${description}" $${filestem}.fi
-hg-regress:
-	@echo "=== Testing hg extractor:"
-	@if $(call AVAILABLE hg) && $(call AVAILABLE git) ; \
-	then \
-		$(call TAPOUT,$(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_TARGETS)); \
-	else echo "    Skipped, hg or git missing."; exit 0; \
-	fi
+
+endif # hg
 
 # ENDS: Tests requiring hg
+
+endif # if git
 
 # Test past this point may depend on any VCS and are expected
 # to die cleanly wuth a TAP complaint if they can't find what they need.
@@ -411,18 +366,12 @@ REPOTOOL_TARGETS = $(REPOTOOL_LOADS:%=repotool-test-%)
 $(REPOTOOL_TARGETS): repotool-test-%:
 	@legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
 	$(SHELL) $*.sh --regress
-repotool-regress:
-	@echo "=== Running repotool tests:"
-	@$(call TAPOUT,$(REPOTOOL_TARGETS))
 
 # Miscellaneous tests.
 SPORADIC_LOADS := hashcheck workflow-cvs-git workflow-svn-git
 SPORADIC_TARGETS = $(SPORADIC_LOADS:%=sporadic-test-%)
 $(SPORADIC_TARGETS): sporadic-test-%:
-	$(SHELL) $*.sh
-sporadic-regress:
-	@echo "=== Running sporadic tests:"
-	@$(call TAPOUT,$(SPORADIC_TARGETS))
+	@$(SHELL) $*.sh
 
 # All test targets
 TEST_TARGETS = $(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_TARGETS) \
@@ -434,12 +383,14 @@ TEST_TARGETS = $(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_T
 
 # Here's how we actually run the tests
 
-check-aux: clean disclose \
-	listcheck roundtrip-regress command-regress \
-	svnload-regress liftcheck-regress legacy-regress svncheck-regress \
-	git-regress hg-regress \
-	repocutter-regress repomapper-regress repotool-regress \
-	sporadic-regress
+# Issue a straight TAP report, no parallelism or filtering
+tap: clean count $(TEST_TARGETS)
+count:
+	@echo 1..$(words $(TEST_TARGETS))
+
+# This is the normal way to run the tests
+parallel-tap: clean disclose
+	@$(call TAPOUT,$(TEST_TARGETS))
 
 disclose:
 	@echo "Running with $(CONCURRENT_JOBS) threads."
