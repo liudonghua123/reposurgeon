@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.25: 2021-03-02::
      New manual section, "Tips and tricks".
      Tag rename checks that it won't step on an existing name.
      "help" without topic now emits a custom TOC with command groupings.
