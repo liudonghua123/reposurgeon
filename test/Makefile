@@ -373,22 +373,25 @@ SPORADIC_TARGETS = $(SPORADIC_LOADS:%=sporadic-test-%)
 $(SPORADIC_TARGETS): sporadic-test-%:
 	@$(SHELL) $*.sh
 
-# All test targets
-TEST_TARGETS = $(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_TARGETS) \
-		$(COMMAND_TARGETS) \
+# All test targets. Putting expensive targets early in this list might
+# shave a little off total time. The Subversion tools are much the slowest
+# so those tests start first.
+TEST_TARGETS = $(LIFTCHECK_TARGETS) $(SVNCHECK_TARGETS) \
 		$(GIT_EXTRACTOR_TARGETS) $(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_TARGETS) \
-		$(SVNLOAD_TARGETS) $(LIFTCHECK_TARGETS) $(LEGACY_TARGETS) \
+		$(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_TARGETS) \
+		$(COMMAND_TARGETS) $(SVNLOAD_TARGETS) $(LEGACY_TARGETS) \
 		$(REPOMAPPER_TARGETS) $(REPOTOOL_TARGETS) $(REPOCUTTER_TARGETS) \
-		$(SVNCHECK_TARGETS) $(SPORADIC_TARGETS)
+		$(SPORADIC_TARGETS)
 
-# Here's how we actually run the tests
+# Here's how we actually run the tests:
 
 # Issue a straight TAP report, no parallelism or filtering
 tap: clean count $(TEST_TARGETS)
 count:
 	@echo 1..$(words $(TEST_TARGETS))
 
-# This is the normal way to run the tests
+# This is the normal way to run the tests intteractively,
+# using a TAP consumer.
 parallel-tap: clean disclose
 	@$(call TAPOUT,$(TEST_TARGETS))
 
