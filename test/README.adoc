@@ -1,13 +1,21 @@
 == Testing the code ==
 
-"make" here in the test directoy runs a complete set of regression
+"make" here in the test directory runs a complete set of regression
 tests. It's what "make check" in the main directory redirects to.
 
-If you get a very long list of test report lines, install tappy or
-install some other consumer of TAP (Test Anything Protocol) and set it
-as TAPCONSUMER in test/Makefile.  This will make the output far less
-noisy, passing though only errror indicattions. You can get the raw
-TAP report at any timw with "make tap".
+If you get a very long list of test report lines, install tappy; get
+it with "apt get tappy" in Debian-based Linuxes, or see the first URL
+in the references below. Alternatively, you could install some other
+consumer of TAP (Test Anything Protocol) and set it as TAPCONSUMER in
+test/Makefile.
+
+This will make the test output far less noisy, passing though only
+error indications. You can get the raw TAP report at any time with
+"make tap".
+
+On the 64-core 3GHz AMD64 machine I use for development, a full
+make check runs in 15-20 seconds. Scale expectations appropriately
+for your hardware.
 
 If you get a failure on the repotool-initialize-cvs-git test, but
 nowhere else, try updating your versions of CVS and cvs-fast-export
@@ -444,6 +452,8 @@ associated with them which is supposed to show up in the trace viewer,
 but this feature is not yet exploited.
 
 === Some references ===
+
+https://github.com/python-tap/tappy
 
 https://testanything.org/
 
