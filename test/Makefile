@@ -44,7 +44,7 @@ AVAILABLE=command -v $(1) >/dev/null 2>&1
 
 # parallel-tap must not be run in parallel.
 check:
-	$(MAKE) -j1 parallel-tap
+	@$(MAKE) -j1 --no-print-directory parallel-tap
 
 .SUFFIXES: .svn .chk .fi .map
 
@@ -222,86 +222,12 @@ endif # if svn
 
 # BEGINS: Tests requiring git only
 
-# FIXME: Abolish this thing now that we're down to one TAP frame.
-#
-# The goal of filtering with a TAP consumer is to keep the error
-# display small enough that when any one test gets broken it's
-# guaranteed not to get lost in a flood of routine messages or scroll
-# off the screen.  This puts a premium on having as few as possible
-# TAP output frames (each correspomding to one invocation of the TAP
-# consumer) as possible.
-#
-# Trying to cut down on the number of TAP reporting frames led us down 
-# one serious rabbit hole.  The sticky case is when we want to supply both a
-# test-load name and a description of what case it excercises for
-# generating a TAP status message, and we cam't mine the descrption
-# out of the test load.
-#
-# The following horrible hackery seems to be the only way to pass a
-# list of (filestem, description) pairs to make in such a way that we
-# can separate the pair components and use them to generate a custom
-# rule.  Here's how it works:
-#
-# 1. Start with a list of {filestem, description} pairs glued together
-# in a way that makes them syntactically legal to be make rule
-# targets.  We separate filestem from description with a period,
-# because that will help us separate the parts later. We use the
-# standard dodge of encoding spaces as underscres.
-#
-# 4. Declare a target list. This will be the list you declared in step 1
-# with a distinguishing namespace prefix added to each member.
-#
-# 3. Write a pattern rule with that distinguishing nanespace prefix
-# before %.  The rule text will have one variable part - #@, the
-# target name.  Now the real fun starts: and to make it more fun,
-# we're going to use several of make's more obscure features to
-# generate as much of the command text as possible early, rather than
-# using shell hackery at rule execution time.
-#
-# The reason we want this is simple: so that make -n will show us
-# something with a reasonably clear relationship to what's finally
-# executed.  Otherwise trying to debug and extend these rules would be
-# a fast path to insanity.
-#
-# 4. First, we need to the prefix off $@.  Then we need to break our 
-# {filestem, description} cookie apart.  This is where it matters that we used
-# a period as a separator, because it turns out that the only functions in
-# make's string library that can split up a token are $(prefix) and $(suffix)
-# intended for strings like "foo.c".
-#
-# Complicating matters, expansion of user-defined make variables is
-# either unreliable or has undocumented restrictions, so both of the
-# part-extractor expressions have to be written in one fell swoop
-# starting from $@.
-#
-# 5. The payoff from all this is that we cn now feed a simple derivative
-# of our original list of {filestem, description} pairs to a parallel make
-# and the right things will happen,
-#
-# To explore the following worked example, do "make -n git-regress" to
-# see the parallel-make command that gets generated; the interesting
-# part is the kist if targets.  Then do "make -n
-# git-regress-test-be2.with_merges" to see how a target in the list
-# expands to a generared rule.  Finally do "make TAPCONSUMER=cat
-# git-regress" to see what execution of the generated targets looks
-# like.
-
 # Test the git extractor
-GIT_EXTRACTOR_LOADS= \
-	bs.basic \
-	be.with_multiple_git_branches \
-	bs.with_multiple_git_branches \
-	be2.with_merges \
-	be3.with_merges \
-	be4.with_merges \
-	be5.with_merges \
-	bt.with_tags \
-	bt2.with_tags
+GIT_EXTRACTOR_LOADS= bs.fi testrepo2.fi utf8.fi
 GIT_EXTRACTOR_TARGETS = $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)
-$(GIT_EXTRACTOR_TARGETS): git-extractor-test-%:
-	@filestem="$(basename $*)"; description="$(subst _, ,$*)"; \
-	./fi-to-fi <$${filestem}.fi | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
-	| tapdiffer "$${filestem}.fi: git extractor $${description}" $${filestem}.fi;
+$(GIT_EXTRACTOR_TARGETS): git-extractor-test-%: %
+	@./fi-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
+	| tapdiffer "$<: git extractor round-tripping" $<;
 
 # ENDS: Tests requiring git only
 
@@ -322,30 +248,12 @@ hg-buildregress:
 	    ./hg-$${item}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${item}.fi \
 		2>&1 || exit 1; \
 	done
-HG_EXTRACTOR_LOADS= \
-	be.with_multiple_hg_branches \
-	be2.with_multiple_hg_branches \
-	be3.with_multiple_hg_branches \
-	bb-alt.with_multiple_hg_branches_and_impossible_coloring \
-	be-bookmarks.with_multiple_hg_branches \
-	be2.with_merges \
-	be3.with_merges \
-	be4.with_merges \
-	be5.with_merges \
-	be6.with_merges \
-	bt.with_tags \
-	bt2.with_tags \
-	bt3.with_tags \
-	bt3-local.with_tags \
-	be-subrepo.with_pathological_loads \
-	be-subrepo2.with_pathological_loads
-HG_EXTRACTOR_TARGETS=$(HG_EXTRACTOR_LOADS:%=hg-extractor-test-%)
-hg-extractor-test-%:
-	@filestem="$(basename $*)"; description="$(subst _, ,$(subst .,,$(suffix $*)))"; \
-	./hg-$${filestem}-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon/d' \
-	| tapdiffer "$${filestem}.fi: hg extractor $${description}" $${filestem}.fi
+HG_EXTRACTOR_TARGETS=$(HGSCRIPTS:%=hg-extractor-test-%)
+$(HG_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi
+	@./hg-$*-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon/d' \
+	| tapdiffer "$<: hg extractor round-tripping" $<
 
-endif # hg
+endif # if hg
 
 # ENDS: Tests requiring hg
 
@@ -390,7 +298,7 @@ tap: clean count $(TEST_TARGETS)
 count:
 	@echo 1..$(words $(TEST_TARGETS))
 
-# This is the normal way to run the tests intteractively,
+# This is the normal way to run the tests interactively,
 # using a TAP consumer.
 parallel-tap: clean disclose
 	@$(call TAPOUT,$(TEST_TARGETS))
