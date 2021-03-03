@@ -471,7 +471,7 @@ func mirror(args []string) {
 			credentials = fmt.Sprintf("--source-username %q", username)
 		}
 		if password != "" {
-			credentials += fmt.Sprintf(" --source-password %q", username)
+			credentials += fmt.Sprintf(" --source-password %q", password)
 		}
 		runShellProcessOrDie("svnadmin create "+locald, "mirror creation")
 		makeStub(locald+"/hooks/pre-revprop-change", "#!/bin/sh\nexit 0;\n")
