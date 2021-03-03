@@ -484,7 +484,7 @@ func mirror(args []string) {
 		// since rsyncing, or havoc will ensue.
 		runShellProcessOrDie(fmt.Sprintf("chmod a+x %s/hooks/pre-revprop-change", locald), "mirroring")
 		runShellProcessOrDie(fmt.Sprintf("svnsync init -q %s --allow-non-empty file://%s %s", credentials, locald, operand), "mirroring")
-		runShellProcessOrDie(fmt.Sprintf("svnsync synchronize -q --steal-lock file://%s", locald), "mirroring")
+		runShellProcessOrDie(fmt.Sprintf("svnsync synchronize -q %s --steal-lock file://%s", credentials, locald), "mirroring")
 	} else if isdir(filepath.Join(operand, "locks")) {
 		if operand[0] == os.PathSeparator {
 			locald = operand
