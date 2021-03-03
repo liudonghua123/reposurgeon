@@ -1189,7 +1189,7 @@ own change tracking.
 [[command-syntax]]
 === Command syntax
 
-Ip give you the flavor of the command language, here
+To give you the flavor of the command language, here
 are some simple examples:
 
 --------
