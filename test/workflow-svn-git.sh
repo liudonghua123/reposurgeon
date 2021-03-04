@@ -8,7 +8,7 @@ need svn svnadmin
 
 TMPDIR=${TMPDIR:-/tmp}
 
-trap 'rm -rf ${TMPDIR}/scratch$$ ${TMPDIR}/ref$$ ${TMPDIR}/out$$' EXIT HUP INT QUIT TERM
+trap 'rm -rf ${TMPDIR}/scratch$$ ${TMPDIR}/ref$$ ${TMPDIR}/out$$ ${TMPDIR}/diff$$' EXIT HUP INT QUIT TERM
 
 # Go to our sandbox
 testdir=$(realpath .)
@@ -22,11 +22,21 @@ tapcd "${TMPDIR}/scratch$$"
 repotool initialize -q vanilla-secundus svn git || ( echo "not ok - $0: initialization failed"; exit 1)
 
 # Mirror vanilla-prime into vanilla-secundus and invoke standard workflow
-make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" >/dev/null 2>&1  || ( echo "not ok - $0: mirror and conversion failed"; exit 1)
+make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" >/dev/null 2>&1  || ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 
 # Compare the results
-repotool compare-all vanilla-secundus-mirror vanilla-secundus-git || ( echo "not ok - $0: repositories do not compare equal."; exit 1 )
-
-echo "ok - $0: repositories compared equal"; exit 0
+repotool compare-all vanilla-secundus-mirror vanilla-secundus-git >"${TMPDIR}/diff$$" 
+if [ -s "${TMPDIR}/diff$$" ]
+then
+    echo "not ok - $0: repositories do not compare equal."
+    echo "  --- |"
+    sed <"/tmp/warnings$$" -e 's/^/  /'
+    sed <"/tmp/diff$$" -e 's/^/  /'
+    echo "  ..."
+    exit 1
+else
+    echo "ok - $0: repositories compared equal";
+    exit 0
+fi
 
 #end

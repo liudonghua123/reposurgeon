@@ -15,7 +15,7 @@ need cvs cvs-fast-export
 
 TMPDIR=${TMPDIR:-/tmp}
 
-trap 'rm -rf ${TMPDIR}/cvs-scratch$$ ${TMPDIR}/ref$$ ${TMPDIR}/out$$' EXIT HUP INT QUIT TERM
+trap 'rm -rf ${TMPDIR}/cvs-scratch$$ ${TMPDIR}/ref$$ ${TMPDIR}/out$$ ${TMPDIR}/diff$$' EXIT HUP INT QUIT TERM
 
 # Go to our sandbox
 here=$(realpath .)
@@ -26,13 +26,20 @@ tapcd "${TMPDIR}/cvs-scratch$$"
 repotool initialize -q hack1 cvs git
 
 # Convert the repository
-make --silent -e REMOTE_URL="cvs://localhost${here}/hack1.repo#module" VERBOSITY="" 2>&1 | sed "/ no commitids before/"d
+make --silent -e REMOTE_URL="cvs://localhost${here}/hack1.repo#module" VERBOSITY="" 2>&1 | sed "/ no commitids before/"d >"${TMPDIR}/diff$$" ||  ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 
 # Compare the results
-repotool compare-all hack1-mirror hack1-git || ( echo "not ok - $0: repositories do not compare equal."; exit 1 )
-
-echo "ok - $0: repositories compare equal"
-
-# No output is good news
+repotool compare-all hack1-mirror hack1-git >>"${TMPDIR}/diff$$"
+if [ -s "${TMPDIR}/diff$$" ]
+then
+    echo "not ok - $0: repositories do not compare equal."
+    echo "  --- |"
+    sed <"/tmp/diff$$" -e 's/^/  /'
+    echo "  ..."
+    exit 1
+else
+    echo "ok - $0: repositories compare equal"
+    exit 0
+fi
 
 #end

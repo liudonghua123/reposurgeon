@@ -47,6 +47,7 @@ then
 elif ls -l test-checkout$$/trunk/targetdir/sourcefile.txt | grep x >/dev/null
 then
     echo "ok - $0: executable permission is as expected"
+    exit 0
 else
     echo "not ok - $0: executable permission on targetdir/sourcefile was expected"
     exit 1
