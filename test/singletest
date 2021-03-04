@@ -94,7 +94,9 @@ do
 	       echo "not ok - ${x}: ${legend}"
 	       if [ ! "${QUIET}" = 1 ]
 	       then
-		   sed </tmp/tapdiff$$ -e 's/^/ /'
+		   echo "  --- |"
+		   sed </tmp/tapdiff$$ -e 's/^/  /'
+		   echo "  ..."
 	       fi
 	       exit 1
 	   fi	   

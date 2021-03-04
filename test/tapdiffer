@@ -5,7 +5,7 @@
 # Usage: tapdiffer LEGEND CHECKFILE
 #
 # Output is a TAP report, ok if the diff is empty and not ok otherwisw.
-# A nonempty diff is shipped as a TAP detail message following "not ok" 
+# A nonempty diff is shipped as a TAP YAML block following "not ok" 
 # unless QUIET=1 in the environment.
 #
 legend=$1
@@ -21,7 +21,9 @@ else
 	echo "not ok - ${checkfile}: ${legend}"
 	if [ ! "${QUIET}" = 1 ]
 	then
-		sed </tmp/tapdiff$$ -e 's/^/ /'
+		echo "  --- |"
+		sed </tmp/tapdiff$$ -e 's/^/  /'
+		echo "  ..."
 	fi
 	exit 1
 fi

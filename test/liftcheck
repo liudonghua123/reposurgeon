@@ -3,8 +3,9 @@
 # liftcheck - compare reposurgeon lift of a Subversion repo with a checkout
 #
 # Produces an ok/not-ok line suitable for feeding to a TAP consumer.
-# If the environment variable is set, the detail-like part of a :nit ok" line,
-# which is normally a diff listing of discrepancies, is suppressed.
+# If the comparison produces a nonempty diff, it is output as a YAML
+# block following the "not ok" linr.  If the environment variable
+# QUIET is set to 1, the diff is suppressed.
 #
 # The -v option reveals executed subcommands.
 # The -q option makes repotool extra quiet and reports only errors.
@@ -258,8 +259,10 @@ do
 	echo "not ok - ${what}: ${description}"
 	if [ ! "${QUIET}" = 1 ]
 	then
-	    sed </tmp/warnings$$ -e 's/^/ /'
-	    sed </tmp/diff$$ -e 's/^/ /'
+	    echo "  --- |"
+	    sed </tmp/warnings$$ -e 's/^/  /'
+	    sed </tmp/diff$$ -e 's/^/  /'
+	    echo "  ..." 
 	fi
 	exit 1
     fi
