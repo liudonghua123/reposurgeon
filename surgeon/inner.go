@@ -1896,6 +1896,7 @@ type Tag struct {
 	repo       *Repository
 	tagname    string
 	committish string
+	hash       gitHashType
 	tagger     *Attribution
 	Comment    string
 	legacyID   string
@@ -2152,6 +2153,9 @@ func (t *Tag) Save(w io.Writer) {
 		fmt.Fprintf(w, "#legacy-id %s\n", t.legacyID)
 	}
 	fmt.Fprintf(w, "from %s\n", t.committish)
+	if t.hash.isValid() {
+		fmt.Fprintf(w, "original-oid %s\n", t.hash.hexify())
+	}
 	if t.tagger != nil {
 		fmt.Fprintf(w, "tagger %s\n", t.tagger)
 	}
@@ -4667,6 +4671,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 			baton.twirl()
 		} else if bytes.HasPrefix(line, []byte("tag")) {
 			var tagger *Attribution
+			var hash gitHashType
 			tagname := string(bytes.TrimSpace(line[4:]))
 			line = sp.fiReadline()
 			legacyID := ""
@@ -4684,6 +4689,12 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 				sp.error(fmt.Sprintf("missing 'from' field in tag %q", tagname))
 			}
 			line = sp.fiReadline()
+			if bytes.HasPrefix(line, []byte("original-oid")) {
+				hash = newGitHash(bytes.Fields(line)[1])
+			} else {
+				sp.pushback(line)
+			}
+			line = sp.fiReadline()
 			if bytes.HasPrefix(line, []byte("tagger")) {
 				var err error
 				tagger, err = newAttribution(string(line[7:]))
@@ -4696,6 +4707,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 			}
 			d, _ := sp.fiReadData([]byte{})
 			tag := newTag(sp.repo, tagname, referent, tagger, string(d))
+			tag.hash = hash
 			tag.legacyID = legacyID
 			sp.repo.addEvent(tag)
 		} else {

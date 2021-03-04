@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Read and write original-oid fields in annotated tags.
+
 4.25: 2021-03-02::
      New manual section, "Tips and tricks".
      Tag rename checks that it won't step on an existing name.
