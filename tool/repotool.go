@@ -164,7 +164,7 @@ clean:
 	rm -fr *~ .rs* {{.Project}}-conversion.tar.gz *.{{.SourceVCS}} *.fi *.fo
 
 # Bundle up the conversion metadata for shipping
-SOURCES = Makefile {{.Project}}.lift {{.Project}}.map $(EXTRAS)
+SOURCES = Makefile {{.Project}}.opts {{.Project}}.lift {{.Project}}.map $(EXTRAS)
 {{.Project}}-conversion.tar.gz: $(SOURCES)
 	tar --dereference --transform 's:^:{{.Project}}-conversion/:' -czvf {{.Project}}-conversion.tar.gz $(SOURCES)
 
