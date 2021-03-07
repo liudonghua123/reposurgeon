@@ -42,6 +42,11 @@ TAPOUT = (echo "1..$(words $(1))"; $(MAKE) --output-sync --no-print-directory -j
 # Test whether we have a specified command
 AVAILABLE=command -v $(1) >/dev/null 2>&1
 
+# Parallel make doesn't return a fail status when a single subprocess fails,
+# so we need to log the failures and check the log for nonemptiness in order
+# to hand a real status back. This is important for CI/CD.  
+FAILLOG=/tmp/reposurgeon-make.log
+
 # parallel-tap must not be run in parallel.
 check:
 	@$(MAKE) -j1 --no-print-directory parallel-tap
@@ -81,11 +86,11 @@ MESSAGEBOX_TARGETS=$(patsubst %,messagebox-%,$(wildcard *.fi))
 
 # Stream roundtripping tests
 $(ROUNDTRIP_TARGETS): roundtrip-%: %
-	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | tapdiffer "$< roundtrip" $<)
+	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | tapdiffer "$< roundtrip" $<) || echo "$@" >>$(FAILLOG);
 $(ROUNDTRIP_COMPRESS_TARGETS): roundtrip-compress-%: %
-	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | tapdiffer "$< compressed roundtrip" $<)
+	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | tapdiffer "$< compressed roundtrip" $<) || echo "$@" >>$(FAILLOG);
 $(MESSAGEBOX_TARGETS): messagebox-%: %
-	@$(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | tapdiffer "$< message-box roundtripping" $<
+	@($(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | tapdiffer "$< message-box roundtripping" $<) || echo "$@" >>$(FAILLOG);
 
 # Generated command-test loads
 multigen.svn: multigen.sh
@@ -108,7 +113,7 @@ mixedbranchlift.svn: branchliftgen.sh
 COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
 COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
 $(COMMAND_TARGETS): command-regress-%: %.tst
-	@singletest -a testing123 $<;
+	@singletest -a testing123 $< || echo "$@" >>$(FAILLOG);
 command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn 
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
@@ -131,9 +136,9 @@ svnload-buildregress:
 	done
 SVNLOAD_TARGETS=$(SVNLOAD_LOADS:%=svnload-regress-%)
 $(SVNLOAD_TARGETS): svnload-regress-%: %.svn
-	@test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
+	@(test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -"  >/tmp/stream$$$$ 2>&1; \
-	tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$;
+	tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$ ) || echo "$@" >>$(FAILLOG);
 
 # Regression-testing of repocutter
 REPOCUTTER_LOADS := $(shell ls -1 repocutter*.sh | sed '/.sh/s///')
@@ -144,8 +149,8 @@ repocutter-buildregress:
 	done
 REPOCUTTER_TARGETS = $(REPOCUTTER_LOADS:%=repocutter-test-%)
 $(REPOCUTTER_TARGETS): repocutter-test-%:
-	@legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $*.sh | tapdiffer "$${legend}" $*.chk;
+	@(legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $*.sh | tapdiffer "$${legend}" $*.chk) || echo "$@" >>$(FAILLOG);
 
 # Regression-testing of repomapper; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
@@ -157,8 +162,8 @@ repomapper-buildregress:
 	done
 REPOMAPPER_TARGETS = $(REPOMAPPER_LOADS:%=mapper-test-%)
 $(REPOMAPPER_TARGETS): mapper-test-%:
-	@legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $*.sh | tapdiffer "$${legend}" $*.chk;
+	@(legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $*.sh | tapdiffer "$${legend}" $*.chk) || echo "$@" >>$(FAILLOG);
 repomapper-regress:
 	@echo "=== Running repomapper tests:"
 	@$(call TAPOUT,$(REPOMAPPER_TARGETS))
@@ -173,9 +178,9 @@ legacy-buildregress:
 	done
 LEGACY_TARGETS = $(LEGACY_LOADS:%=legacy-test-%)
 $(LEGACY_TARGETS): legacy-test-%: %.svn
-	@legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
+	@(legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "read <$<" "legacy write -" | grep -v '^reposurgeon:' 2>/dev/null \
-	| tapdiffer "$${legend}" $(basename $<).map
+	| tapdiffer "$${legend}" $(basename $<).map) || echo "$@" >>$(FAILLOG);
 
 # ENDS: Tests that require only reposurgeon itself
 
@@ -194,9 +199,9 @@ svncheck-buildregress:
 	done
 SVNCHECK_TARGETS = $(SVNCHECK_LOADS:%=svncheck-test-%)
 $(SVNCHECK_TARGETS): svncheck-test-%:
-	@legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	@(legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
 	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' \
-	| tapdiffer "$*: $${legend}" $*.chk;
+	| tapdiffer "$*: $${legend}" $*.chk) || echo "$@" >>$(FAILLOG);
 
 endif # if svn
 
@@ -214,7 +219,7 @@ ifneq ($(call AVAILABLE svn),)
 LIFTCHECK_LOADS = $(wildcard *.svn)
 LIFTCHECK_TARGETS = $(LIFTCHECK_LOADS:%=liftcheck-regress-full-%)
 $(LIFTCHECK_TARGETS): liftcheck-regress-full-%: %
-	@liftcheck -q -r all $<
+	@liftcheck -q -r all $< || echo "$@" >>$(FAILLOG);
 
 endif # if svn
 
@@ -226,8 +231,8 @@ endif # if svn
 GIT_EXTRACTOR_LOADS= bs.fi testrepo2.fi utf8.fi
 GIT_EXTRACTOR_TARGETS = $(GIT_EXTRACTOR_LOADS:%=git-extractor-test-%)
 $(GIT_EXTRACTOR_TARGETS): git-extractor-test-%: %
-	@./fi-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
-	| tapdiffer "$<: git extractor round-tripping" $<;
+	@(./fi-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
+	| tapdiffer "$<: git extractor round-tripping" $<) || echo "$@" >>$(FAILLOG);
 
 # ENDS: Tests requiring git only
 
@@ -239,8 +244,8 @@ ifneq ($(call AVAILABLE hg),)
 HGSTREAMS = testrepo2
 HGSTREAMS_EXTRACTOR_TARGETS = $(HGSTREAMS:%=hg-extractor-test-%)
 $(HGSTREAMS_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi
-	@./hg-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
-	| tapdiffer "$<: hg extractor" $<;
+	@(./hg-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
+	| tapdiffer "$<: hg extractor" $<) || echo "$@" >>$(FAILLOG);
 HGSCRIPTS = $(subst -test,,$(subst hg-,,$(wildcard hg-*-test)))
 hg-buildregress:
 	@for item in $(HGSCRIPTS); do \
@@ -250,8 +255,8 @@ hg-buildregress:
 	done
 HG_EXTRACTOR_TARGETS=$(HGSCRIPTS:%=hg-extractor-test-%)
 $(HG_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi
-	@./hg-$*-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon/d' \
-	| tapdiffer "$<: hg extractor round-tripping" $<
+	@(./hg-$*-test | sed -e 1d -e '/^#legacy-id/d'  | sed -e '/^#reposurgeon/d' \
+	| tapdiffer "$<: hg extractor round-tripping" $<) || echo "$@" >>$(FAILLOG)
 
 endif # if hg
 
@@ -272,14 +277,14 @@ repotool-buildregress:
 	done
 REPOTOOL_TARGETS = $(REPOTOOL_LOADS:%=repotool-test-%)
 $(REPOTOOL_TARGETS): repotool-test-%:
-	@legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $*.sh --regress
+	@(legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
+	$(SHELL) $*.sh --regress) || echo "$@" >>$(FAILLOG);
 
 # Miscellaneous tests.
 SPORADIC_LOADS := hashcheck workflow-cvs-git workflow-svn-git
 SPORADIC_TARGETS = $(SPORADIC_LOADS:%=sporadic-test-%)
 $(SPORADIC_TARGETS): sporadic-test-%:
-	@$(SHELL) $*.sh
+	@$(SHELL) $*.sh || echo "$@" >>$(FAILLOG);
 
 # All test targets. Putting expensive targets early in this list might
 # shave a little off total time. The Subversion tools are much the slowest
@@ -301,7 +306,8 @@ count:
 # This is the normal way to run the tests interactively,
 # using a TAP consumer.
 parallel-tap: clean disclose
-	@$(call TAPOUT,$(TEST_TARGETS))
+	@rm -f $(FAILLOG)
+	@$(call TAPOUT,$(TEST_TARGETS)); if [ -s $(FAILLOG) ]; then ( echo "Tests failed:"; cat $(FAILLOG); exit 1); fi; 
 
 disclose:
 	@echo "Running with $(CONCURRENT_JOBS) threads."
