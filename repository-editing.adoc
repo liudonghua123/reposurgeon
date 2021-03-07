@@ -138,6 +138,9 @@ gitify
 tag emptycommit-23 noteworthy
 tag /emptycommit/ delete
 
+# Delete remnant .cvsignore files from a past life as CVS.
+expunge /.cvsignore$/
+
 # Often, your Subversion repository was a CVS repository in a past
 # life. CVS creates tags named with the suffix "-root" to mark branch
 # points for its internal housekeeping, and cv2svn blindly copied them
@@ -2625,9 +2628,6 @@ thousands of dead branches. While it is important that content copies
 from dead branches be resolved correctly, the branches themselves are
 almost never interesting.)
 
---cvsignores::
-Suppress the normal deletion of _.cvsignore_ files.
-
 [[branchify_opt,--branchify=]]
 include::docinclude/branchify.adoc[]
 
@@ -2643,6 +2643,7 @@ line from reposurgeon's test suite:
 read <nesting.svn \
      --branchify=cpp-msbuild/trunk:cpp-msbuild/branches/*:cpp-msbuild/tags/*
 ----
+
 
 It is also possible to embed a magic comment in a Subversion stream
 file to set these options (this is mainly useful in test
