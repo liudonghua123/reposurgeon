@@ -2293,7 +2293,7 @@ path in the branchify set'.
 ----
 # This is what the branchify option would look like
 # If you needed to specify the default set of branch patterns.
-rwad  --branchify=trunk:tags/*:branches/*:* <example.svn
+read --branchify=trunk:tags/*:branches/*:* <example.svn
 ----
 
 `)
