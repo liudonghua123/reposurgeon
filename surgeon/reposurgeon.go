@@ -2279,7 +2279,7 @@ func (rs *Reposurgeon) HelpBranchify() {
 	rs.helpOutput(`
 --branchify=DIRECTORY[:DIRECTORY]...
 
-Specify a semicolon-separated list of directories to be treated as
+Specify a colon-separated list of directories to be treated as
 potential branches (to become tags if there are no modifications
 after the creation copies) when analyzing a Subversion repo. This
 option is ignored when reading with the --nobranch option.  It
