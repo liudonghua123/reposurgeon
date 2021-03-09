@@ -35,7 +35,7 @@ need () {
     # shellcheck disable=SC2068
     for tool in $@
     do
-	command -v "${tool}" >/dev/null 2>&1 || ( echo "not ok: ${tool} missing. | SKIP"; exit 0; )
+	command -v "${tool}" >/dev/null 2>&1 || ( echo "not ok: ${tool} missing. # SKIP"; exit 0; )
     done
 }
 
