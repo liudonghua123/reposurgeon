@@ -10,7 +10,7 @@ REPOMAPPER := repomapper
 QUIET=0
 
 # The TAP filter. Only affects presentation of the test suite messages
-TAPCONSUMER=tappy
+TAPCONSUMER=tapview
 
 # No user-serviceable parts below this line.
 

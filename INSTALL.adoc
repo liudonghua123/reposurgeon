@@ -60,9 +60,6 @@ are also required for testing. Very old versions of Subversion
 (certainly 1.6 or earlier, but not 1.9 or later) will cause one
 spurious test failure.
 
-To run tests you'll want to either install tappy or choose some other
-consumer for Test Anything Protocol and tell test/Makefile about it.
-
 gnuplot is only required if you're planning to try performance-tuning
 with repobench.
 
@@ -79,7 +76,7 @@ installed, invoke `make check` in the main directory.
 
 == Notes to packagers ==
 
-The package should recommend tappy, CVS and Subversion, though not
+The package should recommend CVS and Subversion, though not
 require them.
 
 It probably is not necessary to package repobench, as it is

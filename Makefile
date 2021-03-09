@@ -68,7 +68,7 @@ helpers:
 	sudo apt-get install asciidoctor awk
 
 test-helpers: 
-	sudo apt install cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync golint shellcheck tappy
+	sudo apt install cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync golint shellcheck
 
 #
 # Documentation
