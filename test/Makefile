@@ -10,7 +10,7 @@ REPOMAPPER := repomapper
 QUIET=0
 
 # The TAP filter. Only affects presentation of the test suite messages
-TAPCONSUMER=tapview
+TAPCONSUMER=tappy
 
 # No user-serviceable parts below this line.
 
@@ -164,9 +164,6 @@ REPOMAPPER_TARGETS = $(REPOMAPPER_LOADS:%=mapper-test-%)
 $(REPOMAPPER_TARGETS): mapper-test-%:
 	@(legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
 	$(SHELL) $*.sh | tapdiffer "$${legend}" $*.chk) || echo "$@" >>$(FAILLOG);
-repomapper-regress:
-	@echo "=== Running repomapper tests:"
-	@$(call TAPOUT,$(REPOMAPPER_TARGETS))
 
 # Test legacy-map generation
 LEGACY_LOADS=nut mergeinfo-with-split
