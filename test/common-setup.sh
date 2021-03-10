@@ -32,13 +32,16 @@ toolmeta() {
 }
 
 need () {
-    for tool in "$@"
-    do
-        if ! command -v "${tool}" >/dev/null 2>&1; then
-            echo "not ok: ${tool} missing. # SKIP"
-            exit 0
-        fi
+    set -- "$@" ""
+    while [ -n "$1" ]; do
+        command -v "$1" >/dev/null || set -- "$@" "$1"
+        shift
     done
+    shift
+    if [ "$#" -gt 0 ]; then
+        printf 'not ok: %s missing # SKIP\n' "$@"
+        exit 0
+    fi
 }
 
 tapcd () {
