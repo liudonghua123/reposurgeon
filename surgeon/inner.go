@@ -58,7 +58,7 @@ const maxAlloc = 100000
 
 // Short types for these saves space in very large arrays of repository structures.
 // But they're mainly here to avoid strings, which are expensive (16 bytes) in Go.
-type markidx uint32 // Mark indicies
+type markidx uint32 // Mark indices
 type blobidx uint32 // Blob indices. Should not be narrower than mark indices.
 type revidx uint32  // Revision indices
 // Large repositories can have more than 65536 nodes within a
@@ -226,7 +226,7 @@ func filecopy(src, dst string) (int64, error) {
 // necessary, making string-valued references instead. Thus,
 // sectioning a small string out of a very large one may cause
 // the large string to be held in memory even thouggh the rest of the
-// contnt is no longer referenced.
+// content is no longer referenced.
 func stringCopy(a string) string {
 	return (a + " ")[:len(a)]
 }
@@ -1244,7 +1244,7 @@ func (date *Date) Before(other Date) bool {
 	return date.timestamp.Before(other.timestamp)
 }
 
-// After tests rime ordering of Date objects
+// After tests time ordering of Date objects
 func (date *Date) After(other Date) bool {
 	return date.timestamp.After(other.timestamp)
 }
@@ -1711,7 +1711,7 @@ func (b *Blob) materialize() string {
 	return b.getBlobfile(false)
 }
 
-// what to treat as a coment when message-boxing
+// what to treat as a comment when message-boxing
 func (b Blob) getComment() string {
 	return string(b.getContent())
 }
@@ -2185,7 +2185,7 @@ type Reset struct {
 	ref        string
 	committish string
 	color      string
-	legacyID   string // Sometines these are reduced Subversion commits
+	legacyID   string // Sometimes these are reduced Subversion commits
 	repo       *Repository
 	deleteme   bool
 }
@@ -2225,7 +2225,7 @@ func (reset Reset) getMark() string {
 	return ""
 }
 
-// what to treat as a coment when message-boxing (dummy to satify Event)
+// what to treat as a comment when message-boxing (dummy to satisfy Event)
 func (reset Reset) getComment() string {
 	return ""
 }
@@ -2631,7 +2631,7 @@ func (callout *Callout) idMe() string {
 	return fmt.Sprintf("callout-%s", callout.mark)
 }
 
-// what to treat as a coment when message-boxing (dummy to satisfy Event)
+// what to treat as a comment when message-boxing (dummy to satisfy Event)
 func (callout Callout) getComment() string {
 	return ""
 }
@@ -3126,7 +3126,7 @@ func (commit *Commit) emailIn(msg *MessageBlock, fill bool) bool {
 		}
 		// Another potential minor bug: permuting the set of authors
 		// will look like a modification, as old and new authors are
-		// compaired pairwise rather than set equality being checked.
+		// compared pairwise rather than set equality being checked.
 		// Possibly a feature if one thinks order is significant, but
 		// I just did it this way because it was easier.
 		for i, hdr := range authorkeys {
@@ -3420,9 +3420,9 @@ func (commit *Commit) insertParent(idx int, mark string) {
 }
 
 func (commit *Commit) removeParent(event CommitLike) {
-	// remove *all* occurences of event in parents
+	// remove *all* occurrences of event in parents
 	commit._parentNodes = commitRemove(commit._parentNodes, event)
-	// and all occurences of self in event's children
+	// and all occurrences of self in event's children
 	if commit, ok := event.(*Commit); ok {
 		commit._childNodes = commitRemove(commit._childNodes, commit)
 		commit.invalidateManifests()
@@ -6532,7 +6532,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 					}
 				}
 				if firstparent > 1 {
-					croak("can't push back to a first parent tha is a multi-child commit")
+					croak("can't push back to a first parent that is a multi-child commit")
 				}
 			}
 		}

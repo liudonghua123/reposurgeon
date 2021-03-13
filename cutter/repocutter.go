@@ -957,7 +957,7 @@ func payload(hd string, header []byte) []byte {
 	return header[offs : offs+end]
 }
 
-// Subcommand implememtations begin here
+// Subcommand implementations begin here
 
 func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 	if debug {
@@ -1504,7 +1504,7 @@ func renumber(source DumpfileSource) {
 							headerState = AwaitingHeader
 						}
 					} else {
-						croak("unkown property entry begin: " + string(line))
+						croak("unknown property entry begin: " + string(line))
 					}
 				} else if propParserState == awaitingPropDelete {
 					propParserState = awaitingNext
@@ -1516,7 +1516,7 @@ func renumber(source DumpfileSource) {
 						os.Stdout.Write(lengthline)
 						mergeinfolength, _ := strconv.Atoi(string(bytes.Fields(lengthline)[1]))
 						os.Stdout.Write(renumberMergeInfo(source.Lbs.Read(mergeinfolength), renumbering))
-						// ignore trailing newline, already artifically appended in renumberMergeInfo
+						// ignore trailing newline, already artificially appended in renumberMergeInfo
 						source.Lbs.Readline()
 						propParserState = awaitingNext
 					} else {

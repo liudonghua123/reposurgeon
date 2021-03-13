@@ -295,7 +295,7 @@ func TestOrderedMap(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(m.keys, []string{"foo", "hugger"}) {
-		t.Errorf("keys value ot as expected")
+		t.Errorf("keys value not as expected")
 	}
 
 	// Should be false as key is not present
@@ -2096,7 +2096,7 @@ TAG o123-o123
 			[]string{},
 		},
 
-		// Apply to every object, with safety off, replacing first occurrance (default)
+		// Apply to every object, with safety off, replacing first occurrence (default)
 		{safetyOff, isValid, "(1..$)", "/o123/s456/", "unsafe-dft-first-every",
 			[]string{
 				"BLB s456-o123\n",

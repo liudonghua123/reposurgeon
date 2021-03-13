@@ -240,7 +240,7 @@ surgeon/help-index.go: help-index.awk repository-editing.adoc
 	$(AWK) -f $^ >$@
 
 #
-# Auxillary Go tooling productions
+# Auxiliary Go tooling productions
 #
 
 get:

@@ -738,7 +738,7 @@ func (action NodeAction) isBogon() bool {
 		(action.kind == sdFILE || action.kind == sdDIR || action.action == sdDELETE) &&
 		((action.fromRev == 0) == (action.fromPath == ""))) {
 		if logEnable(logSHOUT) {
-			logit("forbidden operation in dump stream (versoin 7?) at r%d: %s", action.revision, action)
+			logit("forbidden operation in dump stream (version 7?) at r%d: %s", action.revision, action)
 		}
 		return true
 	}
@@ -1178,7 +1178,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 				// branch.
 				if node.action == sdDELETE || node.action == sdREPLACE {
 					// Attempting to remove this
-					// dependecy on branch
+					// dependency on branch
 					// structure produced an error
 					// in the preocessing of split commits:
 					// https://gitlab.com/esr/reposurgeon/-/issues/341

@@ -17,7 +17,7 @@ Repository head::
 
 4.24: 2021-02-13::
      Retire the read --cvsignores option; best to use an expunge instead.
-     Subversion proerties discarded during read are logged, not shouted.
+     Subversion properties discarded during read are logged, not shouted.
      In branch/tag rename and expunge, be more flexible about RE delimiters.
      Commands that accept output redirection can also pipe to a command,
      The --branchmap option is gone in favor of using branch rename.
@@ -173,7 +173,7 @@ Repository head::
      More pathological tag-rename cases are coped with gracefully.
      All documentation moved to asciidoc for better web rendering.
      Logging now has facility flags rather than a single level.
-     The svnmerge-inregrated properties creaed by svnmerge.py are handled.
+     The svnmerge-inregrated properties created by svnmerge.py are handled.
      Use Bazaar config file or .muttrc for identity if available.
      The expunge and branchify commands now respect string quotes.
      The changelogs command takes an optional regexp choosing files to be mined.

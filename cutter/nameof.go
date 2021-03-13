@@ -252,7 +252,7 @@ func NewNameSequence() NameSequence {
 	//    "Solar",
 	//    "Thunder",         // Collides with "Lightning"
 	//    "Tourmaline",      // 3 syllables
-	//    "Vermillion",      // 4 syllables
+	//    "Vermilion",       // 4 syllables
 	//    "Viridian",        // 4 syllables
 	//    "Whirling",
 

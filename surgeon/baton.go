@@ -304,7 +304,7 @@ func (baton *Baton) endProgress() {
 	}
 }
 
-// Write ships a log message to be displayed by te baton
+// Write ships a log message to be displayed by the baton
 func (baton *Baton) Write(b []byte) (n int, err error) {
 	if baton != nil {
 		baton.printLog(b)

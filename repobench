@@ -125,7 +125,7 @@ fi
 
 if [ $display = yes ] && [ "$2" != "" ]
 then
-    # We have: Multiple benchmark-data files corresponding to diffrent
+    # We have: Multiple benchmark-data files corresponding to different
     # revisions.  We want: A merged plot extracting a selected statistic
     # from all of them for comparative graphing.
     cat >/tmp/plotme$$ <<EOF

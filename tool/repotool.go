@@ -629,7 +629,7 @@ func checkout(outdir string, rev string) string {
 		}
 		// The reason for checkout's odd calling signature -
 		// pass it a checkout directory, get back a symlink
-		// toi what you actually wanted - is here. The problem
+		// to what you actually wanted - is here. The problem
 		// is that Subversion checkoutd on large repositories
 		// are horribly slow.  In case we're doing a
 		// comparison on all tags and branches, we want to
@@ -928,7 +928,7 @@ func compareRevision(args []string, rev string) string {
 			diff += fmt.Sprintf("Same: %s\n", path)
 		}
 
-		// Check for permission mismatch,  We have to skip directories beccause
+		// Check for permission mismatch,  We have to skip directories because
 		// of Go MkdirAll's behavior that requiring seek permission; this makes for
 		// spurious mismatches in the x permission bit. The error cases here
 		// can be reached by symlink entries in Subversion files.

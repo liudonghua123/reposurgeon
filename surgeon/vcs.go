@@ -45,7 +45,7 @@ type VCS struct {
 	initializer  string           // Command to initualize a repo
 	pathlister   string           // Command to list registered files
 	taglister    string           // Command to list tag names
-	branchlister string           // Coommand to list branch names
+	branchlister string           // Command to list branch names
 	importer     string           // Command to import from stream format
 	checkout     string           // Command to check out working copy
 	preserve     orderedStringSet // Config and hook stuff to be preserved

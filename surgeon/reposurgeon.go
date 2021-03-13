@@ -955,7 +955,7 @@ that would otherwise be performed repeatedly, e.g. in macro calls.
 Example:
 
 ----
-# Assign toi the name "cvsjunk" the selection set of all commits with a
+# Assign to the name "cvsjunk" the selection set of all commits with a
 # boilerplate CVS empty log message in the comment. 
 /empty log message/ assign cvsjunk
 ----
@@ -2753,7 +2753,7 @@ type filterCommand struct {
 // GoReplacer bridges from Python-style backreferences (\1) to Go-style ($1).
 // This was originally a shim for testing during the port from Python.  It has
 // been kept because Go's use of $n for group matches conflicts with the
-// use of $n for script arguments in reposurgeon.  Also, we can do interpreation
+// use of $n for script arguments in reposurgeon.  Also, we can do interpretation
 // of Go string escapes at a good point, *after* the Python-style backrefereences
 // have been translated.
 func GoReplacer(re *regexp.Regexp, fromString, toString string) string {
@@ -3012,7 +3012,7 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 	if err != nil || len(fields) != 2 {
 		croak("missing or malformed setfield line")
 	}
-	// Caling strings.Title so that Python-style (uncapitalized)
+	// Calling strings.Title so that Python-style (uncapitalized)
 	// fieldnames will still work.
 	field := strings.Title(fields[0])
 	value, err := stringEscape(fields[1])
@@ -4065,7 +4065,7 @@ func (rs *Reposurgeon) HelpUnite() {
 unite [--prune] [REPO-NAME...]
 
 Unite named repositories into one.  Repos need to be loaded (read) first.
-They will be procesed and removed from the load list.  The union repo
+They will be processed and removed from the load list.  The union repo
 will be selected.
 
 All repos are grafted as branches to the oldest repo.  The branch point
@@ -5808,7 +5808,7 @@ An authors file may have comment lines beginning with #; these
 are ignored.
 
 When an authors file is applied, email addresses in committer and author
-metdata for which the local ID matches between &lt; and @ are replaced
+metadata for which the local ID matches between &lt; and @ are replaced
 according to the mapping (this handles git-svn lifts). Alternatively,
 if the local ID is the entire address, this is also considered a match
 (this handles what git-cvsimport and cvs2git do). If a timezone was
@@ -6272,7 +6272,7 @@ clear [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|
 
 Clear a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
-Do "help options" to see the vailable options.
+Do "help options" to see the available options.
 `)
 }
 
@@ -6761,7 +6761,7 @@ func (rs *Reposurgeon) DoVersion(line string) bool {
 	defer parse.Closem()
 	if line == "" {
 		// This is a technically wrong way of enumerting the list and will need to
-		// change if we ever have visible extractors not correspoinding to an
+		// change if we ever have visible extractors not corresponding to an
 		// entry in the base VCS table.
 		supported := make([]string, 0)
 		for _, v := range vcstypes {
@@ -6861,7 +6861,7 @@ First, these ways of constructing singleton sets:
 ----
 123        event numbered 123 (1-origin)
 :345       event with mark 345
-<456>      commit with legacy-ID 456 (probably a Subversion revsion)
+<456>      commit with legacy-ID 456 (probably a Subversion revision)
 <foo>      the tag named 'foo', or failing that the tip commit of branch foo
 ----
 

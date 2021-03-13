@@ -3,7 +3,7 @@
 == Quick recipe for systems using apt ==
 
 ---------------------------------------------------------------------
-make fullinstall              # Install prequisites and build
+make fullinstall              # Install prerequisites and build
 make check                    # Run the tests
 ---------------------------------------------------------------------
 

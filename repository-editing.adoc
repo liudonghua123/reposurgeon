@@ -3069,9 +3069,9 @@ full name-and-email attributions you want to apply.
 As an example, suppose your history has two committers named
 "fred", one active before March 15 2010 and one after.  The name and
 email fields in their commit attributions all look like "fred <fred>"
-with variable datas following.
+with variable data following.
 
-There's no way you can dicriminate by time in an authors file.
+There's no way you can discriminate by time in an authors file.
 But there's a different technique that will work.  Like this:
 
 ----
@@ -3372,7 +3372,7 @@ In versions 4.24 and earlier the behavior of the "unite" command
 was incompatibly different it that it took master branch from the last
 repo in the list, renaming others. Now it leaves master from the first.
 
-The blob command now takes an explict mark, rather than creating a new
+The blob command now takes an explicit mark, rather than creating a new
 blob :1 and renumbering all others as in 4.23 and earlier.
 
 Filter syntax now uses subcommand verbs rather than the options of 4.23 and
