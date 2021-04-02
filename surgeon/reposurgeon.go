@@ -4078,7 +4078,7 @@ will be renumbered.
 
 The name of the new repo is composed from names of united repos joined
 by '+'. It will have no source directory. The type of repo will be
-inherited if all repos share the same ty[e, otherwise no type will be set.
+inherited if all repos share the same type, otherwise no type will be set.
 
 With the option --prune, at each join generate D ops for every
 file that doesn't have a modify operation in the root commit of the
