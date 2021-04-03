@@ -3176,10 +3176,10 @@ are a couple of things you can do to make a good resolution more
 likely:
 
 1. Identify and report the phase in which the stallout occurs.  Be
-   aware that there is a known O(n**2) problem in phase C2 of the
+   aware that there is a known problem that phase C2 of the
    Subversion dump reader that really thrashes the allocator; that's
    not reducible and we're just going to tell you you have to throw
-   more RAM at the problem.
+   more RAM and compute clocks at the problem.
 
 2. Use repobench to see if you can identify a revision that triggers
    the stall.  The procedure for this is to use it to step your
@@ -3191,6 +3191,15 @@ likely:
 [[reporting-bugs]]
 === How to report bugs
 
+Be aware that bugs can be due to problems in any of (a) reposurgeon
+itself, (b) the front end it's using to read your repository, or (c)
+the back end that writes the modified repository.  For example, when
+you have a bug in a CVS conversion it is more than likely to be a
+problem with the cvs-fast-export front end.  In that case you need to
+read
+https://gitlab.com/esr/cvs-fast-export/-/blob/master/reporting-bugs.adoc[Reporting
+bugs in cvs-fast-export] and follow those directions.
+
 It is generally not possible to reproduce reposurgeon/repocutter bugs without a
 copy of the history on which they occurred. When you find a bug,
 please send the maintainers:
@@ -3199,7 +3208,10 @@ please send the maintainers:
 behavior.  If reposurgeon/repocutter died, include the backtrace.
 
 (b) A git fast-import or Subversion dump file of the repository you
-were operating on, or a pointer to where it can be pulled from.
+were operating on, or in the case of CVS the whole repository.
+Alternatively a pointer to where it can be pulled from - though a
+static copy submitted with the bug is better is better because commits
+added afterwards can confuse diagnostics.
 
 (c) A script containing the sequence of reposurgeon or repocutter commands that
 revealed the bug.  If you were exploring interactively, remember
