@@ -3261,6 +3261,11 @@ Then run "<<repotool.adoc#,repotool>> export", capturing the output.
 The commands you will use for test-case reduction are reposurgeon and,
 on Subversion dumps, <<repocutter.adoc#,repocutter>>.
 
+There is a cvsstrip tool in the cvs-fast-export distribution
+that performs an analogous stripping operation on CVS repositories.
+Please see the troubleshooting indytuctions included with that
+distribution to lean how to use it.
+
 ==== Replace the content blobs in the dump with stubs
 
 The subcommand in both tools is 'strip'; it will usually cut the size
