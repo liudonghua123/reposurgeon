@@ -60,7 +60,7 @@ var makefileTemplate = `# Makefile for {{.Project}} conversion using reposurgeon
 # 1. Make sure reposurgeon and repotool are on your $PATH.
 # 2. (Skip this step if you're starting from a stream file.) For svn, set
 #    REMOTE_URL to point at the remote repository you want to convert;
-#    you can use either an svn: URL or an rsync: UIRL for this.
+#    you can use either an svn: URL or an rsync: URL for this.
 #    If the repository is already in a DVCS such as hg or git,
 #    set REMOTE_URL to either the normal cloning URL (starting with hg://,
 #    git://, etc.) or to the path of a local clone.
@@ -129,12 +129,12 @@ default: {{.Project}}-{{.TargetVCS}}
 	repotool mirror $(REMOTE_URL) {{.Project}}-mirror
 
 # Make a local checkout of the source mirror for inspection
-{{.Project}}-checkout: {{.Project}}-mirror
-	cd {{.Project}}-mirror >/dev/null; repotool checkout $(PWD)/{{.Project}}-checkout
+%-checkout: %-mirror
+	cd %-mirror >/dev/null; repotool checkout $(PWD)/%-checkout
 
 # Make a local checkout of the source mirror for inspection at a specific tag
-{{.Project}}-%-checkout: {{.Project}}-mirror
-	cd {{.Project}}-mirror >/dev/null; repotool checkout $(PWD)/{{.Project}}-$*-checkout $*
+%-%-checkout: %-mirror
+	cd %-mirror >/dev/null; repotool checkout $(PWD)/%-$*-checkout $*
 
 # Force rebuild of first-stage stream from the local mirror on the next make
 local-clobber: clean
