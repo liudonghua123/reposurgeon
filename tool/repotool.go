@@ -133,8 +133,8 @@ default: {{.Project}}-{{.TargetVCS}}
 	cd %-mirror >/dev/null; repotool checkout $(PWD)/%-checkout
 
 # Make a local checkout of the source mirror for inspection at a specific tag
-%-%-checkout: %-mirror
-	cd %-mirror >/dev/null; repotool checkout $(PWD)/%-$*-checkout $*
+{{.Project}}-%-checkout: {{.Project}}-mirror
+	cd {{.Project}}-mirror >/dev/null; repotool checkout $(PWD)/{{.Project}}-$*-checkout $*
 
 # Force rebuild of first-stage stream from the local mirror on the next make
 local-clobber: clean
