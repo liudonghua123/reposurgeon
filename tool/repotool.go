@@ -434,7 +434,7 @@ func export() {
 
 func mirror(args []string) {
 	if verbose {
-		fmt.Printf("initialize args: %v\n", args)
+		fmt.Printf("mirror args: %v\n", args)
 	}
 	operand := args[0]
 	mirrordir := ""
