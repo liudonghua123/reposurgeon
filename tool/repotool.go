@@ -110,9 +110,6 @@ LOGFILE = conversion.log
 # Configuration ends here
 
 .PHONY: local-clobber remote-clobber gitk gc compare clean dist stubmap
-# Tell make not to auto-remove tag directories, because it only tries rm 
-# and hence fails
-.PRECIOUS: {{.Project}}-%-checkout {{.Project}}-%-{{.TargetVCS}}
 
 default: {{.Project}}-{{.TargetVCS}}
 
@@ -132,17 +129,13 @@ default: {{.Project}}-{{.TargetVCS}}
 %-checkout: %-mirror
 	cd %-mirror >/dev/null; repotool checkout $(PWD)/%-checkout
 
-# Make a local checkout of the source mirror for inspection at a specific tag
-{{.Project}}-%-checkout: {{.Project}}-mirror
-	cd {{.Project}}-mirror >/dev/null; repotool checkout $(PWD)/{{.Project}}-$*-checkout $*
-
-# Force rebuild of first-stage stream from the local mirror on the next make
+# Force rebuild of stream from the local mirror on the next make
 local-clobber: clean
-	rm -fr {{.Project}}.fi {{.Project}}-{{.TargetVCS}} *~ .rs* {{.Project}}-conversion.tar.gz {{.Project}}-*-{{.TargetVCS}}
+	rm -fr {{.Project}}.fi {{.Project}}-{{.TargetVCS}}
 
 # Force full rebuild from the remote repo on the next make.
 remote-clobber: local-clobber
-	rm -fr {{.Project}}.{{.SourceVCS}} {{.Project}}-mirror {{.Project}}-checkout {{.Project}}-*-checkout
+	rm -fr {{.Project}}.{{.SourceVCS}} *-mirror *-checkout
 
 # Get the (empty) state of the author mapping from the first-stage stream
 stubmap: {{.Project}}.{{.SourceVCS}}
