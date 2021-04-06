@@ -55,15 +55,13 @@ type Control struct {
 	signals    chan os.Signal
 	logmutex   sync.Mutex
 	// The abort flag
-	abortScript          bool
-	abortLock            sync.Mutex
-	listOptions          map[string]orderedStringSet
-	profileNames         map[string]string
-	startTime            time.Time
-	baton                *Baton
-	GCPercent            int
-	_ti                  *terminfo.Terminfo
-	_terminfoUnavailable bool
+	abortScript  bool
+	abortLock    sync.Mutex
+	listOptions  map[string]orderedStringSet
+	profileNames map[string]string
+	startTime    time.Time
+	baton        *Baton
+	GCPercent    int
 }
 
 func (ctx *Control) isInteractive() bool {
@@ -97,36 +95,6 @@ func (ctx *Control) init() {
 	ctx.startTime = time.Now()
 	control.lineSep = "\n"
 	control.GCPercent = 100 // Golang's starting value
-}
-
-func (ctx *Control) ti() *terminfo.Terminfo {
-	if ctx._ti != nil {
-		return ctx._ti
-	}
-	if ctx._terminfoUnavailable {
-		panic("no terminfo database available")
-	}
-	var err error
-	ctx._ti, err = terminfo.LoadFromEnv()
-	if err != nil {
-		if !control.flagOptions["testmode"] {
-			logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", os.Getenv("TERM"), err).Error())
-		}
-		ctx._ti, err = terminfo.Load("ctxterm")
-		if err != nil {
-			if !control.flagOptions["testmode"] {
-				logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "ctxterm", err).Error())
-			}
-			ctx._ti, err = terminfo.Load("dumb")
-			if err != nil {
-				if !control.flagOptions["testmode"] {
-					logit(fmt.Errorf("warning, unable to load terminfo database for terminal type '%s': %w", "dumb", err).Error())
-				}
-				ctx._terminfoUnavailable = true
-			}
-		}
-	}
-	return ctx._ti
 }
 
 var control Control
@@ -543,7 +511,7 @@ func (rs *Reposurgeon) helpOutput(help string) {
 			}
 		}
 	} else if terminal.IsTerminal(1) && control.isInteractive() {
-		pager, err := NewPager(control.ti())
+		pager, err := NewPager(ti)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, fmt.Errorf("Unable to start a pager: %w", err).Error())
 		} else {
@@ -649,7 +617,7 @@ func (rs *Reposurgeon) DoHelp(ctx context.Context, argIn string) (stopOut bool) 
 			if err == nil {
 				maxWidth = width - 4
 			}
-			pager, err := NewPager(control.ti())
+			pager, err := NewPager(ti)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, fmt.Errorf("Unable to start a pager: %w", err).Error())
 				return false
@@ -660,15 +628,15 @@ func (rs *Reposurgeon) DoHelp(ctx context.Context, argIn string) (stopOut bool) 
 		}
 		longest := 43
 		for _, h := range _Helps {
-			hasUL := control.ti() != nil && len(control.ti().Strings[terminfo.EnterUnderlineMode]) != 0
+			hasUL := len(ti.Strings[terminfo.EnterUnderlineMode]) != 0
 			lines := wrap(h.commands, maxWidth-longest)
 			isdigit := func(b byte) bool { return unicode.IsDigit(rune(b)) }
 			for idx, line := range lines {
 				if idx == 0 {
 					if hasUL && isdigit(h.title[0]) {
-						control.ti().Fprintf(out, terminfo.EnterUnderlineMode)
+						ti.Fprintf(out, terminfo.EnterUnderlineMode)
 						io.WriteString(out, h.title)
-						control.ti().Fprintf(out, terminfo.ExitUnderlineMode)
+						ti.Fprintf(out, terminfo.ExitUnderlineMode)
 						fmt.Fprintf(out, "%*s%s\n", longest-len(h.title), " ", line)
 					} else {
 						fmt.Fprintf(out, "%s%*s%s\n", h.title, longest-len(h.title), " ", line)

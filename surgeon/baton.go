@@ -92,6 +92,22 @@ type Message struct {
 	str []byte
 }
 
+var ti *terminfo.Terminfo
+
+func init() {
+	var err error
+	ti, err = terminfo.LoadFromEnv()
+	if err != nil {
+		for _, termtype := range []string{os.Getenv("TERM"), "ctxterm", "dumb"} {
+			ti, err = terminfo.Load(termtype)
+			if err == nil {
+				return
+			}
+		}
+		panic("no terminfo database available")
+	}
+}
+
 const twirlInterval = 100 * time.Millisecond // Rate-limit baton twirls
 const progressInterval = 1 * time.Second     // Rate-limit progress messages
 
@@ -113,13 +129,13 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 			} else if me.stream != nil {
 				if msg.ty == LOG {
 					if me.progressEnabled {
-						control.ti().Fprintf(me.stream, terminfo.ColumnAddress, 0)
-						control.ti().Fprintf(me.stream, terminfo.ClrEol)
+						ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+						ti.Fprintf(me.stream, terminfo.ClrEol)
 						me.stream.Write(msg.str)
-						if !bytes.HasSuffix(msg.str, control.ti().Strings[terminfo.ScrollForward]) {
-							control.ti().Fprintf(me.stream, terminfo.ScrollForward)
+						if !bytes.HasSuffix(msg.str, ti.Strings[terminfo.ScrollForward]) {
+							ti.Fprintf(me.stream, terminfo.ScrollForward)
 						}
-						control.ti().Fprintf(me.stream, terminfo.ColumnAddress, 0)
+						ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
 						me.stream.Write(*lastProgress)
 					} else {
 						if len(msg.str) != 0 {
@@ -130,8 +146,8 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 						}
 					}
 				} else if msg.ty == PROGRESS {
-					control.ti().Fprintf(me.stream, terminfo.ColumnAddress, 0)
-					control.ti().Fprintf(me.stream, terminfo.ClrEol)
+					ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+					ti.Fprintf(me.stream, terminfo.ClrEol)
 					me.stream.Write(msg.str)
 					lastProgress = &msg.str
 				}
@@ -414,17 +430,4 @@ func _copyb(s []byte) []byte {
 	temp := make([]byte, len(s))
 	copy(temp, s)
 	return temp
-}
-
-func getTerminfoBytes(cap string, params ...string) []byte {
-	reader, _, err := readFromProcess("tput " + cap + " " + strings.Join(params, " "))
-	if err != nil {
-		return nil
-	}
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(reader)
-	if err != nil {
-		return nil
-	}
-	return buf.Bytes()
 }
