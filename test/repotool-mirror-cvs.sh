@@ -16,7 +16,7 @@ need cvs cvs-fast-export
 trap 'rm -rf /tmp/mirror$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 
 # Then exercise the mirror code to make a copy of it, and dump it.
-${REPOTOOL:-repotool} mirror "cvs://localhost${PWD}/hack1.repo#module" /tmp/mirror$$
+${REPOTOOL:-repotool} mirror -q "cvs://localhost${PWD}/hack1.repo#module" /tmp/mirror$$
 (tapcd /tmp/mirror$$; ${REPOTOOL:-repotool} export 2>&1) >/tmp/out$$ 2>&1
 
 toolmeta "$1" /tmp/out$$

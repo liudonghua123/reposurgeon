@@ -26,7 +26,7 @@ fi
 # Make a repository from a sample stream.
 ./svn-to-svn -q -n /tmp/test-repo-$$ <vanilla.svn
 # Then exercise the mirror code to make a copy of it.
-${REPOTOOL:-repotool} mirror rsync://localhost/tmp/test-repo-$$ /tmp/mirror$$
+${REPOTOOL:-repotool} mirror -q rsync://localhost/tmp/test-repo-$$ /tmp/mirror$$
 
 # This test can fail spuriously due to format skew.  Kevin Caswick
 # explains:

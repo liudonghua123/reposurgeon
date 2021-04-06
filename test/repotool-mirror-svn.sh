@@ -16,7 +16,7 @@ trap 'rm -rf /tmp/test-repo-fubar /tmp/out$$ /tmp/mirror$$' EXIT HUP INT QUIT TE
 # Make a repository from a sample stream.
 ./svn-to-svn -q -n /tmp/test-repo-fubar <vanilla.svn
 # Then exercise the mirror code to make a copy of it.
-${REPOTOOL:-repotool} mirror file:///tmp/test-repo-fubar /tmp/mirror$$
+${REPOTOOL:-repotool} mirror -q file:///tmp/test-repo-fubar /tmp/mirror$$
 
 # This test can fail spuriously due to format skew.  Kevin Caswick
 # explains:

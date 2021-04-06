@@ -25,7 +25,7 @@ trap 'rm -rf /tmp/test-mirror-repo$$ /tmp/mirror$$ /tmp/out$$' EXIT HUP INT QUIT
 # Build an example repo
 ./hg-to-fi -n /tmp/test-mirror-repo$$ <testrepo2.fi
 # Then exercise the mirror code to make a copy of it, and dump it.
-${REPOTOOL:-repotool} mirror "file://tmp/test-mirror-repo$$" /tmp/mirror$$
+${REPOTOOL:-repotool} mirror -q "file://tmp/test-mirror-repo$$" /tmp/mirror$$
 (tapcd /tmp/mirror$$; ${REPOTOOL:-repotool} export) >/tmp/out$$ 2>&1
 
 toolmeta "$mode" /tmp/out$$ export
