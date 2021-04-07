@@ -1,4 +1,4 @@
 #!/bin/sh
 ## Test path rename
-${REPOCUTTER:-repocutter} -q pathrename README WIBBLE <vanilla.svn
+${REPOCUTTER:-repocutter} -q pathrename README WOBBLE WOBBLE WIBBLE <vanilla.svn
 

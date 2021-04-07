@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     repocuttor pathrename can do multiple path transforms in one command.
+
 4.26: 2021-04-03::
      Read and write original-oid fields in annotated tags.
      The read --cvsignores option is gone; use expunge to drop cvsignores.

@@ -114,13 +114,14 @@ Replace path segments and committer IDs with arbitrary but consistent
 names in order to obscure them. The replacement algorithm is tuned to
 make the replacements readily distinguishable by eyeball.
 `,
-	"pathrename": `pathrename: usage: repocutter [-r SELECTION ] pathrename FROM TO
+	"pathrename": `pathrename: usage: repocutter [-r SELECTION ] pathrename {FROM TO}+
 
 Modify Node-path headers, Node-copyfrom-path headers, and
 svn:mergeinfo properties matching the specified Golang regular
 expression FROM; replace with TO.  TO may contain Golang-style
 backreferences (${1}, ${2} etc - parentheses not optional) to
-parenthesized portions of FROM.
+parenthesized portions of FROM. Multiple FROM/TO pairs may be
+specified and are applied in order.
 `,
 	"propdel": `propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
 
@@ -1278,11 +1279,14 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 	source.Report(selection, nodehook, revhook, true, true)
 }
 
-// Hack paths by applying a regexp transformation.
+// Hack paths by applying regexp transformations.
 func pathrename(source DumpfileSource, selection SubversionRange, patterns []string) {
-	r := regexp.MustCompile(patterns[0])
 	mutator := func(s []byte) []byte {
-		return r.ReplaceAll(s, []byte(patterns[1]))
+		for i := 0; i < len(patterns)/2; i++ {
+			r := regexp.MustCompile(patterns[i*2])
+			s = r.ReplaceAll(s, []byte(patterns[i*2+1]))
+		}
+		return s
 	}
 
 	mutatePaths(source, selection, mutator, nil, nil)
