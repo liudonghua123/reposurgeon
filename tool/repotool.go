@@ -5,9 +5,11 @@ package main
 // SPDX-License-Identifier: BSD-2-Clause
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,6 +18,7 @@ import (
 	"path/filepath"
 	"regexp"
 	//"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -228,6 +231,34 @@ func runShellProcessOrDie(dcmd string, legend string) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		croak("executing %q: %v", dcmd, err)
+	}
+}
+
+// Either execute a command with line-by-line monitoring of output or die noisily
+func runMonitoredProcessOrDie(dcmd string, legend string, hook func(string)) {
+	if legend != "" {
+		legend = " " + legend
+	}
+	if verbose {
+		announce("monitoring '%s'%s", dcmd, legend)
+	}
+	cmd := exec.Command("sh", "-c", "("+dcmd+")")
+	pipeReader, pipeWriter := io.Pipe()
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = pipeWriter
+	cmd.Stderr = os.Stderr
+
+	scanner := bufio.NewScanner(pipeReader)
+	scanner.Split(bufio.ScanLines)
+	go func() {
+		for scanner.Scan() {
+			hook(scanner.Text())
+		}
+	}()
+
 	err := cmd.Run()
 	if err != nil {
 		croak("executing %q: %v", dcmd, err)
@@ -448,6 +479,19 @@ func mirror(args []string) {
 	}
 	username := os.Getenv("RUSERNAME")
 	password := os.Getenv("RPASSWORD")
+	// Gets commit length of a repo from its URL
+	reposize := func(operand string) int {
+		infoCredentials := ""
+		if username != "" {
+			infoCredentials = fmt.Sprintf("--username %q", username)
+		}
+		if password != "" {
+			infoCredentials += fmt.Sprintf(" --password %q", password)
+		}
+		s := captureFromProcess(fmt.Sprintf("svn info --show-item=revision %s %s", infoCredentials, operand), "info")
+		revs, _ := strconv.Atoi(strings.Trim(s, "\n"))
+		return revs
+	}
 	var locald string
 	tillHash := regexp.MustCompile("^.*#")
 	isFullURL, badre := regexp.Match("svn://|svn\\+ssh://|https://|http://", []byte(operand))
@@ -459,12 +503,12 @@ func mirror(args []string) {
 		} else {
 			locald = filepath.Join(pwd, mirrordir)
 		}
-		credentials := ""
+		mirrorCredentials := ""
 		if username != "" {
-			credentials = fmt.Sprintf("--source-username %q", username)
+			mirrorCredentials = fmt.Sprintf("--source-username %q", username)
 		}
 		if password != "" {
-			credentials += fmt.Sprintf(" --source-password %q", password)
+			mirrorCredentials += fmt.Sprintf(" --source-password %q", password)
 		}
 		runShellProcessOrDie("svnadmin create "+locald, "mirror creation")
 		makeStub(locald+"/hooks/pre-revprop-change", "#!/bin/sh\nexit 0;\n")
@@ -476,8 +520,19 @@ func mirror(args []string) {
 		// very sure you have not made any local changes to the repo
 		// since rsyncing, or havoc will ensue.
 		runShellProcessOrDie(fmt.Sprintf("chmod a+x %s/hooks/pre-revprop-change", locald), "mirroring")
-		runShellProcessOrDie(fmt.Sprintf("svnsync init -q %s --allow-non-empty file://%s %s", credentials, locald, operand), "mirroring")
-		runShellProcessOrDie(fmt.Sprintf("svnsync synchronize -q %s --steal-lock file://%s", credentials, locald), "mirroring")
+		runShellProcessOrDie(fmt.Sprintf("svnsync init -q %s --allow-non-empty file://%s %s", mirrorCredentials, locald, operand), "mirroring")
+		baton := newBaton(!quiet, func(s string) {})
+		baton.startProgress("Mirroring", uint64(reposize(operand)))
+		cmd := fmt.Sprintf("svnsync synchronize %s --steal-lock file://%s", mirrorCredentials, locald)
+		ind := 0
+		runMonitoredProcessOrDie(cmd, "mirroring", func(line string) {
+			if strings.Contains(line, "Committed revision") {
+				ind++
+				baton.percentProgress(uint64(ind))
+			}
+		})
+		baton.Write([]byte{'\n'})
+		baton.endProgress()
 	} else if isdir(filepath.Join(operand, "locks")) {
 		if operand[0] == os.PathSeparator {
 			locald = operand
