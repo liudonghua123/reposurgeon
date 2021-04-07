@@ -98,7 +98,7 @@ func init() {
 	var err error
 	ti, err = terminfo.LoadFromEnv()
 	if err != nil {
-		for _, termtype := range []string{os.Getenv("TERM"), "ctxterm", "dumb"} {
+		for _, termtype := range []string{os.Getenv("TERM"), "xterm", "vt100", "dumb"} {
 			ti, err = terminfo.Load(termtype)
 			if err == nil {
 				return
