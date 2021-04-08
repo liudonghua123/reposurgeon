@@ -135,8 +135,8 @@ gitify
 # in Subversion. Usually there's nothing interesting in the comment
 # text, but you'll want to browse them and check.  These commands
 # save one such tag and delete the rest
-tag emptycommit-23 noteworthy
-tag /emptycommit/ delete
+tag move emptycommit-23 noteworthy
+tag delete /emptycommit/
 
 # Delete remnant .cvsignore files from a past life as CVS.
 expunge /.cvsignore$/
@@ -146,7 +146,7 @@ expunge /.cvsignore$/
 # points for its internal housekeeping, and cv2svn blindly copied them
 # even though the Subversion tools don't need that marker. This
 # clutter can be tossed.
-tag /-root$/ delete
+tag delete /-root$/
 
 # This command illustrates how to use msgin to modify the comment
 # text of a commit. In this test we're patching a Subversion revision
@@ -175,7 +175,7 @@ references lift
 changelogs
 
 # It's good practice to add a tag marking the point of conversion.
-tag cutover-git create @max(=C)
+tag create cutover-git @max(=C)
 msgin <<EOF
 Tag-Name: cutover-git
 Tagger: J. Random Hacker <jrh@random.org> America/Los_Angeles
@@ -664,8 +664,8 @@ Tags from Subversion no-fileop commits::
 
 Tags from CVS -root commits::
     Branch root markers are made by CVS for internal purposes. These
-    often persist through up-conversions to SVN.  "tag /-root$/
-    delete" will clean those up; this is not done automatically
+    often persist through up-conversions to SVN.  "tag delete /-root$/"
+    will clean those up; this is not done automatically
     because implicit magic that deletes data generally turns out
     to be a bad idea.
 
