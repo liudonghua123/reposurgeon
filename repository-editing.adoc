@@ -2897,7 +2897,7 @@ procedure handles those correctly.
 
 Alternatively, you can do a "--nobranch" read of the Subversion
 repository and then individually turn subdirectories into branches
-using the <<branchlift>> command.  The pattern for that looks like
+using the <<branchlift_cmd>> command.  The pattern for that looks like
 this:
 
 --------
