@@ -6061,7 +6061,9 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 				tag.Comment = tag.Comment[:firsteol] +
 					"\n" +
 					tag.Comment[firsteol:]
-				commit.setDelFlag(true)
+				if commit != nil {
+					commit.setDelFlag(true)
+				}
 			}
 		}
 		control.baton.percentProgress(uint64(idx))
