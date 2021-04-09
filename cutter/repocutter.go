@@ -39,6 +39,7 @@ suppresses this.
 Type 'repocutter help <subcommand>' for help on a specific subcommand.
 
 Available subcommands and help topics:
+   closure
    deselect
    expunge
    log
@@ -68,6 +69,7 @@ Available subcommands and help topics:
 var debug = false
 
 var oneliners = map[string]string{
+	"closure":    "Compute the transitive closure of a path set",
 	"deselect":   "Deselecting revisions",
 	"expunge":    "Expunge operations by Node-path header",
 	"log":        "Extracting log entries",
@@ -91,6 +93,12 @@ var oneliners = map[string]string{
 }
 
 var helpdict = map[string]string{
+	"closure": `closure: usage: repocutter [-q] closure PATH...
+
+The 'closure' subcommand computes the transitive closure of a path set under thw
+relation 'copies from' - that is, with the smallest set of additional paths such
+that every copy-from source is in the set.
+`,
 	"deselect": `deselect: usage: repocutter [-q] [-r SELECTION] deselect
 
 The 'deselect' subcommand selects a range and permits only revisions NOT in
@@ -990,6 +998,34 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 			return
 		}
 		source.Lbs.Flush()
+	}
+}
+
+func closure(source DumpfileSource, selection SubversionRange, paths []string) {
+	copiesFrom := make(map[string][]string)
+	gather := func(header []byte, properties []byte, _ []byte) []byte {
+		nodepath := string(getHeader(header, "Node-path"))
+		copysource := getHeader(header, "Node-copyfrom-path")
+		if copysource != nil {
+			copiesFrom[nodepath] = append(copiesFrom[nodepath], string(copysource))
+		}
+		return nil
+	}
+	source.Report(selection, gather, nil, false, false)
+	s := newStringSet(paths...)
+	for {
+		count := s.Len()
+		for target := range s.store {
+			for _, source := range copiesFrom[target] {
+				s.Add(source)
+			}
+		}
+		if count == s.Len() {
+			break
+		}
+	}
+	for _, path := range s.toOrderedStringSet() {
+		fmt.Println(path)
 	}
 }
 
@@ -1897,6 +1933,8 @@ func main() {
 	}
 
 	switch flag.Arg(0) {
+	case "closure":
+		closure(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "deselect":
 		assertNoArgs()
 		deselect(NewDumpfileSource(input, baton), selection)

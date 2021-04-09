@@ -52,8 +52,10 @@ help::
 Without arguments, list available commands. With a
 command-name argument, show detailed help for that subcommand.
 
-The 'deselect' subcommand selects a range and permits
-only revisions NOT in that range to pass to standard output.
+closure::
+The 'closure' subcommand computes the transitive closure of a path set under thw
+relation 'copies from' - that is, with the smallest set of additional paths such
+that every copy-from source is in the set.
 
 deselect::
 The 'deselect' subcommand selects a range and permits only revisions *not* in
