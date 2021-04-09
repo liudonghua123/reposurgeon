@@ -89,7 +89,6 @@ func (ctx *Control) init() {
 		for {
 			<-control.signals
 			control.setAbort(true)
-			respond("Interrupt\n")
 		}
 	}()
 	ctx.startTime = time.Now()
