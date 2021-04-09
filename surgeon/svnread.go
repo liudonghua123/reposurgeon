@@ -405,7 +405,7 @@ func (sp *StreamParser) revision(n revidx) *RevisionRecord {
 	if rev, ok := sp.revmap[n]; ok {
 		return &sp.revisions[rev]
 	}
-	panic(throw("parse", "from-reference to nonexistent Subversion revision"))
+	panic(throw("parse", fmt.Sprintf("from-reference to nonexistent Subversion revision %d", n)))
 }
 
 // Fast append avoids doing a full copy of the slice on every allocation
@@ -2782,7 +2782,7 @@ func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, b
 	// Phase 11:
 	// Canonicalize all commits except all-deletes, and add built-in SVN ignore patterns
 	defer trace.StartRegion(ctx, "SVN Phase 11: canonicalize commits.").End()
-	baton.startProgress("SVN11: canonicalize commits", uint64(len(sp.repo.events)))
+	baton.startProgress("SVN11: canonicalization", uint64(len(sp.repo.events)))
 	var defaultIgnoreBlob *Blob
 	doIgnores := !options.Contains("--no-automatic-ignores")
 	defaultIgnores := []byte(subversionDefaultIgnores)

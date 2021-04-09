@@ -678,8 +678,8 @@ const (
 
 var logtags = map[string]uint{
 	"shout":      logSHOUT,
-	"baton":      logBATON,
 	"warn":       logWARN,
+	"baton":      logBATON,
 	"tagfix":     logTAGFIX,
 	"topology":   logTOPOLOGY,
 	"properties": logPROPERTIES,

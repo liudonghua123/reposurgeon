@@ -139,7 +139,7 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 		if sourceParent, ok = sourceParent.dirs[component]; !ok {
 			// The source path does not exist, bail out
 			if srcid != "" && logEnable(logWARN) {
-				logit("nonexistent source %q on pathmap copy from %s", sourcePath, srcid)
+				logit("nonexistent source on pathmap copy from %s:%s to %q", srcid, sourcePath, targetPath)
 			}
 			return
 		}
@@ -154,7 +154,7 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 			if !ok {
 				// The source path does not exist, bail out
 				if logEnable(logWARN) {
-					logit("nonexistent source %q on pathmap copy from %s", sourcePath, srcid)
+					logit("nonexistent source on pathmap copy from %s:%s to empty target", srcid, sourcePath)
 				}
 				return
 			}
