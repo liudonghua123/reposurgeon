@@ -5,7 +5,7 @@
 if [ -z "${USER}" ]
 then
     echo "not ok - $0: ssh is blocked in CI"
-    exit 0
+    exit 1
 fi
 
 # shellcheck disable=SC1091
