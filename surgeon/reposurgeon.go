@@ -4313,6 +4313,10 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	fields := parse.Tokens()
+	if len(fields) == 0 {
+		croak("path command requires a verb.")
+		return false
+	}
 	if fields[0] == "rename" {
 		if len(fields) != 3 {
 			croak("wrong number of fields in path rename command")
