@@ -1067,6 +1067,9 @@ type, the associated mark (or '-' if no mark) and a summary field
 varying by type.  For a branch or tag it's the reference; for a commit
 it's the commit branch; for a blob it's a space-separated list of the 
 repository path of the files with the blob as content.
+
+This command can be safely interrupted with ^C, returning you to the
+prompt.
 `)
 }
 
@@ -1101,6 +1104,9 @@ func (rs *Reposurgeon) DoIndex(lineIn string) bool {
 			fmt.Fprintf(parse.stdout, "%6d branch %6s    %s\n", eventid+1, committish, e.ref)
 		default:
 			fmt.Fprintf(parse.stdout, "     ?             -    %s", e)
+		}
+		if control.getAbort() {
+			break
 		}
 	}
 	return false
@@ -1428,6 +1434,9 @@ Display commits in a human-friendly format; the first column is raw
 event numbers, the second a timestamp in UTC. If the repository
 has legacy IDs, they will be displayed in the third column. The
 leading portion of the comment follows.
+
+This command can be safely interrupted with ^C, returning you to the
+prompt.
 `)
 }
 
@@ -1456,6 +1465,9 @@ func (rs *Reposurgeon) HelpTags() {
 Display tags and resets: three fields, an event number and a type and a name.
 Branch tip commits associated with tags are also displayed with the type
 field 'commit'.
+
+This command can be safely interrupted with ^C, returning you to the
+prompt.
 `)
 }
 
@@ -1489,6 +1501,9 @@ func (rs *Reposurgeon) HelpStamp() {
 
 Display full action stamps corresponding to commits in a select.
 The stamp is followed by the first line of the commit message.
+
+This command can be safely interrupted with ^C, returning you to the
+prompt.
 `)
 }
 
@@ -2555,6 +2570,9 @@ decluttered form that is convenient for editing:
 ----
 =C msgout --filter=/Event-Number:|Committer:|Author:|Check-Text:/
 ----
+
+This command can be safely interrupted with ^C, returning you to the
+prompt.
 `)
 }
 
@@ -7228,6 +7246,10 @@ whitespace characters followed by "#", that trailing portion is
 ignored.
 
 Scripts may call other scripts to arbitrary depth.
+
+When running a cript interacttively, you can abort it by typing Ctl-C 
+abnd return to the top-level prompt. The abort flag is checked after each
+script line is executed. 
 `)
 }
 
