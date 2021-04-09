@@ -7563,9 +7563,8 @@ func main() {
 				}
 				acmd = interpreter.PreCmd(ctx, acmd)
 				stop1 := interpreter.OneCmd(ctx, acmd)
-				stop2 := control.abortScript
-				stop3 := interpreter.PostCmd(ctx, stop, acmd)
-				if stop1 || stop2 || stop3 {
+				stop2 := interpreter.PostCmd(ctx, stop, acmd)
+				if stop1 || stop2 {
 					goto breakout
 				}
 			}
