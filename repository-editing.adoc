@@ -3109,6 +3109,32 @@ An Emacs mode for editing msgout dumps ships with the reposurgeon
 distribution.  It includes various useful commands for Gitifying
 comments and reference-lifting.
 
+=== Avoid git-svn lossage with repocutter filtering
+
+Subversion histories that have been touched by git-svn often have
+suble damage in the metadata.  One common class of problems comes from
+git-svn creating .gitignore and .git histories in the Subversion
+repository. Commits on these paths are best treated as junk and removed.
+
+While they could be removed with a reposurgeon expunge command after
+the repository has been translated to Git, sometimes one sees a worse
+problem resulting from git-svn somehow creating invalid copy nodes
+involving .git/.gitignore.  This can poroduce alarming log messages,
+or even cause a Subversion stream read to fail spuriously despite the
+actual Subversion part of the history being undamaged.
+
+If you suspect this is happening, the following repocutter expunge
+command is your friend:
+
+----
+repocutter expunge "/.git$"  "/.gitignore$"
+----
+
+If you use this to pre-filter your repository dump it will remove the
+garbled copy nodes along with every other modification to matching
+path, wiithout affecting anything in the actual native Subversion
+part of the history.
+
 [[troubleshooting]]
 == Troubleshooting and bug reports
 
