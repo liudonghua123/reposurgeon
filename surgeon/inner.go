@@ -9487,7 +9487,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 	}
 
 	if liftroot == nil {
-		croak("branchlift error - pathprefix '%s' not found in repository", pathprefix)
+		croak("branchlift error - path prefix '%s' not found in source branch %s", pathprefix, sourcebranch)
 		return 0
 	}
 
