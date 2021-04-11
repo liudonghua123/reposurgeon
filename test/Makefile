@@ -107,6 +107,8 @@ tagdoublet.svn: tagdoubletgen.sh
 	sh tagdoubletgen.sh >tagdoublet.svn
 mixedbranchlift.svn: branchliftgen.sh
 	sh branchliftgen.sh >mixedbranchlift.svn
+tagwithcommits.svn: tagwithcommitsgen.sh
+	sh tagwithcommitsgen.sh >tagwithcommits.svn
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.

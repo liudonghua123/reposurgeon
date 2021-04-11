@@ -1,0 +1,170 @@
+SVN-fs-dump-format-version: 2
+ ## tag with commit after creation example
+
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+1970-01-01T00:00:00.000000Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 137
+Content-length: 137
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:10.000000Z
+K 7
+svn:log
+V 35
+add trunk branches tags directories
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 109
+Content-length: 109
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:20.000000Z
+K 7
+svn:log
+V 8
+add file
+PROPS-END
+
+Node-path: trunk/file
+Node-kind: file
+Node-action: add
+Text-content-md5: d3b07384d113edec49eaa6238ad5ff00
+Text-content-sha1: f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
+Prop-content-length: 10
+Text-content-length: 4
+Content-length: 14
+
+PROPS-END
+foo
+
+
+Revision-number: 3
+Prop-content-length: 117
+Content-length: 117
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:30.000000Z
+K 7
+svn:log
+V 15
+Tag Release 1.0
+PROPS-END
+
+Node-path: tags/1.0
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 2
+Node-copyfrom-path: trunk
+
+
+Revision-number: 4
+Prop-content-length: 117
+Content-length: 117
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:40.000000Z
+K 7
+svn:log
+V 15
+Tag Release 2.0
+PROPS-END
+
+Node-path: tags/2.0
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 3
+Node-copyfrom-path: trunk
+
+
+Revision-number: 5
+Prop-content-length: 137
+Content-length: 137
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:50.000000Z
+K 7
+svn:log
+V 35
+Commit to Release 2.0 after tagging
+PROPS-END
+
+Node-path: tags/2.0/file
+Node-kind: file
+Node-action: change
+Text-content-md5: f47c75614087a8dd938ba4acff252494
+Text-content-sha1: 4e48e2c9a3d2ca8a708cb0cc545700544efb5021
+Text-content-length: 8
+Content-length: 8
+
+foo
+bar
+
+
