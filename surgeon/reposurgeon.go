@@ -4872,7 +4872,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		// and resets that were made from Subversion
 		// branch-copy commits. The name and ref fields of
 		// such things are branch IDs with the suffix "-root",
-		// but without a refs/heads leader, and we need tp
+		// but without a refs/heads leader, and we need to
 		// put the prefix part through the the same
 		// transformation as branch names.
 		//
@@ -4891,7 +4891,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 						continue
 					}
 					subst := GoReplacer(sourceRE, tagname, newname)
-					tag.tagname = subst[6:] + "-root"
+					tag.tagname = subst[len(strings.Split(subst, "/")[0])+1:] + "-root"
 					tag.setDelFlag(true)
 				} else if reset, ok := event.(*Reset); ok {
 					resetname := removeBranchPrefix(reset.ref)
