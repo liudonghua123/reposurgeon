@@ -9486,6 +9486,11 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 		}
 	}
 
+	if liftroot == nil {
+		croak("branchlift error - pathprefix '%s' not found in repository", pathprefix)
+		return 0
+	}
+
 	// Now we need to fix up ancestry links.
 	var sourceparents []CommitLike
 	var liftparents []CommitLike
