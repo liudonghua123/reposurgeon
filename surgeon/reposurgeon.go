@@ -5414,7 +5414,7 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	// We need a new branch name
 	var newname string
 	newname, line = popToken(line)
-	if pathprefix == "" {
+	if newname == "" {
 		newname = path.Base(pathprefix[:len(pathprefix)-1])
 	}
 	if !strings.HasPrefix(newname, "refs/heads/") {
