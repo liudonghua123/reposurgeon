@@ -4891,7 +4891,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 						continue
 					}
 					subst := GoReplacer(sourceRE, tagname, newname)
-					tag.tagname = subst[len(strings.Split(subst, "/")[0])+1:] + "-root"
+					tag.tagname = subst[strings.Index(subst, "/")+1:] + "-root"
 					tag.setDelFlag(true)
 				} else if reset, ok := event.(*Reset); ok {
 					resetname := removeBranchPrefix(reset.ref)
