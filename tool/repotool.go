@@ -84,17 +84,11 @@ var makefileTemplate = `# Makefile for {{.Project}} conversion using reposurgeon
 # 6. Run 'make stubmap' to create a stub author map.
 # 7. Run 'make' to build a converted repository.
 #
-# The reason both first- and second-stage stream files are generated is that,
-# especially with Subversion, making the first-stage stream file is often
-# painfully slow. By splitting the process, we lower the overhead of
-# experiments with the lift script.
-#
 # For a production-quality conversion you will need to edit the map
 # file and the lift script.  During the process you can set EXTRAS to
 # name extra metadata such as a comments message-box.
 #
-# Afterwards, you can use the headcompare and tagscompare productions
-# to check your work.
+# Afterwards, you can use the *compare productions to check your work.
 #
 
 EXTRAS = 

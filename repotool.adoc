@@ -114,7 +114,7 @@ The compare operation accepts the following options:
 	Emit context diff.
 
 -q::
-	Suppress nonfatal errors.
+	Suppress nonfatal errors and progress spinners.
 
 -s::
 	List matching files.
