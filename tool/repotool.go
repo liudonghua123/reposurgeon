@@ -545,7 +545,22 @@ func mirror(args []string) {
 		} else {
 			locald = filepath.Join(pwd, operand)
 		}
-		runShellProcessOrDie(fmt.Sprintf("svnsync synchronize -q --steal-lock file://%s", locald), "mirroring")
+		baton := newBaton(!quiet, func(s string) {})
+		remotesize := reposize(operand)
+		localsize := reposize(fmt.Sprintf("file://%s", locald))
+		baton.startProgress("Mirroring", uint64(remotesize-localsize))
+		cmd := fmt.Sprintf("svnsync synchronize -q --steal-lock file://%s", locald)
+		ind := 0
+		runMonitoredProcessOrDie(cmd, "mirroring", func(line string) {
+			if strings.Contains(line, "Committed revision") {
+				ind++
+				baton.percentProgress(uint64(ind))
+			}
+		})
+		if !quiet {
+			baton.Write([]byte{'\n'}) // Kludge, FIXME
+		}
+		baton.endProgress()
 	} else if strings.HasPrefix(operand, "rsync://") {
 		if mirrordir == "" {
 			locald = filepath.Join(pwd, filepath.Base(operand)+"-mirror")
