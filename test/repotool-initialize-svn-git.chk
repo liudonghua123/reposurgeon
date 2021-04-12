@@ -11,7 +11,7 @@ xyzzy.map
 xyzzy.opts
 
 Checksums to make sure file contents correct:
-fe19c04b2b9a1c4dcd4f38bc6e425773  ./Makefile
+80f5314c581300c3881d2c077e35ccb6  ./Makefile
 8f44c96b9942ad7655b17fec218e75f7  ./xyzzy.lift
 91c78d0cfe552dbe6de5ea8d17b726b8  ./xyzzy.map
 4b72635a7976f13fbd51a7c79a142733  ./xyzzy.opts

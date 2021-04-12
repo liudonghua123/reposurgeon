@@ -110,6 +110,10 @@ VERBOSITY = "set progress"
 REPOSURGEON = reposurgeon
 LOGFILE = conversion.log
 
+# Set and uncomment these if remote access tio Subversion needs credentials.
+#export RUSERNAME=
+#export RPASSWORD=
+
 # Configuration ends here
 
 .PHONY: local-clobber remote-clobber gitk gc compare clean dist stubmap
@@ -531,7 +535,9 @@ func mirror(args []string) {
 				baton.percentProgress(uint64(ind))
 			}
 		})
-		baton.Write([]byte{'\n'})
+		if !quiet {
+			baton.Write([]byte{'\n'}) // Kludge, FIXME
+		}
 		baton.endProgress()
 	} else if isdir(filepath.Join(operand, "locks")) {
 		if operand[0] == os.PathSeparator {
@@ -674,6 +680,15 @@ func checkout(outdir string, rev string) string {
 	} else if vcs.name == "svn" {
 		if rev != "" {
 			rev = "-r " + rev
+		}
+		/* These options aren't actually documnted */
+		username := os.Getenv("RUSERNAME")
+		password := os.Getenv("RPASSWORD")
+		if username != "" {
+			rev += fmt.Sprintf("--username %q", username)
+		}
+		if password != "" {
+			rev += fmt.Sprintf(" --password %q", password)
 		}
 		// The reason for checkout's odd calling signature -
 		// pass it a checkout directory, get back a symlink
