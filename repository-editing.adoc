@@ -1221,9 +1221,6 @@ are some simple examples:
                        ;; Makefile and all blobs referred to in a
                        ;; fileop touching Makefile.
 
-:46 tip                ;; Display the branch tip that owns
-                       ;; commit :46.
-
 @dsc(:55) list         ;; Display all commits with ancestry tracing
                        ;; to :55.
 
