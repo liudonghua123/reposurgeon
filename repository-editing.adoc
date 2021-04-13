@@ -764,7 +764,7 @@ The command `=L <<msgout_cmd>>` is good for extracting commits with
 multi-line comments in a form that can be deleted and merged back in
 with the msgin command.
 
-The reposurgeon command `<<inspect_cmd>> =H` will show you tip commits
+The reposurgeon command `=H <<inspect_cmd>>` will show you tip commits
 which may contain only deletes and deletealls.
 
 Tags can be inspected with `=T <<inspect_cmd>>`. Junk tags can be
