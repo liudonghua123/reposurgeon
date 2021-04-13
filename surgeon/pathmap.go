@@ -228,9 +228,10 @@ func (pm *PathMap) remove(path string) {
 		// Try to go down a level
 		subtree, ok := pm.dirs[component]
 		if !ok {
+			// FIXME: enabling this at logWARN produces lots of spurious messages.
 			// A component in the path doesn't exist as a directory; bail out
-			if logEnable(logWARN) {
-				logit("path %q to be deleted is missing", path)
+			if logEnable(logFILEMAP) {
+				logit("path %q to be deleted is missing from pathmap", path)
 			}
 			return
 		}
