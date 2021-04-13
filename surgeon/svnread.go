@@ -2109,8 +2109,8 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 							frombranch = newfrom
 						} else if frombranch != newfrom {
 							if logEnable(logWARN) {
-								logit("Link detection for %s <%s> failed: file copies from multiple branches",
-									commit.mark, commit.legacyID)
+								logit("Link detection for %s <%s> failed: file copies from multiple branches to %s, difference is %s vs %s",
+									commit.mark, commit.legacyID, destbranch, frombranch, newfrom)
 							}
 							maxfrom = 0
 							break
