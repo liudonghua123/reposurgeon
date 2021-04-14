@@ -1004,8 +1004,8 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	copiesFrom := make(map[string][]string)
 	gather := func(header []byte, properties []byte, _ []byte) []byte {
-		nodepath := string(getHeader(header, "Node-path"))
-		copysource := getHeader(header, "Node-copyfrom-path")
+		nodepath := string(payload("Node-path", header))
+		copysource := payload("Node-copyfrom-path", header)
 		if copysource != nil {
 			copiesFrom[nodepath] = append(copiesFrom[nodepath], string(copysource))
 		}
@@ -1216,16 +1216,6 @@ func getAuthor(props map[string]string) string {
 	return "(no author)"
 }
 
-// getHeader - extract a given field from a header string
-func getHeader(txt []byte, hdr string) []byte {
-	for _, line := range bytes.Split(txt, []byte("\n")) {
-		if bytes.HasPrefix(line, []byte(hdr+": ")) {
-			return line[len(hdr)+2:]
-		}
-	}
-	return nil
-}
-
 // SVNTimeParse - parse a date in the Subversion variant of RFC3339 format
 func SVNTimeParse(rdate string) time.Time {
 	// An example date in SVN format is '2011-11-30T16:40:02.180831Z'
@@ -1334,13 +1324,13 @@ func reduce(source DumpfileSource) {
 	interesting := make(map[int]bool)
 	interesting[0] = true
 	reducehook := func(header []byte, properties []byte, _ []byte) []byte {
-		if !(string(getHeader(header, "Node-kind")) == "file" && string(getHeader(header, "Node-action")) == "change") || len(properties) > 0 { //len([]nil == 0)
+		if !(string(payload("Node-kind", header)) == "file" && string(payload("Node-action", header)) == "change") || len(properties) > 0 { //len([]nil == 0)
 			interesting[source.Revision-1] = true
 			interesting[source.Revision] = true
 			interesting[source.Revision+1] = true
 			//fmt.Fprintf(os.Stderr, "Principal interest: %d %d %d\n", source.Revision-1, source.Revision, source.Revision+1)
 		}
-		copysource := getHeader(header, "Node-copyfrom-rev")
+		copysource := payload("Node-copyfrom-rev", header)
 		if copysource != nil {
 			n, err := strconv.Atoi(string(copysource))
 			if err == nil {
@@ -1715,7 +1705,7 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 				// Avoid replacing symlinks, a reposurgeon sanity check barfs.
 				if !bytes.HasPrefix(content, []byte("link ")) {
 					tell := fmt.Sprintf("Revision is %d, file path is %s.\n",
-						source.Revision, getHeader(header, "Node-path"))
+						source.Revision, payload("Node-path", header))
 					content = []byte(tell)
 					header = SetLength("Text-content", header, len(content))
 					header = SetLength("Content", header, len(properties)+len(content))
