@@ -2870,7 +2870,7 @@ read <multiproject.svn \
   --branchify=project1/trunk:project1/branches/*:project1/tags/*:*
 branch rename heads/project1/trunk heads/master
 branch rename @heads/project1/branches/(.*)@ heads/\1
-branch heads/project2 delete
+branch delete heads/project2
 --------
 
 The read option branchifies every directory underneath project1 for
