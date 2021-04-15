@@ -1,11 +1,17 @@
+# You can override the included template(s) by including variable overrides
+# See https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 image: golang:1.15
-
 include:
-  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
-
+- template: Workflows/MergeRequest-Pipelines.gitlab-ci.yml
+- template: Security/SAST.gitlab-ci.yml
 before_script:
-  - source ci/prepare.sh
-
+- source ci/prepare.sh
 test:
   script:
   - make CONCURRENT_JOBS=4 -k check
+stages:
+- test
+sast:
+  stage: test
