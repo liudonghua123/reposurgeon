@@ -4265,7 +4265,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 // HelpPath says "Shut up, golint!"
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
-path [list [>OUTFILE] | rename PATTERN [--force] TARGET]]
+[SELECTION] path [list [>OUTFILE] | rename PATTERN [--force] TARGET]]
 
 With the verb "list", list all paths touched by fileops in the selection
 set (which defaults to the entire repo). This command does > redirection.
