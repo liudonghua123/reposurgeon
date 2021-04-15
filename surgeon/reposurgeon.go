@@ -4341,7 +4341,7 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		sort.Strings(allpaths)
 		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
 	} else {
-		croak("unknown verb '%s' in path command.", fields[1])
+		croak("unknown verb '%s' in path command.", fields[0])
 	}
 	return false
 }
