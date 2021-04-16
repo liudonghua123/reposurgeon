@@ -106,12 +106,13 @@ that every copy-from source is in the set.
 The 'deselect' subcommand selects a range and permits only revisions NOT in
 that range to pass to standard output.
 `,
-	"expunge": `expunge: usage: repocutter [-r SELECTION ] expunge PATTERN...
+	"expunge": `expunge: usage: repocutter [-r SELECTION ] [-repo REPO] expunge PATTERN...
 
 Delete all operations with Node-path headers matching specified
 Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
-record removed as well.
+record removed as well, and any copy/move commits with a copyfrom referencing a
+non-matching path will turn into an add commit by using "svn cat REPO".
 `,
 	"log": `log: usage: repocutter [-r SELECTION] log
 
@@ -1061,11 +1062,14 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, true)
 }
 
-// Helpers for expunge and sift
-var findHeaderEnd = regexp.MustCompile("\n\n")  // to append at end, replace two \n with one
-var findCopyFromRev = regexp.MustCompile("Node-copyfrom-rev:.*\n")
-var findCopyFromPath = regexp.MustCompile("Node-copyfrom-path:.*\n")
+// "expunge" and "sift" helper to get all the Regexp instances needed
+var findHeaderEnd *regexp.Regexp
+var findCopyFromRev *regexp.Regexp
+var findCopyFromPath *regexp.Regexp
 func getRegexMatcher(patterns []string) func([]byte) bool {
+	findHeaderEnd = regexp.MustCompile("\n\n")  // to append at end, replace two \n with one
+	findCopyFromRev = regexp.MustCompile("Node-copyfrom-rev:.*\n")
+	findCopyFromPath = regexp.MustCompile("Node-copyfrom-path:.*\n")
 	regexes := make([]*regexp.Regexp, 0)
 	for _, pattern := range patterns {
 		regexes = append(regexes, regexp.MustCompile(pattern))
@@ -1080,6 +1084,8 @@ func getRegexMatcher(patterns []string) func([]byte) bool {
 		return false
 	}
 }
+
+// "expunge" and "sift" helper to use `svn cat` to convert a copy/move commit from an invalid source to an add commit
 func convertCommitToAdd(source DumpfileSource, repo string, copysource []byte, header []byte, properties []byte) ([]byte, []byte) {
 	if repo == "" {
 		errmsg := "expunged %s was a copy/move source in rev# %d, so -repo argument"
