@@ -111,8 +111,9 @@ that range to pass to standard output.
 Delete all operations with Node-path headers matching specified
 Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
-record removed as well, and any copy/move commits with a copyfrom referencing a
-non-matching path will turn into an add commit by using "svn cat REPO".
+record removed as well. If the -repo option is given, a copy/move
+commit with a copyfrom referencing a non-matching path will turn
+into an add commit using "svn cat REPO".
 `,
 	"log": `log: usage: repocutter [-r SELECTION] log
 
@@ -130,7 +131,7 @@ make the replacements readily distinguishable by eyeball.
 Modify Node-path headers, Node-copyfrom-path headers, and
 svn:mergeinfo properties matching the specified Golang regular
 expression FROM; replace with TO.  TO may contain Golang-style
-backreferences (${1}, ${2} etc - parentheses not optional) to
+backreferences (${1}, ${2} etc - curly brackets not optional) to
 parenthesized portions of FROM. Multiple FROM/TO pairs may be
 specified and are applied in order.
 `,
@@ -211,8 +212,9 @@ Replacements may be restricted to a specified range.
 Delete all operations with Node-path headers *not* matching specified
 Golang regular expressions (opposite of 'expunge').  Any revision left
 with no Node records after this filtering has its Revision record
-removed as well, and any copy/move commits with a copyfrom referencing a
-non-matching path will turn into an add commit by using "svn cat REPO".
+removed as well. If the -repo option is given, a copy/move
+commit with a copyfrom referencing a non-matching path will turn
+into an add commit using "svn cat REPO".
 `,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
 
@@ -911,11 +913,10 @@ func captureFromProcess(command string) []byte {
 		croak("executing %q: %v", cmd, err)
 	}
 	//if verbose {
-		announce(string(content))
+	announce(string(content))
 	//}
 	return content
 }
-
 
 const delim = "------------------------------------------------------------------------"
 
@@ -1066,8 +1067,9 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 var findHeaderEnd *regexp.Regexp
 var findCopyFromRev *regexp.Regexp
 var findCopyFromPath *regexp.Regexp
+
 func getRegexMatcher(patterns []string) func([]byte) bool {
-	findHeaderEnd = regexp.MustCompile("\n\n")  // to append at end, replace two \n with one
+	findHeaderEnd = regexp.MustCompile("\n\n") // to append at end, replace two \n with one
 	findCopyFromRev = regexp.MustCompile("Node-copyfrom-rev:.*\n")
 	findCopyFromPath = regexp.MustCompile("Node-copyfrom-path:.*\n")
 	regexes := make([]*regexp.Regexp, 0)
