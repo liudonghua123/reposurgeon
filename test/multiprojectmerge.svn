@@ -1,0 +1,434 @@
+SVN-fs-dump-format-version: 2
+ ## multiple projects merged into common trunk example
+
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+1970-01-01T00:00:00.000000Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:10.000000Z
+K 7
+svn:log
+V 23
+init multi-project repo
+PROPS-END
+
+Node-path: docs
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: docs/branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: docs/tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: docs/trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: firmware
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: firmware/branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: firmware/tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: firmware/trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: software
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: software/branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: software/tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: software/trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:20.000000Z
+K 7
+svn:log
+V 23
+initial software commit
+PROPS-END
+
+Node-path: software/trunk/software.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: 7a3ff41b07911295ad596ea37060692c
+Text-content-sha1: 8a3f40deb5bf46dd62ed06c263f1666bfaa4736e
+Prop-content-length: 10
+Text-content-length: 25
+Content-length: 35
+
+PROPS-END
+initial software content
+
+
+Revision-number: 3
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:30.000000Z
+K 7
+svn:log
+V 23
+initial firmware commit
+PROPS-END
+
+Node-path: firmware/trunk/firmware.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: 60b2a6ea27bd50c58fb2a92e7c52cdac
+Text-content-sha1: 76e12ce0365d360073c6cef2e82039f6fbef6410
+Prop-content-length: 10
+Text-content-length: 25
+Content-length: 35
+
+PROPS-END
+initial firmware content
+
+
+Revision-number: 4
+Prop-content-length: 121
+Content-length: 121
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:40.000000Z
+K 7
+svn:log
+V 19
+initial docs commit
+PROPS-END
+
+Node-path: docs/trunk/docs.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: a970f5743db0a67a38116ab862d595d9
+Text-content-sha1: 88d1d53e4f5b5385049ed89fd3f57d54848aa484
+Prop-content-length: 10
+Text-content-length: 21
+Content-length: 31
+
+PROPS-END
+initial docs content
+
+
+Revision-number: 5
+Prop-content-length: 183
+Content-length: 183
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:50.000000Z
+K 7
+svn:log
+V 81
+We don't want to develop separate projects anymore! Prepare for one single trunk.
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 6
+Prop-content-length: 128
+Content-length: 128
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:00.000000Z
+K 7
+svn:log
+V 26
+copy software to new trunk
+PROPS-END
+
+Node-path: trunk/software
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 1
+Node-copyfrom-path: software/trunk
+
+
+Node-path: trunk/software/software.txt
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 2
+Node-copyfrom-path: software/trunk/software.txt
+Text-copy-source-md5: 7a3ff41b07911295ad596ea37060692c
+Text-copy-source-sha1: 8a3f40deb5bf46dd62ed06c263f1666bfaa4736e
+
+
+Revision-number: 7
+Prop-content-length: 128
+Content-length: 128
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:10.000000Z
+K 7
+svn:log
+V 26
+copy firmware to new trunk
+PROPS-END
+
+Node-path: trunk/firmware
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 1
+Node-copyfrom-path: firmware/trunk
+
+
+Node-path: trunk/firmware/firmware.txt
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 3
+Node-copyfrom-path: firmware/trunk/firmware.txt
+Text-copy-source-md5: 60b2a6ea27bd50c58fb2a92e7c52cdac
+Text-copy-source-sha1: 76e12ce0365d360073c6cef2e82039f6fbef6410
+
+
+Revision-number: 8
+Prop-content-length: 124
+Content-length: 124
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:20.000000Z
+K 7
+svn:log
+V 22
+copy docs to new trunk
+PROPS-END
+
+Node-path: trunk/docs
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 1
+Node-copyfrom-path: docs/trunk
+
+
+Node-path: trunk/docs/docs.txt
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 4
+Node-copyfrom-path: docs/trunk/docs.txt
+Text-copy-source-md5: a970f5743db0a67a38116ab862d595d9
+Text-copy-source-sha1: 88d1d53e4f5b5385049ed89fd3f57d54848aa484
+
+
+Revision-number: 9
+Prop-content-length: 135
+Content-length: 135
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:30.000000Z
+K 7
+svn:log
+V 33
+continue development on new trunk
+PROPS-END
+
+Node-path: trunk/docs/docs.txt
+Node-kind: file
+Node-action: change
+Text-content-md5: 67a0d73f825cd9ee75d3554ba86d6c32
+Text-content-sha1: 5bb7108bcf1e88d9404f87a10d42831cf2c1d8ba
+Text-content-length: 47
+Content-length: 47
+
+initial docs content
+continue docs development
+
+
+Node-path: trunk/firmware/firmware.txt
+Node-kind: file
+Node-action: change
+Text-content-md5: 0eb28cb4734ffdc15a160856d3cef5b7
+Text-content-sha1: 39bfa7612ab7a11493a90f6bd2627ca4c8391c9f
+Text-content-length: 55
+Content-length: 55
+
+initial firmware content
+continue firmware development
+
+
+Node-path: trunk/software/software.txt
+Node-kind: file
+Node-action: change
+Text-content-md5: 6cace6f6eed39b0a97ecbc3d9ee4d6b3
+Text-content-sha1: 4048d96a9c07ec4c23cb4480379b7beb69e02ca3
+Text-content-length: 55
+Content-length: 55
+
+initial software content
+continue software development
+
+

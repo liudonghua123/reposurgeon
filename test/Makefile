@@ -111,6 +111,8 @@ tagwithcommits.svn: tagwithcommitsgen.sh
 	sh tagwithcommitsgen.sh >tagwithcommits.svn
 branchtagdoublet.svn: branchtagdoubletgen.sh
 	sh branchtagdoubletgen.sh >branchtagdoublet.svn
+multiprojectmerge.svn: multiprojectmergegen.sh
+	sh $< >$@
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
@@ -118,7 +120,7 @@ COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
 COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
 $(COMMAND_TARGETS): command-regress-%: %.tst
 	@singletest -a testing123 $< || echo "$@" >>$(FAILLOG);
-command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn branchtagdoublet.svn
+command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn branchtagdoublet.svn multiprojectmerge.svn
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
