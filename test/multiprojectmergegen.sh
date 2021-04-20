@@ -16,16 +16,16 @@ projects="software firmware docs"
 for project in $projects; do
     for dir in trunk branches tags
     do
-        mkdir -p $project/$dir
+        mkdir -p "$project/$dir"
     done
-    svn add --quiet $project
+    svn add --quiet "$project"
 done
 svn commit --quiet -m 'init multi-project repo'
 
 # r2, r3, r4
 for project in $projects; do
-    echo "initial $project content" >$project/trunk/$project.txt
-    svn add --quiet $project/trunk/$project.txt
+    echo "initial $project content" >"$project/trunk/$project.txt"
+    svn add --quiet "$project/trunk/$project.txt"
     svn commit --quiet -m "initial $project commit"
 done
 
@@ -47,14 +47,14 @@ svn commit --quiet -m "We don't want to develop separate projects anymore! Prepa
 
 # r6, r7, r8
 for project in $projects; do
-    svn copy --quiet $project/trunk trunk/$project
+    svn copy --quiet "$project/trunk" "trunk/$project"
     svn commit --quiet -m "copy $project to new trunk"
 done
 svn --quiet up
 
 #r9
 for project in $projects; do
-    echo "continue $project development" >>trunk/$project/$project.txt
+    echo "continue $project development" >>"trunk/$project/$project.txt"
 done
 svn commit --quiet -m "continue development on new trunk"
 
