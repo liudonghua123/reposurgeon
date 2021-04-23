@@ -4874,7 +4874,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		// What we're coping with is the possibility of tags
 		// and resets that were made from Subversion
 		// branch-copy commits. The name and ref fields of
-		// such things are branch IDs with the suffix "-root",
+		// such things are branch IDs with the suffix "-root" or "-tipdelete",
 		// but without a refs/heads leader, and we need to
 		// put the prefix part through the the same
 		// transformation as branch names.
@@ -4884,17 +4884,19 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		if repo.vcs != nil && repo.vcs.name == "svn" {
 			for _, event := range repo.events {
 				if tag, ok := event.(*Tag); ok {
-					if !strings.HasSuffix(tag.tagname, "-root") {
+					if !(strings.HasSuffix(tag.tagname, "-root") || strings.HasSuffix(tag.tagname, "-tipdelete")) {
 						continue
 					}
 					tagname := removeBranchPrefix(tag.tagname)
-					tagname = tagname[:len(tagname)-5]
+					tagnameParts := strings.Split(tagname, "-")
+					suffix := "-" + tagnameParts[len(tagnameParts)-1]
+					tagname = tagname[:len(tagname)-len(suffix)]
 					tagname = "heads/" + tagname
 					if !sourceRE.MatchString(tagname) {
 						continue
 					}
 					subst := GoReplacer(sourceRE, tagname, newname)
-					tag.tagname = subst[strings.Index(subst, "/")+1:] + "-root"
+					tag.tagname = subst[strings.Index(subst, "/")+1:] + suffix
 					tag.setDelFlag(true)
 				} else if reset, ok := event.(*Reset); ok {
 					resetname := removeBranchPrefix(reset.ref)
