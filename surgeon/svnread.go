@@ -2602,7 +2602,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 		newname = strings.ReplaceAll(newname, "..", "") // Rule 3
 		squashed := make([]rune, 0)
 		for _, c := range []rune(newname) {
-			if c == 0177 || c < 040 || c == '~' || c == '^' || c == ':' {
+			if c == 0177 || c <= 040 || c == '~' || c == '^' || c == ':' {
 				continue
 			}
 			squashed = append(squashed, c)
