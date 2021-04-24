@@ -136,14 +136,14 @@ V 30
 copy trunk to first new branch
 PROPS-END
 
-Node-path: branches/first branch with space
+Node-path: branches/first-branch
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 1
 Node-copyfrom-path: trunk
 
 
-Node-path: branches/first branch with space/file
+Node-path: branches/first-branch/file
 Node-kind: file
 Node-action: add
 Node-copyfrom-rev: 3
@@ -170,7 +170,7 @@ V 36
 continue development on first branch
 PROPS-END
 
-Node-path: branches/first branch with space/file
+Node-path: branches/first-branch/file
 Node-kind: file
 Node-action: change
 Text-content-md5: 28619a76513547ba79e632701ab9e4ef
@@ -201,7 +201,7 @@ V 19
 delete first branch
 PROPS-END
 
-Node-path: branches/first branch with space
+Node-path: branches/first-branch
 Node-action: delete
 
 
@@ -223,7 +223,7 @@ V 24
 copy trunk to new branch
 PROPS-END
 
-Node-path: branches/branch with space
+Node-path: branches/second-branch
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 6
@@ -248,7 +248,7 @@ V 30
 continue development on branch
 PROPS-END
 
-Node-path: branches/branch with space/file
+Node-path: branches/second-branch/file
 Node-kind: file
 Node-action: change
 Text-content-md5: 28619a76513547ba79e632701ab9e4ef

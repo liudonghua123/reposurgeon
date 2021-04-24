@@ -25,27 +25,27 @@ echo "more content" >>trunk/file
 svn --quiet commit -m "continue development"
 
 # r4
-svn --quiet copy "trunk" "branches/first branch with space"
+svn --quiet copy "trunk" "branches/first-branch"
 svn --quiet commit -m "copy trunk to first new branch"
 svn --quiet up
 
 # r5
-echo "even more branch content" >>"branches/first branch with space/file"
+echo "even more branch content" >>"branches/first-branch/file"
 svn --quiet commit -m "continue development on first branch"
 svn --quiet up
 
 # r6
-svn --quiet rm "branches/first branch with space"
+svn --quiet rm "branches/first-branch"
 svn --quiet commit -m "delete first branch"
 svn --quiet up
 
 # r7
-svn --quiet copy "trunk" "branches/branch with space"
+svn --quiet copy "trunk" "branches/second-branch"
 svn --quiet commit -m "copy trunk to new branch"
 svn --quiet up
 
 # r8
-echo "even more branch content" >>"branches/branch with space/file"
+echo "even more branch content" >>"branches/second-branch/file"
 svn --quiet commit -m "continue development on branch"
 
 # r9

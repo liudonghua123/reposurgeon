@@ -56,7 +56,7 @@ initial content
 more content
 even more branch content
 
-commit refs/deleted/r6/heads/first-branch-with-space
+commit refs/deleted/r6/heads/deleted-branch
 #legacy-id 5
 mark :7
 committer fred <fred> 50 +0000
@@ -65,7 +65,7 @@ continue development on first branch
 from :5
 M 100644 :6 file
 
-commit refs/heads/branch-with-space
+commit refs/heads/second-branch
 #legacy-id 8
 mark :8
 committer fred <fred> 80 +0000
@@ -90,21 +90,21 @@ continue trunk development
 from :5
 M 100644 :9 file
 
-tag deleted/r6/first-branch-with-space-root
+tag deleted/r6/deleted-branch-root
 #legacy-id 4
 from :5
 tagger fred <fred> 40 +0000
 data 31
 copy trunk to first new branch
 
-tag deleted/r6/first-branch-with-space-tipdelete
+tag deleted/r6/deleted-branch-tipdelete
 #legacy-id 6
 from :7
 tagger fred <fred> 60 +0000
 data 20
 delete first branch
 
-tag branch-with-space-root
+tag second-branch-root
 #legacy-id 7
 from :5
 tagger fred <fred> 70 +0000
