@@ -4482,6 +4482,10 @@ SELECTION merge
 Create a merge link. Takes a selection set argument, ignoring all but
 the lowest (source) and highest (target) members.  Creates a merge link
 from the highest member (child) to the lowest (parent).
+
+This command will throw an error if you try to make a merge link to a 
+parentless (e.g. root) commit, as that would produce an invalid
+fast-import stream.
 `)
 }
 
