@@ -4498,6 +4498,11 @@ func (rs *Reposurgeon) DoMerge(_line string) bool {
 	}
 	early := commits[0]
 	late := commits[len(commits)-1]
+	if !late.hasParents() {
+		// Letting this true would create an invalid fast-import stream
+		croak("refusing to create commit with merge link but no parent.")
+		return false
+	}
 	if late.mark < early.mark {
 		late, early = early, late
 	}

@@ -1,4 +1,5 @@
 reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
+reposurgeon: refusing to create commit with merge link but no parent.
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -54,9 +55,6 @@ mark :6
 data 21
 initial docs content
 
-reset refs/heads/docs
-from refs/heads/docs^0
-
 commit refs/heads/docs
 #legacy-id 4
 mark :7
@@ -83,7 +81,6 @@ committer fred <fred> 70 +0000
 data 27
 copy firmware to new trunk
 from :8
-merge :5
 M 100644 :4 firmware/firmware.txt
 
 commit refs/heads/master
