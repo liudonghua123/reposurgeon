@@ -6526,15 +6526,15 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 			// to it we'd have to compute an inverse
 			// fileop and push it forward to the other
 			// children.
-			if len(commit.children()) > 1 {
-				firstparent := 0
-				for _, child := range commit.children() {
-					if childcommit, ok := child.(*Commit); ok && childcommit.parents()[0] == commit {
-						firstparent++
+			if commit.hasParents() {
+				parent := commit.parents()[0]
+				for _, child := range parent.children() {
+					if child == commit {
+						continue
 					}
-				}
-				if firstparent > 1 {
-					croak("can't push back to a first parent that is a multi-child commit")
+					if childcommit, ok := child.(*Commit); ok && childcommit.parents()[0] == parent {
+						croak("can't push back to a first parent that is a multi-child commit")
+					}
 				}
 			}
 		}
