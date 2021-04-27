@@ -223,11 +223,12 @@ matching the specified regular expressions; if no expressions are
 given, match all paths.  Useful when you need to examine a
 particularly complex node structure.
 `,
-	"swap": `swap: usage: repocutter [-r SELECTION] swap
+	"swap": `swap: usage: repocutter [-r SELECTION] swap [PATTERN]
 
 Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
-a common form of multi-project repository.
+a common form of multi-project repository.  If a PATTRERN is given, 
+only paths mastching the pattern are swapped.
 `,
 	"testify": `testify: usage: repocutter [-r SELECTION] testify
 
@@ -1806,8 +1807,15 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 }
 
 // Hack paths by swapping the top two components.
-func swap(source DumpfileSource, selection SubversionRange) {
+func swap(source DumpfileSource, selection SubversionRange, patterns []string) {
+	var match *regexp.Regexp
+	if len(patterns) > 0 {
+		match = regexp.MustCompile(patterns[0])
+	}
 	mutator := func(path []byte) []byte {
+		if match != nil && !match.Match(path) {
+			return path
+		}
 		parts := bytes.Split(path, []byte("/"))
 		if len(parts) < 2 {
 			// Single-component directory creations should be
@@ -2077,8 +2085,7 @@ func main() {
 	case "strip":
 		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "swap":
-		assertNoArgs()
-		swap(NewDumpfileSource(input, baton), selection)
+		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "testify":
 		assertNoArgs()
 		testify(NewDumpfileSource(input, baton))
