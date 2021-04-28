@@ -1818,6 +1818,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string) {
 		}
 		parts := bytes.Split(path, []byte("/"))
 		if len(parts) < 2 {
+			// FIXME: Known problem here when a node has both a
+			// single-component path an is a copy source for a
+			// later node - can happen in weirdly-sgaped multiprojerct
+			// directories.
+			//
 			// Single-component directory creations should be
 			// skipped; each such operation for directory 'foo' is
 			// replaced by the creation of the swapped directory
