@@ -57,6 +57,7 @@ Available subcommands and help topics:
    select
    setlog
    sift
+   split
    strip
    swap
    testify
@@ -88,6 +89,7 @@ var oneliners = map[string]string{
 	"select":     "Selecting revisions",
 	"setlog":     "Mutating log entries",
 	"sift":       "Sift for operations by Node-path header",
+	"split":      "Split a copy operation into a trunk/branches/tags clique",
 	"strip":      "Replace content with unique cookies, preserving structure",
 	"swap":       "Swap first two components of pathnames",
 	"testify":    "Massage a stream file into a neutralized test load",
@@ -215,6 +217,13 @@ with no Node records after this filtering has its Revision record
 removed as well. If the -repo option is given, a copy/move
 commit with a copyfrom referencing a non-matching path will turn
 into an add commit using "svn cat REPO".
+`,
+	"split": `split: usage: repocutter split PATH...
+
+Transform evey stream operation with Node-path PATH in the path list into three operations
+on PATH/trunk. PATH/branches, and PATH/tags. This operatrion assumes if the operation is a copy 
+that structure exists under the source directory and aso mutates Node-copyfrom headeers
+accordingly. 
 `,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
 
@@ -1762,6 +1771,38 @@ func sift(source DumpfileSource, selection SubversionRange, repo string, pattern
 	source.Report(selection, sifthook, nil, true, true)
 }
 
+func split(source DumpfileSource, selection SubversionRange, paths []string) {
+	splithook := func(header []byte, properties []byte, content []byte) []byte {
+		matches := false
+		target := payload("Node-path", header)
+		for _, path := range paths {
+			if bytes.Equal(target, []byte(path)) {
+				matches = true
+			}
+		}
+		if matches {
+			originalHeader := string(header)
+			copytarget := "Node-path: " + string(payload("Node-path", header))
+			copysource := "Node-copyfrom-path: " + string(payload("Node-copyfrom-path", header))
+			trunkCopy := strings.Replace(originalHeader, copytarget, copytarget+"/trunk", 1)
+			branchesCopy := strings.Replace(originalHeader, copytarget, copytarget+"/branches", 1)
+			tagsCopy := strings.Replace(originalHeader, copytarget, copytarget+"/tags", 1)
+			if copysource != "" {
+				trunkCopy = strings.Replace(trunkCopy, copysource, copysource+"/trunk", 1)
+				branchesCopy = strings.Replace(branchesCopy, copysource, copysource+"/branches", 1)
+				tagsCopy = strings.Replace(tagsCopy, copysource, copysource+"/tags", 1)
+			}
+			header = []byte(trunkCopy + branchesCopy + tagsCopy)
+		}
+		all := make([]byte, 0)
+		all = append(all, header...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+	source.Report(selection, splithook, nil, true, true)
+}
+
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
 	innerstrip := func(header []byte, properties []byte, content []byte) []byte {
 		// first check against the patterns, if any are given
@@ -2087,6 +2128,8 @@ func main() {
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
 	case "sift":
 		sift(NewDumpfileSource(input, baton), selection, repo, flag.Args()[1:])
+	case "split":
+		split(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "strip":
 		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "swap":
