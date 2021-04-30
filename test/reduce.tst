@@ -1,6 +1,6 @@
 ## Test of strip blobs reduce command
 set echo
-read <roundup.fi
+read <implicit.fi
 strip --blobs --reduce
 write -
 
