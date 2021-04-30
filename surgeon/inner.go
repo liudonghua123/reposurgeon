@@ -9521,7 +9521,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 }
 
 /* Topologically reduce the repo */
-func (repo *Repository) reduce() {
+func (repo *Repository) reduce(ignoreFileops bool) {
 	interesting := newOrderedStringSet()
 	for _, event := range repo.events {
 		if tag, ok := event.(*Tag); ok {
@@ -9531,7 +9531,7 @@ func (repo *Repository) reduce() {
 		} else if commit, ok := event.(*Commit); ok {
 			if len(commit.children()) != 1 || len(commit.parents()) != 1 {
 				interesting.Add(commit.mark)
-			} else {
+			} else if !ignoreFileops {
 				for _, op := range commit.operations() {
 					direct := commit.parents()[0]
 					var noAncestor bool

@@ -2390,7 +2390,7 @@ func (rs *Reposurgeon) DoInspect(line string) bool {
 // HelpStrip says "Shut up, golint!"
 func (rs *Reposurgeon) HelpStrip() {
 	rs.helpOutput(`
-[SELECTION] strip {--blobs|--reduce}
+[SELECTION] strip {--blobs|--reduce [--fileops]}
 
 This is intended for producing reduced test cases from large repositories.
 
@@ -2404,8 +2404,11 @@ blobs. The "--reduce" mode always acts on the entire repository.
 With the modifier "--reduce", perform a topological reduction that
 throws out uninteresting commits.  If a commit has all file
 modifications (no deletions or copies or renames) and has exactly one
-ancestor and one descendant, then it may be boring.  To be fully
-boring, it must also not be referred to by any tag or reset.
+ancestor and one descendant, then it may be boring.  With the modifier
+"--fileops", all file operations (even deletions or copies or renames)
+are considered boring, which may be useful if you want to examine a
+repository's branching/tagging history.  To be fully
+boring, the commit must also not be referred to by any tag or reset.
 Interesting commits are not boring, or have a non-boring parent or
 non-boring child.
 `)
@@ -2413,7 +2416,7 @@ non-boring child.
 
 // CompleteStrip is a completion hook across strip's modifiers.
 func (rs *Reposurgeon) CompleteStrip(text string) []string {
-	return []string{"--blobs", "--reduce"}
+	return []string{"--blobs", "--reduce", "--fileops"}
 }
 
 // DoStrip strips out content to produce a reduced test case.
@@ -2437,7 +2440,7 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 	}
 	if striptypes.Contains("--reduce") {
 		oldlen = len(repo.events)
-		repo.reduce()
+		repo.reduce(striptypes.Contains("--fileops"))
 		respond("From %d to %d events.", oldlen, len(repo.events))
 	}
 
