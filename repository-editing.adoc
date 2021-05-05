@@ -2062,6 +2062,8 @@ It is presently an error to insert a new committer or tagger
 attribution.  To change a committer or tagger, use "setfield"
 instead.
 
+include::docinclude/prepend.adoc[]
+
 include::docinclude/append.adoc[]
 
 include::docinclude/gitify.adoc[]

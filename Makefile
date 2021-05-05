@@ -139,6 +139,7 @@ BNF_TOPICS = \
 	names \
 	path \
 	prefer \
+	prepend \
 	preserve \
 	print \
 	quit \
