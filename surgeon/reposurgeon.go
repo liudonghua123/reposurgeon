@@ -3155,6 +3155,70 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 	return false
 }
 
+// HelpPrepend says "Shut up, golint!"
+func (rs *Reposurgeon) HelpPrepend() {
+	rs.helpOutput(`
+[SELECTION] prepend [--lstrip] TEXT
+
+Prepend text to the comments of commits and tags in the specified
+selection set. The text is the first token of the command and may
+be a quoted string. C-style escape sequences in the string are
+interpreted using Go's Quote/Unquote codec from the strconv library.
+
+If the option --lstrip is given, the comment is left-stripped before
+the new text is prepended. If the option --legacy is given, the string
+%LEGACY% in the prepend payload is replaced with the commit's lagacy-ID
+before it is prepended.
+
+Example:
+---------
+=C prepend "Legacy-Id: %LEGACY%\n" --legacy
+---------
+`)
+}
+
+// DoPrepend prepends a specified line to comments in the specified selection set.
+func (rs *Reposurgeon) DoPrepend(line string) bool {
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
+	defer parse.Closem()
+	fields, err := shlex.Split(parse.line, true)
+	if err != nil {
+		croak(err.Error())
+		return false
+	}
+	if len(fields) == 0 {
+		croak("missing prepend line")
+		return false
+	}
+	line, err = stringEscape(fields[0])
+	if err != nil {
+		croak(err.Error())
+		return false
+	}
+	for _, ei := range rs.selection {
+		event := rs.chosen().events[ei]
+		switch event.(type) {
+		case *Commit:
+			commit := event.(*Commit)
+			if parse.options.Contains("--lstrip") {
+				commit.Comment = strings.TrimLeft(commit.Comment, " \n\t")
+			}
+			if parse.options.Contains("--legacy") {
+				commit.Comment = strings.Replace(line, "%LEGACY%", commit.legacyID, -1) + commit.Comment
+			} else {
+				commit.Comment = line + commit.Comment
+			}
+		case *Tag:
+			tag := event.(*Tag)
+			if parse.options.Contains("--lstrip") {
+				tag.Comment = strings.TrimLeft(tag.Comment, " \n\t")
+			}
+			tag.Comment = line + tag.Comment
+		}
+	}
+	return false
+}
+
 // HelpSquash says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSquash() {
 	rs.helpOutput(`
