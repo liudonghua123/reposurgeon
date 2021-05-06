@@ -80,7 +80,7 @@ listcheck:
 
 # Test that all stream files round-trip properly: compressed, uncompressed,
 # and when passed through as message boxes by msgin/msgout.
-RULES_ROUNDTRIP=$(patsubst %,roundtrip-%,$(wildcard *.fi))
+ROUNDTRIP_TARGETS=$(patsubst %,roundtrip-%,$(wildcard *.fi))
 ROUNDTRIP_COMPRESS_TARGETS=$(patsubst %,roundtrip-compress-%,$(wildcard *.fi))
 MESSAGEBOX_TARGETS=$(patsubst %,messagebox-%,$(wildcard *.fi))
 
