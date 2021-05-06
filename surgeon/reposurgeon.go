@@ -3094,7 +3094,7 @@ func (rs *Reposurgeon) DoSetperm(line string) bool {
 // HelpAppend says "Shut up, golint!"
 func (rs *Reposurgeon) HelpAppend() {
 	rs.helpOutput(`
-[SELECTION] append [--rstrip] TEXT
+[SELECTION] append [--rstrip] [--legacy] TEXT
 
 Append text to the comments of commits and tags in the specified
 selection set. The text is the first token of the command and may
@@ -3158,7 +3158,7 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 // HelpPrepend says "Shut up, golint!"
 func (rs *Reposurgeon) HelpPrepend() {
 	rs.helpOutput(`
-[SELECTION] prepend [--lstrip] TEXT
+[SELECTION] prepend [--lstrip] [--legacy] TEXT
 
 Prepend text to the comments of commits and tags in the specified
 selection set. The text is the first token of the command and may
