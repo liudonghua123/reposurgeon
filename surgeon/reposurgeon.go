@@ -4726,6 +4726,7 @@ func (rs *Reposurgeon) DoReparent(line string) bool {
 		if logEnable(logWARN) {
 			logit("reparent requires one or more selected commits")
 		}
+		return false
 	}
 	child := selected[len(selected)-1]
 	parents := make([]CommitLike, len(rs.selection)-1)
