@@ -49,7 +49,9 @@ type Counter struct {
 	count      uint64
 }
 
-// Progress is the evolved form of the counter which shows the percentage of completion and the rate of progress in addition to the count
+// Progress is the evolved form of the counter which shows the
+// percentage of completion and the rate of progress in addition to
+// the count
 type Progress struct {
 	sync.RWMutex
 	start      time.Time
@@ -167,7 +169,7 @@ func (baton *Baton) setInteractivity(enabled bool) {
 	}
 }
 
-// log prints out a simple log message
+// printLog prints out a simple log message
 func (baton *Baton) printLog(str []byte) {
 	if baton != nil {
 		if baton.progressEnabled {
@@ -178,6 +180,7 @@ func (baton *Baton) printLog(str []byte) {
 	}
 }
 
+// printLogrting prints out a simple log message
 func (baton *Baton) printLogString(str string) {
 	if baton != nil {
 		if baton.progressEnabled {
