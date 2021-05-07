@@ -8969,6 +8969,9 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 				blank.tagger = attrib
 				blank.emailIn(message, true)
 				commits := repo.commits(nil)
+				if len(commits) == 0 {
+					panic(throw("command", "repository has no commits"))
+				}
 				blank.remember(repo, commits[len(commits)-1].mark)
 				repo.addEvent(blank)
 			} else {
