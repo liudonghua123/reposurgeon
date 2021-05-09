@@ -2,6 +2,7 @@
 
 Repository head::
      repocuttor pathrename can do multiple path transforms in one command.
+     repocutter closure finds transitive closures of path sets under copyfrom.
 
 4.26: 2021-04-03::
      Read and write original-oid fields in annotated tags.
