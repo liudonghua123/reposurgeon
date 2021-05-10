@@ -214,7 +214,7 @@ removed as well.
 `,
 	"split": `split: usage: repocutter split PATH...
 
-Transform evey stream operation with Node-path PATH in the path list into three operations
+Transform every stream operation with Node-path PATH in the path list into three operations
 on PATH/trunk. PATH/branches, and PATH/tags. This operatrion assumes if the operation is a copy 
 that structure exists under the source directory and aso mutates Node-copyfrom headeers
 accordingly. 
