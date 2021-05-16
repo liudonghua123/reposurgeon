@@ -1,0 +1,150 @@
+SVN-fs-dump-format-version: 2
+
+UUID: 843dc787-8fae-4c75-9d75-92dde3239a7c
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+2021-05-16T16:30:27.465797Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 115
+Content-length: 115
+
+K 10
+svn:author
+V 6
+paulie
+K 8
+svn:date
+V 27
+2021-05-16T16:30:27.551444Z
+K 7
+svn:log
+V 14
+initial commit
+PROPS-END
+
+Node-path: dir2
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 6
+paulie
+K 8
+svn:date
+V 27
+2021-05-16T16:30:27.687470Z
+K 7
+svn:log
+V 24
+commit with many changes
+PROPS-END
+
+Node-path: dir2/file1
+Node-kind: file
+Node-action: add
+Text-content-length: 9
+Content-length: 9
+
+content1
+
+Node-path: dir2/file2
+Node-kind: file
+Node-action: add
+Text-content-length: 15
+Content-length: 15
+
+content2
+line2
+
+
+Node-path: dir3
+Node-kind: dir
+Node-action: add
+
+
+Node-path: dir3/file1
+Node-kind: file
+Node-action: add
+Text-content-length:  9
+Content-length:  9
+
+content1
+
+Node-path: dir3/file2
+Node-kind: file
+Node-action: add
+Text-content-length:  9
+Content-length:  9
+
+content2
+
+Revision-number: 3
+Prop-content-length: 115
+Content-length: 115
+
+K 10
+svn:author
+V 6
+paulie
+K 8
+svn:date
+V 27
+2021-05-16T16:30:27.796272Z
+K 7
+svn:log
+V 14
+commit of dir4
+PROPS-END
+
+Node-path: dir4
+Node-kind: dir
+Node-action: add
+
+
+Node-path: dir4/anewfile
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 17
+Content-length: 27
+
+PROPS-END
+new file in dir4
+
+
+Node-path: dir4/file2
+Node-kind: file
+Node-action: add
+Text-content-length: 23
+Content-length: 23
+
+content2
+line2 in dir4
+
+
+Node-path: dir4/file1
+Node-kind: file
+Node-action: add
+Text-content-length:  9
+Content-length:  9
+
+content1
+
