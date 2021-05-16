@@ -1151,7 +1151,7 @@ func emitNodeAddRecords(source DumpfileSource, repo string) {
 		contentLen := strconv.FormatInt(info.Size(), 10)
 		all = append(all, []byte("Text-content-length:  "+contentLen+"\n")...)
 		all = append(all, []byte("Content-length:  "+contentLen+"\n\n")...)
-		data, err := os.ReadFile(path)
+		data, err := ioutil.ReadFile(path)
 		if err != nil {
 			croak("script failure reading temp path '%s': %s", path, err)
 		}
