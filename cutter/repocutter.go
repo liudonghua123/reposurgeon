@@ -10,8 +10,10 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -68,6 +70,7 @@ Available subcommands and help topics:
 // 'squash' command has been omitted.
 
 var debug = false
+var quiet bool
 
 var oneliners = map[string]string{
 	"closure":    "Compute the transitive closure of a path set",
@@ -106,12 +109,14 @@ that every copy-from source is in the set.
 The 'deselect' subcommand selects a range and permits only revisions NOT in
 that range to pass to standard output.
 `,
-	"expunge": `expunge: usage: repocutter [-r SELECTION ] expunge PATTERN...
+	"expunge": `expunge: usage: repocutter [-r SELECTION ] [-repo REPO] expunge PATTERN...
 
 Delete all operations with Node-path headers matching specified
 Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
-record removed as well.
+record removed as well. If the -repo option is given, a copy/move
+commit with a copyfrom referencing an expunged path will turn
+into an add commit using "svn cat REPO".
 `,
 	"log": `log: usage: repocutter [-r SELECTION] log
 
@@ -205,12 +210,14 @@ Replace the log entries in the input dumpfile with the corresponding entries
 in the LOGFILE, which should be in the format of an svn log output.
 Replacements may be restricted to a specified range.
 `,
-	"sift": `sift: usage: repocutter [-r SELECTION ] sift PATTERN...
+	"sift": `sift: usage: repocutter [-r SELECTION] [-repo REPO] sift PATTERN...
 
 Delete all operations with Node-path headers *not* matching specified
 Golang regular expressions (opposite of 'expunge').  Any revision left
 with no Node records after this filtering has its Revision record
-removed as well.
+removed as well. If the -repo option is given, a copy/move
+commit with a copyfrom referencing an expunged path will turn
+into an add commit using "svn cat REPO".
 `,
 	"split": `split: usage: repocutter split PATH...
 
@@ -297,6 +304,13 @@ func (baton *Baton) End(msg string) {
 func croak(msg string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "repocutter: croaking, "+msg+"\n", args...)
 	os.Exit(1)
+}
+
+func announce(msg string, args ...interface{}) {
+	if !quiet {
+		content := fmt.Sprintf(msg, args...)
+		os.Stderr.WriteString("repocutter: " + content + "\n")
+	}
 }
 
 // LineBufferedSource - Generic class for line-buffered input with pushback.
@@ -548,7 +562,7 @@ func SetLength(header string, data []byte, val int) []byte {
 	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
 }
 
-// stripChecksums - remove chwecksums from a blob header
+// stripChecksums - remove checksums from a blob header
 func stripChecksums(header []byte) []byte {
 	r1 := regexp.MustCompile("Text-content-md5:.*\n")
 	header = r1.ReplaceAll(header, []byte{})
@@ -784,6 +798,7 @@ func (s *SubversionRange) Upperbound() int {
 }
 
 // Report a filtered portion of content.
+var endcommithook func()  // can be set in a nodehook or prophook
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header []byte, properties []byte, content []byte) []byte,
 	prophook func(properties *Properties),
@@ -802,6 +817,9 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	var nodecount int
 	var line []byte
 	for {
+		if endcommithook != nil {
+			endcommithook() // since set via nodehook/prophook, can only be non-nil at the end of a commit
+		}
 		ds.Index = 0
 		nodecount = 0
 		stash, _ := ds.ReadRevisionHeader(prophook)
@@ -816,6 +834,9 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		for {
 			line = ds.Lbs.Readline()
 			if len(line) == 0 {
+				if endcommithook != nil { // need this since the same `if` above will be skipped on the very last revision
+					endcommithook()
+				}
 				return
 			}
 			if string(line) == "\n" {
@@ -899,6 +920,22 @@ func (lf *Logfile) Contains(revision int) bool {
 	return ok
 }
 
+// captureFromProcess runs a specified command, capturing the output.
+func captureFromProcess(command string) []byte {
+	if !quiet {
+		announce("%s: capturing %s", time.Now(), command)
+	}
+	cmd := exec.Command("sh", "-c", command)
+	content, err := cmd.CombinedOutput()
+	if err != nil {
+		croak("executing %q: %v", cmd, err)
+	}
+	//if verbose {
+	announce(string(content))
+	//}
+	return content
+}
+
 const delim = "------------------------------------------------------------------------"
 
 // NewLogfile - initialize a new logfile object from an input source
@@ -965,7 +1002,7 @@ func NewLogfile(readable io.Reader, restrict *SubversionRange) *Logfile {
 	return &lf
 }
 
-// Extract content of  a specified header
+// Extract content of a specified header field
 func payload(hd string, header []byte) []byte {
 	offs := bytes.Index(header, []byte(hd+": "))
 	if offs == -1 {
@@ -1044,26 +1081,180 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, true)
 }
 
-// Strip out ops defined by a revision selection and a path regexp.
-func expunge(source DumpfileSource, selection SubversionRange, patterns []string) {
-	expungehook := func(header []byte, properties []byte, content []byte) []byte {
-		matched := false
-		nodepath := payload("Node-path", header)
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				r := regexp.MustCompile(pattern)
-				if r.Match(nodepath) {
-					matched = true
-					break
-				}
+// "expunge" and "sift" helper to get all the Regexp instances needed
+var findHeaderEnd *regexp.Regexp
+var findNodeAction *regexp.Regexp
+var findCopyFromRev *regexp.Regexp
+var findCopyFromPath *regexp.Regexp
+
+func getRegexMatcher(patterns []string, returnValOnMatch bool) func([]byte) bool {
+	findHeaderEnd = regexp.MustCompile("\n\n")
+	findNodeAction = regexp.MustCompile("Node-action:.*\n")
+	findCopyFromRev = regexp.MustCompile("Node-copyfrom-rev:.*\n")
+	findCopyFromPath = regexp.MustCompile("Node-copyfrom-path:.*\n")
+	regexes := make([]*regexp.Regexp, 0)
+	for _, pattern := range patterns {
+		regexes = append(regexes, regexp.MustCompile(pattern))
+	}
+
+	return func(path []byte) bool {
+		for _, r := range regexes {
+			if r.Match(path) {
+				return returnValOnMatch
 			}
 		}
-		if !matched {
-			all := make([]byte, 0)
-			all = append(all, header...)
-			all = append(all, properties...)
-			all = append(all, content...)
-			return all
+		return !returnValOnMatch
+	}
+}
+
+// "expunge" and "sift" helper to recursively create node adds for a converted add commit (used by convertNodeMoveToAdd())
+var currentDirMoveDst []byte // save this since subsequent node records can be of edited files, so wait for Node-path to change
+var currentDirMoveSrc []byte
+var currentDirRev []byte
+var currentDirMoveSeenPaths [][]byte // these were edited nested files in a directory copy/move, so were already dumped
+
+func emitNodeAddRecords(source DumpfileSource, repo string) {
+	dir, err := ioutil.TempDir("", "repocutter-")
+	if err != nil {
+		croak("script failure creating '%s': %s", dir, err)
+	}
+	defer os.RemoveAll(dir)
+
+	// checkout the whole SVN directory into the temp directory
+	captureFromProcess(fmt.Sprintf("svn checkout %s%s@%s %s/%s", repo, currentDirMoveSrc, currentDirRev, dir, currentDirMoveDst))
+	os.RemoveAll(fmt.Sprintf("%s/%s/.svn", dir, currentDirMoveDst)) // we don't want to walk the .svn dir
+
+	// walk the checked out files and create new dumpfile nodes for each one
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			croak("script failure walking temp path '%s': %s", path, err)
+		}
+		if len(path) == len(dir) {
+			return nil // skip top-level dir to prevent "slice bounds out of range" error below
+		}
+		nodePath := []byte(path[len(dir)+1:]) // remove "tmpdir/" prefix from path
+		for _, item := range currentDirMoveSeenPaths {
+			if bytes.Equal(item, nodePath) {
+				return nil // already handled since file was changed in this commit
+			}
+		}
+		all := make([]byte, 0)
+		all = append(all, []byte("Node-path: "+string(nodePath)+"\n")...)
+		if info.IsDir() {
+			all = append(all, []byte("Node-kind: dir\n")...)
+			all = append(all, []byte("Node-action: add\n\n")...)
+			return nil
+		}
+		// else is a file
+		all = append(all, []byte("Node-kind: file\n")...)
+		all = append(all, []byte("Node-action: add\n")...)
+		contentLen := strconv.FormatInt(info.Size(), 10)
+		all = append(all, []byte("Text-content-length:  "+contentLen+"\n")...)
+		all = append(all, []byte("Content-length:  "+contentLen+"\n\n")...)
+		data, err := ioutil.ReadFile(path)
+		if err != nil {
+			croak("script failure reading temp path '%s': %s", path, err)
+		}
+		all = append(all, data...)
+		all = append(all, '\n')
+		source.say(all)
+		return nil
+	})
+	if err != nil {
+		croak("script failure walking temp dir '%s': %s", dir, err)
+	}
+
+	// reset globals
+	currentDirMoveDst = nil
+	currentDirMoveSrc = nil
+	endcommithook = nil
+	currentDirMoveSeenPaths = nil
+}
+
+// "expunge" and "sift" helper to convert a copy/move commit from an invalid source to add commit(s)
+// this modifies the global currentDirMove{Src,Dst} and currentDirMoveSeenPaths values to be used by emitNodeAddRecords(),
+// which is called either when a new path is seen in this commit or by the endcommithook()
+// NOTE: these are the types of copyfroms repocutter knows about (which is hopefully all possible)
+// 1. file copied/moved without changes (will have no content, so uses `svn cat`)
+// 2. file copied/moved with changes (will already have all the latest content, so just cleanup the header)
+// 3. directory copied/moved (which could include changed files, i.e. 2. above) is handled by emitNodeAddRecords()
+func convertNodeMoveToAdd(source DumpfileSource, repo string, isaKeeper func([]byte) bool, header []byte, properties []byte, content []byte) []byte {
+	copysource := payload("Node-copyfrom-path", header)
+	copydest := payload("Node-path", header)
+	isUnderCurDirMove := len(currentDirMoveDst) > 0 && bytes.HasPrefix(copydest, currentDirMoveDst)
+	if !isUnderCurDirMove && (copysource == nil || isaKeeper(copysource)) {
+		// no need to modify commit, so just return it
+		all := make([]byte, 0)
+		all = append(all, header...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+
+	if repo == "" {
+		errmsg := "expunged %s was a copy/move source in rev# %d, so -repo argument"
+		errmsg += " is required to convert the commit to an add"
+		croak(errmsg, copysource, source.Revision)
+	}
+	copysourceRev := payload("Node-copyfrom-rev", header)
+	copysourceKind := payload("Node-kind", header)
+
+	if len(currentDirMoveDst) > 0 && !bytes.HasPrefix(copydest, currentDirMoveDst) {
+		// this moved path is not under currentDirMoveDst, so we can close out the previous one
+		// by prepending those new nodes (if any) before this current one
+		emitNodeAddRecords(source, repo)
+	}
+
+	if bytes.Equal(copysourceKind, []byte("dir")) && !isUnderCurDirMove {
+		currentDirMoveDst = copydest
+		currentDirMoveSrc = copysource
+		currentDirRev = copysourceRev
+		endcommithook = func() {
+			emitNodeAddRecords(source, repo)
+		}
+	}
+
+	if len(currentDirMoveDst) > 0 {
+		currentDirMoveSeenPaths = append(currentDirMoveSeenPaths, copydest)
+	}
+	header = stripChecksums(header)
+	header = findNodeAction.ReplaceAll(header, []byte("Node-action: add\n")) // in case it was "change"
+	header = findCopyFromRev.ReplaceAll(header, []byte{}) // remove Node-copyfrom-rev
+	header = findCopyFromPath.ReplaceAll(header, []byte{}) // remove Node-copyfrom-path
+	header = findHeaderEnd.ReplaceAll(header, []byte("\n")) // to append at end, replace two \n with one
+
+	if bytes.Equal(copysourceKind, []byte("file")) {
+		// get/set Text-content-length and Content-length
+		curLen := payload("Text-content-length", header)
+		if curLen == nil {
+			// this does not include content, so we need to get it from SVN
+			content = captureFromProcess(fmt.Sprintf("svn cat %s%s@%s", repo, copysource, copysourceRev))
+			header = append(header, []byte("Text-content-length: "+strconv.Itoa(len(content))+"\n")...)
+			// set Content-length
+			curLen = payload("Content-length", header)
+			if curLen != nil {
+				header = SetLength("Content", header, len(properties)+len(content))
+			} else {
+				header = append(header, []byte("Content-length: "+strconv.Itoa(len(properties)+len(content))+"\n")...)
+			}
+		} // else nothing to do, since we already have the latest content and header was fixed above
+	}
+	header = append(header, '\n') // after any additional headers were added, add final \n
+	all := make([]byte, 0)
+	all = append(all, header...)
+	all = append(all, properties...)
+	all = append(all, content...)
+	return all
+}
+
+// Strip out ops defined by a revision selection and a path regexp.
+func expunge(source DumpfileSource, selection SubversionRange, repo string, patterns []string) {
+	notMatchesAnyPattern := getRegexMatcher(patterns, false)
+
+	expungehook := func(header []byte, properties []byte, content []byte) []byte {
+		if notMatchesAnyPattern(payload("Node-path", header)) {
+			// we're keeping this commit
+			return convertNodeMoveToAdd(source, repo, notMatchesAnyPattern, header, properties, content)
 		}
 		return []byte{}
 	}
@@ -1668,26 +1859,15 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 }
 
 // Strip a portion of the dump file defined by a revision selection.
-// Sift for ops defined by a revision selection and a path regexp.
-func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
+// Sift for ops defined by a revision selection and a path regexp and use `svn cat`
+// to convert any move commits whose copyfrom references a non-matching path.
+func sift(source DumpfileSource, selection SubversionRange, repo string, patterns []string) {
+	matchesAnyPattern := getRegexMatcher(patterns, true)
+
 	sifthook := func(header []byte, properties []byte, content []byte) []byte {
-		matched := false
-		nodepath := payload("Node-path", header)
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				r := regexp.MustCompile(pattern)
-				if r.Match(nodepath) {
-					matched = true
-					break
-				}
-			}
-		}
-		if matched {
-			all := make([]byte, 0)
-			all = append(all, header...)
-			all = append(all, properties...)
-			all = append(all, content...)
-			return all
+		if matchesAnyPattern(payload("Node-path", header)) {
+			// we're keeping this commit
+			return convertNodeMoveToAdd(source, repo, matchesAnyPattern, header, properties, content)
 		}
 		return []byte{}
 	}
@@ -1921,9 +2101,9 @@ func testify(source DumpfileSource) {
 
 func main() {
 	selection := NewSubversionRange("0:HEAD")
-	var quiet bool
 	var logentries string
 	var rangestr string
+	var repo string
 	var infile string
 	input := os.Stdin
 	flag.BoolVar(&debug, "d", false, "enable debug messages")
@@ -1936,6 +2116,7 @@ func main() {
 	flag.BoolVar(&quiet, "quiet", false, "disable progress messages")
 	flag.StringVar(&rangestr, "r", "", "set selection range")
 	flag.StringVar(&rangestr, "range", "", "set selection range")
+	flag.StringVar(&repo, "repo", "", "set repo path/URL for sift/expunge")
 	flag.IntVar(&base, "b", 0, "base value to renumber from")
 	flag.IntVar(&base, "base", 0, "base value to renumber from")
 	flag.Parse()
@@ -1976,6 +2157,14 @@ func main() {
 		}
 	}
 
+	if repo != "" {
+		// make sure `repo` ends in a slash
+		lastChar := repo[len(repo)-1]
+		if lastChar != '/' && lastChar != '\\' {
+			repo += "/"
+		}
+	}
+
 	switch flag.Arg(0) {
 	case "closure":
 		closure(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
@@ -1983,7 +2172,7 @@ func main() {
 		assertNoArgs()
 		deselect(NewDumpfileSource(input, baton), selection)
 	case "expunge":
-		expunge(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+		expunge(NewDumpfileSource(input, baton), selection, repo, flag.Args()[1:])
 	case "help":
 		if len(flag.Args()) == 1 {
 			os.Stdout.WriteString(doc)
@@ -2041,7 +2230,7 @@ func main() {
 		}
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
 	case "sift":
-		sift(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+		sift(NewDumpfileSource(input, baton), selection, repo, flag.Args()[1:])
 	case "split":
 		split(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "strip":
