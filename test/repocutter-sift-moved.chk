@@ -12,8 +12,8 @@ V 27
 PROPS-END
 
 Revision-number: 1
-Prop-content-length: 115
-Content-length: 115
+Prop-content-length: 113
+Content-length: 113
 
 K 10
 svn:author
@@ -39,8 +39,8 @@ PROPS-END
 
 
 Revision-number: 2
-Prop-content-length: 125
-Content-length: 125
+Prop-content-length: 123
+Content-length: 123
 
 K 10
 svn:author
@@ -96,8 +96,8 @@ Content-length:  9
 content2
 
 Revision-number: 3
-Prop-content-length: 115
-Content-length: 115
+Prop-content-length: 113
+Content-length: 113
 
 K 10
 svn:author

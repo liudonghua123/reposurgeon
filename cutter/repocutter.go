@@ -2061,28 +2061,61 @@ PROPS-END
 // Neutralize the input test load
 func testify(source DumpfileSource) {
 	const NeutralUser = "fred"
+	const NeutralUserLen = len(NeutralUser)
 	counter := base
 	var p []byte
-	var state int
+	var state, oldAutherLen, oldPropLen, oldContentLen int
+	var headerBuf []byte // need buffer to edit Prop-content-length and Content-length
+	var inRevHeader, saveToHeaderBuf bool
+	// since Go doesn't have a ternary operator, we need to create these helper funcs
+	getPropLen := func(saveToHeaderBuf bool, line []byte) []byte {
+		if counter > 1 && inRevHeader && !saveToHeaderBuf { // first rev doesn't have an author
+			return payload("Prop-content-length", line)
+		}
+		return nil
+	}
+	getContentLen := func(saveToHeaderBuf bool, line []byte) []byte {
+		if saveToHeaderBuf {
+			return payload("Content-length", line)
+		}
+		return nil
+	}
+
 	for {
 		line := source.Lbs.Readline()
 		if len(line) == 0 {
 			break
 		}
 		if p = payload("UUID", line); p != nil && source.Lbs.linenumber <= 10 {
-			continue
+			line = make([]byte, 0)
 		} else if p = payload("Revision-number", line); p != nil {
 			counter++
+			inRevHeader = true
+		} else if p = getPropLen(saveToHeaderBuf, line); p != nil {
+			saveToHeaderBuf = true
+			headerBuf = make([]byte, 0)
+			line = make([]byte, 0)
+			oldPropLen, _ = strconv.Atoi(string(p))
+		} else if p = getContentLen(saveToHeaderBuf, line); p != nil {
+			line = make([]byte, 0)
+			oldContentLen, _ = strconv.Atoi(string(p))
 		} else if bytes.HasPrefix(line, []byte("svn:author")) {
 			state = 1
 		} else if state == 1 && bytes.HasPrefix(line, []byte("V ")) {
-			line = []byte(fmt.Sprintf("V %d\n", len(NeutralUser)))
+			oldAutherLen, _ = strconv.Atoi(string(line[2:len(line)-1]))
+			headerBuf = append([]byte(fmt.Sprintf("Prop-content-length: %d\nContent-length: %d\n",
+				(oldPropLen + NeutralUserLen - oldAutherLen),
+				(oldContentLen + NeutralUserLen - oldAutherLen))), headerBuf...)
+			line = append(headerBuf, []byte(fmt.Sprintf("V %d\n", NeutralUserLen))...)
+			saveToHeaderBuf = false
+			inRevHeader = false
 			state = 2
 		} else if bytes.HasPrefix(line, []byte("svn:date")) {
 			state = 4
 		} else if bytes.HasPrefix(line, []byte("PROPS-END")) {
 			state = 0
 		}
+
 		if state == 3 {
 			line = []byte(NeutralUser + "\n")
 			state = 0
@@ -2092,7 +2125,13 @@ func testify(source DumpfileSource) {
 			line = []byte(t2 + "\n")
 			state = 0
 		}
-		os.Stdout.Write(line)
+
+		if saveToHeaderBuf {
+			headerBuf = append(headerBuf, line...)
+		} else {
+			os.Stdout.Write(line)
+		}
+
 		if state >= 2 {
 			state++
 		}
