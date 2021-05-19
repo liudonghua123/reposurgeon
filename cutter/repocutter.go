@@ -797,8 +797,8 @@ func (s *SubversionRange) Upperbound() int {
 	return s.intervals[len(s.intervals)-1][1]
 }
 
-// Report a filtered portion of content.
 var endcommithook func()  // can be set in a nodehook or prophook
+// Report a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header []byte, properties []byte, content []byte) []byte,
 	prophook func(properties *Properties),
