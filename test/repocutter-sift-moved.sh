@@ -16,8 +16,7 @@ mkdir dir1 dir2
 cd dir1 || exit
 echo content1 > file1
 echo content2 > file2
-# shellcheck disable=SC2103
-cd ..
+cd .. || exit
 svn add -- * > /dev/null
 svn commit -m 'initial commit' > /dev/null
 
@@ -35,8 +34,7 @@ echo 'new file in dir4' > dir4/anewfile
 svn add dir4/anewfile > /dev/null
 svn commit -m 'commit of dir4' > /dev/null
 
-# shellcheck disable=SC2103
-cd ..
+cd .. || exit
 svnadmin dump "$DIR/repocutter-sift-moved-repo" | \
     ${REPOCUTTER:-repocutter} -q -repo "file://$DIR/repocutter-sift-moved-repo" sift dir2 dir3 dir4 | \
     ${REPOCUTTER:-repocutter} -q testify
