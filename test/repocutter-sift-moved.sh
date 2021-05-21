@@ -11,12 +11,12 @@ svnadmin create repocutter-sift-moved-repo > /dev/null
 svn co "file://$DIR/repocutter-sift-moved-repo" repocutter-sift-moved-checkout > /dev/null
 
 # create dir1 and dir2 initially, with only dir1 having files
-cd repocutter-sift-moved-checkout || exit
+cd >/dev/null repocutter-sift-moved-checkout || exit 1
 mkdir dir1 dir2
-cd dir1 || exit
+cd >/dev/null dir1 || exit 1
 echo content1 > file1
 echo content2 > file2
-cd .. || exit
+cd .. >/dev/null || exit 1
 svn add -- * > /dev/null
 svn commit -m 'initial commit' > /dev/null
 
@@ -34,7 +34,7 @@ echo 'new file in dir4' > dir4/anewfile
 svn add dir4/anewfile > /dev/null
 svn commit -m 'commit of dir4' > /dev/null
 
-cd .. || exit
+cd .. >/dev/null || exit 1
 svnadmin dump -q "$DIR/repocutter-sift-moved-repo" | \
     ${REPOCUTTER:-repocutter} -q -repo "file://$DIR/repocutter-sift-moved-repo" sift dir2 dir3 dir4 | \
     ${REPOCUTTER:-repocutter} -q testify
