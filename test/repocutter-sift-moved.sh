@@ -35,6 +35,6 @@ svn add dir4/anewfile > /dev/null
 svn commit -m 'commit of dir4' > /dev/null
 
 cd .. || exit
-svnadmin dump "$DIR/repocutter-sift-moved-repo" | \
+svnadmin dump -q "$DIR/repocutter-sift-moved-repo" | \
     ${REPOCUTTER:-repocutter} -q -repo "file://$DIR/repocutter-sift-moved-repo" sift dir2 dir3 dir4 | \
     ${REPOCUTTER:-repocutter} -q testify
