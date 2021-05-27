@@ -3526,7 +3526,7 @@ of time, curly brackets (not parens) performed subexpression grouping.
 [[emergency]]
 === Emergency help
 
-If you need emergency help, go to the #reposurgeon IRC on freenode.
+If you need emergency help, go to the #reposurgeon IRC on irc.oftc.net.
 Be aware, however, that the maintainer is too busy to babysit
 difficult repository conversions unless he has explicitly volunteered
 for one or someone is paying him to care about it.  For explanation,
