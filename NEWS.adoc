@@ -1,8 +1,9 @@
 = reposurgeon project news =
 
-Repository head::
+4.27: 2021-05-27::
      repocutter pathrename can do multiple path transforms in one command.
      repocutter closure finds transitive closures of path sets under copyfrom.
+     IRC channel migration to OFTC.
 
 4.26: 2021-04-03::
      Read and write original-oid fields in annotated tags.
