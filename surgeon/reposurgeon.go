@@ -3343,7 +3343,7 @@ Some examples:
 :15 add D .gitignore
 
 # Create a new blob :2317 with specified content. At commit :17, add modify 
-# or creation of a file named "spaulding>" with its content in the new blob.
+# or creation of a file named "spaulding" with its content in the new blob.
 # Make it check out with 755 (-rwxr-xr-x) permissions rather than the
 # normal 644 (-rw-r--r--). 
 blob :2317 <<EOF
