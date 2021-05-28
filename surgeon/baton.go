@@ -131,13 +131,13 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 			} else if me.stream != nil {
 				if msg.ty == LOG {
 					if me.progressEnabled {
-						ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+						ti.Fprintf(me.stream, terminfo.CarriageReturn)
 						ti.Fprintf(me.stream, terminfo.ClrEol)
 						me.stream.Write(msg.str)
 						if !bytes.HasSuffix(msg.str, ti.Strings[terminfo.ScrollForward]) {
 							ti.Fprintf(me.stream, terminfo.ScrollForward)
 						}
-						ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+						ti.Fprintf(me.stream, terminfo.CarriageReturn)
 						me.stream.Write(*lastProgress)
 					} else {
 						if len(msg.str) != 0 {
@@ -148,7 +148,7 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 						}
 					}
 				} else if msg.ty == PROGRESS {
-					ti.Fprintf(me.stream, terminfo.ColumnAddress, 0)
+					ti.Fprintf(me.stream, terminfo.CarriageReturn)
 					ti.Fprintf(me.stream, terminfo.ClrEol)
 					me.stream.Write(msg.str)
 					lastProgress = &msg.str
