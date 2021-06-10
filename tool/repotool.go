@@ -477,10 +477,13 @@ func mirror(args []string) {
 	}
 	username := os.Getenv("RUSERNAME")
 	password := os.Getenv("RPASSWORD")
+	plausibleSVNPrefix := func(operand string) bool {
+		return strings.HasPrefix(operand, "svn://") || strings.HasPrefix(operand, "file://") || strings.HasPrefix(operand, "https://") && strings.HasPrefix(operand, "http://")
+	}
 	// Gets commit length of a Subversion repo from its URL. Can be run
 	// on a local mirror directory.
 	reposize := func(operand string) int {
-		if !strings.HasPrefix(operand, "svn://") && !strings.HasPrefix(operand, "file://") {
+		if !plausibleSVNPrefix(operand) {
 			if operand[0] != '/' {
 				operand = "/" + operand
 			}
@@ -540,26 +543,23 @@ func mirror(args []string) {
 			baton.Write([]byte{'\n'}) // Kludge, FIXME
 		}
 		baton.endProgress()
-		// Stash the remote URL in the mirror directory
-		// so that when mirroring incrementally we can query its size.
-		if ioutil.WriteFile(filepath.Join(locald, "REMOTE-URL"), []byte(operand), 0644) != nil {
-			log.Fatal("couldn't stash remote repository URL in REMOTE-URL")
-		}
 	} else if isdir(filepath.Join(operand, "locks")) {
 		if operand[0] == os.PathSeparator {
 			locald = operand
 		} else {
 			locald = filepath.Join(pwd, operand)
 		}
+		getremote := fmt.Sprintf("svnlook pg %s -r 0 --revprop svn:sync-from-url", operand)
 		cmd := fmt.Sprintf("svnsync synchronize -q --steal-lock file://%s", locald)
-		if remote, err := ioutil.ReadFile(filepath.Join(locald, "REMOTE-URL")); err != nil {
-			// Without the stashed remote size we can't progress-meter
+		if remote := captureFromProcess(getremote, "getting remote URL"); !plausibleSVNPrefix(remote) {
+			// Without the remote size we can't progress-meter.
+			// Might happen if we rsynced this.
 			runShellProcessOrDie(cmd, "mirroring")
 		} else {
 			// Have remote size, we can progress-meter,
 			// this makes long resyncs more bearable.
 			baton := newBaton(!quiet, func(s string) {})
-			remotesize := reposize(string(remote))
+			remotesize := reposize(remote)
 			localsize := reposize(locald)
 			baton.startProgress("Mirroring", uint64(remotesize-localsize))
 			ind := 0
@@ -588,6 +588,7 @@ func mirror(args []string) {
 		parts := strings.SplitN(operand[8:], "/", 2)
 		operand = parts[0] + ":/" + parts[1]
 		runShellProcessOrDie(fmt.Sprintf("rsync --delete -az %s/ %s", operand, locald), "mirroring")
+		// FIXME: Is there some useful way we can set the svn:sync-from-url property here?
 	} else if strings.HasPrefix(operand, "cvs://") || localrepo(operand, "file://", "cvs") {
 		if mirrordir != "" {
 			locald = mirrordir
