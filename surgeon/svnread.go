@@ -2897,6 +2897,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	//   another branch history (which would be a bit strange) or if the
 	//   --preserve option is used.
 	rootmarks := newOrderedStringSet()
+	roottags := newStringSet()
 	for _, roots := range sp.branchRoots {
 		for _, root := range roots {
 			rootmarks.Add(root.mark)
@@ -2936,7 +2937,15 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 			return name + "-tipdelete"
 		}
 		if rootmarks.Contains(commit.mark) {
-			return name + "-root"
+			// A little fancy dancing to avoid duplicate tag names due to tag
+			// creation followed by tag conversion to a branch. The test case is
+			// branchtagdoublet.svn
+			newname := name + "-root"
+			if roottags.Contains(newname) {
+				newname = name + "-r" + commit.legacyID + "-root"
+			}
+			roottags.Add(newname)
+			return newname
 		}
 		// Fall back to emptycommit-revision
 		return "emptycommit-" + commit.legacyID

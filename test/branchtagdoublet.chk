@@ -72,7 +72,7 @@ tagger fred <fred> 30 +0000
 data 26
 Create release branch 1.0
 
-tag release-1.0-root
+tag release-1.0-r5-root
 #legacy-id 5
 from :5
 tagger fred <fred> 50 +0000
