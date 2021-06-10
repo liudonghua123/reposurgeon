@@ -479,6 +479,12 @@ func mirror(args []string) {
 	password := os.Getenv("RPASSWORD")
 	// Gets commit length of a repo from its URL
 	reposize := func(operand string) int {
+		if !strings.HasPrefix(operand, "svn://") && !strings.HasPrefix(operand, "file://") {
+			if operand[0] != '/' {
+				operand = "/" + operand
+			}
+			operand = "file://"
+		}
 		infoCredentials := ""
 		if username != "" {
 			infoCredentials = fmt.Sprintf("--username %q", username)
