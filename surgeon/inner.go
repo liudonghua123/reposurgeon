@@ -3995,6 +3995,9 @@ func (commit *Commit) Save(w io.Writer) {
 	if vcs == nil && commit.repo.vcs != nil && commit.repo.vcs.importer != "" {
 		vcs = commit.repo.vcs
 	}
+	// incremental gets set when the commit has parents, its branch is not realized
+	// (has no commits in the repository) and its parent branch is not realized.
+	// This must mean we are shipping it as the beginning of a partial set of commits.
 	incremental := false
 	if !commit.repo.writeOptions.Contains("--noincremental") {
 		if commit.repo.realized != nil && commit.hasParents() {
