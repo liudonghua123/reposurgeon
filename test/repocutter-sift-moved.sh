@@ -3,8 +3,7 @@
 cd "$(dirname "$0")" || exit
 DIR=$(pwd)
 
-# cleanup old files
-rm -fr repocutter-sift-moved-*
+trap "rm -fr repocutter-sift-moved-*" EXIT HUP INT QUIT TERM
 
 # create new repo and check it out
 svnadmin create repocutter-sift-moved-repo > /dev/null
