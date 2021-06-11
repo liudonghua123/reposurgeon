@@ -861,14 +861,7 @@ func (sp *StreamParser) initBranchify(options stringSet) bool {
 		if strings.HasPrefix(option, "--branchify=") {
 			optval := strings.Split(option[12:], ":")
 			for _, trial := range optval {
-				// manually replace "\s" with " " to allow paths with spaces in --branchify
-				trial = strings.ReplaceAll(trial, "\\s", " ")
-
-				// use explicit "/" here instead of svnSep (which might be "\")
-				// - would clash with !explicit option "--branchify=trunk:tags/*:branches/*:*"
-				// - would clash with "\s" as placeholder for space in dir name
-				// - would clash with documentation where all examples are with "/" anyway
-				split := strings.Split(trial, "/")
+				split := strings.Split(trial, svnSep)
 				l := len(split)
 				sp.branchify[l] = append(sp.branchify[l], split)
 			}
