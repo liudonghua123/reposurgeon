@@ -26,23 +26,31 @@ mark :1
 data 20
 9876543210987654321
 
+reset refs/heads/master
+from refs/heads/master^0
+
 commit refs/heads/master
 mark :2
 committer Fred J. Muggs <fjm@grobble.com> 0 +0000
 data 18
 Reverse the data.
-from refs/heads/master^0
 M 100644 :1 README
 
 EOF
 git checkout --quiet
-if git log | grep -q "Reverse the data."
+
+# Check that the last commit is present
+git log | grep -q "Reverse the data."
+if [ "$?" != 0 ]
 then
-    echo "ok - $0: incremental import test."
-else
     echo "not ok - $0: incremental import test."
     exit 1
 fi
+
+# Check link structure. HEAD^1 is "parent of the head commit"
+git log HEAD^1 | grep -q "Second commit"
+
+echo "ok - $0: incremental import test."
 
 # end
 
