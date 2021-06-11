@@ -1192,8 +1192,11 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 						// can occur if the directory is empty.
 						// We can just ignore that case. Otherwise...
 						if node.fileSet != nil {
-							node.fileSet.iter(func(child string, obj interface{}) {
-								deleted := obj.(*NodeAction)
+							// See the "Deterministic traversal order" comment
+							// a few lines down.
+							for _, child := range node.fileSet.pathnames() {
+								trampoline, _ := node.fileSet.get(child)
+								deleted := trampoline.(*NodeAction)
 								if logEnable(logEXTRACT) {
 									logit("r%d-%d~%s: deleting %s",
 										node.revision, node.index, node.path, child)
@@ -1204,7 +1207,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 								newnode.action = sdDELETE
 								newnode.kind = deleted.kind
 								appendExpanded(newnode)
-							})
+							}
 						}
 					}
 				}
@@ -1219,8 +1222,16 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 							node.revision, node.index, copyType, node.path, node.fromRev, node.fromPath)
 					}
 					// Now generate nodes for all files that were actually copied
-					// fileSet contains nodes at their destination
-					node.fileSet.iter(func(dest string, copied interface{}) {
+					// fileSet contains nodes at their destination.
+					//
+					// Deterministic traversal order of items in the copy set
+					// is enforced by iterating not over the PathMap itself
+					// but its pathname list, which is sorted.  This is
+					// a little slower but in some cases (a split commit
+					// due to a cross-branch deletion or directory-copy)
+					// it's the only way to have stable tests
+					for _, dest := range node.fileSet.pathnames() {
+						copied, _ := node.fileSet.get(dest)
 						found := copied.(*NodeAction)
 						subnode := new(NodeAction)
 						subnode.path = dest
@@ -1238,7 +1249,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 								subnode.fromRev, subnode.fromPath, subnode.path, subnode)
 						}
 						appendExpanded(subnode)
-					})
+					}
 				}
 				// Allow GC to reclaim fileSet storage, we no longer need it
 				node.fileSet = nil
