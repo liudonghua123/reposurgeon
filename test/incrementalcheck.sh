@@ -44,12 +44,18 @@ git log | grep -q "Reverse the data."
 # shellcheck disable=SC2181
 if [ "$?" != 0 ]
 then
-    echo "not ok - $0: incremental import test."
+    echo "not ok - $0: incremental import test (content)."
     exit 1
 fi
 
 # Check link structure. HEAD^1 is "parent of the head commit"
 git log HEAD^1 | grep -q "Second commit"
+# shellcheck disable=SC2181
+if [ "$?" != 0 ]
+then
+    echo "not ok - $0: incremental import test (link structure)."
+    exit 1
+fi
 
 echo "ok - $0: incremental import test."
 
