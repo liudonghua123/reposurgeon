@@ -1224,7 +1224,7 @@ are some simple examples:
 @dsc(:55) list         ;; Display all commits with ancestry tracing
                        ;; to :55.
 
-@min([.gitignore]) remove .gitignore
+@min([.gitignore]&=C) remove .gitignore
                        ;; Remove the first .gitignore fileop in the
                        ;; repo.  In a Subversion lift this contains
                        ;; patterns corresponding to Subversion default
