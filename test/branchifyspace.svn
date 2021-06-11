@@ -1,0 +1,241 @@
+SVN-fs-dump-format-version: 2
+ ## Example for testing --branchify option with spaces in directory names
+
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+1970-01-01T00:00:00.000000Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 134
+Content-length: 134
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:10.000000Z
+K 7
+svn:log
+V 35
+add trunk branches tags directories
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 120
+Content-length: 120
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:20.000000Z
+K 7
+svn:log
+V 21
+add nonbranch1/README
+PROPS-END
+
+Node-path: nonbranch1
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: nonbranch1/README
+Node-kind: file
+Node-action: add
+Text-content-md5: d3b07384d113edec49eaa6238ad5ff00
+Text-content-sha1: f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
+Prop-content-length: 10
+Text-content-length: 4
+Content-length: 14
+
+PROPS-END
+foo
+
+
+Revision-number: 3
+Prop-content-length: 123
+Content-length: 123
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:30.000000Z
+K 7
+svn:log
+V 24
+add non branch 2/DRINKME
+PROPS-END
+
+Node-path: non branch 2
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: non branch 2/DRINKME
+Node-kind: file
+Node-action: add
+Text-content-md5: 1a5a0797bec617a73643e25f3b391957
+Text-content-sha1: bbcc563f91f12ab3ad4579ce03987fe979e3a610
+Prop-content-length: 10
+Text-content-length: 7
+Content-length: 17
+
+PROPS-END
+liquid
+
+
+Revision-number: 4
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:40.000000Z
+K 7
+svn:log
+V 26
+nonbranch1/README: add bar
+PROPS-END
+
+Node-path: nonbranch1/README
+Node-kind: file
+Node-action: change
+Text-content-md5: f47c75614087a8dd938ba4acff252494
+Text-content-sha1: 4e48e2c9a3d2ca8a708cb0cc545700544efb5021
+Text-content-length: 8
+Content-length: 8
+
+foo
+bar
+
+
+Revision-number: 5
+Prop-content-length: 151
+Content-length: 151
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:50.000000Z
+K 7
+svn:log
+V 52
+nonbranch1/README: add end & "non branch 2": add sky
+PROPS-END
+
+Node-path: non branch 2/DRINKME
+Node-kind: file
+Node-action: change
+Text-content-md5: cfadb3560ef4696914b5529b6afd1048
+Text-content-sha1: d7a9ca6277e18543aa640d25b3170e1416afa581
+Text-content-length: 11
+Content-length: 11
+
+liquid
+sky
+
+
+Node-path: nonbranch1/README
+Node-kind: file
+Node-action: change
+Text-content-md5: 2bf37023d36cc99452a7a024a147c348
+Text-content-sha1: 950c1891128edb5b5da8659f1f1089fd8373f088
+Text-content-length: 12
+Content-length: 12
+
+foo
+bar
+end
+
+
+Revision-number: 6
+Prop-content-length: 131
+Content-length: 131
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:00.000000Z
+K 7
+svn:log
+V 32
+append to "non branch 2/DRINKME"
+PROPS-END
+
+Node-path: non branch 2/DRINKME
+Node-kind: file
+Node-action: change
+Text-content-md5: 036a08e317fee6a09cb18c615a0306f2
+Text-content-sha1: dfa06d032aa27b5fed246ffc1727d55a7d7a588b
+Text-content-length: 8
+Content-length: 8
+
+falling
+
+

@@ -115,6 +115,8 @@ multiprojectmerge.svn: multiprojectmergegen.sh
 	sh $< >$@
 branchrenametipdelete.svn: branchrenametipdeletegen.sh
 	sh $< >$@
+branchifyspace.svn: branchifyspacegen.sh
+	sh $< >$@
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
