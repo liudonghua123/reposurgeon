@@ -41,6 +41,7 @@ git checkout --quiet
 
 # Check that the last commit is present
 git log | grep -q "Reverse the data."
+# shellcheck disable=SC2181
 if [ "$?" != 0 ]
 then
     echo "not ok - $0: incremental import test."
