@@ -3995,10 +3995,12 @@ func (commit *Commit) Save(w io.Writer) {
 	if vcs == nil && commit.repo.vcs != nil && commit.repo.vcs.importer != "" {
 		vcs = commit.repo.vcs
 	}
-	// incremental gets set when the commit has parents, its branch is not realized
-	// (has no commits in the repository) and its parent branch is not realized.
-	// This must mean we are shipping it as the beginning of a partial set of commits.
-	incremental := false
+	// incrementalStart gets set when the commit has parents, its
+	// branch is not realized (has no commits in the repository)
+	// and its parent branch is not realized.  This must mean we
+	// are shipping it as the beginning of a partial set of
+	// commits.
+	incrementalStart := false
 	if !commit.repo.writeOptions.Contains("--noincremental") {
 		if commit.repo.realized != nil && commit.hasParents() {
 			if _, ok := commit.repo.realized[commit.Branch]; !ok {
@@ -4007,7 +4009,7 @@ func (commit *Commit) Save(w io.Writer) {
 				case *Commit:
 					pbranch := parent.(*Commit).Branch
 					if !commit.repo.realized[pbranch] {
-						incremental = true
+						incrementalStart = true
 					}
 				}
 			}
@@ -4015,7 +4017,7 @@ func (commit *Commit) Save(w io.Writer) {
 	}
 	// getting a value from a nil map is safe
 	previousOnBranch := commit.repo.branchPosition[commit.Branch]
-	if incremental {
+	if incrementalStart {
 		fmt.Fprintf(w, "reset %s\nfrom %s^0\n\n", commit.Branch, commit.Branch)
 	} else if len(commit.parents()) == 0 && previousOnBranch != nil {
 		fmt.Fprintf(w, "reset %s\n", commit.Branch)
@@ -4068,7 +4070,7 @@ func (commit *Commit) Save(w io.Writer) {
 	noImplicit := commit.repo.writeOptions.Contains("--no-implicit")
 	if len(parents) > 0 {
 		ancestor := parents[0]
-		if (commit.repo.internals == nil && !incremental) || commit.repo.internals.Contains(ancestor.getMark()) {
+		if (commit.repo.internals == nil && !incrementalStart) || commit.repo.internals.Contains(ancestor.getMark()) {
 			if noImplicit || !(commit.implicitParent &&
 				previousOnBranch == ancestor && len(parents) == 1) {
 				fmt.Fprintf(w, "from %s\n", ancestor.getMark())
