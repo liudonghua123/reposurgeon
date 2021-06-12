@@ -2275,6 +2275,9 @@ An asterisk at the end of a path in the set means 'all immediate
 subdirectories of this path, unless they are part of another (longer)
 path in the branchify set'.
 
+Spaces in directory names have to be substituted by "\s",
+as the command parser cannot handle spaces inside arguments.
+
 ----
 # This is what the branchify option would look like
 # If you needed to specify the default set of branch patterns.
