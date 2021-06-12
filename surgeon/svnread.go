@@ -1986,7 +1986,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// Phase 7:
 	// The branches we colored in during the last phase almost
 	// completely define the topology of the DAG, except for the
-	// location of their root points. At first sight computing the
+	// sttachment points of their roots. At first sight computing the
 	// root points seems tricky, since a branch root revision can
 	// be the target of multiple copies from different revision
 	// and they can be a mix of directory and file copies.
@@ -2033,7 +2033,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// before the last copy.
 	//
 	// 5. Tag or branch delete followed by recreating copy
-	// *within the same revision*.  Rgww tests/tagdoublet.svn
+	// *within the same revision*.  See tests/tagdoublet.svn
 	// for an example.
 	//
 	// These cases are rebarbative. Dealing with them is by far the
@@ -2060,6 +2060,8 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 		commit.setParents([]CommitLike{parent})
 	}
 	count := 0
+	// Walk through the set of branch roots, attempting to glue
+	// each one to a parent.
 	for branch, roots := range sp.branchRoots {
 		if logEnable(logTOPOLOGY) {
 			legend := ""
@@ -2069,12 +2071,13 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 			if len(roots) >= 1 {
 				legend = legend[:len(legend)-2]
 			}
-			logit("Branch %s has roots %s", branch, legend)
+			logit("Branch %s has root commit %s", branch, legend)
 		}
 		for _, commit := range roots {
 			rev, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
 			record := sp.revision(intToRevidx(rev))
 			if record != nil {
+				// Simple case: find attachment points defined by branch copies
 				for _, node := range record.nodes {
 					if node.kind == sdDIR && node.fromRev != 0 &&
 						trimSep(node.path) == branch {
@@ -2097,9 +2100,10 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 					}
 					baton.twirl()
 				}
-				// Try to detect file-based copies, like what CVS can generate
-				// Remember the maximum value of fromRev in all nodes, or 0 if
-				// the file nodes don't all have a fromRev. We also record the
+				// Try to detect file-based copies, like what CVS can generate.
+				//
+				// Remember the maximum value of fromRev in all nodes of this root ewvision,
+				// or 0 if the file nodes don't all have a fromRev. We also record the
 				// minimum value, to warn if they are different.
 				maxfrom, minfrom := revidx(0), maxRev
 				var frombranch string
