@@ -1,5 +1,10 @@
 = reposurgeon project news =
 
+Repository head::
+     Bug fix for incremental mirroring.
+     Avoid creating dyuplicate dag names when a tag turns intio a branch
+     Enforce stable order of subnode traversals when doing node expansion.
+
 4.27: 2021-05-27::
      repocutter pathrename can do multiple path transforms in one command.
      repocutter closure finds transitive closures of path sets under copyfrom.
