@@ -1986,55 +1986,48 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// Phase 7:
 	// The branches we colored in during the last phase almost
 	// completely define the topology of the DAG, except for the
-	// sttachment points of their roots. At first sight computing the
-	// root points seems tricky, since a branch root revision can
-	// be the target of multiple copies from different revision
-	// and they can be a mix of directory and file copies.
+	// sttachment points of their roots. This can be tricky brcause
+	// a branch root revision can be the target of multiple copies
+	// from different revision and they can be a mix of directory
+	// and file copies.
 	//
-	// All of those copies need to be re-played to compute the
-	// content at each revision properly, but in computing branch
-	// links it's the location of the *last copy* to the root
-	// commit of each branch that we want.
+	// Cases handled here:
 	//
-	// If there was only ever one Subversion directory copy to any
-	// given target directory life is easy - at every revision
-	// the copy point looks the same.  Looking for the last copy
-	// will pick that up.
+	// 1. Branch creation with directory copies.
 	//
-	// The tricky cases are:
-	//
-	// 1. Botched Subversion branch creation. This is a revision
-	// consisting of a directory add, or possibly directory copy,
-	// followed by a one or more file copies to the new branch
-	// directory *not* using svn cp. Some of the file copies look
-	// like adds in the dumpfile but can be matched up to their
-	// source by hash. There's no ambiguity about where the link is.
-	// We need not even complain about these.
-	//
-	// 2. Subversion branch creation, followed by deletion,
-	// followed by recreation by a copy from a later revision
-	// under the same name.
-	//
-	// 3. Branch or tag creations followed by partial updates.
-	// There's a case like this in tagpollute.svn in the test
-	// suite. There is no ideal answer here; choosing the source
-	// revision of the last partial update recreates the view from
-	// the future.
-	//
-	// 4. Subversion dumpfile traces left by cvs2svn's attempt
+	// 2. Subversion dumpfile traces left by cvs2svn's attempt
 	// to synthesize Subversion branches from CVS branch creations.
-	// These have no directory copy operations at all.
-	// When cvs2svn created branches, it tried to copy each file
-	// from the commit corresponding to the CVS revision where the
-	// file was last changed before the branch creation, which
-	// could potentially be a different revision for each file in
-	// the new branch. And CVS didn't actually record branch
+	// These are reviobs with multople filer copies snd no have no
+	// directory copy operations at all. When cvs2svn created branches,
+	// it tried to copy each file from the commit corresponding to the
+	// CVS revision where the file was last changed before the branch
+	// creation, which could potentially be a different revision for
+	// each file in the new branch. And CVS didn't actually record branch
 	// creation times.  But the branch creation can't have been
 	// before the last copy.
 	//
-	// 5. Tag or branch delete followed by recreating copy
-	// *within the same revision*.  See tests/tagdoublet.svn
-	// for an example.
+	// Cases we do not cover here or arguably handle incorrectly:
+	//
+	// * https://gitlab.com/esr/reposurgeon/-/issues/357 (Auto-detection
+	// of SVN branch relationship fails if branch was created empty first)
+	// Not handled - creation with a sourceless A results in a disconnected
+	// branch.
+	//
+	// * Botched Subversion branch creation. This is a revision
+	// consisting of a directory copy, followed by a one or more file
+	// copies to the new branch directory *not* using svn cp.  Arguably
+	// handled incorrectly - the directory copy will be the branch point,
+	// but it might be better to identify the branch point with the last copy.
+	//
+	// * Subversion branch creation, followed by deletion,
+	// followed by recreation by a copy from a later revision
+	// under the same name. This isn't handled here but in the
+	// reference-disambiguation pass.
+	//
+	// * Tag or branch delete followed by recreating copy
+	// within the same revision.  See tests/tagdoublet.svn
+	// for an example. This isn't handled here but in the
+	// reference-disambiguation pass.
 	//
 	// These cases are rebarbative. Dealing with them is by far the
 	// most likely source of bugs in the analyzer.
