@@ -253,6 +253,7 @@ compared.
 }
 
 var base int
+var tag string
 
 // Baton - ship progress indications to stderr
 type Baton struct {
@@ -302,7 +303,8 @@ func (baton *Baton) End(msg string) {
 }
 
 func croak(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "repocutter: croaking, "+msg+"\n", args...)
+	legend := "repocutter" + tag + ": croaking, " + msg + "\n"
+	fmt.Fprintf(os.Stderr, legend, args...)
 	os.Exit(1)
 }
 
@@ -377,8 +379,7 @@ func (lbs *LineBufferedSource) Readline() (line []byte) {
 func (lbs *LineBufferedSource) Require(prefix string) []byte {
 	line := lbs.Readline()
 	if !strings.HasPrefix(string(line), prefix) {
-		fmt.Printf("repocutter: required prefix '%s' not seen after line %d\n", prefix, lbs.linenumber)
-		os.Exit(1)
+		croak("required prefix '%s' not seen after line %d", prefix, lbs.linenumber)
 	}
 	//if debug {
 	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
@@ -389,7 +390,7 @@ func (lbs *LineBufferedSource) Require(prefix string) []byte {
 // Straight read from underlying file, no buffering.
 func (lbs *LineBufferedSource) Read(rlen int) []byte {
 	if len(lbs.Linebuffer) != 0 {
-		croak(fmt.Sprintf("repocutter: line buffer unexpectedly nonempty after line %d", lbs.linenumber))
+		croak("line buffer unexpectedly nonempty after line %d", lbs.linenumber)
 	}
 	text := make([]byte, 0, rlen)
 	chunk := make([]byte, rlen)
@@ -415,7 +416,7 @@ func (lbs *LineBufferedSource) Peek() []byte {
 	nxtline, err := lbs.reader.ReadBytes('\n')
 	lbs.linenumber++
 	if err != nil && err != io.EOF {
-		croak(fmt.Sprintf("repocutter: I/O error in Peek of LineBufferedSource: %s", err))
+		croak("I/O error in Peek of LineBufferedSource: %s", err)
 	}
 	if debug {
 		fmt.Fprintf(os.Stderr, "<Peek %d: buffer=%q + next=%q>\n",
@@ -797,7 +798,7 @@ func (s *SubversionRange) Upperbound() int {
 	return s.intervals[len(s.intervals)-1][1]
 }
 
-var endcommithook func()  // can be set in a nodehook or prophook
+var endcommithook func() // can be set in a nodehook or prophook
 // Report a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header []byte, properties []byte, content []byte) []byte,
@@ -1219,9 +1220,9 @@ func convertNodeMoveToAdd(source DumpfileSource, repo string, isaKeeper func([]b
 	}
 	header = stripChecksums(header)
 	header = findNodeAction.ReplaceAll(header, []byte("Node-action: add\n")) // in case it was "change"
-	header = findCopyFromRev.ReplaceAll(header, []byte{}) // remove Node-copyfrom-rev
-	header = findCopyFromPath.ReplaceAll(header, []byte{}) // remove Node-copyfrom-path
-	header = findHeaderEnd.ReplaceAll(header, []byte("\n")) // to append at end, replace two \n with one
+	header = findCopyFromRev.ReplaceAll(header, []byte{})                    // remove Node-copyfrom-rev
+	header = findCopyFromPath.ReplaceAll(header, []byte{})                   // remove Node-copyfrom-path
+	header = findHeaderEnd.ReplaceAll(header, []byte("\n"))                  // to append at end, replace two \n with one
 
 	if bytes.Equal(copysourceKind, []byte("file")) {
 		// get/set Text-content-length and Content-length
@@ -2102,10 +2103,10 @@ func testify(source DumpfileSource) {
 		} else if bytes.HasPrefix(line, []byte("svn:author")) {
 			state = 1
 		} else if state == 1 && bytes.HasPrefix(line, []byte("V ")) {
-			oldAutherLen, _ = strconv.Atoi(string(line[2:len(line)-1]))
+			oldAutherLen, _ = strconv.Atoi(string(line[2 : len(line)-1]))
 			headerBuf = append([]byte(fmt.Sprintf("Prop-content-length: %d\nContent-length: %d\n",
-				(oldPropLen + NeutralUserLen - oldAutherLen),
-				(oldContentLen + NeutralUserLen - oldAutherLen))), headerBuf...)
+				(oldPropLen+NeutralUserLen-oldAutherLen),
+				(oldContentLen+NeutralUserLen-oldAutherLen))), headerBuf...)
 			line = append(headerBuf, []byte(fmt.Sprintf("V %d\n", NeutralUserLen))...)
 			saveToHeaderBuf = false
 			inRevHeader = false
@@ -2158,7 +2159,12 @@ func main() {
 	flag.StringVar(&repo, "repo", "", "set repo path/URL for sift/expunge")
 	flag.IntVar(&base, "b", 0, "base value to renumber from")
 	flag.IntVar(&base, "base", 0, "base value to renumber from")
+	flag.StringVar(&tag, "t", "", "set error tag")
+	flag.StringVar(&tag, "tag", "", "set errur tag")
 	flag.Parse()
+	if tag != "" {
+		tag = "(" + tag + ")"
+	}
 	if rangestr != "" {
 		selection = NewSubversionRange(rangestr)
 	}
@@ -2191,8 +2197,7 @@ func main() {
 
 	assertNoArgs := func() {
 		if len(flag.Args()) != 1 {
-			fmt.Fprintf(os.Stderr, "repocutter: extra arguments detected after command keyword!\n")
-			os.Exit(1)
+			croak("extra arguments detected after command keyword!\n")
 		}
 	}
 
@@ -2221,8 +2226,7 @@ func main() {
 			os.Stdout.WriteString(cdoc)
 			break
 		}
-		fmt.Fprintf(os.Stderr, "repocutter: no such command\n")
-		os.Exit(1)
+		croak("no such command\n")
 	case "log":
 		assertNoArgs()
 		log(NewDumpfileSource(input, baton), selection)

@@ -46,6 +46,10 @@ program is bounded by the size of the the largest single blob plus its
 metadata.  It does not need to hold the entire repo metadata in
 memory.
 
+The -t option sets a tag to be included in error message.  This will
+be useful for determining which stage of a multistage repocutter
+pipeline failed.
+
 The following subcommands are available:
 
 help::
