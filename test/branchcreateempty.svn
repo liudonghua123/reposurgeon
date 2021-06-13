@@ -1,0 +1,236 @@
+SVN-fs-dump-format-version: 2
+ ## branch creation via copy-to-empty-dir example # This file is generated - do not hand-hack it.
+
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+1970-01-01T00:00:00.000000Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 130
+Content-length: 130
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:10.000000Z
+K 7
+svn:log
+V 31
+create initial folder structure
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 118
+Content-length: 118
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:20.000000Z
+K 7
+svn:log
+V 19
+add initial content
+PROPS-END
+
+Node-path: trunk/file
+Node-kind: file
+Node-action: add
+Text-content-md5: c92a609361734b2bd601e7919bbb9445
+Text-content-sha1: 547cf73a9fb9bdb93f8b9f47cddc5d211135a699
+Prop-content-length: 10
+Text-content-length: 16
+Content-length: 26
+
+PROPS-END
+initial content
+
+
+Revision-number: 3
+Prop-content-length: 119
+Content-length: 119
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:30.000000Z
+K 7
+svn:log
+V 20
+continue development
+PROPS-END
+
+Node-path: trunk/file
+Node-kind: file
+Node-action: change
+Text-content-md5: de729579e17af02706a111c9132c0158
+Text-content-sha1: 567507e38bcced0e93842a3123f4e5f6aef0475d
+Text-content-length: 29
+Content-length: 29
+
+initial content
+more content
+
+
+Revision-number: 4
+Prop-content-length: 127
+Content-length: 127
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:40.000000Z
+K 7
+svn:log
+V 28
+prepare empty release branch
+PROPS-END
+
+Node-path: branches/release-1.0
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 5
+Prop-content-length: 143
+Content-length: 143
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:00:50.000000Z
+K 7
+svn:log
+V 44
+copy everything from trunk to release branch
+PROPS-END
+
+Node-path: branches/release-1.0/file
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 4
+Node-copyfrom-path: trunk/file
+Text-copy-source-md5: de729579e17af02706a111c9132c0158
+Text-copy-source-sha1: 567507e38bcced0e93842a3123f4e5f6aef0475d
+
+
+Revision-number: 6
+Prop-content-length: 129
+Content-length: 129
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:00.000000Z
+K 7
+svn:log
+V 30
+continue development on branch
+PROPS-END
+
+Node-path: branches/release-1.0/file
+Node-kind: file
+Node-action: change
+Text-content-md5: 28619a76513547ba79e632701ab9e4ef
+Text-content-sha1: 61473ce1552c2af1a1f23a762d0777982f5553df
+Text-content-length: 54
+Content-length: 54
+
+initial content
+more content
+even more branch content
+
+
+Revision-number: 7
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:10.000000Z
+K 7
+svn:log
+V 26
+continue trunk development
+PROPS-END
+
+Node-path: trunk/file
+Node-kind: file
+Node-action: change
+Text-content-md5: 161d0028e25bf4582977bd3cb7333e05
+Text-content-sha1: 64c5520ba3460c3a9b0b0326ad09b7cb961aff62
+Text-content-length: 53
+Content-length: 53
+
+initial content
+more content
+even more trunk content
+
+

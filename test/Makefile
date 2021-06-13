@@ -115,6 +115,8 @@ multiprojectmerge.svn: multiprojectmergegen.sh
 	sh $< >$@
 branchrenametipdelete.svn: branchrenametipdeletegen.sh
 	sh $< >$@
+branchcreateempty.svn: branchcreateemptygen.sh
+	sh $< >$@
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
@@ -122,7 +124,7 @@ COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
 COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
 $(COMMAND_TARGETS): command-regress-%: %.tst
 	@singletest -a testing123 $< || echo "$@" >>$(FAILLOG);
-command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn branchtagdoublet.svn multiprojectmerge.svn branchrenametipdelete.svn
+command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn branchtagdoublet.svn multiprojectmerge.svn branchrenametipdelete.svn branchcreateempty.svn
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \

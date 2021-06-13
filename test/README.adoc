@@ -288,6 +288,14 @@ but it makes a good stability test. Any change that breaks the
 Subversion analyzer even subtly is likely to produce a diff on this
 test.
 
+== The branchcreateempty test
+
+This demonstrates what happens when a Subversion branch is created
+as an empty dirctory and filled in with file copies in later revisions.
+
+This sequence odf options ought to be turned into a branch copy, but
+every attempt to do so has created more problems than it solved.
+
 == Generated ignore tests
 
 ignoregen.sh can be used to regenerate the ignore.svn and
