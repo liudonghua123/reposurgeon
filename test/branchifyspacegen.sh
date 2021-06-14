@@ -56,7 +56,8 @@ PATH=$(realpath ..):$(realpath .):${PATH}
 
 # shellcheck disable=1117
 svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed "1a\
-\ ## Example for testing --branchify option with spaces in directory names
+\ ## Example for testing --branchify option with spaces in directory names\n\
+\ # reposurgeon-read-options: --branchify=nonbranch1:non\\\sbranch\\\s2
 "
 
 # end

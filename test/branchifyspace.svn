@@ -1,5 +1,6 @@
 SVN-fs-dump-format-version: 2
  ## Example for testing --branchify option with spaces in directory names
+ # reposurgeon-read-options: --branchify=nonbranch1:non\sbranch\s2
 
 
 Revision-number: 0
