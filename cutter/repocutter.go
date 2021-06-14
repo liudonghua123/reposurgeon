@@ -221,8 +221,8 @@ into an add commit using "svn cat REPO".
 	"split": `split: usage: repocutter split PATH...
 
 Transform every stream operation with Node-path PATH in the path list into three operations
-on PATH/trunk. PATH/branches, and PATH/tags. This operatrion assumes if the operation is a copy 
-that structure exists under the source directory and aso mutates Node-copyfrom headeers
+on PATH/trunk. PATH/branches, and PATH/tags. This operation assumes if the operation is a copy 
+that structure exists under the source directory and also mutates Node-copyfrom headers
 accordingly. 
 `,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
@@ -1849,8 +1849,7 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 		if haslog && logpatch.Contains(source.Revision) {
 			logentry := logpatch.comments[source.Revision]
 			if string(logentry.author) != getAuthor(prop.properties) {
-				fmt.Fprintf(os.Stderr, "repocutter: author of revision %d doesn't look right, aborting!\n", source.Revision)
-				os.Exit(1)
+				croak("author of revision %d doesn't look right, aborting!\n", source.Revision)
 			}
 			prop.properties["svn:log"] = string(logentry.text)
 		}
@@ -1884,6 +1883,13 @@ func split(source DumpfileSource, selection SubversionRange, paths []string) {
 			}
 		}
 		if matches {
+			if p := string(properties); p != "" && p != "PROPS-END\n" {
+				croak("can't split a node with nonempty properties (%v).", string(properties))
+			}
+			if debug {
+				fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
+			}
+			propdelim := "PROPS-END\n\n"
 			originalHeader := string(header)
 			copytarget := "Node-path: " + string(payload("Node-path", header))
 			copysource := "Node-copyfrom-path: " + string(payload("Node-copyfrom-path", header))
@@ -1895,7 +1901,7 @@ func split(source DumpfileSource, selection SubversionRange, paths []string) {
 				branchesCopy = strings.Replace(branchesCopy, copysource, copysource+"/branches", 1)
 				tagsCopy = strings.Replace(tagsCopy, copysource, copysource+"/tags", 1)
 			}
-			header = []byte(trunkCopy + branchesCopy + tagsCopy)
+			header = []byte(trunkCopy + propdelim + branchesCopy + propdelim + tagsCopy)
 		}
 		all := make([]byte, 0)
 		all = append(all, header...)
