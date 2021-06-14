@@ -165,8 +165,7 @@ selection. You may specify multiple property settings.
 Renumber all revisions, patching Node-copyfrom headers as required.
 Any selection option is ignored. Takes no arguments.  The -b option 
 1can be used to set the base to renumber from, defaulting to 0.
-`,
-	"reduce": `reduce: usage: repocutter reduce INPUT-FILE
+`, "reduce": `reduce: usage: repocutter reduce INPUT-FILE
 
 Strip revisions out of a dump so the only parts left those likely to
 be relevant to a conversion problem. A revision is interesting if it
@@ -375,18 +374,6 @@ func (lbs *LineBufferedSource) Readline() (line []byte) {
 	return
 }
 
-// Require - read a line, requiring it to have a specified prefix.
-func (lbs *LineBufferedSource) Require(prefix string) []byte {
-	line := lbs.Readline()
-	if !strings.HasPrefix(string(line), prefix) {
-		croak("required prefix '%s' not seen after line %d", prefix, lbs.linenumber)
-	}
-	//if debug {
-	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
-	//}
-	return line
-}
-
 // Straight read from underlying file, no buffering.
 func (lbs *LineBufferedSource) Read(rlen int) []byte {
 	if len(lbs.Linebuffer) != 0 {
@@ -467,19 +454,19 @@ func NewProperties(source *DumpfileSource) Properties {
 		}
 
 		if bytes.HasPrefix(currentline, []byte("D ")) {
-			source.Lbs.Require("D")
+			source.Require("D")
 			keyhd := string(source.Lbs.Readline())
 			key := strings.TrimRight(keyhd, linesep)
 			props.propdelkeys = append(props.propdelkeys, key)
 			continue
 		}
-		source.Lbs.Require("K")
+		source.Require("K")
 		keyhd := string(source.Lbs.Readline())
 		key := strings.TrimRight(keyhd, linesep)
-		valhd := source.Lbs.Require("V")
+		valhd := source.Require("V")
 		vlen, _ := strconv.Atoi(string(bytes.Fields(valhd)[1]))
 		value := string(source.Lbs.Read(vlen))
-		source.Lbs.Require(linesep)
+		source.Require(linesep)
 		props.properties[key] = value
 		props.propkeys = append(props.propkeys, key)
 	}
@@ -578,7 +565,7 @@ func stripChecksums(header []byte) []byte {
 
 // ReadRevisionHeader - read a revision header, parsing its properties.
 func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]byte, map[string]string) {
-	stash := ds.Lbs.Require("Revision-number:")
+	stash := ds.Require("Revision-number:")
 	rev := string(bytes.Fields(stash)[1])
 	rval, err := strconv.Atoi(rev)
 	if err != nil {
@@ -587,9 +574,9 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 	}
 	ds.Revision = rval
 	ds.Index = 0
-	stash = append(stash, ds.Lbs.Require("Prop-content-length:")...)
-	stash = append(stash, ds.Lbs.Require("Content-length:")...)
-	stash = append(stash, ds.Lbs.Require(linesep)...)
+	stash = append(stash, ds.Require("Prop-content-length:")...)
+	stash = append(stash, ds.Require("Content-length:")...)
+	stash = append(stash, ds.Require(linesep)...)
 	props := NewProperties(ds)
 	if PropertyHook != nil {
 		PropertyHook(&props)
@@ -613,12 +600,24 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 	return stash, props.properties
 }
 
+// Require - read a line, requiring it to have a specified prefix.
+func (ds *DumpfileSource) Require(prefix string) []byte {
+	line := ds.Lbs.Readline()
+	if !strings.HasPrefix(string(line), prefix) {
+		croak("required prefix '%s' not seen after line %d (r%v)", prefix, ds.Lbs.linenumber, ds.Revision)
+	}
+	//if debug {
+	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
+	//}
+	return line
+}
+
 // ReadNode - read a node header and body.
 func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) ([]byte, []byte, []byte) {
 	if debug {
 		fmt.Fprintf(os.Stderr, "<READ NODE BEGINS>\n")
 	}
-	header := ds.Lbs.Require("Node-")
+	header := ds.Require("Node-")
 	for {
 		line := ds.Lbs.Readline()
 		if len(line) == 0 {
@@ -630,7 +629,7 @@ func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) ([]byte, []by
 			r := string(m[1])
 			if !ds.EmittedRevisions[r] {
 				header = append(header, line...)
-				header = append(header, ds.Lbs.Require("Node-copyfrom-path")...)
+				header = append(header, ds.Require("Node-copyfrom-path")...)
 				continue
 			}
 		}
