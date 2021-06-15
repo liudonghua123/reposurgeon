@@ -1888,8 +1888,11 @@ func split(source DumpfileSource, selection SubversionRange, paths []string) {
 			if debug {
 				fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
 			}
-			propdelim := "PROPS-END\n\n"
 			originalHeader := string(header)
+			propdelim := ""
+			if strings.Contains(originalHeader, "Prop-content") {
+				propdelim = "PROPS-END\n\n"
+			}
 			copytarget := "Node-path: " + string(payload("Node-path", header))
 			copysource := "Node-copyfrom-path: " + string(payload("Node-copyfrom-path", header))
 			trunkCopy := strings.Replace(originalHeader, copytarget, copytarget+"/trunk", 1)
