@@ -895,8 +895,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				}
 				continue
 			}
-			fmt.Fprintf(os.Stderr, "repocutter: parse at %d doesn't look right (%q), aborting!\n", ds.Revision, line)
-			os.Exit(1)
+			croak("at %d, parse of %q doesn't look right, aborting!", ds.Revision, string(line))
 		}
 	}
 }
