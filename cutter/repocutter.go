@@ -798,6 +798,7 @@ func (s *SubversionRange) Upperbound() int {
 }
 
 var endcommithook func() // can be set in a nodehook or prophook
+
 // Report a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header []byte, properties []byte, content []byte) []byte,
@@ -1971,8 +1972,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string) {
 		parts := bytes.Split(path, []byte("/"))
 		if len(parts) < 2 {
 			// FIXME: Known problem here when a node has both a
-			// single-component path an is a copy source for a
-			// later node - can happen in weirdly-sgaped multiprojerct
+			// single-component path and is a copy source for a
+			// later node - can happen in weirdly-shaped multiproject
 			// directories.
 			//
 			// Single-component directory creations should be
