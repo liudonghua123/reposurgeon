@@ -18,3 +18,17 @@ set interactive
 reposurgeon: malformed span
 1...3 resolve
 reposurgeon: malformed span
+
+# Create some tags to test tag selection
+tag create tag1test @max(=C)
+tag create tag2test @max(=C)
+
+# Test tag filtering by name
+=T&/tag1/n inspect
+Event 36 ================================================================
+tag tag1test
+from :34
+tagger Eric S. Raymond <esr@thyrsus.com> 1289257440 -0500
+data 33
+Give the deletion push a target.
+

@@ -439,7 +439,7 @@ func (rs *Reposurgeon) evalTextSearch(state selEvalState,
 		'r': "committish", // tag or reset
 		'p': "text",       // passthrough
 		't': "tagger",     // tag
-		'n': "name",       // tag
+		'n': "tagname",    // tag
 	}
 	var searchIn []string
 	for _, v := range searchableAttrs {
@@ -474,7 +474,7 @@ func (rs *Reposurgeon) evalTextSearch(state selEvalState,
 			}
 			panic(fmt.Sprintf(`no "tagger" in %T`, e))
 		},
-		"name": func(e Event) string { return exattr(e, "name") },
+		"tagname": func(e Event) string { return exattr(e, "tagname") },
 	}
 	checkAuthors := false
 	checkBlobs := false
