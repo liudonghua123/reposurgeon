@@ -17,6 +17,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+
 	//"sort"
 	"strconv"
 	"strings"
@@ -557,7 +558,7 @@ func mirror(args []string) {
 			mirrorCredentials += fmt.Sprintf(" --source-password %q", password)
 		}
 		getremote := fmt.Sprintf("svnlook pg %s -r 0 --revprop svn:sync-from-url", operand)
-		cmd := fmt.Sprintf("svnsync synchronize -q --steal-lock %d file://%s", mirrorCredentials, locald)
+		cmd := fmt.Sprintf("svnsync synchronize -q --steal-lock %s file://%s", mirrorCredentials, locald)
 		if remote := captureFromProcess(getremote, "getting remote URL"); !plausibleSVNPrefix(remote) {
 			// Without the remote size we can't progress-meter.
 			// Might happen if we rsynced this.
