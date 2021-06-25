@@ -1,8 +1,8 @@
 = reposurgeon project news =
 
 Repository head::
-     Bug fix for incremental mirroring.
-     Avoid creating dyuplicate dag names when a tag turns intio a branch
+     Bug fixes for incremental mirroring, text search by tag name.
+     Avoid creating duplicate tag names when a tag turns intio a branch
      Enforce stable order of subnode traversals when doing node expansion.
      Added repocutter -t option to tag error messages from pipelines.
 
