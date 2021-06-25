@@ -18,6 +18,11 @@ import (
 	"unicode/utf8"
 )
 
+// unclean tells us how to detect ungitified comments.  Check for Git
+// conventions - require a spacer line after first \n if multiline,
+// subject line no more than 50 chars, body lines no more than 72.
+var unclean = regexp.MustCompile("^[^\n]*\n[^\n]|^.{51,}\n|\n.{73,}")
+
 //
 // The selection-language parsing code starts here.
 //

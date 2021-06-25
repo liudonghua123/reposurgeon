@@ -909,7 +909,8 @@ func (d OrderedMap) Swap(i int, j int) {
  */
 
 // MessageBlockDivider is the separator between messages in a message-box.
-var MessageBlockDivider = bytes.Repeat([]byte("-"), 78)
+// The 72 is so we can tewll when a body line is too long according to Git convention.
+var MessageBlockDivider = bytes.Repeat([]byte("-"), 72)
 
 // MessageBlock is similar to net/mail's type, but the body is pulled inboard
 // as a string.  This is appropriate because change comments are normally short.

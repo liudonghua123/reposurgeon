@@ -398,7 +398,7 @@ func TestEmptyComment(t *testing.T) {
 }
 
 func TestReadMessage(t *testing.T) {
-	rawmsg := `------------------------------------------------------------------------------
+	rawmsg := `------------------------------------------------------------------------
 Event-Number: 2
 Event-Mark: :2
 Branch: refs/heads/master
@@ -408,7 +408,7 @@ Committer-Date: 1970-01-01T00:00:00Z
 Check-Text: First commit.
 
 First commit.
-------------------------------------------------------------------------------
+------------------------------------------------------------------------
 Event-Number: 4
 Event-Mark: :4
 Branch: refs/heads/master
@@ -419,11 +419,11 @@ Check-Text: Second commit.
 
 Second commit. This one tests byte stuffing.
 
-.------------------------------------------------------------------------------
+.------------------------------------------------------------------------
 
 Magic cookie.
 
-------------------------------------------------------------------------------
+------------------------------------------------------------------------
 `
 
 	r := bufio.NewReader(strings.NewReader(rawmsg))
@@ -750,7 +750,7 @@ func TestTag(t *testing.T) {
 
 	assertEqual(t, t1.actionStamp(), "2016-03-03T03:39:07Z!jrh")
 	assertEqual(t, t1.emailOut(nullOrderedStringSet, 42, nil),
-		"------------------------------------------------------------------------------\nEvent-Number: 43\nTag-Name: sample1\nTarget-Mark: :2\nTagger: jrh <jrh>\nTagger-Date: Wed, 02 Mar 2016 22:39:07 -0500\nCheck-Text: Sample tag #1\n\nSample tag #1\n")
+		"------------------------------------------------------------------------\nEvent-Number: 43\nTag-Name: sample1\nTarget-Mark: :2\nTagger: jrh <jrh>\nTagger-Date: Wed, 02 Mar 2016 22:39:07 -0500\nCheck-Text: Sample tag #1\n\nSample tag #1\n")
 	assertEqual(t, t1.String(),
 		"tag sample1\nfrom :2\ntagger jrh <jrh> 1456976347 -0500\ndata 14\nSample tag #1\n\n")
 
@@ -1041,7 +1041,7 @@ func TestCommitMethods(t *testing.T) {
 	assertEqual(t, commit.showlegacy(), "")
 	assertEqual(t, commit.stamp(nullOrderedStringSet, 42, 0),
 		"<2016-03-14T23:32:27Z!esr@thyrsus.com> Example commit for unit testing")
-	expectout := "------------------------------------------------------------------------------\nEvent-Number: 43\nEvent-Mark: :2\nCommitter: J. Random Hacker <jrh@foobar.com>\nCommitter-Date: Wed, 02 Mar 2016 22:39:07 -0500\nAuthor: esr <esr@thyrsus.com>\nAuthor-Date: Mon, 14 Mar 2016 23:32:27 +0000\nCheck-Text: Example commit for unit testing\n\nExample commit for unit testing\n"
+	expectout := "------------------------------------------------------------------------\nEvent-Number: 43\nEvent-Mark: :2\nCommitter: J. Random Hacker <jrh@foobar.com>\nCommitter-Date: Wed, 02 Mar 2016 22:39:07 -0500\nAuthor: esr <esr@thyrsus.com>\nAuthor-Date: Mon, 14 Mar 2016 23:32:27 +0000\nCheck-Text: Example commit for unit testing\n\nExample commit for unit testing\n"
 	assertEqual(t, commit.emailOut(nullOrderedStringSet, 42, nil), expectout)
 	hackheader := `Event-Number: 43
 Author: Tim the Enchanter <esr@thyrsus.com>
@@ -1054,7 +1054,7 @@ Example commit for unit testing, modified.
 		log.Fatalf("On first read: %v", err)
 	}
 	commit.emailIn(msg, false)
-	hackcheck := "------------------------------------------------------------------------------\nEvent-Number: 43\nEvent-Mark: :2\nCommitter: J. Random Hacker <jrh@foobar.com>\nCommitter-Date: Wed, 02 Mar 2016 22:39:07 -0500\nAuthor: Tim the Enchanter <esr@thyrsus.com>\nAuthor-Date: Mon, 14 Mar 2016 23:32:27 +0000\nCheck-Text: Example commit for unit testing, modified.\n\nExample commit for unit testing, modified.\n"
+	hackcheck := "------------------------------------------------------------------------\nEvent-Number: 43\nEvent-Mark: :2\nCommitter: J. Random Hacker <jrh@foobar.com>\nCommitter-Date: Wed, 02 Mar 2016 22:39:07 -0500\nAuthor: Tim the Enchanter <esr@thyrsus.com>\nAuthor-Date: Mon, 14 Mar 2016 23:32:27 +0000\nCheck-Text: Example commit for unit testing, modified.\n\nExample commit for unit testing, modified.\n"
 	assertEqual(t, commit.emailOut(nullOrderedStringSet, 42, nil), hackcheck)
 
 	attr1, _ := newAttribution("jrh <jrh> 1456976347 -0500")
