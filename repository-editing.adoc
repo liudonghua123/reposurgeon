@@ -98,10 +98,30 @@ Please also see the notes on system-specific issues under
 [[quickstart]]
 == Quick start
 
-As a motivating example, commands follow to do a Subversion-to-Git
+`reposurgeon` accepts commands as command line arguments. For example:
+
+--------------------------
+$ reposurgeon "read projectdir" lint
+--------------------------
+
+This will read repository into memory from `projectdir` and check it
+for problems. The quotes are required so the read command and its
+argument will be presented to the command interpreter as a single
+string.
+
+You can use "help" and "help <command>" to learn more about
+`reposurgeon` commands, or just read on.
+
+Typically you put these commands in a script that you evolve by
+experimenting until you got a conversion that suited your tastes and
+needs. `"script"` command allows to read such command list from a file.
+
+--------------------------
+$ reposurgeon "script projectscript.lift"
+--------------------------
+
+As a motivating example, the script below does a Subversion-to-Git
 lift on a repository named _project_ just under the current directory.
-Note that these are given as though typed to the interactive command
-prompt, which is not shown.
 
 [source,bash]
 --------
@@ -166,7 +186,7 @@ EOF
 references lift
 
 # Sometimes it's useful to drop files from the repo that should
-# never have been checked in.
+# never have been checked in. 1..$ - selects all commits.
 1..$ expunge /documents/.*.pdf/
 
 # Process GNU Changelogs to get better attributions for changesets.
@@ -190,25 +210,6 @@ prefer git
 rebuild project-git
 --------
 
-Typically you'd have these commands in a script that you evolved by
-experimenting until you got a conversion that suited your tastes and
-needs.
-
-To learn more about reposurgeon, keep reading or type "help" at
-the reposurgeon command prompt.
-
-Reposurgeon can be passed commands on its invocation line but the
-syntax may be a little surprising if you're used to classic Unix
-switch conventions.  Each string in the command line argument is
-passed to the interpreter as a command, in order; thus, you could
-replicate the first two actions of the previous script with this:
-
---------------------------
-$ reposurgeon "read project" lint
---------------------------
-
-The quotes are required so the read command and its argument will be
-presented to the command interpreter as a single string.
 
 [[conversion]]
 == A Guide to Repository Conversion
