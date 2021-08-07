@@ -6,13 +6,13 @@ prefix?=/usr/local
 mandir?=share/man
 target=$(DESTDIR)$(prefix)
 
-META = README.adoc INSTALL.adoc NEWS.adoc COPYING
+META = README.adoc INSTALL.adoc NEWS.adoc
 PAGES = reposurgeon.adoc repocutter.adoc repomapper.adoc repotool.adoc repobench.adoc
 DOCS = $(PAGES) repository-editing.adoc oops.svg
 SOURCES = $(shell ls */*.go) repobench reposurgeon-mode.el go.mod go.sum extractversion.sh
 SOURCES += Makefile control reposturgeon.png reposurgeon-git-aliases
 SOURCES += Dockerfile ci/prepare.sh .gitlab-ci.yml
-SOURCES += $(META) $(DOCS)
+SOURCES += $(META) $(DOCS) COPYING
 
 .PHONY: all build install uninstall version check release refresh \
 	docker-build docker-check docker-check-noscm get test fmt lint
@@ -20,8 +20,8 @@ SOURCES += $(META) $(DOCS)
 BINARIES  = reposurgeon repotool repomapper repocutter
 INSTALLABLES = $(BINARIES) repobench
 MANPAGES  = $(PAGES:.adoc=.1)
-HTMLFILES = $(DOCS:.adoc=.html)
-SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES)
+HTMLFILES = $(DOCS:.adoc=.html) $(META:.adoc=.html)
+SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES) COPYING
 
 .PHONY: all fullinstall build stable-golang current-golang helpers test-helpers \
 		get test lint fmt clean install uninstall dist release refresh
