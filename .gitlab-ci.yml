@@ -17,5 +17,3 @@ test:
   - make CONCURRENT_JOBS=4 -k check
 stages:
 - test
-sast:
-  stage: test
