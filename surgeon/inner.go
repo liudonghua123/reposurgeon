@@ -195,6 +195,13 @@ func min(a, b int) int {
 	return b
 }
 
+// closeOrDie prevents useless complaints by GoSec
+func closeOrDie(f io.ReadCloser) {
+	if err := f.Close(); err != nil {
+		panic(err)
+	}
+}
+
 // filecopy does what it says, returning bytes copied and an error indication
 func filecopy(src, dst string) (int64, error) {
 	sourceFileStat, err := os.Stat(src)
@@ -210,13 +217,13 @@ func filecopy(src, dst string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer source.Close()
+	defer closeOrDie(source)
 
 	destination, err := os.Create(dst)
 	if err != nil {
 		return 0, err
 	}
-	defer destination.Close()
+	defer closeOrDie(destination)
 	nBytes, err := io.Copy(destination, source)
 	return nBytes, err
 }
@@ -1066,7 +1073,7 @@ func zoneFromEmail(addr string) string {
 		if err != nil {
 			croak("no country-code to timezone mapping")
 		} else {
-			defer file.Close()
+			defer closeOrDie(file)
 
 			firstpass := make(map[string][]string)
 
@@ -1600,13 +1607,13 @@ func (b *Blob) getContent() []byte {
 	if err != nil {
 		panic(fmt.Errorf("Blob read: %v", err))
 	}
-	defer file.Close()
+	defer closeOrDie(file)
 	if control.flagOptions["compress"] {
 		input, err2 := gzip.NewReader(file)
 		if err2 != nil {
 			panic(err.Error())
 		}
-		defer input.Close()
+		defer closeOrDie(input)
 		data, err = ioutil.ReadAll(input)
 	} else {
 		data, err = ioutil.ReadAll(file)
@@ -1706,7 +1713,7 @@ func (b *Blob) setContentFromStream(s io.ReadCloser) {
 func (b *Blob) materialize() string {
 	if b.start != noOffset {
 		content := b.getContentStream()
-		defer content.Close()
+		defer closeOrDie(content)
 		b.setContentFromStream(content)
 	}
 	return b.getBlobfile(false)
@@ -7879,7 +7886,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 			return nil, err
 		}
 		repo.fastImport(context.TODO(), tp, options, source, baton)
-		tp.Close()
+		closeOrDie(tp)
 		if suppressBaton {
 			control.flagOptions["progress"] = true
 		}
@@ -7892,7 +7899,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 				return nil, err
 			}
 			repo.readAuthorMap(repo.all(), fp)
-			fp.Close()
+			closeOrDie(fp)
 		}
 		legacyMap := vcs.subdirectory + "/legacy_map"
 		legacyMap = filepath.FromSlash(legacyMap)
@@ -7902,7 +7909,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 				return nil, err
 			}
 			repo.readLegacyMap(rfp, baton)
-			rfp.Close()
+			closeOrDie(rfp)
 		}
 		if vcs.pathlister != "" {
 			registered := newOrderedStringSet()
@@ -7960,7 +7967,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 				if err != nil {
 					return nil, err
 				}
-				defer fp.Close()
+				defer closeOrDie(fp)
 				r := bufio.NewReader(fp)
 				for {
 					line, err1 := r.ReadString(byte('\n'))
@@ -9342,7 +9349,7 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 		if err != nil {
 			croak("open or read failed on %s", tarpath)
 		}
-		defer tarfile.Close()
+		defer closeOrDie(tarfile)
 
 		if logEnable(logSHUFFLE) {
 			logit("extracting %s into %s", tarpath, repo.subdir(""))
