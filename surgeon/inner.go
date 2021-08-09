@@ -1,5 +1,5 @@
 // Inner types, classes, and surgical primitives for operating on repository DAGs.
-// Also, the code for deserializing a dumnp fuile to a DAG and
+// Also, the code for deserializing a dump fuile to a DAG and
 // serializing a DAG to a dump file.  Nothing in here is dependent on
 // the DSL surface syntax or Kommandant.  It does assume logit(),
 // announce(), croak(), respond(), throw() and catch() do sane things.
@@ -133,24 +133,9 @@ func catch(accept string, x interface{}) *exception {
 const userReadWriteMode = 0644       // rw-r--r--
 const userReadWriteSearchMode = 0775 // rwxrwxr-x
 
-func exists(pathname string) bool {
-	_, err := os.Stat(pathname)
-	return !os.IsNotExist(err)
-}
-
-func isdir(pathname string) bool {
-	st, err := os.Stat(pathname)
-	return err == nil && st.Mode().IsDir()
-}
-
 func isfile(pathname string) bool {
 	st, err := os.Stat(pathname)
 	return err == nil && st.Mode().IsRegular()
-}
-
-func islink(pathname string) bool {
-	st, err := os.Stat(pathname)
-	return err == nil && (st.Mode()&os.ModeSymlink) != 0
 }
 
 func relpath(dir string) string {

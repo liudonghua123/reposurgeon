@@ -280,21 +280,6 @@ func captureFromProcess(command string, legend string) string {
 	return string(content)
 }
 
-func exists(pathname string) bool {
-	_, err := os.Stat(pathname)
-	return !os.IsNotExist(err)
-}
-
-func isdir(pathname string) bool {
-	st, err := os.Stat(pathname)
-	return err == nil && st.Mode().IsDir()
-}
-
-func islink(pathname string) bool {
-	st, err := os.Stat(pathname)
-	return err == nil && (st.Mode()&os.ModeSymlink) != 0
-}
-
 func under(target string, hook func()) {
 	if verbose {
 		fmt.Printf("repotool: in %s...\n", target)
