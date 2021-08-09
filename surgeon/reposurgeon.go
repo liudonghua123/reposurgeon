@@ -2232,8 +2232,11 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 			croak(err2.Error())
 			return false
 		}
-	} else {
+	} else if isfile(parse.line) {
 		croak("read no longer takes a filename argument - use < redirection instead")
+		return false
+	} else {
+		croak("read dir \"" + parse.line + "\" does not exist")
 		return false
 	}
 	rs.repolist = append(rs.repolist, repo)
