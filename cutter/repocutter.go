@@ -1999,7 +1999,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		top := parts[0]
 		if structural {
 			under := string(parts[1])
-			if under == "trunk" {
+			if under == "trunk" || len(parts) < 3 {
 				parts[0] = parts[1]
 				parts[1] = top
 			} else if under == "branches" || under == "tags" {
