@@ -5,6 +5,8 @@
 # using $PWD.
 # Note: GitLab's CI environment does not seem to define $PWD, however, it
 # does have 'realpath', so use of $PWD here does no harm.
+unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
+
 command -v realpath >/dev/null 2>&1 ||
     realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
 
