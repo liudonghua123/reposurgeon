@@ -2007,9 +2007,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				parts[1] = parts[2]
 				parts[2] = top
 			} else {
-				fmt.Printf("repocutter: unexpected path part %s at r%d, line %d\n",
-					parts[1], source.Revision, source.Lbs.linenumber)
-				os.Exit(1)
+				croak("unexpected path part %s in %s at r%d, line %d",
+					parts[1], path, source.Revision, source.Lbs.linenumber)
 			}
 		} else { // naive swap
 			parts[0] = parts[1]
