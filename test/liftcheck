@@ -38,6 +38,8 @@
 # to reposurgeon.
 set -e
 
+unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
+
 export LANG=C
 
 repotoolopt=""

@@ -53,6 +53,8 @@
 # to reposurgeon.
 #
 
+unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
+
 # shellcheck disable=SC1091
 command -v realpath >/dev/null 2>&1 ||
     realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }

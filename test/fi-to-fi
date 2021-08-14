@@ -29,6 +29,8 @@
 # The TESTOPT variable can be used to pass an early command or option setting
 # to reposurgeon.
 #
+unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
+
 BIN="${BINDIR:-$(realpath ..)}"
 
 extract=True
