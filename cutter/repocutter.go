@@ -61,6 +61,7 @@ Available subcommands and help topics:
    split
    strip
    swap
+   swapsvn
    testify
    version
 `
@@ -93,6 +94,7 @@ var oneliners = map[string]string{
 	"split":      "Split a copy operation into a trunk/branches/tags clique",
 	"strip":      "Replace content with unique cookies, preserving structure",
 	"swap":       "Swap first two components of pathnames",
+	"swapsvn":    "Subversion structure-aware swap",
 	"testify":    "Massage a stream file into a neutralized test load",
 	"version":    "Report repocutter's version",
 }
@@ -236,8 +238,17 @@ particularly complex node structure.
 
 Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
-a common form of multi-project repository.  If a PATTRERN is given, 
-only paths mastching the pattern are swapped.
+a common form of multi-project repository.  If a PATTERN argument is given, 
+only paths matching the pattern are swapped.
+`,
+	"swapsvn": `swap: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
+
+Like swap, but is aware of Subversion structure.  Requires that the second component
+of each matching path be "trunk", "branches", or "tags", terminates with error if
+this is not so. Swaps "trunk" and the top-level directory straight up.  For tags and 
+branches, the following *two* components are swapped to the top - thus, "foo/branches/release23"
+becomes "branches/release23/foo". If a PATTERN argument is given, only paths matching
+the pattern are swapped.
 `,
 	"testify": `testify: usage: repocutter [-r SELECTION] testify
 
@@ -1959,8 +1970,8 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, false)
 }
 
-// Hack paths by swapping the top two components.
-func swap(source DumpfileSource, selection SubversionRange, patterns []string) {
+// Hack paths by swapping the top two components - if "structural" is on, be Subvesion-aware.
+func swap(source DumpfileSource, selection SubversionRange, patterns []string, structural bool) {
 	var match *regexp.Regexp
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
@@ -1985,9 +1996,25 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string) {
 			// long as some trunk subdirectory *is* created.
 			return nil
 		}
-		tp := parts[0]
-		parts[0] = parts[1]
-		parts[1] = tp
+		top := parts[0]
+		if structural {
+			under := string(parts[1])
+			if under == "trunk" {
+				parts[0] = parts[1]
+				parts[1] = top
+			} else if under == "branches" || under == "tags" {
+				parts[0] = parts[1]
+				parts[1] = parts[2]
+				parts[2] = top
+			} else {
+				fmt.Printf("repocutter: unexpected path part %s at r%d, line %d\n",
+					parts[1], source.Revision, source.Lbs.linenumber)
+				os.Exit(1)
+			}
+		} else { // naive swap
+			parts[0] = parts[1]
+			parts[1] = top
+		}
 		return bytes.Join(parts, []byte("/"))
 	}
 	revhook := func(props *Properties) {
@@ -2287,7 +2314,9 @@ func main() {
 	case "strip":
 		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "swap":
-		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:], false)
+	case "swapsvn":
+		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:], true)
 	case "testify":
 		assertNoArgs()
 		testify(NewDumpfileSource(input, baton))
