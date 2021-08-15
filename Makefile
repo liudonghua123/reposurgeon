@@ -17,10 +17,14 @@ SOURCES += $(META) $(DOCS) COPYING
 .PHONY: all build install uninstall version check release refresh \
 	docker-build docker-check docker-check-noscm get test fmt lint
 
+# Conditionalize building of documentation on wherther our formatter is installed
+ifneq (, $(shell which asciidoctor))
+HTMLFILES = $(DOCS:.adoc=.html) $(META:.adoc=.html)
+endif
+
 BINARIES  = reposurgeon repotool repomapper repocutter
 INSTALLABLES = $(BINARIES) repobench
 MANPAGES  = $(PAGES:.adoc=.1)
-HTMLFILES = $(DOCS:.adoc=.html) $(META:.adoc=.html)
 SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES) COPYING
 
 .PHONY: all fullinstall build stable-golang current-golang helpers test-helpers \
