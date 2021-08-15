@@ -48,7 +48,8 @@ A few scripts are written in shell. Any Bourne-shell-like
 implementation will do. The restricted shell shipped on Debian/Ubuntu
 will work. Shell is almost certainly already installed on your system.
 
-You will need asciidoctor to format the documentation.
+You will need asciidoctor to format the documentation.  The Makefile
+will silently refrain from doing this if you don't have it installed.
 
 The repotool mirror code needs rsync.
 
@@ -66,7 +67,8 @@ with repobench.
 == Building the software from the repository ==
 
 To build the tools after cloning the repository, simply run "make" in
-the toplevel directory.  This also builds the suite documentation.
+the toplevel directory.  This also builds the suite documentation
+if you have asciidoctor installed.
 
 == Testing the software ==
 
