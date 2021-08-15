@@ -42,6 +42,9 @@ you discover the commands you need.
 Help is available within reposurgeon using the "<<help_cmd>>" command.
 Type "help" alone for a list of help topics.
 
+If you find an error or omission in this document, you can suggest an
+edit https://gitlab.com/esr/reposurgeon/-/blob/master/repository-editing.adoc[here].
+
 [[introduction]]
 == Introduction
 
