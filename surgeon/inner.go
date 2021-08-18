@@ -2359,31 +2359,31 @@ func (fileop *FileOp) construct(op optype, opargs ...string) *FileOp {
 	return fileop
 }
 
-// stringScan extracts tokens from a text line.  Tokens maky be
+// stringScan extracts tokens from a text line.  Tokens may be
 // "-quoted, in which the bounding quotes are stripped and C-style
 // backslashes interpreted in the interior. Meant to mimic the
 // behavior of git-fast-import.
 func stringScan(input string, limit int) []string {
-	bufs := make([][]byte, 0)
+	bufs := make([][]rune, 0)
 	state := 0
 	tokenStart := func() {
 		//fmt.Fprintf(os.Stderr, "New token\n")
-		bufs = append(bufs, make([]byte, 0))
+		bufs = append(bufs, make([]rune, 0))
 	}
-	tokenContinue := func(c byte) {
+	tokenContinue := func(c rune) {
 		//fmt.Fprintf(os.Stderr, "%c: appending\n", c)
 		bufs[len(bufs)-1] = append(bufs[len(bufs)-1], c)
 	}
-	toState := func(c byte, i int) int {
+	toState := func(c rune, i int) int {
 		//fmt.Fprintf(os.Stderr, "%c: %d -> %d\n", c, state, i)
 		return i
 	}
-	for i := range input {
-		c := input[i]
+	for i, c := range input {
+		_ = i
 		//fmt.Fprintf(os.Stderr, "State %d, byte %c\n", state, c)
 		switch state {
 		case 0: // ground state, in whitespace
-			if unicode.IsSpace(rune(c)) {
+			if unicode.IsSpace(c) {
 				continue
 			} else if c == '"' {
 				state = toState(c, 2)
@@ -2395,7 +2395,7 @@ func stringScan(input string, limit int) []string {
 				tokenContinue(c)
 			}
 		case 1: // in token
-			if unicode.IsSpace(rune(c)) && len(bufs) < limit {
+			if unicode.IsSpace(c) && len(bufs) < limit {
 				state = toState(c, 0)
 			} else {
 				tokenContinue(c)
