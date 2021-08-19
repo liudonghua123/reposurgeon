@@ -59,9 +59,9 @@ type svnReader struct {
 	maplock    sync.Mutex         // Lock modification of shared maps
 	branchify  map[int][][]string // Parsed branchification setting
 	revisions  []RevisionRecord
-	revmap     map[revidx]revidx
-	backfrom   map[revidx]revidx
-	streamview []*NodeAction // All nodes in stream order
+	revmap     map[revidx]revidx // Indices in the revisions array to Subversion revision IDs
+	backfrom   map[revidx]revidx // Subversion revision ID to previous revision ID
+	streamview []*NodeAction     // All nodes in stream order
 	hashmap    map[string]*NodeAction
 	history    *History
 	// a map from SVN branch names to a revision-indexed list of "last commits"
@@ -608,7 +608,12 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 						node = new(NodeAction)
 					}
 					uintrev, _ := strconv.ParseUint(string(sdBody(line)), 10, int((unsafe.Sizeof(revidx(0))*8)) & ^int(0))
-					node.fromRev = revidx(uintrev & uint64(^revidx(0)))
+					copyfrom := uintrev & uint64(^revidx(0))
+					// If the stream is missing revisions the revision number we
+					// just extracted may be nonexistent. We may want to djust
+					// references so they are always valid by running
+					// backwards to the most recent revision.
+					node.fromRev = revidx(copyfrom)
 				} else if bytes.HasPrefix(line, []byte("Node-copyfrom-path: ")) {
 					if node == nil {
 						node = new(NodeAction)
