@@ -2587,6 +2587,10 @@ Note that the Subversion dump reader only supports versions 1 and
 This shouldn't be a problem with normal use of reposurgeon, which
 calls svnadmin dump in its default mode generating version 2.
 
+If a stream file hasd gaps in the revision sequence, branch copy
+references to nonexistent revisions will be patches to refer to the
+most recent existing revision before the missing one.
+
 Certain optional modifiers on the `<<read_cmd>>` command change
 its behavior when reading Subversion repositories:
 
@@ -2898,7 +2902,9 @@ While something like this could be done with
 correctly resolve Subversion copies across projects.  This reposurgeon
 procedure handles those correctly.
 
-Alternatively, you can do a "--nobranch" read of the Subversion
+Another useful tool is the repocutter "swapsvn" primitive.
+
+Finally, you can do a "--nobranch" read of the Subversion
 repository and then individually turn subdirectories into branches
 using the <<branchlift_cmd>> command.  The pattern for that looks like
 this:

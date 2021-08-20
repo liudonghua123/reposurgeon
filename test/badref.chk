@@ -1,2 +1,2 @@
-reposurgeon: from-reference to nonexistent Subversion revision 3
+reposurgeon: node list parsing, line 146: missing copyfrom 3 -> 2
 "Avoid having a last command that fails."

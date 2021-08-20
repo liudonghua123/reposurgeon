@@ -405,6 +405,8 @@ func (sp *StreamParser) revision(n revidx) *RevisionRecord {
 	if rev, ok := sp.revmap[n]; ok {
 		return &sp.revisions[rev]
 	}
+	// This should never happen. It used to, on stream files with gaps in the revisionm sequence,
+	// but there is now fallback logic in the node-parsing phase to fix those up.
 	panic(throw("parse", fmt.Sprintf("from-reference to nonexistent Subversion revision %d", n)))
 }
 
@@ -608,12 +610,25 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 						node = new(NodeAction)
 					}
 					uintrev, _ := strconv.ParseUint(string(sdBody(line)), 10, int((unsafe.Sizeof(revidx(0))*8)) & ^int(0))
-					copyfrom := uintrev & uint64(^revidx(0))
+					copyfrom := revidx(uintrev & uint64(^revidx(0)))
 					// If the stream is missing revisions the revision number we
-					// just extracted may be nonexistent. We may want to djust
+					// just extracted may be nonexistent. Adjust
 					// references so they are always valid by running
 					// backwards to the most recent revision.
-					node.fromRev = revidx(copyfrom)
+					backdown := copyfrom
+					for {
+						if _, ok := sp.revmap[backdown]; ok {
+							break
+						}
+						backdown--
+					}
+					if backdown != copyfrom {
+						if logEnable(logWARN) {
+							logit("node list parsing, line %d: missing copyfrom %d -> %d",
+								sp.importLine, copyfrom, backdown)
+						}
+					}
+					node.fromRev = backdown
 				} else if bytes.HasPrefix(line, []byte("Node-copyfrom-path: ")) {
 					if node == nil {
 						node = new(NodeAction)
@@ -715,7 +730,7 @@ func (action NodeAction) String() string {
 	out += " " + string(actionValues[action.action])
 	out += " " + string(pathTypeValues[action.kind])
 	out += " '" + action.path + "'"
-	if action.fromRev != 0 {
+	if action.fromRev != 0 || action.fromPath != "" {
 		out += fmt.Sprintf(" from=%d", action.fromRev) + "~" + action.fromPath
 	}
 	//if action.fileSet != nil && !action.fileSet.isEmpty() {
