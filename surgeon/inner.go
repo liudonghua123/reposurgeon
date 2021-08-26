@@ -4987,7 +4987,6 @@ type Repository struct {
 	timings          []TimeMark
 	assignments      map[string]orderedIntSet
 	inlines          int
-	uniqueness       string // "committer_date", "committer_stamp", or ""
 	markseq          int
 	authormap        map[string]Contributor
 	tzmap            map[string]*time.Location // most recent email address to timezone
@@ -5938,12 +5937,12 @@ func (repo *Repository) parseDollarCookies() {
 }
 
 // Audit the repository for uniqueness properties.
-func (repo *Repository) checkUniqueness(chatty bool, logHook func(string)) {
-	repo.uniqueness = ""
+func (repo *Repository) checkUniqueness() (int, int) {
+	repo.clrDelFlags()
 	timecheck := make(map[string]Event)
 	timeCollisions := make(map[string][]Event)
 	// Not worth parallelizing this loop, there isn't enough going on
-	// outside of the actual mapn accesses - which must be locked and
+	// outside of the actual map accesses - which must be locked and
 	// serialized.
 	commits := repo.commits(nil)
 	for _, event := range commits {
@@ -5957,21 +5956,9 @@ func (repo *Repository) checkUniqueness(chatty bool, logHook func(string)) {
 		timecheck[when] = event
 	}
 	if len(timeCollisions) == 0 {
-		repo.uniqueness = "committer_date"
-		if chatty {
-			logHook("All commit times in this repository are unique.")
-		}
-		return
+		return 0, 0
 	}
-	if logHook != nil {
-		reps := make([]string, 0)
-		for k := range timeCollisions {
-			reps = append(reps, k)
-		}
-		logHook(fmt.Sprintf("These %d timestamps have multiple commits: %s",
-			len(reps), strings.Join(reps, " ")))
-	}
-	stampCollisions := newOrderedStringSet()
+	collisionCount := 0
 	for _, clique := range timeCollisions {
 		stampcheck := make(map[string]string)
 		for _, event := range clique {
@@ -5981,22 +5968,13 @@ func (repo *Repository) checkUniqueness(chatty bool, logHook func(string)) {
 			}
 			stamp, ok := stampcheck[commit.actionStamp()]
 			if ok {
-				stampCollisions.Add(fmt.Sprintf("%s = %s", stamp, commit.idMe()))
+				collisionCount++
+				event.setDelFlag(true)
 			}
 			stampcheck[stamp] = commit.mark
 		}
 	}
-	if len(stampCollisions) == 0 {
-		repo.uniqueness = "committer_stamp"
-		if logHook != nil {
-			logHook("All commit stamps in this repository are unique.")
-		}
-		return
-	}
-	if logHook != nil {
-		logHook("These marks are in stamp collisions: " +
-			strings.Join(stampCollisions, " "))
-	}
+	return len(timeCollisions), collisionCount
 }
 
 // exportStyle says how we should we tune the export dump format.

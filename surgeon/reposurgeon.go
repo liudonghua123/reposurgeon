@@ -1616,6 +1616,9 @@ or "lint --o" lists them.
 
 The options and output format of this command are unstable; they may
 change without notice as more sanity checks are added.
+
+This command sets Q bits; true where a potential problem was reported,
+false otherwise.
 `)
 }
 
@@ -1635,110 +1638,134 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 `[1:])
 		return false
 	}
+
+	checkDeletealls := parse.options.Contains("--deletealls") || parse.options.Contains("--d")
+	checkRoots := parse.options.Empty() || parse.options.Contains("--roots") || parse.options.Contains("--r")
+	checkDisconnected := parse.options.Empty() || parse.options.Contains("--connected") || parse.options.Contains("--c")
+	checkAttributions := parse.options.Empty() || parse.options.Contains("--names") || parse.options.Contains("--n")
+	checkCvsignores := parse.options.Contains("--cvsignores") || parse.options.Contains("--c")
+	checkUniques := parse.options.Empty() || parse.options.Contains("--uniqueness") || parse.options.Contains("--u")
+
 	var lintmutex sync.Mutex
 	unmapped := regexp.MustCompile("^[^@]*$|^[^@]*@" + rs.chosen().uuid + "$")
 	shortset := newOrderedStringSet()
 	deletealls := newOrderedStringSet()
-	disconnected := newOrderedStringSet()
-	roots := newOrderedStringSet()
 	emptyaddr := newOrderedStringSet()
 	emptyname := newOrderedStringSet()
 	badaddress := newOrderedStringSet()
 	cvsignores := 0
+	countRoots := 0
+	countDisconnected := 0
+
+	rs.chosen().clrDelFlags()
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
 		commit, iscommit := event.(*Commit)
 		if !iscommit {
 			return
 		}
-		if len(commit.operations()) > 0 && commit.operations()[0].op == deleteall && commit.hasChildren() {
+		if checkDeletealls && len(commit.operations()) > 0 && commit.operations()[0].op == deleteall && commit.hasChildren() {
 			lintmutex.Lock()
 			deletealls.Add(fmt.Sprintf("on %s at %s", commit.Branch, commit.idMe()))
+			commit.setDelFlag(true)
 			lintmutex.Unlock()
 		}
 		if !commit.hasParents() && !commit.hasChildren() {
-			lintmutex.Lock()
-			disconnected.Add(commit.idMe())
-			lintmutex.Unlock()
-		} else if !commit.hasParents() {
-			lintmutex.Lock()
-			roots.Add(commit.idMe())
-			lintmutex.Unlock()
-		}
-		if unmapped.MatchString(commit.committer.email) {
-			lintmutex.Lock()
-			shortset.Add(commit.committer.email)
-			lintmutex.Unlock()
-		}
-		for _, person := range commit.authors {
-			lintmutex.Lock()
-			if unmapped.MatchString(person.email) {
-				shortset.Add(person.email)
+			if checkDisconnected {
+				lintmutex.Lock()
+				countDisconnected++
+				commit.setDelFlag(true)
+				lintmutex.Unlock()
 			}
-			lintmutex.Unlock()
+		} else if !commit.hasParents() {
+			if checkRoots {
+				lintmutex.Lock()
+				commit.setDelFlag(true)
+				countRoots++
+				lintmutex.Unlock()
+			}
 		}
-		if commit.committer.email == "" {
-			lintmutex.Lock()
-			emptyaddr.Add(commit.idMe())
-			lintmutex.Unlock()
-		} else if !strings.Contains(commit.committer.email, "@") {
-			lintmutex.Lock()
-			badaddress.Add(commit.idMe())
-			lintmutex.Unlock()
-		}
-		for _, author := range commit.authors {
-			if author.email == "" {
+		if checkAttributions {
+			if unmapped.MatchString(commit.committer.email) {
+				lintmutex.Lock()
+				shortset.Add(commit.committer.email)
+				commit.setDelFlag(true)
+				lintmutex.Unlock()
+			}
+			for _, person := range commit.authors {
+				lintmutex.Lock()
+				if unmapped.MatchString(person.email) {
+					shortset.Add(person.email)
+					commit.setDelFlag(true)
+				}
+				lintmutex.Unlock()
+			}
+			if commit.committer.email == "" {
 				lintmutex.Lock()
 				emptyaddr.Add(commit.idMe())
+				commit.setDelFlag(true)
 				lintmutex.Unlock()
-			} else if !strings.Contains(author.email, "@") {
+			} else if !strings.Contains(commit.committer.email, "@") {
 				lintmutex.Lock()
 				badaddress.Add(commit.idMe())
+				commit.setDelFlag(true)
 				lintmutex.Unlock()
 			}
-		}
-		if commit.committer.fullname == "" {
-			lintmutex.Lock()
-			emptyname.Add(commit.idMe())
-		}
-		for _, author := range commit.authors {
-			if author.fullname == "" {
+			for _, author := range commit.authors {
+				if author.email == "" {
+					lintmutex.Lock()
+					emptyaddr.Add(commit.idMe())
+					commit.setDelFlag(true)
+					lintmutex.Unlock()
+				} else if !strings.Contains(author.email, "@") {
+					lintmutex.Lock()
+					badaddress.Add(commit.idMe())
+					commit.setDelFlag(true)
+					lintmutex.Unlock()
+				}
+			}
+			if commit.committer.fullname == "" {
 				lintmutex.Lock()
 				emptyname.Add(commit.idMe())
-
+				commit.setDelFlag(true)
+				lintmutex.Unlock()
+			}
+			for _, author := range commit.authors {
+				if author.fullname == "" {
+					lintmutex.Lock()
+					emptyname.Add(commit.idMe())
+					commit.setDelFlag(true)
+					lintmutex.Unlock()
+				}
 			}
 		}
-		if parse.options.Contains("--deletealls") || parse.options.Contains("--d") {
+		if checkCvsignores {
 			for _, op := range commit.operations() {
 				if strings.HasSuffix(op.Path, ".cvsignore") {
 					cvsignores++
+					commit.setDelFlag(true)
 				}
 			}
 		}
 	})
+
 	// This check isn't done by default because these are common in Subverrsion repos
 	// and do not necessarily indicate a problem.
-	if parse.options.Contains("--deletealls") || parse.options.Contains("--d") {
+	if checkDeletealls {
+		// Can't use unadorned Q set because we want the branch and mark in a short report
 		fmt.Fprintf(parse.stdout, "%d mid-branch deletes.\n", len(deletealls))
 		sort.Strings(deletealls)
 		for _, item := range deletealls {
 			fmt.Fprintf(parse.stdout, "mid-branch delete: %s\n", item)
 		}
 	}
-	if parse.options.Empty() || parse.options.Contains("--connected") || parse.options.Contains("--c") {
-		fmt.Fprintf(parse.stdout, "%d disconnected commits.\n", len(deletealls))
-		sort.Strings(disconnected)
-		for _, item := range disconnected {
-			fmt.Fprintf(parse.stdout, "disconnected commit: %s\n", item)
-		}
+	if checkDisconnected && countDisconnected > 0 {
+		fmt.Fprintf(parse.stdout, "%d disconnected commits in Q set.\n", countDisconnected)
 	}
-	if parse.options.Empty() || parse.options.Contains("--roots") || parse.options.Contains("--r") {
-		if len(roots) > 1 {
-			sort.Strings(roots)
-			fmt.Fprintf(parse.stdout, "multiple root commits: %v\n", roots)
-		}
+	if checkRoots && countRoots > 0 {
+		fmt.Fprintf(parse.stdout, "%d root commits in Q set.\n", countRoots)
 	}
-	if parse.options.Empty() || parse.options.Contains("--names") || parse.options.Contains("--n") {
-		fmt.Fprintf(parse.stdout, "%d attribution anomalies.\n", len(shortset)+len(emptyaddr)+len(emptyname)+len(badaddress))
+	if checkAttributions {
+		fmt.Fprintf(parse.stdout, "%d attribution anomalies in Q set.\n", len(shortset)+len(emptyaddr)+len(emptyname)+len(badaddress))
 		sort.Strings(shortset)
 		for _, item := range shortset {
 			fmt.Fprintf(parse.stdout, "unknown shortname: %s\n", item)
@@ -1756,13 +1783,18 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 			fmt.Fprintf(parse.stdout, "email address missing @: %s\n", item)
 		}
 	}
-	if parse.options.Empty() || parse.options.Contains("--uniqueness") || parse.options.Contains("--u") {
-		rs.chosen().checkUniqueness(true, func(s string) {
-			fmt.Fprint(parse.stdout, "reposurgeon: "+s+control.lineSep)
-		})
+	if checkUniques {
+		timeCollisions, stampCollisions := rs.chosen().checkUniqueness()
+		if timeCollisions == 0 {
+			fmt.Fprintf(parse.stdout, "reposurgeon: all commit times in this repository are unique.\n")
+		} else if stampCollisions == 0 {
+			fmt.Fprintf(parse.stdout, "reposurgeon: all commit stamps in this repository are unique.\n")
+		} else {
+			fmt.Fprintf(parse.stdout, "reposurgeon: %d colliding commit stamps in Q set.\n", stampCollisions)
+		}
 	}
 	if cvsignores > 0 {
-		fmt.Fprintf(parse.stdout, "%d .cvsignore operations found.\n", cvsignores)
+		fmt.Fprintf(parse.stdout, "%d .cvsignore operations in Q set.\n", cvsignores)
 	}
 	return false
 }

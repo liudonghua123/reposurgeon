@@ -1,14 +1,14 @@
 set quiet
 read <bs.fi
 lint
-0 disconnected commits.
-0 attribution anomalies.
-reposurgeon: All commit times in this repository are unique.
+1 root commits in Q set.
+0 attribution anomalies in Q set.
+reposurgeon: all commit times in this repository are unique.
 read <lint.svn
 lint
-0 disconnected commits.
-3 attribution anomalies.
+1 root commits in Q set.
+3 attribution anomalies in Q set.
 unknown shortname: fraggle
 email address missing @: commit@:3=<1>
 email address missing @: commit@:4=<2>
-reposurgeon: All commit times in this repository are unique.
+reposurgeon: all commit times in this repository are unique.

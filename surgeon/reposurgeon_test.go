@@ -1555,8 +1555,8 @@ data 0
 	}
 	assertEqual(t, onecommit, a.String())
 
-	repo.checkUniqueness(false, nil)
-	assertEqual(t, repo.uniqueness, "committer_date")
+	timeCollisions, _ := repo.checkUniqueness()
+	assertIntEqual(t, timeCollisions, 0)
 
 	// Check for no false positives on front events */
 	assertIntEqual(t, len(repo.frontEvents()), 0)
