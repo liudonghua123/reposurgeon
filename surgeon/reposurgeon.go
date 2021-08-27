@@ -1765,7 +1765,10 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 		fmt.Fprintf(parse.stdout, "%d root commits in Q set.\n", countRoots)
 	}
 	if checkAttributions {
-		fmt.Fprintf(parse.stdout, "%d attribution anomalies in Q set.\n", len(shortset)+len(emptyaddr)+len(emptyname)+len(badaddress))
+		anomalyCount := len(shortset) + len(emptyaddr) + len(emptyname) + len(badaddress)
+		if anomalyCount > 0 {
+			fmt.Fprintf(parse.stdout, "%d attribution anomalies in Q set.\n", anomalyCount)
+		}
 		sort.Strings(shortset)
 		for _, item := range shortset {
 			fmt.Fprintf(parse.stdout, "unknown shortname: %s\n", item)
@@ -1796,6 +1799,7 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 	if cvsignores > 0 {
 		fmt.Fprintf(parse.stdout, "%d .cvsignore operations in Q set.\n", cvsignores)
 	}
+
 	return false
 }
 
@@ -3287,9 +3291,7 @@ command is empty.  Tags, resets, and passthroughs are deleted with no
 side effects.  Blobs cannot be directly deleted with this command; they
 are removed only when removal of fileops associated with commits requires this.
 
-When a commit is deleted, what becomes of tags and fileops attached to
-it is controlled by policy flags.  A delete is equivalent to a
-squash with the --delete flag.
+A delete is equivalent to a squash with the --delete flag.
 
 Clears all Q bits.
 `)

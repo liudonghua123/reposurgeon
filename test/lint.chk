@@ -2,7 +2,6 @@ set quiet
 read <bs.fi
 lint
 1 root commits in Q set.
-0 attribution anomalies in Q set.
 reposurgeon: all commit times in this repository are unique.
 read <lint.svn
 lint
