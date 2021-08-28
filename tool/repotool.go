@@ -470,7 +470,7 @@ func mirror(args []string) {
 	// on a local mirror directory.
 	reposize := func(operand string) int {
 		if !plausibleSVNPrefix(operand) {
-			operand = "file://"
+			operand = "file://" + operand
 		}
 		infoCredentials := ""
 		if username != "" {
