@@ -69,9 +69,7 @@ expunge::
 Delete all operations with Node-path headers matching
 specified Go regular expressions.  Any revision left with no Node
 records after this filtering has its Revision record removed as
-well. If the -repo option is given, a copy/move
-commit with a copyfrom referencing an expunged path will turn
-into an add commit using "svn cat REPO".
+well.
 
 log::
 Generate a log report, same format as the output of svn
@@ -152,9 +150,7 @@ sift::
 Delete all operations with Node-path headers *not* matching specified
 Go regular expressions (opposite of 'expunge').  Any revision left
 with no Node records after this filtering has its Revision record
-removed as well. If the -repo option is given, a copy/move
-commit with a copyfrom referencing an expunged path will turn
-into an add commit using "svn cat REPO".
+removed as well.
 
 split::
 Transform every stream operation with Node-path PATH in the path list

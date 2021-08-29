@@ -13,8 +13,8 @@ V 27
 PROPS-END
 
 Revision-number: 1
-Prop-content-length: 125
-Content-length: 125
+Prop-content-length: 122
+Content-length: 122
 
 K 10
 svn:author
@@ -139,8 +139,8 @@ PROPS-END
 
 
 Revision-number: 2
-Prop-content-length: 125
-Content-length: 125
+Prop-content-length: 122
+Content-length: 122
 
 K 10
 svn:author
@@ -170,8 +170,8 @@ initial software content
 
 
 Revision-number: 3
-Prop-content-length: 125
-Content-length: 125
+Prop-content-length: 122
+Content-length: 122
 
 K 10
 svn:author
@@ -201,8 +201,8 @@ initial firmware content
 
 
 Revision-number: 4
-Prop-content-length: 121
-Content-length: 121
+Prop-content-length: 118
+Content-length: 118
 
 K 10
 svn:author
@@ -232,8 +232,8 @@ initial docs content
 
 
 Revision-number: 5
-Prop-content-length: 183
-Content-length: 183
+Prop-content-length: 180
+Content-length: 180
 
 K 10
 svn:author
@@ -277,8 +277,8 @@ PROPS-END
 
 
 Revision-number: 6
-Prop-content-length: 128
-Content-length: 128
+Prop-content-length: 125
+Content-length: 125
 
 K 10
 svn:author
@@ -311,8 +311,8 @@ Text-copy-source-sha1: 8a3f40deb5bf46dd62ed06c263f1666bfaa4736e
 
 
 Revision-number: 7
-Prop-content-length: 128
-Content-length: 128
+Prop-content-length: 125
+Content-length: 125
 
 K 10
 svn:author
@@ -345,8 +345,8 @@ Text-copy-source-sha1: 76e12ce0365d360073c6cef2e82039f6fbef6410
 
 
 Revision-number: 8
-Prop-content-length: 124
-Content-length: 124
+Prop-content-length: 121
+Content-length: 121
 
 K 10
 svn:author
@@ -379,8 +379,8 @@ Text-copy-source-sha1: 88d1d53e4f5b5385049ed89fd3f57d54848aa484
 
 
 Revision-number: 9
-Prop-content-length: 135
-Content-length: 135
+Prop-content-length: 132
+Content-length: 132
 
 K 10
 svn:author
