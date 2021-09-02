@@ -8978,8 +8978,9 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 	events := make([]Event, 0)
 	errorCount := 0
 	var event Event
+	var ok bool
 	for i, message := range updateList {
-		event = nil
+		eventValid := false
 		if message.getHeader("Event-Number") != "" {
 			eventnum, err := strconv.Atoi(message.getHeader("Event-Number"))
 			if err != nil {
@@ -8992,18 +8993,23 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 					errorCount++
 				} else {
 					event = repo.events[eventnum-1]
+					eventValid = true
 				}
 			}
 		} else if message.getHeader("Legacy-ID") != "" {
-			event = legacyMap[message.getHeader("Legacy-ID")]
-			if event == nil {
+			event, ok = legacyMap[message.getHeader("Legacy-ID")]
+			if ok {
+				eventValid = true
+			} else {
 				croak("no commit matches legacy-ID %s",
 					message.getHeader("Legacy-ID"))
 				errorCount++
 			}
 		} else if message.getHeader("Event-Mark") != "" {
-			event = repo.markToEvent(message.getHeader("Event-Mark"))
-			if event == nil {
+			event := repo.markToEvent(message.getHeader("Event-Mark"))
+			if event != nil {
+				eventValid = true
+			} else {
 				croak("no commit matches mark %s",
 					message.getHeader("Event-Mark"))
 				errorCount++
@@ -9014,8 +9020,10 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			blank.authors = append(blank.authors, *attrib)
 			blank.emailIn(message, false)
 			stamp := blank.actionStamp()
-			event = attributionByAuthor[stamp]
-			if event == nil {
+			event, ok = attributionByAuthor[stamp]
+			if ok {
+				eventValid = true
+			} else {
 				croak("no commit matches stamp %s", stamp)
 				errorCount++
 			}
@@ -9029,8 +9037,10 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			blank.committer = *attrib
 			blank.emailIn(message, false)
 			stamp := blank.committer.actionStamp()
-			event = attributionByCommitter[stamp]
-			if event == nil {
+			event, ok = attributionByCommitter[stamp]
+			if ok {
+				eventValid = true
+			} else {
 				croak("no commit matches stamp %s", stamp)
 				errorCount++
 			}
@@ -9044,8 +9054,10 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			blank.tagger = attrib
 			blank.emailIn(message, false)
 			stamp := blank.tagger.actionStamp()
-			event = attributionByAuthor[stamp]
-			if event == nil {
+			event, ok = attributionByAuthor[stamp]
+			if ok {
+				eventValid = true
+			} else {
 				croak("no tag matches stamp %s", stamp)
 				errorCount++
 			}
@@ -9058,8 +9070,10 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			attrib, _ := newAttribution("")
 			blank.tagger = attrib
 			blank.emailIn(message, false)
-			event = nameMap[blank.tagname]
-			if event == nil {
+			event, ok = nameMap[blank.tagname]
+			if ok {
+				eventValid = true
+			} else {
 				croak("no tag matches name %s", blank.tagname)
 				errorCount++
 			}
@@ -9067,7 +9081,7 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			croak("no commit matches update %d:\n%s", i+1, message.String())
 			errorCount++
 		}
-		if event != nil {
+		if eventValid {
 			ei := repo.eventToIndex(event)
 			if ei == -1 {
 				croak("event at update %d can't be found in repository", i+1)
