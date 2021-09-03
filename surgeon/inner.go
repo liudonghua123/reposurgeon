@@ -1462,6 +1462,34 @@ func markNumber(markstring string) markidx {
 	return markidx(n & uint64(^markidx(0)))
 }
 
+func (repo *Repository) clrDelFlags() {
+	walkEvents(repo.events, func(i int, event Event) { event.setDelFlag(false) })
+}
+
+func (repo *Repository) countDelFlags() int {
+	count := 0
+	for _, event := range repo.events {
+		if event.getDelFlag() {
+			count++
+		}
+	}
+	return count
+}
+
+func (repo *Repository) clrQsetFlags() {
+	walkEvents(repo.events, func(i int, event Event) { event.setQsetFlag(false) })
+}
+
+func (repo *Repository) countQsetFlags() int {
+	count := 0
+	for _, event := range repo.events {
+		if event.getQsetFlag() {
+			count++
+		}
+	}
+	return count
+}
+
 //func intToMarkidx(markint uint) markidx {
 //	return markidx(markint & uint(^markidx(0)))
 //}
@@ -1505,6 +1533,18 @@ func (b *Blob) setDelFlag(t bool) {
 		b.colors.Add(colorDELETE)
 	} else {
 		b.colors.Remove(colorDELETE)
+	}
+}
+
+func (b Blob) getQsetFlag() bool {
+	return b.colors.Contains(colorDELETE)
+}
+
+func (b *Blob) setQsetFlag(t bool) {
+	if t {
+		b.colors.Add(colorQSET)
+	} else {
+		b.colors.Remove(colorQSET)
 	}
 }
 
@@ -1923,6 +1963,18 @@ func (t *Tag) setDelFlag(b bool) {
 	}
 }
 
+func (t Tag) getQsetFlag() bool {
+	return t.color == colorQSET
+}
+
+func (t *Tag) setQsetFlag(b bool) {
+	if b {
+		t.color = colorQSET
+	} else {
+		t.color = colorNONE
+	}
+}
+
 // getMark returns the tag's identifying mark
 // Not actually used, needed to satisfy Event interface
 func (t Tag) getMark() string {
@@ -2182,7 +2234,7 @@ type Reset struct {
 	color      string
 	legacyID   string // Sometimes these are reduced Subversion commits
 	repo       *Repository
-	deleteme   bool
+	colors     colorSet
 }
 
 func newReset(repo *Repository, ref string, committish string, legacy string) *Reset {
@@ -2198,11 +2250,27 @@ func newReset(repo *Repository, ref string, committish string, legacy string) *R
 }
 
 func (reset Reset) getDelFlag() bool {
-	return reset.deleteme
+	return reset.colors.Contains(colorDELETE)
 }
 
 func (reset *Reset) setDelFlag(b bool) {
-	reset.deleteme = b
+	if b {
+		reset.colors.Add(colorDELETE)
+	} else {
+		reset.colors.Remove(colorDELETE)
+	}
+}
+
+func (reset Reset) getQsetFlag() bool {
+	return reset.colors.Contains(colorQSET)
+}
+
+func (reset *Reset) setQsetFlag(b bool) {
+	if b {
+		reset.colors.Add(colorQSET)
+	} else {
+		reset.colors.Remove(colorQSET)
+	}
 }
 
 func (reset Reset) isCommit() bool {
@@ -2589,7 +2657,7 @@ type Callout struct {
 	branch      string
 	_childNodes []string
 	color       colorType
-	deleteme    bool
+	colors      colorSet
 }
 
 func newCallout(mark string) *Callout {
@@ -2608,12 +2676,29 @@ func (callout *Callout) hasChildren() bool {
 }
 
 func (callout Callout) getDelFlag() bool {
-	return callout.deleteme
+	return callout.colors.Contains(colorDELETE)
 }
 
 func (callout *Callout) setDelFlag(b bool) {
-	callout.deleteme = b
+	if b {
+		callout.colors.Add(colorDELETE)
+	} else {
+		callout.colors.Remove(colorDELETE)
+	}
 }
+
+func (callout Callout) getQsetFlag() bool {
+	return callout.colors.Contains(colorQSET)
+}
+
+func (callout *Callout) setQsetFlag(b bool) {
+	if b {
+		callout.colors.Add(colorQSET)
+	} else {
+		callout.colors.Remove(colorQSET)
+	}
+}
+
 func (callout Callout) callout() string {
 	return callout.mark
 }
@@ -2666,6 +2751,7 @@ const (
 	colorLATE
 	colorTRIVIAL
 	colorDELETE
+	colorQSET
 )
 
 type colorType uint8
@@ -2716,16 +2802,32 @@ type Commit struct {
 	_childNodes    []CommitLike // list of child nodes
 	hash           gitHashType
 	color          colorType // Scratch storage for graph-coloring
-	deleteme       bool      // Flag used during deletion operations
+	colors         colorSet  // Flag used during deletion operations
 	implicitParent bool      // Whether the first parent was implicit
 }
 
 func (commit Commit) getDelFlag() bool {
-	return commit.deleteme
+	return commit.colors.Contains(colorDELETE)
 }
 
 func (commit *Commit) setDelFlag(b bool) {
-	commit.deleteme = b
+	if b {
+		commit.colors.Add(colorDELETE)
+	} else {
+		commit.colors.Remove(colorDELETE)
+	}
+}
+
+func (commit Commit) getQsetFlag() bool {
+	return commit.colors.Contains(colorQSET)
+}
+
+func (commit *Commit) setQsetFlag(b bool) {
+	if b {
+		commit.colors.Add(colorQSET)
+	} else {
+		commit.colors.Remove(colorQSET)
+	}
 }
 
 func (commit Commit) getMark() string {
@@ -4152,18 +4254,33 @@ func (commit Commit) commonDirectory() string {
 
 //Passthrough represents a passthrough line.
 type Passthrough struct {
-	repo     *Repository
-	text     string
-	color    string
-	deleteme bool
+	repo   *Repository
+	text   string
+	colors colorSet
 }
 
 func (p Passthrough) getDelFlag() bool {
-	return p.deleteme
+	return p.colors.Contains(colorDELETE)
 }
 
 func (p *Passthrough) setDelFlag(b bool) {
-	p.deleteme = b
+	if b {
+		p.colors.Add(colorDELETE)
+	} else {
+		p.colors.Remove(colorDELETE)
+	}
+}
+
+func (p Passthrough) getQsetFlag() bool {
+	return p.colors.Contains(colorQSET)
+}
+
+func (p *Passthrough) setQsetFlag(b bool) {
+	if b {
+		p.colors.Add(colorQSET)
+	} else {
+		p.colors.Remove(colorQSET)
+	}
 }
 
 func newPassthrough(repo *Repository, line string) *Passthrough {
@@ -4846,6 +4963,8 @@ type Event interface {
 	moveto(*Repository)
 	getDelFlag() bool
 	setDelFlag(bool)
+	getQsetFlag() bool
+	setQsetFlag(bool)
 	isCommit() bool
 }
 
@@ -4920,6 +5039,8 @@ type CommitLike interface {
 	moveto(*Repository)
 	getDelFlag() bool
 	setDelFlag(bool)
+	getQsetFlag() bool
+	setQsetFlag(bool)
 	getColor() colorType
 	setColor(colorType)
 	isCommit() bool
@@ -5510,7 +5631,7 @@ func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) err
 		}
 	}
 
-	repo.clrDelFlags()
+	repo.clrQsetFlags()
 	repo.walkEvents(selection, func(idx int, event Event) {
 		switch event.(type) {
 		case *Commit:
@@ -5518,7 +5639,7 @@ func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) err
 			c.committer.remap(repo.authormap)
 			for ai := range c.authors {
 				if c.authors[ai].remap(repo.authormap) {
-					c.setDelFlag(true)
+					c.setQsetFlag(true)
 				}
 			}
 		case *Tag:
@@ -5938,7 +6059,7 @@ func (repo *Repository) parseDollarCookies() {
 
 // Audit the repository for uniqueness properties.
 func (repo *Repository) checkUniqueness() (int, int) {
-	repo.clrDelFlags()
+	repo.clrQsetFlags()
 	timecheck := make(map[string]Event)
 	timeCollisions := make(map[string][]Event)
 	// Not worth parallelizing this loop, there isn't enough going on
@@ -5969,7 +6090,7 @@ func (repo *Repository) checkUniqueness() (int, int) {
 			stamp, ok := stampcheck[commit.actionStamp()]
 			if ok {
 				collisionCount++
-				event.setDelFlag(true)
+				event.setQsetFlag(true)
 			}
 			stampcheck[stamp] = commit.mark
 		}
@@ -6412,20 +6533,6 @@ var allPolicies = orderedStringSet{
 	"--tagforward",
 	"--quiet",
 	"--blobs",
-}
-
-func (repo *Repository) clrDelFlags() {
-	walkEvents(repo.events, func(i int, event Event) { event.setDelFlag(false) })
-}
-
-func (repo *Repository) countDelFlags() int {
-	count := 0
-	for _, event := range repo.events {
-		if event.getDelFlag() {
-			count++
-		}
-	}
-	return count
 }
 
 // Delete a set of events, or rearrange it forward or backwards.
@@ -8399,7 +8506,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 		return clRe.MatchString(filepath.Base(filename))
 	}
 	repo.walkEvents(selection, func(eventRank int, event Event) {
-		event.setDelFlag(false)
+		event.setQsetFlag(false)
 		commit, iscommit := event.(*Commit)
 		evts.bump()
 		defer baton.percentProgress(uint64(evts.value))
@@ -8564,7 +8671,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 				if !matched {
 					commit.authors = append(commit.authors, *newattr)
 					cd++
-					commit.setDelFlag(true)
+					commit.setQsetFlag(true)
 				}
 			}
 		}
@@ -8628,7 +8735,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 		baton.startProgress(prompt, uint64(len(selection)))
 	}
 	altered := new(Safecounter)
-	repo.clrDelFlags()
+	repo.clrQsetFlags()
 	repo.walkEvents(selection, func(idx int, event Event) {
 		if tag, ok := event.(*Tag); ok {
 			if nonblobs {
@@ -8648,7 +8755,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 				}
 				if anychanged {
 					altered.bump()
-					tag.setDelFlag(true)
+					tag.setQsetFlag(true)
 				}
 			}
 		} else if commit, ok := event.(*Commit); ok {
@@ -8692,7 +8799,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 				}
 				if anychanged {
 					altered.bump()
-					commit.setDelFlag(true)
+					commit.setQsetFlag(true)
 				}
 			}
 			if blobs {
@@ -8712,7 +8819,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 			if content != modified {
 				blob.setContent([]byte(modified), noOffset)
 				altered.bump()
-				blob.setDelFlag(true)
+				blob.setQsetFlag(true)
 			}
 		}
 		if !quiet {
@@ -8763,8 +8870,9 @@ func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 // pathRename performas batch path renames by regular expression
 func (repo *Repository) pathRename(selection orderedIntSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)
+	repo.clrQsetFlags()
 	for _, commit := range repo.commits(selection) {
-		commit.setDelFlag(false)
+		commit.setQsetFlag(false)
 		for idx := range commit.fileops {
 			for _, attr := range []string{"Path", "Source", "Target"} {
 				fileop := commit.fileops[idx]
@@ -8783,7 +8891,7 @@ func (repo *Repository) pathRename(selection orderedIntSet, sourceRE *regexp.Reg
 							return
 						} else {
 							actions = append(actions, pathAction{fileop, commit, attr, newpath})
-							commit.setDelFlag(true)
+							commit.setQsetFlag(true)
 						}
 					}
 				}
@@ -8916,7 +9024,7 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 		attributionByCommitter[stamp] = commit
 	}
 	for _, event := range repo.events {
-		event.setDelFlag(false)
+		event.setQsetFlag(false)
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagname != "" {
 				nameMap[tag.tagname] = tag
@@ -9121,19 +9229,19 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 			commit := event.(*Commit)
 			if commit.emailIn(update, false) {
 				changers = append(changers, update)
-				event.setDelFlag(true)
+				event.setQsetFlag(true)
 			}
 		case *Tag:
 			tag := event.(*Tag)
 			if tag.emailIn(update, false) {
 				changers = append(changers, update)
-				event.setDelFlag(true)
+				event.setQsetFlag(true)
 			}
 		case *Blob:
 			blob := event.(*Blob)
 			if blob.emailIn(update, false) {
 				changers = append(changers, update)
-				event.setDelFlag(true)
+				event.setQsetFlag(true)
 			}
 		}
 	}
@@ -9422,7 +9530,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 	var liftroot *Commit
 	splitcount := 0
 	for _, commit := range repo.commits(nil) {
-		commit.setDelFlag(false)
+		commit.setQsetFlag(false)
 		if commit.Branch == sourcebranch {
 			if sourceroot == nil {
 				sourceroot = commit
@@ -9461,7 +9569,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 					}
 					liftFrag := repo.events[idx+1].(*Commit)
 					liftFrag.Branch = newname
-					liftFrag.setDelFlag(true)
+					liftFrag.setQsetFlag(true)
 					for _, op := range liftFrag.operations() {
 						if strings.HasPrefix(op.Source, pathprefix) {
 							op.Source = op.Source[len(pathprefix):]
@@ -9734,7 +9842,7 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 	// Front events go with early segment, they'll be copied to late one.
 	for _, event := range rl.repo.frontEvents() {
 		if passthrough, ok := event.(*Passthrough); ok {
-			passthrough.color = "early"
+			passthrough.colors.Add(colorEARLY)
 		}
 	}
 	//assert all(hasattr(x, "color") || hasattr(x, "colors") || isinstance(x, Reset) for x in rl.repo)
@@ -9775,10 +9883,10 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 			}
 		} else {
 			if passthrough, ok := event.(*Passthrough); ok {
-				if passthrough.color == "early" {
+				if passthrough.colors.Contains(colorEARLY) {
 					passthrough.moveto(earlyPart)
 					earlyPart.addEvent(passthrough)
-				} else if passthrough.color == "late" {
+				} else if passthrough.colors.Contains(colorLATE) {
 					passthrough.moveto(latePart)
 					latePart.addEvent(passthrough)
 				} else {
