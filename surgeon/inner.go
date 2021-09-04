@@ -1462,20 +1462,6 @@ func markNumber(markstring string) markidx {
 	return markidx(n & uint64(^markidx(0)))
 }
 
-func (repo *Repository) clearColor(color colorType) {
-	walkEvents(repo.events, func(i int, event Event) { event.removeColor(color) })
-}
-
-func (repo *Repository) countColor(color colorType) int {
-	count := 0
-	for _, event := range repo.events {
-		if event.hasColor(color) {
-			count++
-		}
-	}
-	return count
-}
-
 //func intToMarkidx(markint uint) markidx {
 //	return markidx(markint & uint(^markidx(0)))
 //}
@@ -1484,12 +1470,11 @@ type colorType uint8
 type colorSet uint8
 
 const (
-	colorNONE            = 0
-	colorEARLY colorType = 1 << iota // Errors and urgent messages
-	colorLATE
-	colorTRIVIAL
-	colorDELETE
-	colorQSET
+	colorNONE             = 0
+	colorEARLY  colorType = 1 << iota // Used in topological-cut operation
+	colorLATE                         // Used in topological-cut operation
+	colorDELETE                       // Used internally in squash operation
+	colorQSET                         // Set to rerport modified objects after various operations
 )
 
 func (c colorSet) Contains(a colorType) bool {
@@ -1503,8 +1488,23 @@ func (c *colorSet) Add(a colorType) {
 func (c *colorSet) Remove(a colorType) {
 	*c &= colorSet(^a)
 }
+
 func (c *colorSet) Clear() {
 	*c = 0
+}
+
+func (repo *Repository) clearColor(color colorType) {
+	walkEvents(repo.events, func(i int, event Event) { event.removeColor(color) })
+}
+
+func (repo *Repository) countColor(color colorType) int {
+	count := 0
+	for _, event := range repo.events {
+		if event.hasColor(color) {
+			count++
+		}
+	}
+	return count
 }
 
 // Blob represents a detached blob of data referenced by a mark.
