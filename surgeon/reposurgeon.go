@@ -1657,7 +1657,7 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 	countRoots := 0
 	countDisconnected := 0
 
-	rs.chosen().clrQsetFlags()
+	rs.chosen().clearColor(colorQSET)
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
 		commit, iscommit := event.(*Commit)
 		if !iscommit {
@@ -1666,20 +1666,20 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 		if checkDeletealls && len(commit.operations()) > 0 && commit.operations()[0].op == deleteall && commit.hasChildren() {
 			lintmutex.Lock()
 			deletealls.Add(fmt.Sprintf("on %s at %s", commit.Branch, commit.idMe()))
-			commit.setQsetFlag(true)
+			commit.addColor(colorQSET)
 			lintmutex.Unlock()
 		}
 		if !commit.hasParents() && !commit.hasChildren() {
 			if checkDisconnected {
 				lintmutex.Lock()
 				countDisconnected++
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 				lintmutex.Unlock()
 			}
 		} else if !commit.hasParents() {
 			if checkRoots {
 				lintmutex.Lock()
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 				countRoots++
 				lintmutex.Unlock()
 			}
@@ -1688,52 +1688,52 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 			if unmapped.MatchString(commit.committer.email) {
 				lintmutex.Lock()
 				shortset.Add(commit.committer.email)
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 				lintmutex.Unlock()
 			}
 			for _, person := range commit.authors {
 				lintmutex.Lock()
 				if unmapped.MatchString(person.email) {
 					shortset.Add(person.email)
-					commit.setQsetFlag(true)
+					commit.addColor(colorQSET)
 				}
 				lintmutex.Unlock()
 			}
 			if commit.committer.email == "" {
 				lintmutex.Lock()
 				emptyaddr.Add(commit.idMe())
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 				lintmutex.Unlock()
 			} else if !strings.Contains(commit.committer.email, "@") {
 				lintmutex.Lock()
 				badaddress.Add(commit.idMe())
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 				lintmutex.Unlock()
 			}
 			for _, author := range commit.authors {
 				if author.email == "" {
 					lintmutex.Lock()
 					emptyaddr.Add(commit.idMe())
-					commit.setQsetFlag(true)
+					commit.addColor(colorQSET)
 					lintmutex.Unlock()
 				} else if !strings.Contains(author.email, "@") {
 					lintmutex.Lock()
 					badaddress.Add(commit.idMe())
-					commit.setQsetFlag(true)
+					commit.addColor(colorQSET)
 					lintmutex.Unlock()
 				}
 			}
 			if commit.committer.fullname == "" {
 				lintmutex.Lock()
 				emptyname.Add(commit.idMe())
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 				lintmutex.Unlock()
 			}
 			for _, author := range commit.authors {
 				if author.fullname == "" {
 					lintmutex.Lock()
 					emptyname.Add(commit.idMe())
-					commit.setQsetFlag(true)
+					commit.addColor(colorQSET)
 					lintmutex.Unlock()
 				}
 			}
@@ -1742,7 +1742,7 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 			for _, op := range commit.operations() {
 				if strings.HasSuffix(op.Path, ".cvsignore") {
 					cvsignores++
-					commit.setQsetFlag(true)
+					commit.addColor(colorQSET)
 				}
 			}
 		}
@@ -2705,7 +2705,7 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 		parse.options.Contains("--create"),
 		parse.options.Contains("--empty-only"))
 	if control.isInteractive() {
-		changed := repo.countQsetFlags()
+		changed := repo.countColor(colorQSET)
 		if changed == 0 {
 			respond("no events modified by msgin.")
 		} else {
@@ -4957,7 +4957,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		newname = removeBranchPrefix(newname)
 		sourcepattern = removeBranchPrefix(sourcepattern)
 		sourceRE := getPattern(sourcepattern)
-		repo.clrQsetFlags()
+		repo.clearColor(colorQSET)
 		for _, branch := range repo.branchset() {
 			branch := removeBranchPrefix(branch)
 			if !sourceRE.MatchString(branch) {
@@ -4972,12 +4972,12 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 				if commit, ok := event.(*Commit); ok {
 					if commit.Branch == addBranchPrefix(branch) {
 						commit.setBranch(addBranchPrefix(subst))
-						commit.setQsetFlag(true)
+						commit.addColor(colorQSET)
 					}
 				} else if reset, ok := event.(*Reset); ok {
 					if reset.ref == addBranchPrefix(branch) {
 						reset.ref = addBranchPrefix(subst)
-						reset.setQsetFlag(true)
+						reset.addColor(colorQSET)
 					}
 				}
 			}
@@ -5013,7 +5013,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 					}
 					subst := GoReplacer(sourceRE, tagname, newname)
 					tag.tagname = subst[strings.Index(subst, "/")+1:] + suffix
-					tag.setQsetFlag(true)
+					tag.addColor(colorQSET)
 				} else if reset, ok := event.(*Reset); ok {
 					resetname := removeBranchPrefix(reset.ref)
 					if !sourceRE.MatchString(resetname) {
@@ -5021,11 +5021,11 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 					}
 					subst := GoReplacer(sourceRE, resetname, newname)
 					reset.ref = addBranchPrefix(subst)
-					reset.setQsetFlag(true)
+					reset.addColor(colorQSET)
 				}
 			}
 		}
-		if n := repo.countQsetFlags(); n == 0 {
+		if n := repo.countColor(colorQSET); n == 0 {
 			croak("no branch fields matched %s", sourceRE)
 		} else {
 			respond("%d objects modified", n)
@@ -5109,7 +5109,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		return false
 	}
 
-	repo.clrQsetFlags()
+	repo.clearColor(colorQSET)
 	if verb == "create" {
 		var tagname string
 		tagname, line = popToken(line)
@@ -5152,7 +5152,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			lasttag = lastcommit
 		}
 		repo.insertEvent(tag, lasttag+1, "tag creation")
-		tag.setQsetFlag(true)
+		tag.addColor(colorQSET)
 		control.baton.twirl()
 		return false
 	}
@@ -5222,7 +5222,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		if verb == "move" {
 			tag.forget()
 			tag.remember(repo, target.mark)
-			tag.setQsetFlag(true)
+			tag.addColor(colorQSET)
 		} else if verb == "rename" {
 			possible := GoReplacer(sourceRE, tag.tagname, newname)
 			if i > 0 && possible == tags[i-1].tagname {
@@ -5230,7 +5230,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 				return false
 			}
 			tag.tagname = possible
-			tag.setQsetFlag(true)
+			tag.addColor(colorQSET)
 		} else if verb == "delete" {
 			// the order here in important
 			repo.delete([]int{tag.index()}, nil, control.baton)
@@ -5239,7 +5239,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		control.baton.twirl()
 	}
 	if verb != "delete" {
-		if n := repo.countQsetFlags(); n == 0 {
+		if n := repo.countColor(colorQSET); n == 0 {
 			croak("no tag names matched %s", sourceRE)
 		} else {
 			respond("%d objects modified", n)
@@ -5337,7 +5337,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		return false
 	}
 
-	repo.clrQsetFlags()
+	repo.clearColor(colorQSET)
 	resets := make([]*Reset, 0)
 	selection := rs.selection
 	if selection == nil {
@@ -5364,7 +5364,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			return false
 		}
 		reset := newReset(repo, resetname, target.mark, target.legacyID)
-		reset.setQsetFlag(true)
+		reset.addColor(colorQSET)
 		repo.addEvent(reset)
 		repo.declareSequenceMutation("reset create")
 	} else if verb == "move" {
@@ -5390,7 +5390,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		}
 		reset.forget()
 		reset.remember(repo, target.mark)
-		reset.setQsetFlag(true)
+		reset.addColor(colorQSET)
 		repo.declareSequenceMutation("reset move")
 	} else if verb == "rename" {
 		var newname string
@@ -5429,12 +5429,12 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 
 		for _, reset := range resets {
 			reset.ref = newname
-			reset.setQsetFlag(true)
+			reset.addColor(colorQSET)
 		}
 		for _, commit := range repo.commits(nil) {
 			if sourceRE.MatchString(commit.Branch) {
 				commit.Branch = newname
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 			}
 		}
 	} else if verb == "delete" {
@@ -5467,7 +5467,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		croak("unknown verb '%s' in reset command.", verb)
 	}
 	if verb != "delete" {
-		if n := repo.countQsetFlags(); n == 0 {
+		if n := repo.countColor(colorQSET); n == 0 {
 			croak("no reset names matched %s", sourceRE)
 		} else {
 			respond("%d objects modified", n)
@@ -6020,7 +6020,7 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 	rs.newLineParse(line, parseALLREPO, nil)
 	repo := rs.chosen()
 	if strings.Contains(line, "lift") {
-		repo.clrQsetFlags()
+		repo.clearColor(colorQSET)
 		rs.chosen().parseDollarCookies()
 		hits := 0
 		substitute := func(getter func(string) *Commit, legend string) string {
@@ -6091,7 +6091,7 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 						return substitute(item.getter, m)
 					})
 				if commit.Comment != oldcomment {
-					commit.setQsetFlag(true)
+					commit.addColor(colorQSET)
 				}
 			}
 		}
@@ -6152,7 +6152,7 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 	rs.newLineParse(line, parseALLREPO, nil)
 	lineEnders := orderedStringSet{".", ",", ";", ":", "?", "!"}
 	control.baton.startProgress("gitifying comments", uint64(len(rs.selection)))
-	rs.chosen().clrQsetFlags()
+	rs.chosen().clearColor(colorQSET)
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
 		if commit, ok := event.(*Commit); ok {
 			commit.Comment = canonicalizeComment(commit.Comment)
@@ -6167,7 +6167,7 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 				commit.Comment = commit.Comment[:firsteol] +
 					"\n" +
 					commit.Comment[firsteol:]
-				commit.setQsetFlag(true)
+				commit.addColor(colorQSET)
 			}
 		} else if tag, ok := event.(*Tag); ok {
 			tag.Comment = strings.TrimSpace(tag.Comment) + "\n"
@@ -6183,7 +6183,7 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 					"\n" +
 					tag.Comment[firsteol:]
 				if commit != nil {
-					commit.setQsetFlag(true)
+					commit.addColor(colorQSET)
 				}
 			}
 		}
@@ -6650,14 +6650,14 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 	repo := rs.chosen()
 	//baton.startProcess("reposurgeon: disambiguating", "")
 	modified := 0
-	repo.clrQsetFlags()
+	repo.clearColor(colorQSET)
 	for _, event := range repo.commits(rs.selection) {
 		parents := event.parents()
 		if len(parents) == 1 {
 			if parent, ok := parents[0].(*Commit); ok {
 				if event.committer.date.timestamp.Equal(parent.committer.date.timestamp) {
 					event.bump(1)
-					event.setQsetFlag(true)
+					event.addColor(colorQSET)
 					modified++
 				}
 			}
