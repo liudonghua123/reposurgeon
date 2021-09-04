@@ -1548,6 +1548,14 @@ func (b *Blob) setQsetFlag(t bool) {
 	}
 }
 
+func (b Blob) getColor() colorSet {
+	return b.colors
+}
+
+func (b *Blob) setColor(color colorSet) {
+	b.colors = color
+}
+
 // idMe IDs this blob for humans.
 func (b *Blob) idMe() string {
 	return fmt.Sprintf("blob@%s", b.mark)
@@ -1933,7 +1941,7 @@ type Tag struct {
 	tagger     *Attribution
 	Comment    string
 	legacyID   string
-	color      colorType
+	colors     colorSet
 }
 
 func newTag(repo *Repository,
@@ -1952,27 +1960,35 @@ func newTag(repo *Repository,
 }
 
 func (t Tag) getDelFlag() bool {
-	return t.color == colorDELETE
+	return t.colors.Contains(colorDELETE)
 }
 
 func (t *Tag) setDelFlag(b bool) {
 	if b {
-		t.color = colorDELETE
+		t.colors.Add(colorDELETE)
 	} else {
-		t.color = colorNONE
+		t.colors.Remove(colorDELETE)
 	}
 }
 
 func (t Tag) getQsetFlag() bool {
-	return t.color == colorQSET
+	return t.colors.Contains(colorQSET)
 }
 
 func (t *Tag) setQsetFlag(b bool) {
 	if b {
-		t.color = colorQSET
+		t.colors.Add(colorQSET)
 	} else {
-		t.color = colorNONE
+		t.colors.Remove(colorQSET)
 	}
+}
+
+func (t Tag) getColor() colorSet {
+	return t.colors
+}
+
+func (t *Tag) setColor(color colorSet) {
+	t.colors = color
 }
 
 // getMark returns the tag's identifying mark
@@ -2271,6 +2287,14 @@ func (reset *Reset) setQsetFlag(b bool) {
 	} else {
 		reset.colors.Remove(colorQSET)
 	}
+}
+
+func (reset Reset) getColor() colorSet {
+	return reset.colors
+}
+
+func (reset *Reset) setColor(color colorSet) {
+	reset.colors = color
 }
 
 func (reset Reset) isCommit() bool {
@@ -2656,7 +2680,6 @@ type Callout struct {
 	mark        string
 	branch      string
 	_childNodes []string
-	color       colorType
 	colors      colorSet
 }
 
@@ -2737,12 +2760,12 @@ func (callout Callout) isCommit() bool {
 	return false
 }
 
-func (callout Callout) getColor() colorType {
-	return callout.color
+func (callout Callout) getColor() colorSet {
+	return callout.colors
 }
 
-func (callout *Callout) setColor(color colorType) {
-	callout.color = color
+func (callout *Callout) setColor(color colorSet) {
+	callout.colors = color
 }
 
 const (
@@ -2801,9 +2824,8 @@ type Commit struct {
 	_parentNodes   []CommitLike // list of parent nodes
 	_childNodes    []CommitLike // list of child nodes
 	hash           gitHashType
-	color          colorType // Scratch storage for graph-coloring
-	colors         colorSet  // Flag used during deletion operations
-	implicitParent bool      // Whether the first parent was implicit
+	colors         colorSet // Flag used during deletion operations
+	implicitParent bool     // Whether the first parent was implicit
 }
 
 func (commit Commit) getDelFlag() bool {
@@ -2849,12 +2871,12 @@ func (commit Commit) isCommit() bool {
 	return true
 }
 
-func (commit Commit) getColor() colorType {
-	return commit.color
+func (commit Commit) getColor() colorSet {
+	return commit.colors
 }
 
-func (commit *Commit) setColor(color colorType) {
-	commit.color = color
+func (commit *Commit) setColor(color colorSet) {
+	commit.colors = color
 }
 
 func (commit *Commit) detach(event Event) bool {
@@ -2991,7 +3013,7 @@ func (commit *Commit) clone(repo *Repository) *Commit {
 	// on each operation of the commit we are cloning from.
 	c.fileops = nil
 	//c.filemap = nil
-	c.color = colorNONE
+	c.colors.Clear()
 	if repo != nil {
 		c.repo = repo
 	}
@@ -4283,6 +4305,14 @@ func (p *Passthrough) setQsetFlag(b bool) {
 	}
 }
 
+func (p Passthrough) getColor() colorSet {
+	return p.colors
+}
+
+func (p *Passthrough) setColor(color colorSet) {
+	p.colors = color
+}
+
 func newPassthrough(repo *Repository, line string) *Passthrough {
 	p := new(Passthrough)
 	p.repo = repo
@@ -4965,6 +4995,8 @@ type Event interface {
 	setDelFlag(bool)
 	getQsetFlag() bool
 	setQsetFlag(bool)
+	getColor() colorSet
+	setColor(colorSet)
 	isCommit() bool
 }
 
@@ -5041,8 +5073,8 @@ type CommitLike interface {
 	setDelFlag(bool)
 	getQsetFlag() bool
 	setQsetFlag(bool)
-	getColor() colorType
-	setColor(colorType)
+	getColor() colorSet
+	setColor(colorSet)
 	isCommit() bool
 }
 
@@ -9759,42 +9791,42 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 		return false, -1, err
 	}
 	late.removeParent(early)
-	doColor := func(commitlike CommitLike, color colorType) {
+	doColor := func(commitlike CommitLike, color colorSet) {
 		commitlike.setColor(color)
 		if commit, ok := commitlike.(*Commit); ok {
 			for _, fileop := range commit.operations() {
 				if fileop.op == opM && fileop.ref != "inline" {
 					blob := rl.repo.markToEvent(fileop.ref)
 					//assert isinstance(repo.repo[blob], Blob)
-					blob.(*Blob).colors.Add(color)
+					blob.(*Blob).colors |= color
 				}
 			}
 		}
 	}
-	doColor(early, colorEARLY)
-	doColor(late, colorLATE)
+	doColor(early, colorSet(colorEARLY))
+	doColor(late, colorSet(colorLATE))
 	conflict := false
 	keepgoing := true
 	for keepgoing && !conflict {
 		keepgoing = false
 		for _, event := range rl.repo.commits(nil) {
-			if event.color != 0 {
+			if event.colors != colorNONE {
 				for _, neighbor := range event.parents() {
 					if neighbor.getColor() == colorNONE {
-						doColor(neighbor, event.color)
+						doColor(neighbor, event.colors)
 						keepgoing = true
 						break
-					} else if neighbor.getColor() != event.color {
+					} else if neighbor.getColor() != event.colors {
 						conflict = true
 						break
 					}
 				}
 				for _, neighbor := range event.children() {
 					if neighbor.getColor() == colorNONE {
-						doColor(neighbor, event.color)
+						doColor(neighbor, event.colors)
 						keepgoing = true
 						break
-					} else if neighbor.getColor() != event.color {
+					} else if neighbor.getColor() != event.colors {
 						conflict = true
 						break
 					}
@@ -9809,12 +9841,7 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 func (repo *Repository) cutClear(early *Commit, late *Commit, cutIndex int) {
 	late.insertParent(cutIndex, early.mark)
 	for _, event := range repo.events {
-		switch event.(type) {
-		case *Blob:
-			event.(*Blob).colors.Clear()
-		case *Commit:
-			event.(*Commit).color = colorNONE
-		}
+		event.setColor(0)
 	}
 }
 
@@ -9834,7 +9861,7 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 		if ok {
 			for _, c := range rl.repo.commits(nil) {
 				if c.mark == t.committish {
-					t.color = c.color
+					t.colors = c.colors
 				}
 			}
 		}
@@ -9853,11 +9880,11 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 	earlyBranches := newOrderedStringSet()
 	lateBranches := newOrderedStringSet()
 	for _, commit := range rl.repo.commits(nil) {
-		if commit.color == colorNONE {
+		if commit.colors == colorNONE {
 			croak(fmt.Sprintf("%s is uncolored!", commit.mark))
-		} else if commit.color == colorEARLY {
+		} else if commit.colors.Contains(colorEARLY) {
 			earlyBranches.Add(commit.Branch)
-		} else if commit.color == colorLATE {
+		} else if commit.colors.Contains(colorLATE) {
 			lateBranches.Add(commit.Branch)
 		}
 	}
@@ -9895,20 +9922,20 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 					panic(fmt.Sprintf("coloring algorithm failed on %s", event.idMe()))
 				}
 			} else if commit, ok := event.(*Commit); ok {
-				if commit.color == colorEARLY {
+				if commit.colors.Contains(colorEARLY) {
 					commit.moveto(earlyPart)
 					earlyPart.addEvent(commit)
-				} else if commit.color == colorLATE {
+				} else if commit.colors.Contains(colorLATE) {
 					commit.moveto(latePart)
 					latePart.addEvent(commit)
 				} else {
 					panic(fmt.Sprintf("coloring algorithm failed on %s", event.idMe()))
 				}
 			} else if tag, ok := event.(*Tag); ok {
-				if tag.color == colorEARLY {
+				if tag.colors.Contains(colorEARLY) {
 					tag.moveto(earlyPart)
 					earlyPart.addEvent(tag)
-				} else if tag.color == colorLATE {
+				} else if tag.colors.Contains(colorLATE) {
 					tag.moveto(latePart)
 					latePart.addEvent(tag)
 				} else {
