@@ -3428,7 +3428,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 	var perms, argpath, mark, source, target string
 	if optype == opD {
 		argpath = fields[1]
-		for _, event := range repo.commits(rs.selection) {
+		for _, event := range repo.commits(&rs.selection) {
 			if event.paths(nil).Contains(argpath) {
 				croak("%s already has an op for %s",
 					event.mark, argpath)
@@ -3467,7 +3467,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			return false
 		}
 		argpath = fields[3]
-		for _, event := range repo.commits(rs.selection) {
+		for _, event := range repo.commits(&rs.selection) {
 			if event.paths(nil).Contains(argpath) {
 				croak("%s already has an op for %s",
 					blob.mark, argpath)
@@ -3481,7 +3481,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 		}
 		source = fields[1]
 		target = fields[2]
-		for _, event := range repo.commits(rs.selection) {
+		for _, event := range repo.commits(&rs.selection) {
 			if event.paths(nil).Contains(source) || event.paths(nil).Contains(target) {
 				croak("%s already has an op for %s or %s",
 					event.mark, source, target)
@@ -3496,7 +3496,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 		croak("unknown operation type %c in add command", optype)
 		return false
 	}
-	for _, commit := range repo.commits(rs.selection) {
+	for _, commit := range repo.commits(&rs.selection) {
 		fileop := newFileOp(rs.chosen())
 		if optype == opD {
 			fileop.construct(opD, argpath)
@@ -4470,7 +4470,7 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
 	} else if fields[0] == "list" {
 		allpaths := newOrderedStringSet()
-		for _, commit := range rs.chosen().commits(rs.selection) {
+		for _, commit := range rs.chosen().commits(&rs.selection) {
 			allpaths = allpaths.Union(commit.paths(nil))
 		}
 		sort.Strings(allpaths)
@@ -4630,7 +4630,7 @@ func (rs *Reposurgeon) DoMerge(_line string) bool {
 		croak("no repo has been chosen.")
 		return false
 	}
-	commits := rs.chosen().commits(rs.selection)
+	commits := rs.chosen().commits(&rs.selection)
 	if len(commits) < 2 {
 		croak("merge requires a selection set with at least two commits.")
 		return false
@@ -4789,7 +4789,7 @@ func (rs *Reposurgeon) DoReparent(line string) bool {
 	} else {
 		sort.Ints(rs.selection)
 	}
-	selected := repo.commits(rs.selection)
+	selected := repo.commits(&rs.selection)
 	if len(selected) == 0 || rs.selection.Size() != len(selected) {
 		if logEnable(logWARN) {
 			logit("reparent requires one or more selected commits")
@@ -4897,7 +4897,7 @@ func (rs *Reposurgeon) DoReorder(line string) bool {
 		croak("'reorder' takes no arguments")
 		return false
 	}
-	commits := repo.commits(rs.selection)
+	commits := repo.commits(&rs.selection)
 	if len(commits) == 0 {
 		croak("no commits in selection")
 		return false
@@ -6113,7 +6113,7 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 		}
 		for _, item := range getterPairs {
 			matchRE := regexp.MustCompile(item.pattern)
-			for _, commit := range rs.chosen().commits(rs.selection) {
+			for _, commit := range rs.chosen().commits(&rs.selection) {
 				oldcomment := commit.Comment
 				commit.Comment = matchRE.ReplaceAllStringFunc(
 					commit.Comment,
@@ -6681,7 +6681,7 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 	//baton.startProcess("reposurgeon: disambiguating", "")
 	modified := 0
 	repo.clearColor(colorQSET)
-	for _, event := range repo.commits(rs.selection) {
+	for _, event := range repo.commits(&rs.selection) {
 		parents := event.parents()
 		if len(parents) == 1 {
 			if parent, ok := parents[0].(*Commit); ok {

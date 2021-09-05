@@ -5733,7 +5733,7 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) (int, int, err
 
 // commits returns a slice of the commits in a specified selection set
 // or all commits if the selection set is nil.
-func (repo *Repository) commits(selection selectionSet) []*Commit {
+func (repo *Repository) commits(selection *selectionSet) []*Commit {
 	out := make([]*Commit, 0)
 	if selection == nil {
 		for _, event := range repo.events {
@@ -5879,7 +5879,7 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 	// Turn into tags commits without (meaningful) fileops.
 	// Use a separate loop because delete() invalidates manifests.
 	if canonicalize {
-		for _, commit := range repo.commits(selection) {
+		for _, commit := range repo.commits(&selection) {
 			commit.canonicalize()
 		}
 	}
@@ -8804,7 +8804,8 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 // accumulateCommits returns the commits derived from a section set through a hook
 func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 	operation func(*Commit) []CommitLike, recurse bool) *fastOrderedIntSet {
-	commits := repo.commits(newSelectionSet(subarg.Values()...))
+	subargSet := newSelectionSet(subarg.Values()...)
+	commits := repo.commits(&subargSet)
 	if !recurse {
 		result := newFastOrderedIntSet()
 		for _, commit := range commits {
@@ -8839,7 +8840,7 @@ func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)
 	repo.clearColor(colorQSET)
-	for _, commit := range repo.commits(selection) {
+	for _, commit := range repo.commits(&selection) {
 		commit.removeColor(colorQSET)
 		for idx := range commit.fileops {
 			for _, attr := range []string{"Path", "Source", "Target"} {
@@ -9309,7 +9310,7 @@ func (repo *Repository) doCoalesce(selection selectionSet, timefuzz int, changel
 	}
 	eligible := make(map[string][]string)
 	squashes := make([][]string, 0)
-	for _, commit := range repo.commits(selection) {
+	for _, commit := range repo.commits(&selection) {
 		trial, ok := eligible[commit.Branch]
 		if !ok {
 			// No active commit span for this branch - start one
