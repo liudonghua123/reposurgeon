@@ -337,19 +337,6 @@ func (s orderedIntSet) Intersection(other orderedIntSet) orderedIntSet {
 	return intersection
 }
 
-func (s orderedIntSet) Equal(other orderedIntSet) bool {
-	if len(s) != len(other) {
-		return false
-	}
-	// Naive O(n**2) method - don't use on large sets if you care about speed
-	for _, item := range s {
-		if !other.Contains(item) {
-			return false
-		}
-	}
-	return true
-}
-
 func (s orderedIntSet) EqualWithOrdering(other orderedIntSet) bool {
 	if len(s) != len(other) {
 		return false
@@ -492,10 +479,30 @@ func (s fastOrderedIntSet) Union(other *fastOrderedIntSet) *fastOrderedIntSet {
 	return &fastOrderedIntSet{p}
 }
 
+func (s fastOrderedIntSet) EqualWithOrdering(other fastOrderedIntSet) bool {
+	if s.Size() != other.Size() {
+		return false
+	}
+	sl := s.Values()
+	ol := other.Values()
+	for i := range sl {
+		if sl[i] != ol[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func (s fastOrderedIntSet) Sort() *fastOrderedIntSet {
 	v := s.set.Values()
 	sort.Slice(v, func(i, j int) bool { return v[i].(int) < v[j].(int) })
 	return &fastOrderedIntSet{orderedset.New(v...)}
+}
+
+func (s *fastOrderedIntSet) Pop() int {
+	x := (*s).Values()[(*s).Size()-1]
+	(*s).Remove(x)
+	return x
 }
 
 func (s fastOrderedIntSet) String() string {

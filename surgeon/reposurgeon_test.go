@@ -205,6 +205,19 @@ func TestStringSet(t *testing.T) {
 	}
 }
 
+func SetEqual(s, other selectionSet) bool {
+	if len(s) != len(other) {
+		return false
+	}
+	// Naive O(n**2) method - don't use on large sets if you care about speed
+	for _, item := range s {
+		if !other.Contains(item) {
+			return false
+		}
+	}
+	return true
+}
+
 func TestSelectionSet(t *testing.T) {
 	ts := newSelectionSet(1, 2, 3)
 	if ts.Contains(4) {
@@ -214,39 +227,39 @@ func TestSelectionSet(t *testing.T) {
 		t.Error("Contain check failed on \"a\", expected true.")
 	}
 
-	ts2 := newSelectionSet(3, 2, 1)
-	if !ts.Equal(ts2) {
+	ts2 := newSelectionSet(1, 2, 3)
+	if !ts.EqualWithOrdering(ts2) {
 		t.Error("Equality check failed when pass expected.")
 	}
 
-	ts3 := newSelectionSet(3, 2, 4)
-	if ts.Equal(ts3) {
+	ts3 := newSelectionSet(3, 2, 1)
+	if ts.EqualWithOrdering(ts3) {
 		t.Error("Equality check succeeded when fail expected.")
 	}
 
 	ts4 := newSelectionSet(3, 2, 1)
-	if !ts.Equal(ts.Intersection(ts4)) {
+	if !ts.EqualWithOrdering(ts.Intersection(ts4)) {
 		t.Error("Intersection computation failed. (1)")
 	}
 
 	ts5 := newSelectionSet(3, 2, 4)
 	expected5 := newSelectionSet(3, 2)
 	saw5 := ts.Intersection(ts5)
-	if !saw5.Equal(expected5) {
+	if !SetEqual(saw5, expected5) {
 		t.Error("Intersection computation failed. (2)")
 	}
 
 	ts6 := newSelectionSet(24, 25, 26)
 	expected4 := newSelectionSet()
 	saw6 := ts.Intersection(ts6)
-	if !saw6.Equal(expected4) {
+	if !SetEqual(saw6, expected4) {
 		t.Error("Intersection computation failed. (3)")
 	}
 
 	ts7 := newSelectionSet(3, 2, 1)
 	ts7.Remove(2)
 	expected7 := newSelectionSet(3, 1)
-	if !ts7.Equal(expected7) {
+	if !SetEqual(ts7, expected7) {
 		t.Error("Remove computation failed.")
 	}
 
@@ -1603,7 +1616,7 @@ data 0
 	allcommits := repo.commits(nil)
 	lastcommit := repo.eventToIndex(allcommits[len(allcommits)-1])
 	ancestors := repo.ancestors(lastcommit)
-	assertBool(t, ancestors.Equal(newSelectionSet(4, 2)), true)
+	assertBool(t, SetEqual(ancestors, newSelectionSet(4, 2)), true)
 }
 
 func TestDelete(t *testing.T) {
