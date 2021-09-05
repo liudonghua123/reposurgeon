@@ -36,7 +36,7 @@ func (rs *Reposurgeon) parseSelectionSet(line string) (machine selEvaluator, res
 	return rs.imp().compile(line)
 }
 
-func (rs *Reposurgeon) evalSelectionSet(machine selEvaluator, repo *Repository) []int {
+func (rs *Reposurgeon) evalSelectionSet(machine selEvaluator, repo *Repository) selectionSet {
 	state := rs.evalState(len(repo.events))
 	defer state.release()
 	return rs.imp().evaluate(machine, state)
@@ -600,8 +600,8 @@ type selEvaluator func(selEvalState, *fastOrderedIntSet) *fastOrderedIntSet
 
 type selParser interface {
 	compile(line string) (selEvaluator, string)
-	evaluate(selEvaluator, selEvalState) []int
-	parse(string, selEvalState) ([]int, string)
+	evaluate(selEvaluator, selEvalState) selectionSet
+	parse(string, selEvalState) (selectionSet, string)
 	parseExpression() selEvaluator
 	parseDisjunct() selEvaluator
 	evalDisjunct(selEvalState, *fastOrderedIntSet, selEvaluator, selEvaluator) *fastOrderedIntSet
@@ -674,7 +674,7 @@ func (p *SelectionParser) compile(line string) (selEvaluator, string) {
 }
 
 // evaluate evaluates a pre-compiled selection query against item list
-func (p *SelectionParser) evaluate(machine selEvaluator, state selEvalState) []int {
+func (p *SelectionParser) evaluate(machine selEvaluator, state selEvalState) selectionSet {
 	if machine == nil {
 		return nil
 	}
@@ -682,7 +682,7 @@ func (p *SelectionParser) evaluate(machine selEvaluator, state selEvalState) []i
 }
 
 // parse parses selection and returns remainder of line with selection removed
-func (p *SelectionParser) parse(line string, state selEvalState) ([]int, string) {
+func (p *SelectionParser) parse(line string, state selEvalState) (selectionSet, string) {
 	machine, rest := p.imp().compile(line)
 	return p.imp().evaluate(machine, state), rest
 }
@@ -1396,12 +1396,12 @@ func (p *attrEditSelParser) evalTextSearch(state selEvalState,
 
 // AttributionEditor inspects and edits committer, author, tagger attributions
 type AttributionEditor struct {
-	eventSel []int
+	eventSel selectionSet
 	events   []Event
-	machine  func([]attrEditAttr) []int
+	machine  func([]attrEditAttr) selectionSet
 }
 
-func newAttributionEditor(sel []int, events []Event, machine func([]attrEditAttr) []int) *AttributionEditor {
+func newAttributionEditor(sel selectionSet, events []Event, machine func([]attrEditAttr) selectionSet) *AttributionEditor {
 	return &AttributionEditor{sel, events, machine}
 }
 
@@ -1439,11 +1439,11 @@ func (p *AttributionEditor) getMark(e Event) string {
 	return m
 }
 
-func (p *AttributionEditor) apply(f func(p *AttributionEditor, eventNo int, e Event, attrs []attrEditAttr, sel []int, extra ...interface{}), extra ...interface{}) {
-	for _, i := range p.eventSel {
+func (p *AttributionEditor) apply(f func(p *AttributionEditor, eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}), extra ...interface{}) {
+	for _, i := range p.eventSel.Values() {
 		e := p.events[i]
 		attrs := p.attributions(e)
-		var sel []int
+		var sel selectionSet
 		func() {
 			defer func() {
 				if x := catch("command", recover()); x != nil {
@@ -1526,7 +1526,7 @@ func (p *AttributionEditor) inspect(w io.Writer) {
 	p.apply((*AttributionEditor).doInspect, w)
 }
 
-func (p *AttributionEditor) doInspect(eventNo int, e Event, attrs []attrEditAttr, sel []int, extra ...interface{}) {
+func (p *AttributionEditor) doInspect(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
 	w := extra[0].(io.Writer)
 	mark := p.getMark(e)
 	if sel == nil {
@@ -1535,7 +1535,7 @@ func (p *AttributionEditor) doInspect(eventNo int, e Event, attrs []attrEditAttr
 			sel[i] = i
 		}
 	}
-	for _, i := range sel {
+	for _, i := range sel.Values() {
 		a := attrs[i]
 		io.WriteString(w, fmt.Sprintf("%6d %6s %2d:%-9s %s\n", eventNo+1, mark, i+1, a.desc(), a))
 	}
@@ -1546,14 +1546,14 @@ func (p *AttributionEditor) assign(args []string) {
 	p.apply((*AttributionEditor).doAssign, name, email, date)
 }
 
-func (p *AttributionEditor) doAssign(eventNo int, e Event, attrs []attrEditAttr, sel []int, extra ...interface{}) {
+func (p *AttributionEditor) doAssign(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
 	name := extra[0].(string)
 	email := extra[1].(string)
 	date := extra[2].(Date)
 	if sel == nil {
 		panic(throw("command", "no attribution selected"))
 	}
-	for _, i := range sel {
+	for _, i := range sel.Values() {
 		attrs[i].assign(name, email, date)
 	}
 }
@@ -1562,11 +1562,11 @@ func (p *AttributionEditor) remove() {
 	p.apply((*AttributionEditor).doRemove)
 }
 
-func (p *AttributionEditor) doRemove(eventNo int, e Event, attrs []attrEditAttr, sel []int, extra ...interface{}) {
+func (p *AttributionEditor) doRemove(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
 	if sel == nil {
 		sel = p.authorIndices(attrs)
 	}
-	rev := make([]int, len(sel))
+	rev := make([]int, sel.Size())
 	copy(rev, sel)
 	sort.Stable(sort.Reverse(sort.IntSlice(rev)))
 	for _, i := range rev {
@@ -1579,7 +1579,7 @@ func (p *AttributionEditor) insert(args []string, after bool) {
 	p.apply((*AttributionEditor).doInsert, after, name, email, date)
 }
 
-func (p *AttributionEditor) doInsert(eventNo int, e Event, attrs []attrEditAttr, sel []int, extra ...interface{}) {
+func (p *AttributionEditor) doInsert(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
 	after := extra[0].(bool)
 	name := extra[1].(string)
 	email := extra[2].(string)
@@ -1611,18 +1611,18 @@ func (p *AttributionEditor) resolve(w io.Writer, label string) {
 	p.apply((*AttributionEditor).doResolve, w, label)
 }
 
-func (p *AttributionEditor) doResolve(eventNo int, e Event, attrs []attrEditAttr, sel []int, extra ...interface{}) {
+func (p *AttributionEditor) doResolve(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
 	w := extra[0].(io.Writer)
 	label := extra[1].(string)
-	if sel == nil {
-		panic(throw("command", "no attribution selected"))
-	}
+	//if sel == nil {
+	//	panic(throw("command", "no attribution selected"))
+	//}
 	var b strings.Builder
 	if len(label) != 0 {
 		b.WriteString(fmt.Sprintf("%s: ", label))
 	}
 	b.WriteString(fmt.Sprintf("%6d %6s [", eventNo+1, p.getMark(e)))
-	for i, n := range sel {
+	for i, n := range sel.Values() {
 		if i > 0 {
 			b.WriteString(", ")
 		}

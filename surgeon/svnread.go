@@ -3035,7 +3035,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 		return false
 	}
 
-	deletia := make([]int, 0)
+	deletia := newSelectionSet()
 	// Do not parallelize, it will cause tags to be created in a nondeterministic order.
 	// There is probably not much to be gained here, anyway.
 	baton.startProgress("SVN12b: tagify empty commits", uint64(len(sp.repo.events)))
@@ -3080,7 +3080,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 				}
 			}
 			commit.Comment = "" // avoid composing with the children
-			deletia = append(deletia, index)
+			deletia.Add(index)
 		}
 		baton.percentProgress(uint64(index) + 1)
 	}

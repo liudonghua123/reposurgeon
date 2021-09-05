@@ -433,7 +433,7 @@ type Reposurgeon struct {
 	RepositoryList
 	SelectionParser
 	callstack    [][]string
-	selection    orderedIntSet
+	selection    selectionSet
 	history      []string
 	preferred    *VCS
 	extractor    Extractor
@@ -686,7 +686,7 @@ func (rs *Reposurgeon) reportSelect(parse *LineParse, display func(*LineParse, i
 	if selection == nil {
 		selection = repo.all()
 	}
-	for _, eventid := range selection {
+	for _, eventid := range selection.Values() {
 		summary := display(parse, eventid, repo.events[eventid])
 		if summary != "" {
 			if strings.HasSuffix(summary, control.lineSep) {
@@ -881,7 +881,7 @@ func (rs *Reposurgeon) DoResolve(line string) bool {
 		respond("No selection\n")
 	} else {
 		out := ""
-		for _, i := range rs.selection {
+		for _, i := range rs.selection.Values() {
 			out += fmt.Sprintf("%d,", i+1)
 		}
 		if len(out) > 0 {
@@ -952,12 +952,12 @@ func (rs *Reposurgeon) DoAssign(line string) bool {
 	if repo.named(name) != nil {
 		croak("%s conflicts with a branch, tag, legacy-ID, date, or previous assignment", name)
 		return false
-	} else if parse.options.Contains("--singleton") && len(rs.selection) != 1 {
+	} else if parse.options.Contains("--singleton") && rs.selection.Size() != 1 {
 		croak("a singleton selection was required here")
 		return false
 	} else {
 		if repo.assignments == nil {
-			repo.assignments = make(map[string]orderedIntSet)
+			repo.assignments = make(map[string]selectionSet)
 		}
 		repo.assignments[name] = rs.selection
 
@@ -1080,7 +1080,7 @@ func (rs *Reposurgeon) DoIndex(lineIn string) bool {
 	// get a default-set computation we don't want.  Second, for this
 	// function it's helpful to have the method strings close together so
 	// we can maintain columnation.
-	for _, eventid := range rs.selection {
+	for _, eventid := range rs.selection.Values() {
 		event := repo.events[eventid]
 		switch e := event.(type) {
 		case *Blob:
@@ -1379,7 +1379,7 @@ func (rs *Reposurgeon) DoStats(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	var blobs, commits, tags, resets, passthroughs int
-	for _, i := range rs.selection {
+	for _, i := range rs.selection.Values() {
 		event := repo.events[i]
 		switch event.(type) {
 		case *Blob:
@@ -1418,7 +1418,7 @@ in the currently-selected repo.
 func (rs *Reposurgeon) DoCount(lineIn string) bool {
 	parse := rs.newLineParse(lineIn, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	fmt.Fprintf(parse.stdout, "%d\n", len(rs.selection))
+	fmt.Fprintf(parse.stdout, "%d\n", rs.selection.Size())
 	return false
 }
 
@@ -1546,7 +1546,7 @@ func (rs *Reposurgeon) DoSizes(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	sizes := make(map[string]int)
-	for _, i := range rs.selection {
+	for _, i := range rs.selection.Values() {
 		if commit, ok := repo.events[i].(*Commit); ok {
 			if _, ok := sizes[commit.Branch]; !ok {
 				sizes[commit.Branch] = 0
@@ -2417,7 +2417,7 @@ func (rs *Reposurgeon) DoInspect(line string) bool {
 			selection = repo.all()
 		}
 	}
-	for _, eventid := range selection {
+	for _, eventid := range selection.Values() {
 		event := repo.events[eventid]
 		header := fmt.Sprintf("Event %d %s\n", eventid+1, strings.Repeat("=", 72))
 		fmt.Fprintln(parse.stdout, utf8trunc(header, 73))
@@ -2472,7 +2472,7 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 		striptypes = newOrderedStringSet(strings.Fields(line)...)
 	}
 	if striptypes.Contains("--blobs") {
-		for _, ei := range rs.selection {
+		for _, ei := range rs.selection.Values() {
 			if blob, ok := repo.events[ei].(*Blob); ok {
 				blob.setContent([]byte(fmt.Sprintf("Blob at %s\n", blob.mark)), noOffset)
 			}
@@ -2576,7 +2576,7 @@ Subversion and CVS conversions.)
 func (rs *Reposurgeon) DoRebuild(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, nil)
 	defer parse.Closem()
-	if len(rs.selection) != 0 {
+	if rs.selection.Size() != 0 {
 		croak("rebuild does not take a selection set")
 		return false
 	}
@@ -3051,7 +3051,7 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 		croak("while setting field: %v", err)
 		return false
 	}
-	for _, ei := range rs.selection {
+	for _, ei := range rs.selection.Values() {
 		event := repo.events[ei]
 		if _, ok := getAttr(event, field); ok {
 			setAttr(event, field, value)
@@ -3094,6 +3094,9 @@ For the selected events (defaulting to none) take the first argument as an
 octal literal describing permissions.  All subsequent arguments are paths.
 For each M fileop in the selection set and exactly matching one of the
 paths, patch the permission field to the first argument value.
+
+Sets Q bits: true if a commit was actually modified by this operation, 
+false otherwise.
 `)
 }
 
@@ -3117,10 +3120,14 @@ func (rs *Reposurgeon) DoSetperm(line string) bool {
 	}
 	baton := control.baton
 	//baton.startProcess("patching modes", "")
-	for _, ei := range rs.selection {
+	rs.chosen().clearColor(colorQSET)
+	for _, ei := range rs.selection.Values() {
 		if commit, ok := rs.chosen().events[ei].(*Commit); ok {
 			for i, op := range commit.fileops {
 				if op.op == opM && paths.Contains(op.Path) {
+					if commit.fileops[i].mode != perm {
+						commit.addColor(colorQSET)
+					}
 					commit.fileops[i].mode = perm
 				}
 			}
@@ -3145,6 +3152,8 @@ If the option --rstrip is given, the comment is right-stripped before
 the new text is appended. If the option --legacy is given, the string
 %LEGACY% in the append payload is replaced with the commit's lagacy-ID
 before it is appended.
+
+Sets Q bits: true for each commit and tag modified, false otherwise.
 
 Example:
 ---------
@@ -3171,7 +3180,8 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 		croak(err.Error())
 		return false
 	}
-	for _, ei := range rs.selection {
+	rs.chosen().clearColor(colorQSET)
+	for _, ei := range rs.selection.Values() {
 		event := rs.chosen().events[ei]
 		switch event.(type) {
 		case *Commit:
@@ -3184,12 +3194,14 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 			} else {
 				commit.Comment += line
 			}
+			commit.addColor(colorQSET)
 		case *Tag:
 			tag := event.(*Tag)
 			if parse.options.Contains("--rstrip") {
 				tag.Comment = strings.TrimRight(tag.Comment, " \n\t")
 			}
 			tag.Comment += line
+			tag.addColor(colorQSET)
 		}
 	}
 	return false
@@ -3209,6 +3221,8 @@ If the option --lstrip is given, the comment is left-stripped before
 the new text is prepended. If the option --legacy is given, the string
 %LEGACY% in the prepend payload is replaced with the commit's lagacy-ID
 before it is prepended.
+
+Sets Q bits: true for each commit and tag modified, false otherwise.
 
 Example:
 ---------
@@ -3235,7 +3249,8 @@ func (rs *Reposurgeon) DoPrepend(line string) bool {
 		croak(err.Error())
 		return false
 	}
-	for _, ei := range rs.selection {
+	rs.chosen().clearColor(colorQSET)
+	for _, ei := range rs.selection.Values() {
 		event := rs.chosen().events[ei]
 		switch event.(type) {
 		case *Commit:
@@ -3248,12 +3263,14 @@ func (rs *Reposurgeon) DoPrepend(line string) bool {
 			} else {
 				commit.Comment = line + commit.Comment
 			}
+			commit.addColor(colorQSET)
 		case *Tag:
 			tag := event.(*Tag)
 			if parse.options.Contains("--lstrip") {
 				tag.Comment = strings.TrimLeft(tag.Comment, " \n\t")
 			}
 			tag.Comment = line + tag.Comment
+			tag.addColor(colorQSET)
 		}
 	}
 	return false
@@ -3271,6 +3288,9 @@ outside the selection range, depending on policy flags.
 The default selection set for this command is empty.  Blobs cannot be
 directly affected by this command; they move or are deleted only when
 removal of fileops associated with commits requires this.
+
+Sets Q bits: true on commits that get fileops pushed to them, false 
+oytherwise.
 `)
 }
 
@@ -3333,6 +3353,8 @@ matches and the commit separation is small enough.  This option handles
 a convention used by Free Software Foundation projects.
 
 With  the --debug option, show messages about mismatches.
+
+Sets Q bits: true on commits that result from coalescence, false otherwise.
 `)
 }
 
@@ -3565,6 +3587,9 @@ selects all D fileops in the commit; the others select one each.
 If the to clause is present, the removed op is appended to the
 commit specified by the following singleton selection set.  This option
 cannot be combined with 'deletes'.
+
+Sets Q bits: trur for each commit modified and blob with altered 
+references, false otherwise.
 `)
 }
 
@@ -3573,7 +3598,7 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, nil)
 	defer parse.Closem()
 	if rs.selection == nil {
-		rs.selection = newOrderedIntSet()
+		rs.selection = newSelectionSet()
 	}
 	repo := rs.chosen()
 	orig := parse.line
@@ -3585,7 +3610,8 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 		optypes = opindex[match[0]:match[1]]
 		opindex, line = popToken(line)
 	}
-	for _, ie := range rs.selection {
+	rs.chosen().clearColor(colorQSET)
+	for _, ie := range rs.selection.Values() {
 		ev := repo.events[ie]
 		event, ok := ev.(*Commit)
 		if !ok {
@@ -3600,6 +3626,7 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 				}
 			}
 			event.setOperations(ops)
+			event.addColor(colorQSET)
 			return false
 		}
 		ind := -1
@@ -3629,11 +3656,11 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 			verb, line := popToken(line)
 			if verb == "to" {
 				rs.setSelectionSet(line)
-				if len(rs.selection) != 1 {
+				if rs.selection.Size() != 1 {
 					croak("remove to requires a singleton selection")
 					return false
 				}
-				target = rs.selection[0]
+				target = rs.selection.Values()[0]
 			}
 		}
 		ops := event.operations()
@@ -3644,10 +3671,12 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 		}
 		removed := ops[ind]
 		event.fileops = append(ops[:ind], ops[ind+1:]...)
+		event.addColor(colorQSET)
 		if target == -1 {
 			if removed.op == opM {
 				blob := repo.markToEvent(removed.ref).(*Blob)
 				blob.removeOperation(removed)
+				blob.addColor(colorQSET)
 				// FIXME: Someday, scavenge blos with no references left
 				//if len(blob.opset) == 0 {
 				//	i := repo.markToIndex(removed.ref)
@@ -3667,6 +3696,7 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 				return false
 			}
 			commit.appendOperation(removed)
+			commit.addColor(colorQSET)
 			// Blob might have to move, too - we need to keep the
 			// relocated op from having an unresolvable forward
 			// mark reference.
@@ -3721,7 +3751,7 @@ func (rs *Reposurgeon) DoDedup(line string) bool {
 	defer parse.Closem()
 	blobMap := make(map[string]string) // hash -> mark
 	dupMap := make(map[string]string)  // duplicate mark -> canonical mark
-	for _, ei := range rs.selection {
+	for _, ei := range rs.selection.Values() {
 		event := rs.chosen().events[ei]
 		if blob, ok := event.(*Blob); ok {
 			sha := blob.gitHash().hexify()
@@ -3819,7 +3849,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 		}
 		loc = time.FixedZone(args[1], zoffset)
 	}
-	for _, ei := range rs.selection {
+	for _, ei := range rs.selection.Values() {
 		event := rs.chosen().events[ei]
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagger != nil {
@@ -3896,11 +3926,11 @@ branch 'qux', the branch segments are renamed 'qux-early' and
 // DoDivide is the command handler for the "divide" command.
 func (rs *Reposurgeon) DoDivide(line string) bool {
 	rs.newLineParse(line, parseREPO, nil)
-	if len(rs.selection) == 0 {
+	if rs.selection.Size() == 0 {
 		croak("one or possibly two arguments specifying a link are required")
 		return false
 	}
-	earlyEvent := rs.chosen().events[rs.selection[0]]
+	earlyEvent := rs.chosen().events[rs.selection.Values()[0]]
 	earlyCommit, ok := earlyEvent.(*Commit)
 	if !ok {
 		croak("first element of selection is not a commit")
@@ -3909,7 +3939,7 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 	possibles := earlyCommit.children()
 	var late Event
 	var lateCommit *Commit
-	if len(rs.selection) == 1 {
+	if rs.selection.Size() == 1 {
 		if len(possibles) > 1 {
 			croak("commit has multiple children, one must be specified")
 			return false
@@ -3924,8 +3954,8 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 			croak("parent has no children")
 			return false
 		}
-	} else if len(rs.selection) == 2 {
-		late = rs.chosen().events[rs.selection[1]]
+	} else if rs.selection.Size() == 2 {
+		late = rs.chosen().events[rs.selection.Values()[1]]
 		lateCommit, ok = late.(*Commit)
 		if !ok {
 			croak("last element of selection is not a commit")
@@ -3935,7 +3965,7 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 			croak("not a parent-child pair")
 			return false
 		}
-	} else if len(rs.selection) > 2 {
+	} else if rs.selection.Size() > 2 {
 		croak("too many arguments")
 	}
 	//assert(early && late)
@@ -3954,7 +3984,7 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 				basename, basename, basename)
 			for i, event := range rs.chosen().events {
 				if commit, ok := event.(*Commit); ok && commit.Branch == basename {
-					if i <= rs.selection[0] {
+					if i <= rs.selection.Values()[0] {
 						commit.Branch += "-early"
 					} else {
 						commit.Branch += "-late"
@@ -4104,11 +4134,11 @@ func (rs *Reposurgeon) DoSplit(line string) bool {
 		croak("no repo has been chosen.")
 		return false
 	}
-	if len(rs.selection) != 1 {
+	if rs.selection.Size() != 1 {
 		croak("selection of a single commit required for this command")
 		return false
 	}
-	where := rs.selection[0]
+	where := rs.selection.Values()[0]
 	event := rs.chosen().events[where]
 	commit, ok := event.(*Commit)
 	if !ok {
@@ -4240,8 +4270,8 @@ func (rs *Reposurgeon) DoGraft(line string) bool {
 	graftRepo := rs.repoByName(parse.line)
 	requireGraftPoint := true
 	var graftPoint int
-	if rs.selection != nil && len(rs.selection) == 1 {
-		graftPoint = rs.selection[0]
+	if rs.selection != nil && rs.selection.Size() == 1 {
+		graftPoint = rs.selection.Values()[0]
 	} else {
 		for _, commit := range graftRepo.commits(nil) {
 			for _, parent := range commit.parents() {
@@ -4361,7 +4391,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 		}
 	}
 	if sourceReset != -1 {
-		repo.delete([]int{sourceReset}, nil, control.baton)
+		repo.delete(newSelectionSet(sourceReset), nil, control.baton)
 	}
 	repo.declareSequenceMutation("debranch operation")
 	return false
@@ -4480,7 +4510,7 @@ func (rs *Reposurgeon) DoManifest(line string) bool {
 		}
 	}
 	events := rs.chosen().events
-	for _, ei := range rs.selection {
+	for _, ei := range rs.selection.Values() {
 		commit, ok := events[ei].(*Commit)
 		if !ok {
 			continue
@@ -4643,11 +4673,11 @@ func (rs *Reposurgeon) DoUnmerge(_line string) bool {
 		croak("no repo has been chosen.")
 		return false
 	}
-	if len(rs.selection) != 1 {
+	if rs.selection.Size() != 1 {
 		croak("unmerge requires a single commit.")
 		return false
 	}
-	event := rs.chosen().events[rs.selection[0]]
+	event := rs.chosen().events[rs.selection.Values()[0]]
 	if commit, ok := event.(*Commit); !ok {
 		croak("unmerge target is not a commit.")
 	} else {
@@ -4751,8 +4781,8 @@ func (rs *Reposurgeon) DoReparent(line string) bool {
 	// parent will have an index higher than the modified commit.
 	var doResort bool
 	if useOrder {
-		for _, idx := range rs.selection[:len(rs.selection)-1] {
-			if idx > rs.selection[len(rs.selection)-1] {
+		for _, idx := range rs.selection.Values()[:rs.selection.Size()-1] {
+			if idx > rs.selection.Values()[rs.selection.Size()-1] {
 				doResort = true
 			}
 		}
@@ -4760,14 +4790,14 @@ func (rs *Reposurgeon) DoReparent(line string) bool {
 		sort.Ints(rs.selection)
 	}
 	selected := repo.commits(rs.selection)
-	if len(selected) == 0 || len(rs.selection) != len(selected) {
+	if len(selected) == 0 || rs.selection.Size() != len(selected) {
 		if logEnable(logWARN) {
 			logit("reparent requires one or more selected commits")
 		}
 		return false
 	}
 	child := selected[len(selected)-1]
-	parents := make([]CommitLike, len(rs.selection)-1)
+	parents := make([]CommitLike, rs.selection.Size()-1)
 	for i, c := range selected[:len(selected)-1] {
 		parents[i] = c
 	}
@@ -4874,7 +4904,7 @@ func (rs *Reposurgeon) DoReorder(line string) bool {
 	} else if len(commits) == 1 {
 		croak("only 1 commit selected; nothing to re-order")
 		return false
-	} else if len(commits) != len(rs.selection) {
+	} else if len(commits) != rs.selection.Size() {
 		croak("selection set must be all commits")
 		return false
 	}
@@ -5127,10 +5157,10 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		if rs.selection == nil {
 			croak("usage: tag create <name> <singleton-selection>")
 			return false
-		} else if len(rs.selection) != 1 {
+		} else if rs.selection.Size() != 1 {
 			croak("tag create requires a singleton commit set.")
 			return false
-		} else if target, ok = repo.events[rs.selection[0]].(*Commit); !ok {
+		} else if target, ok = repo.events[rs.selection.Values()[0]].(*Commit); !ok {
 			croak("create target is not a commit.")
 			return false
 		}
@@ -5177,7 +5207,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 
 	// Collect all matching tags in the selection set
 	tags := make([]*Tag, 0)
-	for _, idx := range rs.selection {
+	for _, idx := range rs.selection.Values() {
 		event := repo.events[idx]
 		if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) == !parse.options.Contains("--not") {
 			tags = append(tags, tag)
@@ -5194,10 +5224,10 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	if verb == "move" {
 		var ok bool
 		rs.setSelectionSet(line)
-		if len(rs.selection) != 1 {
+		if rs.selection.Size() != 1 {
 			croak("tag move requires a singleton commit set.")
 			return false
-		} else if target, ok = repo.events[rs.selection[0]].(*Commit); !ok {
+		} else if target, ok = repo.events[rs.selection.Values()[0]].(*Commit); !ok {
 			croak("move target is not a commit.")
 			return false
 		}
@@ -5233,7 +5263,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			tag.addColor(colorQSET)
 		} else if verb == "delete" {
 			// the order here in important
-			repo.delete([]int{tag.index()}, nil, control.baton)
+			repo.delete(newSelectionSet(tag.index()), nil, control.baton)
 			tag.forget()
 		}
 		control.baton.twirl()
@@ -5343,7 +5373,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	if selection == nil {
 		selection = rs.repo.all()
 	}
-	for _, ei := range selection {
+	for _, ei := range selection.Values() {
 		reset, ok := repo.events[ei].(*Reset)
 		if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
 			resets = append(resets, reset)
@@ -5356,10 +5386,10 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			croak("one or more resets match %s", sourcepattern)
 			return false
 		}
-		if len(rs.selection) != 1 {
+		if rs.selection.Size() != 1 {
 			croak("reset create requires a singleton commit set.")
 			return false
-		} else if target, ok = repo.events[rs.selection[0]].(*Commit); !ok {
+		} else if target, ok = repo.events[rs.selection.Values()[0]].(*Commit); !ok {
 			croak("create target is not a commit.")
 			return false
 		}
@@ -5381,10 +5411,10 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			return false
 		}
 		rs.setSelectionSet(line)
-		if len(rs.selection) != 1 {
+		if rs.selection.Size() != 1 {
 			croak("reset move requires a singleton commit set.")
 			return false
-		} else if target, ok = repo.events[rs.selection[0]].(*Commit); !ok {
+		} else if target, ok = repo.events[rs.selection.Values()[0]].(*Commit); !ok {
 			croak("move target is not a commit.")
 			return false
 		}
@@ -5413,7 +5443,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		if selection == nil {
 			selection = repo.all()
 		}
-		for _, ei := range selection {
+		for _, ei := range selection.Values() {
 			reset, ok := repo.events[ei].(*Reset)
 			if ok && reset.ref == newname {
 				croak("reset reference collision, not renaming.")
@@ -5460,7 +5490,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		}
 		for _, reset := range resets {
 			reset.forget()
-			repo.delete([]int{repo.eventToIndex(reset)}, nil, control.baton)
+			repo.delete(newSelectionSet(repo.eventToIndex(reset)), nil, control.baton)
 		}
 		repo.declareSequenceMutation("reset delete")
 	} else {
@@ -5824,18 +5854,18 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 			return false
 		}
 	}
-	var sel []int
-	for _, i := range selection {
+	sel := newSelectionSet()
+	for _, i := range selection.Values() {
 		switch repo.events[i].(type) {
 		case *Commit, *Tag:
-			sel = append(sel, i)
+			sel.Add(i)
 		}
 	}
-	if len(sel) == 0 {
+	if sel.Size() == 0 {
 		croak("no commits or tags in selection")
 		return false
 	}
-	ed := newAttributionEditor(sel, repo.events, func(attrs []attrEditAttr) []int {
+	ed := newAttributionEditor(sel, repo.events, func(attrs []attrEditAttr) selectionSet {
 		state := selparser.evalState(attrs)
 		defer state.release()
 		return selparser.evaluate(machine, state)
@@ -6098,17 +6128,17 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 		respond("%d references resolved.", hits)
 		repo.writeLegacy = true
 	} else {
-		selection := make([]int, 0)
+		selection := newSelectionSet()
 		for idx, commit := range repo.commits(nil) {
 			if rs.hasReference(commit) {
-				selection = append(selection, idx)
+				selection.Add(idx)
 			}
 		}
-		if len(selection) > 0 {
+		if selection.Size() > 0 {
 			parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 			defer parse.Closem()
 			w := screenwidth()
-			for _, ei := range selection {
+			for _, ei := range selection.Values() {
 				event := repo.events[ei]
 				summary := ""
 				switch event.(type) {
@@ -6151,7 +6181,7 @@ command, false on all other events.
 func (rs *Reposurgeon) DoGitify(line string) bool {
 	rs.newLineParse(line, parseALLREPO, nil)
 	lineEnders := orderedStringSet{".", ",", ";", ":", "?", "!"}
-	control.baton.startProgress("gitifying comments", uint64(len(rs.selection)))
+	control.baton.startProgress("gitifying comments", uint64(rs.selection.Size()))
 	rs.chosen().clearColor(colorQSET)
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
 		if commit, ok := event.(*Commit); ok {
@@ -6220,8 +6250,8 @@ func (rs *Reposurgeon) DoCheckout(line string) bool {
 	}
 	if line == "" {
 		croak("no target directory specified.")
-	} else if len(selection) == 1 {
-		event := repo.events[selection[0]]
+	} else if selection.Size() == 1 {
+		event := repo.events[selection.Values()[0]]
 		if commit, ok := event.(*Commit); ok {
 			commit.checkout(line)
 		} else {
@@ -6248,14 +6278,14 @@ func (rs *Reposurgeon) DoDiff(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	if len(rs.selection) != 2 {
+	if rs.selection.Size() != 2 {
 		if logEnable(logWARN) {
 			logit("a pair of commits is required.")
 		}
 		return false
 	}
-	lower, ok1 := repo.events[rs.selection[0]].(*Commit)
-	upper, ok2 := repo.events[rs.selection[1]].(*Commit)
+	lower, ok1 := repo.events[rs.selection.Values()[0]].(*Commit)
+	upper, ok2 := repo.events[rs.selection.Values()[1]].(*Commit)
 	if !ok1 || !ok2 {
 		if logEnable(logWARN) {
 			logit("a pair of commits is required.")
@@ -6798,11 +6828,11 @@ func (rs *Reposurgeon) DoIncorporate(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	if rs.selection == nil {
-		rs.selection = []int{repo.markToIndex(repo.earliestCommit().mark)}
+		rs.selection = newSelectionSet(repo.markToIndex(repo.earliestCommit().mark))
 	}
 	var commit *Commit
-	if len(rs.selection) == 1 {
-		event := repo.events[rs.selection[0]]
+	if rs.selection.Size() == 1 {
+		event := repo.events[rs.selection.Values()[0]]
 		var ok bool
 		if commit, ok = event.(*Commit); !ok {
 			croak("selection is not a commit.")
@@ -7530,7 +7560,7 @@ func (rs *Reposurgeon) DoHash(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	for _, eventid := range rs.selection {
+	for _, eventid := range rs.selection.Values() {
 		event := repo.events[eventid]
 		var hashrep string
 		switch event.(type) {

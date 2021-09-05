@@ -205,8 +205,8 @@ func TestStringSet(t *testing.T) {
 	}
 }
 
-func TestOrderedIntSet(t *testing.T) {
-	ts := newOrderedIntSet(1, 2, 3)
+func TestSelectionSet(t *testing.T) {
+	ts := newSelectionSet(1, 2, 3)
 	if ts.Contains(4) {
 		t.Error("Contain check failed on \"d\", expected false.")
 	}
@@ -214,38 +214,38 @@ func TestOrderedIntSet(t *testing.T) {
 		t.Error("Contain check failed on \"a\", expected true.")
 	}
 
-	ts2 := newOrderedIntSet(3, 2, 1)
+	ts2 := newSelectionSet(3, 2, 1)
 	if !ts.Equal(ts2) {
 		t.Error("Equality check failed when pass expected.")
 	}
 
-	ts3 := newOrderedIntSet(3, 2, 4)
+	ts3 := newSelectionSet(3, 2, 4)
 	if ts.Equal(ts3) {
 		t.Error("Equality check succeeded when fail expected.")
 	}
 
-	ts4 := newOrderedIntSet(3, 2, 1)
+	ts4 := newSelectionSet(3, 2, 1)
 	if !ts.Equal(ts.Intersection(ts4)) {
 		t.Error("Intersection computation failed. (1)")
 	}
 
-	ts5 := newOrderedIntSet(3, 2, 4)
-	expected5 := orderedIntSet{3, 2}
+	ts5 := newSelectionSet(3, 2, 4)
+	expected5 := newSelectionSet(3, 2)
 	saw5 := ts.Intersection(ts5)
 	if !saw5.Equal(expected5) {
 		t.Error("Intersection computation failed. (2)")
 	}
 
-	ts6 := newOrderedIntSet(24, 25, 26)
-	expected4 := orderedIntSet{}
+	ts6 := newSelectionSet(24, 25, 26)
+	expected4 := newSelectionSet()
 	saw6 := ts.Intersection(ts6)
 	if !saw6.Equal(expected4) {
 		t.Error("Intersection computation failed. (3)")
 	}
 
-	ts7 := newOrderedIntSet(3, 2, 1)
+	ts7 := newSelectionSet(3, 2, 1)
 	ts7.Remove(2)
-	expected7 := orderedIntSet{3, 1}
+	expected7 := newSelectionSet(3, 1)
 	if !ts7.Equal(expected7) {
 		t.Error("Remove computation failed.")
 	}
@@ -262,8 +262,8 @@ func TestOrderedIntSet(t *testing.T) {
 		t.Error("string set add failed.")
 	}
 
-	ts8 := newOrderedIntSet(1, 2, 3, 4)
-	ts9 := newOrderedIntSet(2, 5)
+	ts8 := newSelectionSet(1, 2, 3, 4)
+	ts9 := newSelectionSet(2, 5)
 	diff := ts8.Subtract(ts9)
 	if diff[0] != 1 || diff[1] != 3 || diff[2] != 4 || len(diff) != 3 {
 		t.Errorf("unexpected result of set difference: %v", diff)
@@ -1386,7 +1386,7 @@ woc = wocwoc <woc@cow>
 	repo := newRepository("test")
 	defer repo.cleanup()
 
-	err := repo.readAuthorMap(newOrderedIntSet(), strings.NewReader(input))
+	err := repo.readAuthorMap(newSelectionSet(), strings.NewReader(input))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1550,7 +1550,7 @@ data 0
 `
 	a.Reset()
 	// Check partial export - Event 4 is the second commit
-	if err := repo.fastExport(newOrderedIntSet(4), &a, nullStringSet, nil, control.baton); err != nil {
+	if err := repo.fastExport(newSelectionSet(4), &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	assertEqual(t, onecommit, a.String())
@@ -1562,7 +1562,7 @@ data 0
 	assertIntEqual(t, len(repo.frontEvents()), 0)
 
 	authordump := "esr = Eric S. Raymond <esr@thyrsus.com>"
-	err := repo.readAuthorMap(newOrderedIntSet(), strings.NewReader(authordump))
+	err := repo.readAuthorMap(newSelectionSet(), strings.NewReader(authordump))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1572,7 +1572,7 @@ data 0
 	assertEqual(t, commit1.committer.fullname, "Eric S. Raymond")
 
 	var b strings.Builder
-	mapped := orderedIntSet{repo.eventToIndex(commit1)}
+	mapped := newSelectionSet(repo.eventToIndex(commit1))
 	if err = repo.writeAuthorMap(mapped, &b); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1603,7 +1603,7 @@ data 0
 	allcommits := repo.commits(nil)
 	lastcommit := repo.eventToIndex(allcommits[len(allcommits)-1])
 	ancestors := repo.ancestors(lastcommit)
-	assertBool(t, ancestors.Equal(orderedIntSet{4, 2}), true)
+	assertBool(t, ancestors.Equal(newSelectionSet(4, 2)), true)
 }
 
 func TestDelete(t *testing.T) {
@@ -1614,7 +1614,7 @@ func TestDelete(t *testing.T) {
 	sp.fastImport(context.TODO(), r, nullStringSet, "synthetic test load", control.baton)
 
 	thirdcommit := repo.markToIndex(":6")
-	repo.delete(orderedIntSet{thirdcommit}, nil, control.baton)
+	repo.delete(newSelectionSet(thirdcommit), nil, control.baton)
 	var a strings.Builder
 	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)

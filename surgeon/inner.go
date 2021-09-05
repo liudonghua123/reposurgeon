@@ -354,7 +354,6 @@ func (s orderedIntSet) EqualWithOrdering(other orderedIntSet) bool {
 	if len(s) != len(other) {
 		return false
 	}
-	// Naive O(n**2) method - don't use on large sets if you care about speed
 	for i := range s {
 		if s[i] != other[i] {
 			return false
@@ -511,6 +510,21 @@ func (s fastOrderedIntSet) String() string {
 	}
 	b.WriteRune(']')
 	return b.String()
+}
+
+type selectionSet = orderedIntSet
+
+func newSelectionSet(elements ...int) selectionSet {
+	set := make([]int, 0, len(elements))
+	return append(set, elements...)
+}
+
+func (s selectionSet) Values() []int {
+	return s
+}
+
+func (s selectionSet) Size() int {
+	return len(s)
 }
 
 func max(a, b int) int {
@@ -4029,7 +4043,7 @@ func (commit *Commit) decodable() bool {
 
 // delete severs this commit from its repository.
 func (commit *Commit) delete(policy orderedStringSet, baton *Baton) {
-	commit.repo.delete([]int{commit.index()}, policy, baton)
+	commit.repo.delete(newSelectionSet(commit.index()), policy, baton)
 }
 
 // Save this commit to a stream in fast-import format
@@ -5040,7 +5054,7 @@ type Repository struct {
 	_markToIndexLen  int  // Cache is valid for events[:_markToIndexLen]
 	_markToIndexSawN bool // whether we saw a null mark blob/commit when caching
 	_markToIndexLock sync.Mutex
-	_namecache       map[string][]int
+	_namecache       map[string]selectionSet
 	preserveSet      orderedStringSet
 	basedir          string
 	uuid             string
@@ -5050,7 +5064,7 @@ type Repository struct {
 	legacyMap        map[string]*Commit // From anything that doesn't survive rebuild
 	legacyCount      int
 	timings          []TimeMark
-	assignments      map[string]orderedIntSet
+	assignments      map[string]selectionSet
 	inlines          int
 	markseq          int
 	authormap        map[string]Contributor
@@ -5072,7 +5086,7 @@ func newRepository(name string) *Repository {
 	repo.hintlist = make([]Hint, 0)
 	repo.preserveSet = newOrderedStringSet()
 	repo.legacyMap = make(map[string]*Commit)
-	repo.assignments = make(map[string]orderedIntSet)
+	repo.assignments = make(map[string]selectionSet)
 	repo.timings = make([]TimeMark, 0)
 	repo.authormap = make(map[string]Contributor)
 	repo.tzmap = make(map[string]*time.Location)
@@ -5297,35 +5311,37 @@ func (repo *Repository) branchmap() map[string]string {
 	return brmap
 }
 
-func (repo *Repository) all() orderedIntSet {
+func (repo *Repository) all() selectionSet {
 	// Return a set that selects the entire repository.
-	s := make([]int, len(repo.events))
+	s := newSelectionSet()
 	for i := range repo.events {
-		s[i] = i
+		s.Add(i)
 	}
 	return s
 }
 
 func (repo *Repository) _buildNamecache() {
 	// Avoid repeated O(n**2) lookups.
-	repo._namecache = make(map[string][]int)
+	repo._namecache = make(map[string]selectionSet)
 	commitcount := 0
 	addOrAppend := func(index int, id string) {
 		if _, ok := repo._namecache[id]; !ok {
-			repo._namecache[id] = []int{index}
+			repo._namecache[id] = newSelectionSet(index)
 		} else {
-			repo._namecache[id] = append(repo._namecache[id], index)
+			requiredCopy := repo._namecache[id]
+			requiredCopy.Add(index)
+			repo._namecache[id] = requiredCopy
 		}
 	}
 	for i, event := range repo.events {
 		switch event.(type) {
 		case *Commit:
 			commitcount++
-			repo._namecache[fmt.Sprintf("#%d", commitcount)] = []int{i}
+			repo._namecache[fmt.Sprintf("#%d", commitcount)] = newSelectionSet(i)
 			commit := event.(*Commit)
 			legacyID := commit.legacyID
 			if legacyID != "" {
-				repo._namecache[legacyID] = []int{i}
+				repo._namecache[legacyID] = newSelectionSet(i)
 			}
 
 			committerStamp := commit.committer.actionStamp()
@@ -5344,18 +5360,18 @@ func (repo *Repository) _buildNamecache() {
 			//addOrAppend(i, commit.gitHash().short())
 		case *Tag:
 			tag := event.(*Tag)
-			repo._namecache[tag.tagname] = []int{i}
+			repo._namecache[tag.tagname] = newSelectionSet(i)
 			if tag.legacyID != "" {
-				repo._namecache[tag.legacyID] = []int{i}
+				repo._namecache[tag.legacyID] = newSelectionSet(i)
 			}
 		case *Reset:
 			reset := event.(*Reset)
-			repo._namecache["reset@"+filepath.Base(reset.ref)] = []int{i}
+			repo._namecache["reset@"+filepath.Base(reset.ref)] = newSelectionSet(i)
 			if reset.committish != "" {
-				repo._namecache[filepath.Base(reset.ref)] = []int{repo.markToIndex(reset.committish)}
+				repo._namecache[filepath.Base(reset.ref)] = newSelectionSet(repo.markToIndex(reset.committish))
 			}
 			if reset.legacyID != "" {
-				repo._namecache[reset.legacyID] = []int{i}
+				repo._namecache[reset.legacyID] = newSelectionSet(i)
 			}
 		}
 	}
@@ -5365,9 +5381,9 @@ func (repo *Repository) invalidateNamecache() {
 	repo._namecache = nil
 }
 
-func (repo *Repository) named(ref string) orderedIntSet {
+func (repo *Repository) named(ref string) selectionSet {
 	// Resolve named reference in the control of this repository.
-	selection := newOrderedIntSet()
+	selection := newSelectionSet()
 	// For matches that require iterating across the entire event
 	// sequence, building an entire name lookup table is !much
 	// more expensive in time than doing a single lookup. Avoid
@@ -5394,13 +5410,13 @@ func (repo *Repository) named(ref string) orderedIntSet {
 			}
 			if loc == -1 {
 				if v, ok := repo._namecache["reset@"+ref]; ok {
-					loc = repo.markToIndex(repo.events[v[0]].(*Reset).committish)
+					loc = repo.markToIndex(repo.events[v.Values()[0]].(*Reset).committish)
 				}
 			}
 			if loc == -1 {
 				panic(throw("command", "branch name %s points to hyperspace", symbol))
 			} else {
-				return newOrderedIntSet(loc)
+				return newSelectionSet(loc)
 			}
 		}
 	}
@@ -5449,7 +5465,7 @@ func (repo *Repository) named(ref string) orderedIntSet {
 	if err2 == nil && bang > -1 {
 		emailID = resolveAlias(ref[bang+1:])
 	}
-	matches := newOrderedIntSet()
+	matches := newSelectionSet()
 	if datematch != nil {
 		for ei, event := range repo.events {
 			switch event.(type) {
@@ -5474,18 +5490,18 @@ func (repo *Repository) named(ref string) orderedIntSet {
 				}
 			}
 		}
-		if len(matches) < 1 {
+		if matches.Size() < 1 {
 			panic(throw("command", "no events match %s", ref))
-		} else if len(matches) > 1 {
-			if ordinal != -1 && ordinal <= len(matches) {
-				selection.Add(matches[ordinal-1])
+		} else if matches.Size() > 1 {
+			if ordinal != -1 && ordinal <= matches.Size() {
+				selection.Add(matches.Values()[ordinal-1])
 			} else {
 				selection = selection.Union(matches)
 			}
 		} else {
-			selection.Add(matches[0])
+			selection.Add(matches.Values()[0])
 		}
-		if len(selection) > 0 {
+		if selection.Size() > 0 {
 			return selection
 		}
 	}
@@ -5517,7 +5533,7 @@ func parseContributionLine(netwide string) (Contributor, *time.Location, error) 
 	return Contributor{"", name, mail, timezone}, loc, err
 }
 
-func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) error {
+func (repo *Repository) readAuthorMap(selection selectionSet, fp io.Reader) error {
 	// Read an author-mapping file and apply it to the repo.
 	scanner := bufio.NewScanner(fp)
 	var principal Contributor
@@ -5598,9 +5614,9 @@ func (repo *Repository) readAuthorMap(selection orderedIntSet, fp io.Reader) err
 }
 
 // List the identities we know.
-func (repo *Repository) writeAuthorMap(selection orderedIntSet, fp io.Writer) error {
+func (repo *Repository) writeAuthorMap(selection selectionSet, fp io.Writer) error {
 	contributors := make(map[string]string)
-	for _, ei := range selection {
+	for _, ei := range selection.Values() {
 		event := repo.events[ei]
 		switch event.(type) {
 		case *Commit:
@@ -5717,7 +5733,7 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) (int, int, err
 
 // commits returns a slice of the commits in a specified selection set
 // or all commits if the selection set is nil.
-func (repo *Repository) commits(selection orderedIntSet) []*Commit {
+func (repo *Repository) commits(selection selectionSet) []*Commit {
 	out := make([]*Commit, 0)
 	if selection == nil {
 		for _, event := range repo.events {
@@ -5727,7 +5743,7 @@ func (repo *Repository) commits(selection orderedIntSet) []*Commit {
 			}
 		}
 	} else {
-		for _, idx := range selection {
+		for _, idx := range selection.Values() {
 			event := repo.events[idx]
 			commit, ok := event.(*Commit)
 			if ok {
@@ -5859,7 +5875,7 @@ func defaultEmptyTagName(commit *Commit) string {
                       * createTags:    whether to create tags.
 */
 
-func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, tagifyMerges bool, canonicalize bool, nameFunc func(*Commit) string, legendFunc func(*Commit) string, createTags bool, baton *Baton) error {
+func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tagifyMerges bool, canonicalize bool, nameFunc func(*Commit) string, legendFunc func(*Commit) string, createTags bool, baton *Baton) error {
 	// Turn into tags commits without (meaningful) fileops.
 	// Use a separate loop because delete() invalidates manifests.
 	if canonicalize {
@@ -5875,7 +5891,7 @@ func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, ta
 		}
 	}
 	var errout error
-	deletia := make([]int, 0)
+	deletia := newSelectionSet()
 	tagifyEvent := func(index int) {
 		commit, ok := repo.events[index].(*Commit)
 		if !ok {
@@ -5911,7 +5927,7 @@ func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, ta
 						false,
 						baton)
 				}
-				deletia = append(deletia, index)
+				deletia.Add(index)
 			} else {
 				if commit.Branch != "refs/heads/master" {
 					msg := ""
@@ -5927,19 +5943,19 @@ func (repo *Repository) tagifyEmpty(selection orderedIntSet, tipdeletes bool, ta
 						msg += fmt.Sprintf("zero-op commit on %s.", commit.Branch)
 					}
 					errout = errors.New(msg[1:])
-					deletia = append(deletia, index)
+					deletia.Add(index)
 				}
 			}
 		}
 		baton.twirl()
 	}
 
-	if len(selection) == 0 {
+	if selection.Size() == 0 {
 		for index := range repo.events {
 			tagifyEvent(index)
 		}
 	} else {
-		for _, index := range selection {
+		for _, index := range selection.Values() {
 			tagifyEvent(index)
 		}
 	}
@@ -6052,7 +6068,7 @@ func (repo *Repository) exportStyle() orderedStringSet {
 }
 
 // Dump the repo object in Subversion dump or fast-export format.
-func (repo *Repository) fastExport(selection orderedIntSet,
+func (repo *Repository) fastExport(selection selectionSet,
 	fp io.Writer, options stringSet, target *VCS, baton *Baton) error {
 	repo.writeOptions = options
 	repo.preferred = target
@@ -6064,7 +6080,7 @@ func (repo *Repository) fastExport(selection orderedIntSet,
 		selection = repo.all()
 	} else {
 		repo.internals = newOrderedStringSet()
-		for _, ei := range selection {
+		for _, ei := range selection.Values() {
 			event := repo.events[ei]
 			if mark := event.getMark(); mark != "" {
 				repo.internals.Add(mark)
@@ -6089,7 +6105,7 @@ func (repo *Repository) fastExport(selection orderedIntSet,
 	repo.realized = make(map[string]bool)          // Track what branches are made
 	repo.branchPosition = make(map[string]*Commit) // Track what branches are made
 	baton.startProgress("export", uint64(len(repo.events)))
-	for idx, ei := range selection {
+	for idx, ei := range selection.Values() {
 		baton.twirl()
 		event := repo.events[ei]
 		if passthrough, ok := event.(*Passthrough); ok {
@@ -6198,8 +6214,8 @@ func (repo *Repository) addEvent(event Event) {
 
 // Filter assignments, warning if any of them goes empty.
 func (repo *Repository) filterAssignments(f func(Event) bool) {
-	intContains := func(list []int, val int) bool {
-		for _, v := range list {
+	intContains := func(list selectionSet, val int) bool {
+		for _, v := range list.Values() {
 			if v == val {
 				return true
 			}
@@ -6207,16 +6223,16 @@ func (repo *Repository) filterAssignments(f func(Event) bool) {
 		return false
 	}
 	for name, values := range repo.assignments {
-		newassigns := make([]int, 0)
+		newassigns := newSelectionSet()
 		dc := 0
 		for i, e := range repo.events {
 			if f(e) {
 				dc++
 			} else if intContains(values, i) {
-				newassigns = append(newassigns, i-dc)
+				newassigns.Add(i - dc)
 			}
 		}
-		if len(values) > 0 && len(newassigns) == 0 {
+		if values.Size() > 0 && newassigns.Size() == 0 {
 			croak(fmt.Sprintf("sequence modification left %s empty", name))
 		}
 		repo.assignments[name] = newassigns
@@ -6250,8 +6266,8 @@ func (repo *Repository) earliest() time.Time {
 }
 
 // Return ancestors of an event, in reverse order.
-func (repo *Repository) ancestors(ei int) orderedIntSet {
-	trail := newOrderedIntSet()
+func (repo *Repository) ancestors(ei int) selectionSet {
+	trail := newSelectionSet()
 	for {
 		commit, ok := repo.events[ei].(*Commit)
 		if !ok {
@@ -6270,9 +6286,9 @@ func (repo *Repository) ancestors(ei int) orderedIntSet {
 
 // walkEvents walks a selection applying a hook function.to the events
 // This method needs to be kept in sync with the walkEvents function.
-func (repo *Repository) walkEvents(selection orderedIntSet, hook func(i int, event Event)) {
+func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, event Event)) {
 	if control.flagOptions["serial"] {
-		for i, e := range selection {
+		for i, e := range selection.Values() {
 			hook(i, repo.events[e])
 		}
 		return
@@ -6289,14 +6305,14 @@ func (repo *Repository) walkEvents(selection orderedIntSet, hook func(i int, eve
 		go func() {
 			// The for loop will stop when channel is closed
 			for i := range channel {
-				hook(i, repo.events[selection[i]])
+				hook(i, repo.events[selection.Values()[i]])
 			}
 			done <- true
 		}()
 	}
 
 	// Populate the channel with the events
-	for i := range selection {
+	for i := range selection.Values() {
 		channel <- i
 	}
 	close(channel)
@@ -6480,7 +6496,7 @@ var allPolicies = orderedStringSet{
 }
 
 // Delete a set of events, or rearrange it forward or backwards.
-func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, baton *Baton) error {
+func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, baton *Baton) error {
 	if logEnable(logDELETE) {
 		logit("Deletion list is %v", selected)
 	}
@@ -6510,7 +6526,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 	delblobs := policy.Contains("--blobs")
 	// Sanity checks
 	if !dquiet {
-		for _, ei := range selected {
+		for _, ei := range selected.Values() {
 			event := repo.events[ei]
 			commit, ok := event.(*Commit)
 			if !ok {
@@ -6541,7 +6557,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 	}
 	// A special check on the first commit is required when pushing back
 	if pushback {
-		for _, ei := range selected {
+		for _, ei := range selected.Values() {
 			event := repo.events[ei]
 			commit, ok := event.(*Commit)
 			if !ok {
@@ -6574,7 +6590,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 	// Here are the deletions
 	repo.clearColor(colorDELETE)
 	var delCount int
-	for _, ei := range selected {
+	for _, ei := range selected.Values() {
 		var newTarget *Commit
 		event := repo.events[ei]
 		switch event.(type) {
@@ -6857,7 +6873,7 @@ func (repo *Repository) squash(selected orderedIntSet, policy orderedStringSet, 
 }
 
 // Delete a set of events.
-func (repo *Repository) delete(selected orderedIntSet, policy orderedStringSet, baton *Baton) {
+func (repo *Repository) delete(selected selectionSet, policy orderedStringSet, baton *Baton) {
 	options := append(orderedStringSet{"--delete", "--quiet"}, policy...)
 	repo.squash(selected, options, baton)
 }
@@ -6916,13 +6932,13 @@ func (repo *Repository) gcBlobs() {
 //
 
 // Expunge a set of files from the commits in the selection set.
-func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp, delete bool, notagify bool, baton *Baton) error {
+func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, delete bool, notagify bool, baton *Baton) error {
 	// First pass: compute fileop deletions
-	alterations := make([][]int, 0)
+	alterations := make([]selectionSet, 0)
 	repo.clearColor(colorDELETE)
-	for _, ei := range selection {
+	for _, ei := range selection.Values() {
 		event := repo.events[ei]
-		deletia := make([]int, 0)
+		deletia := newSelectionSet()
 		commit, ok := event.(*Commit)
 		if ok {
 			for i, fileop := range commit.operations() {
@@ -6931,14 +6947,14 @@ func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp,
 				}
 				if fileop.op == opD || fileop.op == opM {
 					if expunge.MatchString(fileop.Path) == delete {
-						deletia = append(deletia, i)
+						deletia.Add(i)
 					}
 				} else if fileop.op == opR || fileop.op == opC {
 					// FIXME: This code needs tests
 					sourcedelete := expunge.MatchString(fileop.Source) == delete
 					targetdelete := expunge.MatchString(fileop.Path) == delete
 					if sourcedelete {
-						deletia = append(deletia, i)
+						deletia.Add(i)
 						if fileop.op == opR {
 							oldmatchers := strings.Split(expunge.String(), "|")
 							newmatchers := make([]string, 0)
@@ -6953,7 +6969,7 @@ func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp,
 						if fileop.op == opR {
 							fileop.op = opD
 						} else if fileop.op == opC {
-							deletia = append(deletia, i)
+							deletia.Add(i)
 						}
 					}
 				}
@@ -6962,15 +6978,15 @@ func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp,
 		alterations = append(alterations, deletia)
 	}
 	// Second pass: perform actual fileop expunges
-	for i, ei := range selection {
+	for i, ei := range selection.Values() {
 		deletia := alterations[i]
-		if len(deletia) == 0 {
+		if deletia.Size() == 0 {
 			continue
 		}
 		commit := repo.events[ei].(*Commit)
 		keepers := make([]*FileOp, 0)
 		blobs := make([]*Blob, 0)
-		for _, j := range deletia {
+		for _, j := range deletia.Values() {
 			fileop := commit.fileops[j]
 			var sourcedelete bool
 			var targetdelete bool
@@ -6997,9 +7013,8 @@ func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp,
 		}
 
 		nondeletia := make([]*FileOp, 0)
-		deletiaSet := newOrderedIntSet(deletia...)
 		for i, op := range commit.operations() {
-			if !deletiaSet.Contains(i) {
+			if !deletia.Contains(i) {
 				nondeletia = append(nondeletia, op)
 			}
 		}
@@ -7017,22 +7032,22 @@ func (repo *Repository) expunge(selection orderedIntSet, expunge *regexp.Regexp,
 	// Now remove commits that no longer have fileops, and released blobs.
 	// log events that will be deleted.
 	if logEnable(logDELETE) {
-		toDelete := make([]int, 0)
+		toDelete := newSelectionSet()
 		for i, event := range repo.events {
 			switch event.(type) {
 			case *Blob:
 				blob := event.(*Blob)
 				if backreferences[blob.mark] == 0 {
-					toDelete = append(toDelete, i+1)
+					toDelete.Add(i + 1)
 				}
 			case *Commit:
 				commit := event.(*Commit)
 				if len(commit.operations()) == 0 {
-					toDelete = append(toDelete, i+1)
+					toDelete.Add(i + 1)
 				}
 			}
 		}
-		if len(toDelete) == 0 {
+		if toDelete.Size() == 0 {
 			respond("deletion set is empty.")
 		} else {
 			respond("deleting blobs and empty commits %v", toDelete)
@@ -7082,8 +7097,8 @@ func (d *DAG) setdefault(key int, e *DAGedges) *DAGedges {
 
 // DAGedges is a set of in and out edges to be associated with a DAG
 type DAGedges struct {
-	eout orderedIntSet
-	ein  orderedIntSet
+	eout selectionSet
+	ein  selectionSet
 }
 
 func (d DAGedges) String() string {
@@ -7183,22 +7198,22 @@ func (repo *Repository) resort() {
 	// its original index)
 	s := new(IntHeap)
 	heap.Init(s)
-	for _, elt := range start {
+	for _, elt := range start.Values() {
 		heap.Push(s, elt)
 	}
-	tsorted := newOrderedIntSet()
+	tsorted := newSelectionSet()
 	oldIndexToNew := make(map[int]int)
 	for len(*s) > 0 {
 		n := heap.Pop(s).(int)
 		//assert n not in old_index_to_new
-		oldIndexToNew[n] = len(tsorted)
+		oldIndexToNew[n] = tsorted.Size()
 		tsorted.Add(n)
 		ein := dag[n].ein
-		for len(ein) > 0 {
+		for ein.Size() > 0 {
 			m := ein.Pop()
 			medges := dag[m]
 			medges.eout.Remove(n)
-			if len(medges.eout) == 0 {
+			if medges.eout.Size() == 0 {
 				heap.Push(s, m)
 			}
 		}
@@ -7210,12 +7225,12 @@ func (repo *Repository) resort() {
 		//fmt.Sprintf("Sort order: %v\n", tsorted)
 		//assert len(t - o) == 0
 		leftout := orig.Subtract(tsorted)
-		if len(leftout) > 0 {
+		if leftout.Size() > 0 {
 			croak("event re-sort failed due to one or more dependency cycles involving the following events: %v", leftout)
 			return
 		}
 		newEvents := make([]Event, len(repo.events))
-		for i, j := range tsorted {
+		for i, j := range tsorted.Values() {
 			newEvents[i] = repo.events[j]
 		}
 		repo.events = newEvents
@@ -7226,29 +7241,30 @@ func (repo *Repository) resort() {
 		repo.declareSequenceMutation("")
 		for k, v := range repo.assignments {
 			old := v
-			repo.assignments[k] = make([]int, len(v))
-			for i := range v {
-				repo.assignments[k][i] = oldIndexToNew[old[i]]
+			requiredCopy := newSelectionSet()
+			for i := range v.Values() {
+				requiredCopy.Add(oldIndexToNew[old.Values()[i]])
 			}
+			repo.assignments[k] = requiredCopy
 		}
 	}
 }
 
 // Re-order a contiguous range of commits.
-func (repo *Repository) reorderCommits(v []int, bequiet bool) {
-	if len(v) <= 1 {
+func (repo *Repository) reorderCommits(v selectionSet, bequiet bool) {
+	if v.Size() <= 1 {
 		return
 	}
-	events := make([]*Commit, len(v))
-	for i, e := range v {
+	events := make([]*Commit, v.Size())
+	for i, e := range v.Values() {
 		commit, ok := repo.events[e].(*Commit)
 		if ok {
 			events[i] = commit
 		}
 	}
-	sortedEvents := make([]*Commit, len(v))
-	sort.Sort(sort.IntSlice(v))
-	for i, e := range v {
+	sortedEvents := make([]*Commit, len(v.Values()))
+	v.Sort()
+	for i, e := range v.Values() {
 		commit, ok := repo.events[e].(*Commit)
 		if ok {
 			sortedEvents[i] = commit
@@ -7635,9 +7651,9 @@ func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options str
 			parentMark := parent.getMark()
 			if isCallout(parentMark) {
 				attach := repo.named(parentMark)
-				if len(attach) == 1 {
+				if attach.Size() == 1 {
 					commit.removeParent(parent)
-					newparent := repo.events[attach[0]]
+					newparent := repo.events[attach.Values()[0]]
 					commit.insertParent(idx, newparent.getMark())
 				} else {
 					unresolved = append(unresolved, parentMark)
@@ -7652,12 +7668,12 @@ func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options str
 }
 
 // Apply a hook to all paths, returning the set of modified paths.
-func (repo *Repository) pathWalk(selection orderedIntSet, hook func(string) string) orderedStringSet {
+func (repo *Repository) pathWalk(selection selectionSet, hook func(string) string) orderedStringSet {
 	if hook == nil {
 		hook = func(s string) string { return s }
 	}
 	modified := newOrderedStringSet()
-	for _, ei := range selection {
+	for _, ei := range selection.Values() {
 		event := repo.events[ei]
 		if commit, ok := event.(*Commit); ok {
 			for i, fileop := range commit.operations() {
@@ -8331,7 +8347,7 @@ func canonicalizeInlineAddress(line string) (bool, string, string, string) {
 	return true, pre, fmt.Sprintf("<%s>", strings.TrimSpace(email)), post
 }
 
-func (repo *Repository) processChangelogs(selection orderedIntSet, line string, baton *Baton) (bool, int, int, int, int) {
+func (repo *Repository) processChangelogs(selection selectionSet, line string, baton *Baton) (bool, int, int, int, int) {
 	cm, cd := 0, 0
 	var errLock sync.Mutex
 	errlines := make([]string, 0)
@@ -8436,8 +8452,8 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 	}
 
 	baton.startProgress("processing changelogs", uint64(len(repo.events)))
-	attributions := make([]string, len(selection))
-	allCoAuthors := make([][]string, len(selection))
+	attributions := make([]string, selection.Size())
+	allCoAuthors := make([][]string, selection.Size())
 	evts := new(Safecounter) // shared between threads, for progression only
 	cc := new(Safecounter)
 	cl := new(Safecounter)
@@ -8565,7 +8581,7 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 		allCoAuthors[eventRank] = sorted
 	})
 	baton.endProgress()
-	for eventRank, eventID := range selection {
+	for eventRank, eventID := range selection.Values() {
 		commit, iscommit := repo.events[eventID].(*Commit)
 		attribution := attributions[eventRank]
 		if !iscommit || attribution == "" {
@@ -8647,10 +8663,10 @@ func (repo *Repository) processChangelogs(selection orderedIntSet, line string, 
 }
 
 // Filter commit metadata (and possibly blobs) through a specified hook.
-func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hook func(string, map[string]string) string, attributes orderedStringSet, safety bool, quiet bool, baton *Baton) {
+func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook func(string, map[string]string) string, attributes orderedStringSet, safety bool, quiet bool, baton *Baton) {
 	blobs := false
 	nonblobs := false
-	for _, ei := range selection {
+	for _, ei := range selection.Values() {
 		event := repo.events[ei]
 		switch event.(type) {
 		case *Blob:
@@ -8671,12 +8687,12 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 	// This is an expensive step because of the sort; avoid doing it
 	// when possible.
 	if blobs && repo.inlines > 0 {
-		for ei := selection[0]; ei <= selection[len(selection)-1]; ei++ {
+		for ei := selection.Values()[0]; ei <= selection.Values()[selection.Size()-1]; ei++ {
 			event := repo.events[ei]
 			if commit, ok := event.(*Commit); ok {
 				for _, fileop := range commit.operations() {
 					if len(fileop.inline) > 0 {
-						selection = append(selection, ei)
+						selection.Add(ei)
 					}
 				}
 			}
@@ -8684,7 +8700,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 		selection.Sort()
 	}
 	if !quiet {
-		baton.startProgress(prompt, uint64(len(selection)))
+		baton.startProgress(prompt, uint64(selection.Size()))
 	}
 	altered := new(Safecounter)
 	repo.clearColor(colorQSET)
@@ -8788,7 +8804,7 @@ func (repo *Repository) dataTraverse(prompt string, selection orderedIntSet, hoo
 // accumulateCommits returns the commits derived from a section set through a hook
 func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 	operation func(*Commit) []CommitLike, recurse bool) *fastOrderedIntSet {
-	commits := repo.commits(newOrderedIntSet(subarg.Values()...))
+	commits := repo.commits(newSelectionSet(subarg.Values()...))
 	if !recurse {
 		result := newFastOrderedIntSet()
 		for _, commit := range commits {
@@ -8820,7 +8836,7 @@ func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 }
 
 // pathRename performas batch path renames by regular expression
-func (repo *Repository) pathRename(selection orderedIntSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
+func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)
 	repo.clearColor(colorQSET)
 	for _, commit := range repo.commits(selection) {
@@ -8888,7 +8904,7 @@ func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Bato
 	toKeep = repo.accumulateCommits(toKeep,
 		func(c *Commit) []CommitLike { return c.parents() }, true)
 	// Select resets to delete & unreachable commits
-	deletia := []int{}
+	deletia := newSelectionSet()
 	lastKeptIdxWithWrongBranch := -1
 	for i, ev := range repo.events {
 		switch ev.(type) {
@@ -8898,7 +8914,7 @@ func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Bato
 					lastKeptIdxWithWrongBranch = i
 				}
 			} else {
-				deletia = append(deletia, i)
+				deletia.Add(i)
 			}
 		}
 		baton.twirl()
@@ -8934,12 +8950,12 @@ func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Bato
 	}
 	// Actually delete the commits only reachable from wrong branches.
 	// --no-preserve-refs is to avoid creating new resets on wrong branches
-	repo.delete(orderedIntSet(deletia), orderedStringSet{"--no-preserve-refs"}, baton)
+	repo.delete(selectionSet(deletia), orderedStringSet{"--no-preserve-refs"}, baton)
 	repo._buildNamecache()
 }
 
 // readMessageBox modifies repo metadata by reading/merging in a mailbox stream.
-func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadCloser,
+func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadCloser,
 	create bool, emptyOnly bool) {
 	updateList := make([]*MessageBlock, 0)
 	r := bufio.NewReader(input)
@@ -9020,13 +9036,13 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 					// Avoids crapping out on name lookup.
 					blank.Branch = "generated-" + blank.mark[1:]
 				}
-				if selection == nil || len(selection) != 1 {
+				if selection == nil || selection.Size() != 1 {
 					repo.addEvent(blank)
 				} else {
-					commit, ok := repo.events[selection[0]].(CommitLike)
+					commit, ok := repo.events[selection.Values()[0]].(CommitLike)
 					if ok {
 						blank.setParents([]CommitLike{commit})
-						repo.insertEvent(blank, selection[0]+1, "event creation from message block")
+						repo.insertEvent(blank, selection.Values()[0]+1, "event creation from message block")
 					}
 				}
 			}
@@ -9206,9 +9222,9 @@ func (repo *Repository) readMessageBox(selection orderedIntSet, input io.ReadClo
 	}
 }
 
-func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
+func (repo *Repository) doGraph(selection selectionSet, output io.Writer) {
 	fmt.Fprint(output, "digraph {\n")
-	for _, ei := range selection {
+	for _, ei := range selection.Values() {
 		event := repo.events[ei]
 		if commit, ok := event.(*Commit); ok {
 			for _, parent := range commit.parentMarks() {
@@ -9225,7 +9241,7 @@ func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
 				tag.tagname, tag.committish[1:])
 		}
 	}
-	for _, ei := range selection {
+	for _, ei := range selection.Values() {
 		event := repo.events[ei]
 		if commit, ok := event.(*Commit); ok {
 			firstline, _ := splitRuneFirst(commit.Comment, '\n')
@@ -9262,7 +9278,7 @@ func (repo *Repository) doGraph(selection orderedIntSet, output io.Writer) {
 	fmt.Fprint(output, "}\n")
 }
 
-func (repo *Repository) doCoalesce(selection orderedIntSet, timefuzz int, changelog bool, debug bool, baton *Baton) int {
+func (repo *Repository) doCoalesce(selection selectionSet, timefuzz int, changelog bool, debug bool, baton *Baton) int {
 	isChangelog := func(commit *Commit) bool {
 		return strings.Contains(commit.Comment, "empty log message") && len(commit.operations()) == 1 && commit.operations()[0].op == opM && strings.HasSuffix(commit.operations()[0].Path, "ChangeLog")
 	}
@@ -9325,9 +9341,9 @@ func (repo *Repository) doCoalesce(selection orderedIntSet, timefuzz int, change
 	for _, span := range squashes {
 		// Prevent lossage when last is a ChangeLog commit
 		repo.markToEvent(span[len(span)-1]).(*Commit).Comment = repo.markToEvent(span[0]).(*Commit).Comment
-		squashable := make([]int, 0)
+		squashable := newSelectionSet()
 		for _, mark := range span[:len(span)-1] {
-			squashable = append(squashable, repo.markToIndex(mark))
+			squashable.Add(repo.markToIndex(mark))
 		}
 		repo.squash(squashable, orderedStringSet{}, baton)
 	}
@@ -9609,7 +9625,7 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 		}
 	}
 	interesting = interesting.Union(neighbors)
-	deletia := newOrderedIntSet()
+	deletia := newSelectionSet()
 	for i, event := range repo.events {
 		if commit, ok := event.(*Commit); ok && !interesting.Contains(commit.mark) {
 			deletia.Add(i)
