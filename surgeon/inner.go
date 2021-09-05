@@ -8134,7 +8134,8 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 
 	parseChangelogLine := func(line string, commit *Commit, filepath string, pos int) string {
 		// Parse an attribution line in a ChangeLog entry, get an email address
-		if len(line) <= 10 || unicode.IsSpace(rune(line[0])) {
+		r, _ := utf8.DecodeRuneInString(line)
+		if len(line) <= 10 || unicode.IsSpace(r) {
 			return ""
 		}
 		complain := func() {

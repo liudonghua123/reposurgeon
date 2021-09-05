@@ -239,6 +239,9 @@ CHANNEL_LOOP:
 		case "L":
 		default:
 			// Uppercase channels are 'required'
+			// TODO: can hg send more than one byte? If it
+			// can, then reading a byte and casting it to
+			// a rune is incorrect. Someone should check.
 			if unicode.IsUpper(rune(ch[0])) {
 				return nil, nil, 0, fmt.Errorf("unexpected channel: %s", ch)
 			}

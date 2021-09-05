@@ -294,7 +294,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 	// verb and following whitespace have already been popped off when lp.line gets here,
 	// so the pipe bar can in fact be at index zero.
 	pipeIndex := strings.Index(lp.line, "|")
-	isspace := func(b byte) bool { return unicode.IsSpace(rune(b)) }
+	isspace := func(b byte) bool { return b == ' ' }
 	if pipeIndex != -1 && len(lp.line) > 2 && (pipeIndex == 0 || isspace(lp.line[pipeIndex-1])) && isspace(lp.line[pipeIndex+1]) {
 		if !caps["stdout"] {
 			panic(throw("command", "no support for | redirection"))
@@ -627,7 +627,7 @@ func (rs *Reposurgeon) DoHelp(ctx context.Context, argIn string) (stopOut bool) 
 		for _, h := range _Helps {
 			hasUL := len(ti.Strings[terminfo.EnterUnderlineMode]) != 0
 			lines := wrap(h.commands, maxWidth-longest)
-			isdigit := func(b byte) bool { return unicode.IsDigit(rune(b)) }
+			isdigit := func(b byte) bool { return b >= '0' && b <= '9' }
 			for idx, line := range lines {
 				if idx == 0 {
 					if hasUL && isdigit(h.title[0]) {
