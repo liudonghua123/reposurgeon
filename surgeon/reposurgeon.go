@@ -35,6 +35,7 @@ import (
 	"sync"
 	"time"
 	"unicode"
+	"unicode/utf8"
 	"unsafe" // Actually safe - only uses Sizeof
 
 	shlex "github.com/anmitsu/go-shlex"
@@ -404,10 +405,11 @@ func (lp *LineParse) respond(msg string, args ...interface{}) {
 }
 
 func delimitedRegexp(in string) (out string, re bool) {
-	leader := in[0]
-	delimited := in[0] == in[len(in)-1] && unicode.IsPunct(rune(in[0]))
+	leader, leaderSize := utf8.DecodeRuneInString(in)
+	trailer, trailerSize := utf8.DecodeLastRuneInString(in)
+	delimited := leader == trailer && unicode.IsPunct(leader)
 	if delimited {
-		in = in[1 : len(in)-1]
+		in = in[leaderSize : len(in)-trailerSize]
 	}
 	isRe := delimited && leader != 39 // ASCII single quote
 	return in, isRe
