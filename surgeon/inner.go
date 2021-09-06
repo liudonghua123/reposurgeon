@@ -411,7 +411,7 @@ func (s orderedIntSet) Iterator() *setIterator {
 	return &it
 }
 
-// Value retuern the value in the current cell
+// Value return the value in the current cell
 func (it *setIterator) Value() int {
 	return (*it.base)[it.idx]
 }
@@ -440,12 +440,12 @@ func (x *fastOrderedIntSetIt) Value() int {
 	return x.Iterator.Value().(int)
 }
 
-func newFastOrderedIntSet(x ...int) *fastOrderedIntSet {
+func newFastOrderedIntSet(x ...int) fastOrderedIntSet {
 	s := orderedset.New()
 	for _, i := range x {
 		s.Add(i)
 	}
-	return &fastOrderedIntSet{s}
+	return fastOrderedIntSet{s}
 }
 
 func (s fastOrderedIntSet) Size() int {
@@ -481,7 +481,7 @@ func (s *fastOrderedIntSet) Add(x int) {
 	s.set.Add(x)
 }
 
-func (s fastOrderedIntSet) Subtract(other *fastOrderedIntSet) *fastOrderedIntSet {
+func (s fastOrderedIntSet) Subtract(other fastOrderedIntSet) fastOrderedIntSet {
 	p := orderedset.New()
 	it := s.set.Iterator()
 	for it.Next() {
@@ -490,10 +490,10 @@ func (s fastOrderedIntSet) Subtract(other *fastOrderedIntSet) *fastOrderedIntSet
 		}
 	}
 
-	return &fastOrderedIntSet{p}
+	return fastOrderedIntSet{p}
 }
 
-func (s fastOrderedIntSet) Intersection(other *fastOrderedIntSet) *fastOrderedIntSet {
+func (s fastOrderedIntSet) Intersection(other fastOrderedIntSet) fastOrderedIntSet {
 	p := orderedset.New()
 	it := s.set.Iterator()
 	for it.Next() {
@@ -501,13 +501,13 @@ func (s fastOrderedIntSet) Intersection(other *fastOrderedIntSet) *fastOrderedIn
 			p.Add(it.Value())
 		}
 	}
-	return &fastOrderedIntSet{p}
+	return fastOrderedIntSet{p}
 }
 
-func (s fastOrderedIntSet) Union(other *fastOrderedIntSet) *fastOrderedIntSet {
+func (s fastOrderedIntSet) Union(other fastOrderedIntSet) fastOrderedIntSet {
 	p := orderedset.New(s.set.Values()...)
 	p.Add(other.set.Values()...)
-	return &fastOrderedIntSet{p}
+	return fastOrderedIntSet{p}
 }
 
 func (s fastOrderedIntSet) EqualWithOrdering(other fastOrderedIntSet) bool {
@@ -524,10 +524,10 @@ func (s fastOrderedIntSet) EqualWithOrdering(other fastOrderedIntSet) bool {
 	return true
 }
 
-func (s fastOrderedIntSet) Sort() *fastOrderedIntSet {
+func (s fastOrderedIntSet) Sort() fastOrderedIntSet {
 	v := s.set.Values()
 	sort.Slice(v, func(i, j int) bool { return v[i].(int) < v[j].(int) })
-	return &fastOrderedIntSet{orderedset.New(v...)}
+	return fastOrderedIntSet{orderedset.New(v...)}
 }
 
 func (s *fastOrderedIntSet) Pop() int {
