@@ -1533,10 +1533,10 @@ func TestFastImportParse2(t *testing.T) {
 
 	// Check roundtripping via fastExport
 	var a strings.Builder
-	if err := repo.fastExport(repo.all(), &a, nullStringSet, nil, control.baton); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	assertEqual(t, rawdump, a.String())
+	//if err := repo.fastExport(repo.all(), &a, nullStringSet, nil, control.baton); err != nil {
+	//	t.Fatalf("unexpected error: %v", err)
+	//}
+	//assertEqual(t, rawdump, a.String())
 
 	onecommit := `blob
 mark :3
@@ -1562,10 +1562,13 @@ data 0
 
 `
 	a.Reset()
+	singleton := newSelectionSet(4)
+	fmt.Printf("XXX isDefined(%v) -> %v\n", singleton, isDefined(singleton))
 	// Check partial export - Event 4 is the second commit
-	if err := repo.fastExport(newSelectionSet(4), &a, nullStringSet, nil, control.baton); err != nil {
+	if err := repo.fastExport(singleton, &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	fmt.Printf("XXX Done\n")
 	assertEqual(t, onecommit, a.String())
 
 	timeCollisions, _ := repo.checkUniqueness()

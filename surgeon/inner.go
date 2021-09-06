@@ -274,225 +274,47 @@ func splitRuneFirst(s string, sep rune) (first string, rest string) {
 	return s[:idx], s[idx:]
 }
 
-// A copy of the orderedStringSet code with the names changed to protect the innocent.
-// Lack of generics is annoying.
-type orderedIntSet []int
+type selectionSet struct{ set *orderedset.Set }
 
-func isDefined(s orderedIntSet) bool {
-	return s != nil
-}
+type selectionSetIt struct{ orderedset.Iterator }
 
-func undefinedSelectionSet() orderedIntSet {
-	return nil
-}
-
-func newOrderedIntSet(elements ...int) orderedIntSet {
-	set := make([]int, 0, len(elements))
-	return append(set, elements...)
-}
-
-func (s orderedIntSet) Fetch(idx int) int {
-	return s[idx]
-}
-
-func (s orderedIntSet) Contains(item int) bool {
-	for _, el := range s {
-		if item == el {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *orderedIntSet) Remove(item int) bool {
-	for i, el := range *s {
-		if item == el {
-			copy((*s)[i:], (*s)[i+1:])
-			*s = (*s)[:len(*s)-1]
-			return true
-		}
-	}
-	return false
-}
-
-func (s *orderedIntSet) Add(item int) {
-	for _, el := range *s {
-		if el == item {
-			return
-		}
-	}
-	*s = append(*s, item)
-}
-
-func (s orderedIntSet) Subtract(other orderedIntSet) orderedIntSet {
-	var diff orderedIntSet = orderedIntSet{}
-	for _, outer := range s {
-		for _, inner := range other {
-			if outer == inner {
-				goto dontadd
-			}
-		}
-		diff = append(diff, outer)
-	dontadd:
-	}
-	return diff
-}
-
-func (s orderedIntSet) Intersection(other orderedIntSet) orderedIntSet {
-	// Naive O(n**2) method - don't use on large sets if you care about speed
-	var intersection orderedIntSet = orderedIntSet{}
-	for _, item := range s {
-		if other.Contains(item) {
-			intersection = append(intersection, item)
-		}
-	}
-	return intersection
-}
-
-func (s orderedIntSet) EqualWithOrdering(other orderedIntSet) bool {
-	if len(s) != len(other) {
-		return false
-	}
-	for i := range s {
-		if s[i] != other[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func (s orderedIntSet) Union(other orderedIntSet) orderedIntSet {
-	// Naive O(n**2) method - don't use on large sets if you care about speed
-	var union orderedIntSet
-	union = s[:]
-	for _, item := range other {
-		if !s.Contains(item) {
-			union = append(union, item)
-		}
-	}
-	return union
-}
-
-func (s orderedIntSet) Min() int {
-	var min = math.MaxInt32
-	for _, v := range s {
-		if v < min {
-			min = v
-		}
-	}
-	return min
-}
-
-func (s orderedIntSet) Sort() {
-	sort.Slice(s, func(i, j int) bool { return s[i] < s[j] })
-}
-
-func (s *orderedIntSet) Pop() int {
-	x := (*s)[len(*s)-1]
-	*s = (*s)[:len(*s)-1]
-	return x
-}
-
-func (s orderedIntSet) String() string {
-	if len(s) == 0 {
-		return "[]"
-	}
-	var rep strings.Builder
-	rep.Grow(8 * len(s)) // 6 digits plus a comma and a space
-	rep.WriteByte('[')
-	lastIdx := len(s) - 1
-	for idx, el := range s {
-		fmt.Fprintf(&rep, "%d", el)
-		if idx != lastIdx {
-			rep.WriteString(", ")
-		}
-	}
-	rep.WriteByte(']')
-	return rep.String()
-}
-
-type setIterator struct {
-	base *orderedIntSet
-	idx  int
-}
-
-func (s orderedIntSet) Iterator() *setIterator {
-	var it setIterator
-	it.base = &s
-	it.idx = -1
-	return &it
-}
-
-// Value return the value in the current cell
-func (it *setIterator) Value() int {
-	return (*it.base)[it.idx]
-}
-
-// Index bumps the cursor index in the iterable.
-func (it *setIterator) Index() int {
-	return it.idx
-}
-
-// Next bumps the cursor in the iterable
-func (it *setIterator) Next() bool {
-	if it.idx < len(*it.base)-1 {
-		it.idx++
-		return true
-	}
-	return false
-}
-
-func (s selectionSet) Values() []int {
-	return s
-}
-
-func (s selectionSet) Size() int {
-	return len(s)
-}
-
-// fastOrderedIntSet is like orderedIntSet but optimizes for speed at the
-// expense of space.
-type fastOrderedIntSet struct{ set *orderedset.Set }
-
-type fastOrderedIntSetIt struct{ orderedset.Iterator }
-
-/*
-func isDefined(s fastOrderedIntSet) bool {
-	return s.set != nil
-}
-
-func undefinedSelectionSet() fastOrderedIntSet bool {
-	var u fastOrderedIntSet
-	return u
-}
-
-*/
-
-func (s fastOrderedIntSet) Fetch(idx int) int {
-	return s.Values()[idx]
-}
-
-func (x *fastOrderedIntSetIt) Value() int {
-	return x.Iterator.Value().(int)
-}
-
-func newFastOrderedIntSet(x ...int) fastOrderedIntSet {
+func newSelectionSet(x ...int) selectionSet {
 	s := orderedset.New()
 	for _, i := range x {
 		s.Add(i)
 	}
-	return fastOrderedIntSet{s}
+	return selectionSet{s}
 }
 
-func (s fastOrderedIntSet) Size() int {
+func isDefined(s selectionSet) bool {
+	return s.set != nil
+}
+
+func undefinedSelectionSet() selectionSet {
+	var u selectionSet
+	return u
+}
+
+func (s selectionSet) Fetch(idx int) int {
+	return s.Values()[idx]
+}
+
+func (x *selectionSetIt) Value() int {
+	return x.Iterator.Value().(int)
+}
+
+func (s selectionSet) Size() int {
+	if s.set == nil {
+		return 0
+	}
 	return s.set.Size()
 }
 
-func (s fastOrderedIntSet) Iterator() fastOrderedIntSetIt {
-	return fastOrderedIntSetIt{Iterator: s.set.Iterator()}
+func (s selectionSet) Iterator() selectionSetIt {
+	return selectionSetIt{Iterator: s.set.Iterator()}
 }
 
-func (s fastOrderedIntSet) Values() []int {
+func (s selectionSet) Values() []int {
 	v := make([]int, s.Size())
 	it := s.Iterator()
 	for it.Next() {
@@ -501,11 +323,11 @@ func (s fastOrderedIntSet) Values() []int {
 	return v
 }
 
-func (s fastOrderedIntSet) Contains(x int) bool {
-	return s.set.Contains(x)
+func (s selectionSet) Contains(x int) bool {
+	return s.set != nil && s.set.Contains(x)
 }
 
-func (s *fastOrderedIntSet) Remove(x int) bool {
+func (s *selectionSet) Remove(x int) bool {
 	if s.Contains(x) {
 		s.set.Remove(x)
 		return true
@@ -513,11 +335,15 @@ func (s *fastOrderedIntSet) Remove(x int) bool {
 	return false
 }
 
-func (s *fastOrderedIntSet) Add(x int) {
+func (s *selectionSet) Add(x int) {
+	if s.set == nil {
+		s.set = orderedset.New(x)
+		return
+	}
 	s.set.Add(x)
 }
 
-func (s fastOrderedIntSet) Subtract(other fastOrderedIntSet) fastOrderedIntSet {
+func (s selectionSet) Subtract(other selectionSet) selectionSet {
 	p := orderedset.New()
 	it := s.set.Iterator()
 	for it.Next() {
@@ -526,10 +352,10 @@ func (s fastOrderedIntSet) Subtract(other fastOrderedIntSet) fastOrderedIntSet {
 		}
 	}
 
-	return fastOrderedIntSet{p}
+	return selectionSet{p}
 }
 
-func (s fastOrderedIntSet) Intersection(other fastOrderedIntSet) fastOrderedIntSet {
+func (s selectionSet) Intersection(other selectionSet) selectionSet {
 	p := orderedset.New()
 	it := s.set.Iterator()
 	for it.Next() {
@@ -537,16 +363,16 @@ func (s fastOrderedIntSet) Intersection(other fastOrderedIntSet) fastOrderedIntS
 			p.Add(it.Value())
 		}
 	}
-	return fastOrderedIntSet{p}
+	return selectionSet{p}
 }
 
-func (s fastOrderedIntSet) Union(other fastOrderedIntSet) fastOrderedIntSet {
+func (s selectionSet) Union(other selectionSet) selectionSet {
 	p := orderedset.New(s.set.Values()...)
 	p.Add(other.set.Values()...)
-	return fastOrderedIntSet{p}
+	return selectionSet{p}
 }
 
-func (s fastOrderedIntSet) EqualWithOrdering(other fastOrderedIntSet) bool {
+func (s selectionSet) EqualWithOrdering(other selectionSet) bool {
 	if s.Size() != other.Size() {
 		return false
 	}
@@ -560,19 +386,29 @@ func (s fastOrderedIntSet) EqualWithOrdering(other fastOrderedIntSet) bool {
 	return true
 }
 
-func (s fastOrderedIntSet) Sort() fastOrderedIntSet {
-	v := s.set.Values()
-	sort.Slice(v, func(i, j int) bool { return v[i].(int) < v[j].(int) })
-	return fastOrderedIntSet{orderedset.New(v...)}
+func (s selectionSet) Min() int {
+	var min = math.MaxInt32
+	for _, v := range s.Values() {
+		if v < min {
+			min = v
+		}
+	}
+	return min
 }
 
-func (s *fastOrderedIntSet) Pop() int {
+func (s *selectionSet) Sort() {
+	v := s.set.Values()
+	sort.Slice(v, func(i, j int) bool { return v[i].(int) < v[j].(int) })
+	s.set = orderedset.New(v...)
+}
+
+func (s *selectionSet) Pop() int {
 	x := (*s).Values()[(*s).Size()-1]
 	(*s).Remove(x)
 	return x
 }
 
-func (s fastOrderedIntSet) String() string {
+func (s selectionSet) String() string {
 	var b strings.Builder
 	b.WriteRune('[')
 	it := s.Iterator()
@@ -584,13 +420,6 @@ func (s fastOrderedIntSet) String() string {
 	}
 	b.WriteRune(']')
 	return b.String()
-}
-
-type selectionSet = orderedIntSet
-
-func newSelectionSet(elements ...int) selectionSet {
-	set := make([]int, 0, len(elements))
-	return append(set, elements...)
 }
 
 func max(a, b int) int {
