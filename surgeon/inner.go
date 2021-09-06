@@ -278,9 +278,21 @@ func splitRuneFirst(s string, sep rune) (first string, rest string) {
 // Lack of generics is annoying.
 type orderedIntSet []int
 
+func isDefined(s orderedIntSet) bool {
+	return s != nil
+}
+
+func undefinedSelectionSet() orderedIntSet {
+	return nil
+}
+
 func newOrderedIntSet(elements ...int) orderedIntSet {
 	set := make([]int, 0, len(elements))
 	return append(set, elements...)
+}
+
+func (s orderedIntSet) Fetch(idx int) int {
+	return s[idx]
 }
 
 func (s orderedIntSet) Contains(item int) bool {
@@ -430,11 +442,35 @@ func (it *setIterator) Next() bool {
 	return false
 }
 
+func (s selectionSet) Values() []int {
+	return s
+}
+
+func (s selectionSet) Size() int {
+	return len(s)
+}
+
 // fastOrderedIntSet is like orderedIntSet but optimizes for speed at the
 // expense of space.
 type fastOrderedIntSet struct{ set *orderedset.Set }
 
 type fastOrderedIntSetIt struct{ orderedset.Iterator }
+
+/*
+func isDefined(s fastOrderedIntSet) bool {
+	return s.set != nil
+}
+
+func undefinedSelectionSet() fastOrderedIntSet bool {
+	var u fastOrderedIntSet
+	return u
+}
+
+*/
+
+func (s fastOrderedIntSet) Fetch(idx int) int {
+	return s.Values()[idx]
+}
 
 func (x *fastOrderedIntSetIt) Value() int {
 	return x.Iterator.Value().(int)
@@ -555,14 +591,6 @@ type selectionSet = orderedIntSet
 func newSelectionSet(elements ...int) selectionSet {
 	set := make([]int, 0, len(elements))
 	return append(set, elements...)
-}
-
-func (s selectionSet) Values() []int {
-	return s
-}
-
-func (s selectionSet) Size() int {
-	return len(s)
 }
 
 func max(a, b int) int {
@@ -5325,7 +5353,7 @@ func (repo *Repository) size() int {
 func (repo *Repository) branchset() orderedStringSet {
 	// branchset returns a set of all branchnames appearing in this repo.
 	branches := newOrderedStringSet()
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		branches.Add(commit.Branch)
 	}
 	return branches
@@ -5448,7 +5476,7 @@ func (repo *Repository) named(ref string) selectionSet {
 			}
 			if loc == -1 {
 				if v, ok := repo._namecache["reset@"+ref]; ok {
-					loc = repo.markToIndex(repo.events[v.Values()[0]].(*Reset).committish)
+					loc = repo.markToIndex(repo.events[v.Fetch(0)].(*Reset).committish)
 				}
 			}
 			if loc == -1 {
@@ -5532,12 +5560,12 @@ func (repo *Repository) named(ref string) selectionSet {
 			panic(throw("command", "no events match %s", ref))
 		} else if matches.Size() > 1 {
 			if ordinal != -1 && ordinal <= matches.Size() {
-				selection.Add(matches.Values()[ordinal-1])
+				selection.Add(matches.Fetch(ordinal - 1))
 			} else {
 				selection = selection.Union(matches)
 			}
 		} else {
-			selection.Add(matches.Values()[0])
+			selection.Add(matches.Fetch(0))
 		}
 		if selection.Size() > 0 {
 			return selection
@@ -5545,7 +5573,7 @@ func (repo *Repository) named(ref string) selectionSet {
 	}
 	// More named-reference formats can go here.
 	// Otherwise, return nil to signal invalid selection.
-	return nil
+	return undefinedSelectionSet()
 }
 
 func (repo *Repository) invalidateObjectMap() {
@@ -5771,9 +5799,9 @@ func (repo *Repository) readLegacyMap(fp io.Reader, baton *Baton) (int, int, err
 
 // commits returns a slice of the commits in a specified selection set
 // or all commits if the selection set is nil.
-func (repo *Repository) commits(selection *selectionSet) []*Commit {
+func (repo *Repository) commits(selection selectionSet) []*Commit {
 	out := make([]*Commit, 0)
-	if selection == nil {
+	if !isDefined(selection) {
 		for _, event := range repo.events {
 			commit, ok := event.(*Commit)
 			if ok {
@@ -5917,7 +5945,7 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 	// Turn into tags commits without (meaningful) fileops.
 	// Use a separate loop because delete() invalidates manifests.
 	if canonicalize {
-		for _, commit := range repo.commits(&selection) {
+		for _, commit := range repo.commits(selection) {
 			commit.canonicalize()
 		}
 	}
@@ -5988,7 +6016,7 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 		baton.twirl()
 	}
 
-	if selection.Size() == 0 {
+	if !isDefined(selection) || selection.Size() == 0 {
 		for index := range repo.events {
 			tagifyEvent(index)
 		}
@@ -6063,7 +6091,7 @@ func (repo *Repository) checkUniqueness() (int, int) {
 	// Not worth parallelizing this loop, there isn't enough going on
 	// outside of the actual map accesses - which must be locked and
 	// serialized.
-	commits := repo.commits(nil)
+	commits := repo.commits(undefinedSelectionSet())
 	for _, event := range commits {
 		when := rfc3339(event.when())
 		if _, recorded := timecheck[when]; recorded {
@@ -6114,7 +6142,7 @@ func (repo *Repository) fastExport(selection selectionSet,
 	// Select all blobs implied by the commits in the range. If we ever
 	// go to a representation where fileops are inline this logic will need
 	// to be modified.
-	if selection == nil {
+	if !isDefined(selection) {
 		selection = repo.all()
 	} else {
 		repo.internals = newOrderedStringSet()
@@ -6343,7 +6371,7 @@ func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, even
 		go func() {
 			// The for loop will stop when channel is closed
 			for i := range channel {
-				hook(i, repo.events[selection.Values()[i]])
+				hook(i, repo.events[selection.Fetch(i)])
 			}
 			done <- true
 		}()
@@ -6942,7 +6970,7 @@ func (repo *Repository) dedup(dupMap map[string]string, baton *Baton) {
 // for cleaning up unreferenced blobs.
 func (repo *Repository) gcBlobs() {
 	backreferences := make(map[string]bool)
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		for _, fileop := range commit.operations() {
 			if fileop.op == opM {
 				backreferences[fileop.ref] = true
@@ -7060,7 +7088,7 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 		commit.addColor(colorDELETE)
 	}
 	backreferences := make(map[string]int)
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		for _, fileop := range commit.operations() {
 			if fileop.op == opM {
 				backreferences[fileop.ref]++
@@ -7102,7 +7130,7 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 	}
 	repo.events = filtered
 	repo.invalidateMarkToIndex()
-	errout := repo.tagifyEmpty(nil, false, false, false, nil, nil, !notagify, baton)
+	errout := repo.tagifyEmpty(undefinedSelectionSet(), false, false, false, nil, nil, !notagify, baton)
 	// And tell we changed the manifests and the event sequence.
 	//repo.invalidateManifests()
 	repo.declareSequenceMutation("expunge cleanup")
@@ -7281,7 +7309,7 @@ func (repo *Repository) resort() {
 			old := v
 			requiredCopy := newSelectionSet()
 			for i := range v.Values() {
-				requiredCopy.Add(oldIndexToNew[old.Values()[i]])
+				requiredCopy.Add(oldIndexToNew[old.Fetch(i)])
 			}
 			repo.assignments[k] = requiredCopy
 		}
@@ -7486,10 +7514,10 @@ func (repo *Repository) renumber(origin int, baton *Baton) {
 		}
 	}
 	if baton != nil {
-		count := len(repo.commits(nil))
+		count := len(repo.commits(undefinedSelectionSet()))
 		baton.startcounter("renumbering %d of "+fmt.Sprintf("%d", count)+" commits", 0)
 	}
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		for i, fileop := range commit.operations() {
 			if fileop.op == opM && strings.HasPrefix(fileop.ref, ":") {
 				newmark = remark(fileop.ref, "fileop")
@@ -7684,14 +7712,14 @@ func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options str
 	repo.renumber(1, nil)
 	// Resolve all callouts
 	unresolved := make([]string, 0)
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		for idx, parent := range commit.parents() {
 			parentMark := parent.getMark()
 			if isCallout(parentMark) {
 				attach := repo.named(parentMark)
 				if attach.Size() == 1 {
 					commit.removeParent(parent)
-					newparent := repo.events[attach.Values()[0]]
+					newparent := repo.events[attach.Fetch(0)]
 					commit.insertParent(idx, newparent.getMark())
 				} else {
 					unresolved = append(unresolved, parentMark)
@@ -7839,7 +7867,7 @@ func (repo *Repository) blobAncestor(commit *Commit, path string) *Blob {
 
 func (repo *Repository) dumptimes(w io.Writer) {
 	total := repo.timings[len(repo.timings)-1].stamp.Sub(repo.timings[0].stamp)
-	commitCount := len(repo.commits(nil))
+	commitCount := len(repo.commits(undefinedSelectionSet()))
 	if repo.legacyCount <= 0 {
 		fmt.Fprintf(w, "        commits:\t%d\n", commitCount)
 	} else {
@@ -8098,7 +8126,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 				// Pass 3: build a time+person
 				// to commit mapping.
 				actionToCommit := make(map[string]*Commit)
-				for _, commit := range repo.commits(nil) {
+				for _, commit := range repo.commits(undefinedSelectionSet()) {
 					actionToCommit[commit.committer.actionStamp()] = commit
 				}
 				// Pass 4: use it to set commit properties
@@ -8193,7 +8221,7 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 	if err != nil {
 		return err
 	}
-	repo.fastExport(nil, tp, options, preferred, baton)
+	repo.fastExport(undefinedSelectionSet(), tp, options, preferred, baton)
 	tp.Close()
 	cls.Wait()
 	if repo.writeLegacy {
@@ -8725,7 +8753,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 	// This is an expensive step because of the sort; avoid doing it
 	// when possible.
 	if blobs && repo.inlines > 0 {
-		for ei := selection.Values()[0]; ei <= selection.Values()[selection.Size()-1]; ei++ {
+		for ei := selection.Fetch(0); ei <= selection.Fetch(selection.Size()-1); ei++ {
 			event := repo.events[ei]
 			if commit, ok := event.(*Commit); ok {
 				for _, fileop := range commit.operations() {
@@ -8843,7 +8871,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 func (repo *Repository) accumulateCommits(subarg selectionSet,
 	operation func(*Commit) []CommitLike, recurse bool) selectionSet {
 	subargSet := newSelectionSet(subarg.Values()...)
-	commits := repo.commits(&subargSet)
+	commits := repo.commits(subargSet)
 	if !recurse {
 		result := newSelectionSet()
 		for _, commit := range commits {
@@ -8878,7 +8906,7 @@ func (repo *Repository) accumulateCommits(subarg selectionSet,
 func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)
 	repo.clearColor(colorQSET)
-	for _, commit := range repo.commits(&selection) {
+	for _, commit := range repo.commits(selection) {
 		commit.removeColor(colorQSET)
 		for idx := range commit.fileops {
 			for _, attr := range []string{"Path", "Source", "Target"} {
@@ -8917,7 +8945,7 @@ func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Rege
 func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Baton) {
 	// Select resets & commits to keep
 	toKeep := newSelectionSet()
-	wrongBranch := newFastOrderedIntSet()
+	wrongBranch := newSelectionSet()
 	for i, ev := range repo.events {
 		switch event := ev.(type) {
 		case *Reset:
@@ -9018,7 +9046,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 	nameMap := make(map[string]*Tag)
 	authorCounts := make(map[string]int)
 	committerCounts := make(map[string]int)
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		stamp := commit.actionStamp()
 		if found, ok := attributionByAuthor[stamp]; ok && found != commit {
 			authorCounts[stamp]++
@@ -9046,7 +9074,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 		}
 	}
 	legacyMap := make(map[string]*Commit)
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		if commit.legacyID != "" {
 			legacyMap[commit.legacyID] = commit
 		}
@@ -9059,7 +9087,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				attrib, _ := newAttribution("")
 				blank.tagger = attrib
 				blank.emailIn(message, true)
-				commits := repo.commits(nil)
+				commits := repo.commits(undefinedSelectionSet())
 				if len(commits) == 0 {
 					panic(throw("command", "repository has no commits"))
 				}
@@ -9075,13 +9103,13 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 					// Avoids crapping out on name lookup.
 					blank.Branch = "generated-" + blank.mark[1:]
 				}
-				if selection == nil || selection.Size() != 1 {
+				if !isDefined(selection) || selection.Size() != 1 {
 					repo.addEvent(blank)
 				} else {
-					commit, ok := repo.events[selection.Values()[0]].(CommitLike)
+					commit, ok := repo.events[selection.Fetch(0)].(CommitLike)
 					if ok {
 						blank.setParents([]CommitLike{commit})
-						repo.insertEvent(blank, selection.Values()[0]+1, "event creation from message block")
+						repo.insertEvent(blank, selection.Fetch(0)+1, "event creation from message block")
 					}
 				}
 			}
@@ -9348,7 +9376,7 @@ func (repo *Repository) doCoalesce(selection selectionSet, timefuzz int, changel
 	}
 	eligible := make(map[string][]string)
 	squashes := make([][]string, 0)
-	for _, commit := range repo.commits(&selection) {
+	for _, commit := range repo.commits(selection) {
 		trial, ok := eligible[commit.Branch]
 		if !ok {
 			// No active commit span for this branch - start one
@@ -9536,7 +9564,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 	var sourceroot *Commit
 	var liftroot *Commit
 	splitcount := 0
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		commit.removeColor(colorQSET)
 		if commit.Branch == sourcebranch {
 			if sourceroot == nil {
@@ -9612,7 +9640,7 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 	} else {
 		liftparents = make([]CommitLike, 0)
 	}
-	for _, commit := range repo.commits(nil) {
+	for _, commit := range repo.commits(undefinedSelectionSet()) {
 		if commit.Branch == sourcebranch {
 			// Preserve merge links on the source branch.
 			if len(commit.parents()) > 1 {
@@ -9784,7 +9812,7 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 	keepgoing := true
 	for keepgoing && !conflict {
 		keepgoing = false
-		for _, event := range rl.repo.commits(nil) {
+		for _, event := range rl.repo.commits(undefinedSelectionSet()) {
 			if event.colors != colorNONE {
 				for _, neighbor := range event.parents() {
 					if neighbor.getColor() == colorNONE {
@@ -9834,7 +9862,7 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 	for _, event := range rl.repo.events {
 		t, ok := event.(*Tag)
 		if ok {
-			for _, c := range rl.repo.commits(nil) {
+			for _, c := range rl.repo.commits(undefinedSelectionSet()) {
 				if c.mark == t.committish {
 					t.colors = c.colors
 				}
@@ -9854,7 +9882,7 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 	// of that earlier.
 	earlyBranches := newOrderedStringSet()
 	lateBranches := newOrderedStringSet()
-	for _, commit := range rl.repo.commits(nil) {
+	for _, commit := range rl.repo.commits(undefinedSelectionSet()) {
 		if commit.colors == colorNONE {
 			croak(fmt.Sprintf("%s is uncolored!", commit.mark))
 		} else if commit.colors.Contains(colorEARLY) {
@@ -9934,7 +9962,7 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 // Unite multiple repos into a union repo.
 func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	for _, x := range factors {
-		if len(x.commits(nil)) == 0 {
+		if len(x.commits(undefinedSelectionSet())) == 0 {
 			croak(fmt.Sprintf("empty factor %s", x.name))
 			return
 		}
@@ -9962,7 +9990,7 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	}
 	// Calculate commits in the first repo that will be
 	// parents for subsequent repos.
-	commits := factors[0].commits(nil)
+	commits := factors[0].commits(undefinedSelectionSet())
 	parents := []*Commit{}
 	for _, root := range roots[1:] {
 		// Get last commit from the first repo that is earlier
@@ -9992,7 +10020,7 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 	}
 	//dumpEvents := func(repo *Repository) []string {
 	//	var out []string
-	//	for _, commit := range repo.commits(nil) {
+	//	for _, commit := range repo.commits(undefinedSelectionSet()) {
 	//		out = append(out, commit.getMark())
 	//	}
 	//	return out

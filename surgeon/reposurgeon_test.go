@@ -206,11 +206,11 @@ func TestStringSet(t *testing.T) {
 }
 
 func SetEqual(s, other selectionSet) bool {
-	if len(s) != len(other) {
+	if s.Size() != other.Size() {
 		return false
 	}
 	// Naive O(n**2) method - don't use on large sets if you care about speed
-	for _, item := range s {
+	for _, item := range s.Values() {
 		if !other.Contains(item) {
 			return false
 		}
@@ -278,12 +278,12 @@ func TestSelectionSet(t *testing.T) {
 	ts8 := newSelectionSet(1, 2, 3, 4)
 	ts9 := newSelectionSet(2, 5)
 	diff := ts8.Subtract(ts9)
-	if diff[0] != 1 || diff[1] != 3 || diff[2] != 4 || len(diff) != 3 {
+	if diff.Fetch(0) != 1 || diff.Fetch(1) != 3 || diff.Fetch(2) != 4 || diff.Size() != 3 {
 		t.Errorf("unexpected result of set difference: %v", diff)
 	}
 
 	sum := ts8.Union(ts9)
-	if sum[0] != 1 || sum[1] != 2 || sum[2] != 3 || sum[4] != 5 || len(sum) != 5 {
+	if sum.Fetch(0) != 1 || sum.Fetch(1) != 2 || sum.Fetch(2) != 3 || sum.Fetch(4) != 5 || sum.Size() != 5 {
 		t.Errorf("unexpected result of set union: %v", sum)
 	}
 }
@@ -1613,7 +1613,7 @@ data 0
 	assertBool(t, isPassthrough(repo.events[11], "boogabooga"), true)
 
 	assertEqual(t, repo.earliestCommit().Comment, "First revision.\n")
-	allcommits := repo.commits(nil)
+	allcommits := repo.commits(undefinedSelectionSet())
 	lastcommit := repo.eventToIndex(allcommits[len(allcommits)-1])
 	ancestors := repo.ancestors(lastcommit)
 	assertBool(t, SetEqual(ancestors, newSelectionSet(4, 2)), true)

@@ -56,7 +56,7 @@ func (rs *Reposurgeon) isNamed(s string) (result bool) {
 	}(&result)
 	repo := rs.chosen()
 	if repo != nil {
-		result = repo.named(s) != nil
+		result = isDefined(repo.named(s))
 	}
 	return
 }
@@ -413,11 +413,11 @@ func (rs *Reposurgeon) evalAtomRef(state selEvalState,
 	preselection selectionSet, ref string) selectionSet {
 	selection := newSelectionSet()
 	lookup := rs.chosen().named(ref)
-	if lookup != nil {
+	if isDefined(lookup) {
 		// Choose to include *all* commits matching the date.
 		// Alas, results in unfortunate behavior when a date
 		// with multiple commits ends a span.
-		selection = selection.Union(newSelectionSet(lookup...))
+		selection = selection.Union(lookup)
 	} else {
 		panic(throw("command", "couldn't match a name at <%s>", ref))
 	}
@@ -676,10 +676,9 @@ func (p *SelectionParser) compile(line string) (selEvaluator, string) {
 // evaluate evaluates a pre-compiled selection query against item list
 func (p *SelectionParser) evaluate(machine selEvaluator, state selEvalState) selectionSet {
 	if machine == nil {
-		return nil
+		return undefinedSelectionSet()
 	}
-	out := machine(state, p.allItems()).Values()
-	return out
+	return newSelectionSet(machine(state, p.allItems()).Values()...)
 }
 
 // parse parses selection and returns remainder of line with selection removed
@@ -740,10 +739,10 @@ func (p *SelectionParser) evalDisjunct(state selEvalState,
 	preselection selectionSet, op1, op2 selEvaluator) selectionSet {
 	selected := newSelectionSet()
 	conjunct := op1(state, preselection)
-	if conjunct != nil {
+	if isDefined(conjunct) {
 		selected = selected.Union(conjunct)
 		conjunct = op2(state, preselection)
-		if conjunct != nil {
+		if isDefined(conjunct) {
 			selected = selected.Union(conjunct)
 		}
 	}
@@ -782,7 +781,7 @@ func (p *SelectionParser) evalConjunct(state selEvalState,
 	// that the order specified by the user's first term is
 	// preserved
 	conjunct := op1(state, preselection)
-	if conjunct == nil {
+	if !isDefined(conjunct) {
 		conjunct = preselection
 	} else {
 		// this line is necessary if the user specified only
@@ -790,7 +789,7 @@ func (p *SelectionParser) evalConjunct(state selEvalState,
 		// preselection
 		conjunct = conjunct.Intersection(preselection)
 		term := op2(state, preselection)
-		if term != nil {
+		if isDefined(term) {
 			conjunct = conjunct.Intersection(term)
 		}
 	}
@@ -950,7 +949,7 @@ func (p *SelectionParser) evalPolyrange(state selEvalState,
 	selection := newSelectionSet()
 	for _, op := range ops {
 		sel := op(state, preselection)
-		if sel != nil {
+		if isDefined(sel) {
 			selection = selection.Union(sel)
 		}
 	}
@@ -1531,10 +1530,10 @@ func (p *AttributionEditor) inspect(w io.Writer) {
 func (p *AttributionEditor) doInspect(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
 	w := extra[0].(io.Writer)
 	mark := p.getMark(e)
-	if sel == nil {
-		sel = make([]int, len(attrs))
+	if !isDefined(sel) {
+		sel = newSelectionSet()
 		for i := range attrs {
-			sel[i] = i
+			sel.Add(i)
 		}
 	}
 	for _, i := range sel.Values() {
@@ -1552,7 +1551,7 @@ func (p *AttributionEditor) doAssign(eventNo int, e Event, attrs []attrEditAttr,
 	name := extra[0].(string)
 	email := extra[1].(string)
 	date := extra[2].(Date)
-	if sel == nil {
+	if !isDefined(sel) {
 		panic(throw("command", "no attribution selected"))
 	}
 	for _, i := range sel.Values() {
@@ -1565,11 +1564,11 @@ func (p *AttributionEditor) remove() {
 }
 
 func (p *AttributionEditor) doRemove(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
-	if sel == nil {
-		sel = p.authorIndices(attrs)
+	if !isDefined(sel) {
+		sel = newSelectionSet(p.authorIndices(attrs)...)
 	}
 	rev := make([]int, sel.Size())
-	copy(rev, sel)
+	copy(rev, sel.Values())
 	sort.Stable(sort.Reverse(sort.IntSlice(rev)))
 	for _, i := range rev {
 		attrs[i].remove(e)
@@ -1586,15 +1585,15 @@ func (p *AttributionEditor) doInsert(eventNo int, e Event, attrs []attrEditAttr,
 	name := extra[1].(string)
 	email := extra[2].(string)
 	date := extra[3].(Date)
-	if sel == nil {
-		sel = p.authorIndices(attrs)
+	if !isDefined(sel) {
+		sel = newSelectionSet(p.authorIndices(attrs)...)
 	}
 	var basis = -1
-	if len(sel) != 0 {
+	if sel.Size() != 0 {
 		if after {
-			basis = sel[len(sel)-1]
+			basis = sel.Fetch(sel.Size() - 1)
 		} else {
-			basis = sel[0]
+			basis = sel.Fetch(0)
 		}
 	}
 	var a Attribution
