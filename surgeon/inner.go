@@ -313,7 +313,7 @@ func (s *orderedIntSet) Add(item int) {
 }
 
 func (s orderedIntSet) Subtract(other orderedIntSet) orderedIntSet {
-	var diff orderedIntSet
+	var diff orderedIntSet = orderedIntSet{}
 	for _, outer := range s {
 		for _, inner := range other {
 			if outer == inner {
@@ -328,7 +328,7 @@ func (s orderedIntSet) Subtract(other orderedIntSet) orderedIntSet {
 
 func (s orderedIntSet) Intersection(other orderedIntSet) orderedIntSet {
 	// Naive O(n**2) method - don't use on large sets if you care about speed
-	var intersection orderedIntSet
+	var intersection orderedIntSet = orderedIntSet{}
 	for _, item := range s {
 		if other.Contains(item) {
 			intersection = append(intersection, item)
@@ -397,6 +397,37 @@ func (s orderedIntSet) String() string {
 	}
 	rep.WriteByte(']')
 	return rep.String()
+}
+
+type setIterator struct {
+	base *orderedIntSet
+	idx  int
+}
+
+func (s orderedIntSet) Iterator() *setIterator {
+	var it setIterator
+	it.base = &s
+	it.idx = -1
+	return &it
+}
+
+// Value retuern the value in the current cell
+func (it *setIterator) Value() int {
+	return (*it.base)[it.idx]
+}
+
+// Index bumps the cursor index in the iterable.
+func (it *setIterator) Index() int {
+	return it.idx
+}
+
+// Next bumps the cursor in the iterable
+func (it *setIterator) Next() bool {
+	if it.idx < len(*it.base)-1 {
+		it.idx++
+		return true
+	}
+	return false
 }
 
 // fastOrderedIntSet is like orderedIntSet but optimizes for speed at the
@@ -8808,13 +8839,13 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 	}
 }
 
-// accumulateCommits returns the commits derived from a section set through a hook
-func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
-	operation func(*Commit) []CommitLike, recurse bool) *fastOrderedIntSet {
+// accumulateCommits returns the commits derived from a seleoction set through a hook
+func (repo *Repository) accumulateCommits(subarg selectionSet,
+	operation func(*Commit) []CommitLike, recurse bool) selectionSet {
 	subargSet := newSelectionSet(subarg.Values()...)
 	commits := repo.commits(&subargSet)
 	if !recurse {
-		result := newFastOrderedIntSet()
+		result := newSelectionSet()
 		for _, commit := range commits {
 			for _, x := range operation(commit) {
 				result.Add(repo.eventToIndex(x))
@@ -8822,7 +8853,7 @@ func (repo *Repository) accumulateCommits(subarg *fastOrderedIntSet,
 		}
 		return result
 	}
-	result := newFastOrderedIntSet(subarg.Values()...)
+	result := newSelectionSet(subarg.Values()...)
 	// Populate the queue with selected commits
 	var queue []CommitLike
 	for _, c := range commits {
@@ -8885,7 +8916,7 @@ func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Rege
 // ensure the deleted branches no longer appear anywhere
 func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Baton) {
 	// Select resets & commits to keep
-	toKeep := newFastOrderedIntSet()
+	toKeep := newSelectionSet()
 	wrongBranch := newFastOrderedIntSet()
 	for i, ev := range repo.events {
 		switch event := ev.(type) {

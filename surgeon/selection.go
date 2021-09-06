@@ -72,7 +72,7 @@ func (rs *Reposurgeon) parseExpression() selEvaluator {
 		}
 		rs.pop()
 		orig := value
-		value = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		value = func(x selEvalState, s selectionSet) selectionSet {
 			return rs.evalNeighborhood(x, s, orig)
 		}
 	}
@@ -80,10 +80,10 @@ func (rs *Reposurgeon) parseExpression() selEvaluator {
 }
 
 func (rs *Reposurgeon) evalNeighborhood(state selEvalState,
-	preselection *fastOrderedIntSet, subject selEvaluator) *fastOrderedIntSet {
+	preselection selectionSet, subject selEvaluator) selectionSet {
 	value := subject(state, preselection)
-	addSet := newFastOrderedIntSet()
-	removeSet := newFastOrderedIntSet()
+	addSet := newSelectionSet()
+	removeSet := newSelectionSet()
 	it := value.Iterator()
 	for it.Next() {
 		ei := it.Value()
@@ -122,7 +122,7 @@ func (rs *Reposurgeon) evalNeighborhood(state selEvalState,
 	}
 	value = value.Union(addSet)
 	value = value.Subtract(removeSet)
-	value = value.Sort()
+	value.Sort()
 	return value
 }
 
@@ -177,19 +177,19 @@ func (rs *Reposurgeon) parsePathset() selEvaluator {
 		if err != nil {
 			panic(throw("command", "invalid regular expression %s", matcher))
 		}
-		return func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		return func(x selEvalState, s selectionSet) selectionSet {
 			return rs.evalPathsetRegex(x, s, search, flags)
 		}
 	}
-	return func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+	return func(x selEvalState, s selectionSet) selectionSet {
 		return rs.evalPathset(x, s, matcher)
 	}
 }
 
 // Resolve a path regex to the set of commits that refer to it.
 func (rs *Reposurgeon) evalPathsetRegex(state selEvalState,
-	preselection *fastOrderedIntSet, search *regexp.Regexp,
-	flags orderedStringSet) *fastOrderedIntSet {
+	preselection selectionSet, search *regexp.Regexp,
+	flags orderedStringSet) selectionSet {
 	if flags.Contains("c") {
 		return rs.evalPathsetFull(state, preselection,
 			search, flags.Contains("a"))
@@ -202,7 +202,7 @@ func (rs *Reposurgeon) evalPathsetRegex(state selEvalState,
 	type vendPaths interface {
 		paths(orderedStringSet) orderedStringSet
 	}
-	hits := newFastOrderedIntSet()
+	hits := newSelectionSet()
 	events := rs.chosen().events
 	it := preselection.Iterator()
 	for it.Next() {
@@ -227,11 +227,11 @@ func (rs *Reposurgeon) evalPathsetRegex(state selEvalState,
 
 // Resolve a path name to the set of commits that refer to it.
 func (rs *Reposurgeon) evalPathset(state selEvalState,
-	preselection *fastOrderedIntSet, matcher string) *fastOrderedIntSet {
+	preselection selectionSet, matcher string) selectionSet {
 	type vendPaths interface {
 		paths(orderedStringSet) orderedStringSet
 	}
-	hits := newFastOrderedIntSet()
+	hits := newSelectionSet()
 	events := rs.chosen().events
 	it := preselection.Iterator()
 	for it.Next() {
@@ -244,8 +244,8 @@ func (rs *Reposurgeon) evalPathset(state selEvalState,
 }
 
 func (rs *Reposurgeon) evalPathsetFull(state selEvalState,
-	preselection *fastOrderedIntSet, matchCond *regexp.Regexp,
-	matchAll bool) *fastOrderedIntSet {
+	preselection selectionSet, matchCond *regexp.Regexp,
+	matchAll bool) selectionSet {
 	// Try to match a regex in the trees. For each commit we remember
 	// only the part of the tree that matches the regex. In most cases
 	// it is a lot less memory and CPU hungry than running regexes on
@@ -256,7 +256,7 @@ func (rs *Reposurgeon) evalPathsetFull(state selEvalState,
 		match = func(s string) bool { return !matchCond.MatchString(s) }
 	}
 	matchTrees := make(map[string]*PathMap)
-	result := newFastOrderedIntSet()
+	result := newSelectionSet()
 	lastEvent := selMax(preselection)
 	for i, event := range rs.chosen().events {
 		c, ok := event.(*Commit)
@@ -374,7 +374,7 @@ func (rs *Reposurgeon) parseAtom() selEvaluator {
 		markref := markRE.FindString(rs.line)
 		if len(markref) > 0 {
 			rs.line = rs.line[len(markref):]
-			selection = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+			selection = func(x selEvalState, s selectionSet) selectionSet {
 				return rs.evalAtomMark(x, s, markref)
 			}
 		} else if rs.peek() == ':' {
@@ -387,7 +387,7 @@ func (rs *Reposurgeon) parseAtom() selEvaluator {
 			}
 			ref := rs.line[:closer]
 			rs.line = rs.line[closer+1:]
-			selection = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+			selection = func(x selEvalState, s selectionSet) selectionSet {
 				return rs.evalAtomRef(x, s, ref)
 			}
 		}
@@ -396,28 +396,28 @@ func (rs *Reposurgeon) parseAtom() selEvaluator {
 }
 
 func (rs *Reposurgeon) evalAtomMark(state selEvalState,
-	preselection *fastOrderedIntSet, markref string) *fastOrderedIntSet {
+	preselection selectionSet, markref string) selectionSet {
 	events := rs.chosen().events
 	for i := 0; i < state.nItems(); i++ {
 		e := events[i]
 		if val, ok := getAttr(e, "mark"); ok && val == markref {
-			return newFastOrderedIntSet(i)
+			return newSelectionSet(i)
 		} else if val, ok := getAttr(e, "committish"); ok && val == markref {
-			return newFastOrderedIntSet(i)
+			return newSelectionSet(i)
 		}
 	}
 	panic(throw("command", "mark %s not found.", markref))
 }
 
 func (rs *Reposurgeon) evalAtomRef(state selEvalState,
-	preselection *fastOrderedIntSet, ref string) *fastOrderedIntSet {
-	selection := newFastOrderedIntSet()
+	preselection selectionSet, ref string) selectionSet {
+	selection := newSelectionSet()
 	lookup := rs.chosen().named(ref)
 	if lookup != nil {
 		// Choose to include *all* commits matching the date.
 		// Alas, results in unfortunate behavior when a date
 		// with multiple commits ends a span.
-		selection = selection.Union(newFastOrderedIntSet(lookup...))
+		selection = selection.Union(newSelectionSet(lookup...))
 	} else {
 		panic(throw("command", "couldn't match a name at <%s>", ref))
 	}
@@ -426,9 +426,9 @@ func (rs *Reposurgeon) evalAtomRef(state selEvalState,
 
 // Perform a text search of items.
 func (rs *Reposurgeon) evalTextSearch(state selEvalState,
-	preselection *fastOrderedIntSet,
-	search *regexp.Regexp, modifiers string) *fastOrderedIntSet {
-	matchers := newFastOrderedIntSet()
+	preselection selectionSet,
+	search *regexp.Regexp, modifiers string) selectionSet {
+	matchers := newSelectionSet()
 	// values ("author", "Branch", etc.) in 'searchableAttrs' and keys in
 	// 'extractors' (below) must exactly match spelling and case of fields
 	// in structures being interrogated since reflection is used both to
@@ -551,52 +551,52 @@ func (rs *Reposurgeon) evalTextSearch(state selEvalState,
 
 func (rs *Reposurgeon) functions() map[string]selEvaluator {
 	return map[string]selEvaluator{
-		"chn": func(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+		"chn": func(state selEvalState, subarg selectionSet) selectionSet {
 			return rs.chnHandler(state, subarg)
 		},
-		"dsc": func(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+		"dsc": func(state selEvalState, subarg selectionSet) selectionSet {
 			return rs.dscHandler(state, subarg)
 		},
-		"par": func(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+		"par": func(state selEvalState, subarg selectionSet) selectionSet {
 			return rs.parHandler(state, subarg)
 		},
-		"anc": func(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+		"anc": func(state selEvalState, subarg selectionSet) selectionSet {
 			return rs.ancHandler(state, subarg)
 		},
 	}
 }
 
 // All children of commits in the selection set.
-func (rs *Reposurgeon) chnHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+func (rs *Reposurgeon) chnHandler(state selEvalState, subarg selectionSet) selectionSet {
 	return rs.accumulateCommits(subarg,
 		func(c *Commit) []CommitLike { return c.children() }, false)
 }
 
 // All descendants of a selection set, recursively.
-func (rs *Reposurgeon) dscHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+func (rs *Reposurgeon) dscHandler(state selEvalState, subarg selectionSet) selectionSet {
 	return rs.accumulateCommits(subarg,
 		func(c *Commit) []CommitLike { return c.children() }, true)
 }
 
 // All parents of a selection set.
-func (rs *Reposurgeon) parHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+func (rs *Reposurgeon) parHandler(state selEvalState, subarg selectionSet) selectionSet {
 	return rs.accumulateCommits(subarg,
 		func(c *Commit) []CommitLike { return c.parents() }, false)
 }
 
 // All ancestors of a selection set, recursively.
-func (rs *Reposurgeon) ancHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+func (rs *Reposurgeon) ancHandler(state selEvalState, subarg selectionSet) selectionSet {
 	return rs.accumulateCommits(subarg,
 		func(c *Commit) []CommitLike { return c.parents() }, true)
 }
 
 type selEvalState interface {
 	nItems() int
-	allItems() *fastOrderedIntSet
+	allItems() selectionSet
 	release()
 }
 
-type selEvaluator func(selEvalState, *fastOrderedIntSet) *fastOrderedIntSet
+type selEvaluator func(selEvalState, selectionSet) selectionSet
 
 type selParser interface {
 	compile(line string) (selEvaluator, string)
@@ -604,17 +604,17 @@ type selParser interface {
 	parse(string, selEvalState) (selectionSet, string)
 	parseExpression() selEvaluator
 	parseDisjunct() selEvaluator
-	evalDisjunct(selEvalState, *fastOrderedIntSet, selEvaluator, selEvaluator) *fastOrderedIntSet
+	evalDisjunct(selEvalState, selectionSet, selEvaluator, selEvaluator) selectionSet
 	parseConjunct() selEvaluator
-	evalConjunct(selEvalState, *fastOrderedIntSet, selEvaluator, selEvaluator) *fastOrderedIntSet
+	evalConjunct(selEvalState, selectionSet, selEvaluator, selEvaluator) selectionSet
 	parseTerm() selEvaluator
-	evalTermNegate(selEvalState, *fastOrderedIntSet, selEvaluator) *fastOrderedIntSet
+	evalTermNegate(selEvalState, selectionSet, selEvaluator) selectionSet
 	parseVisibility() selEvaluator
-	evalVisibility(selEvalState, *fastOrderedIntSet, string) *fastOrderedIntSet
+	evalVisibility(selEvalState, selectionSet, string) selectionSet
 	parsePolyrange() selEvaluator
 	polyrangeInitials() string
 	possiblePolyrange() bool
-	evalPolyrange(selEvalState, *fastOrderedIntSet, []selEvaluator) *fastOrderedIntSet
+	evalPolyrange(selEvalState, selectionSet, []selEvaluator) selectionSet
 	parseAtom() selEvaluator
 	parseTextSearch() selEvaluator
 	parseFuncall() selEvaluator
@@ -643,8 +643,8 @@ func (p *SelectionParser) release() { p.nitems = 0 }
 
 func (p *SelectionParser) nItems() int { return p.nitems }
 
-func (p *SelectionParser) allItems() *fastOrderedIntSet {
-	s := newFastOrderedIntSet()
+func (p *SelectionParser) allItems() selectionSet {
+	s := newSelectionSet()
 	for i := 0; i < p.nitems; i++ {
 		s.Add(i)
 	}
@@ -678,7 +678,8 @@ func (p *SelectionParser) evaluate(machine selEvaluator, state selEvalState) sel
 	if machine == nil {
 		return nil
 	}
-	return machine(state, p.allItems()).Values()
+	out := machine(state, p.allItems()).Values()
+	return out
 }
 
 // parse parses selection and returns remainder of line with selection removed
@@ -727,7 +728,7 @@ func (p *SelectionParser) parseDisjunct() selEvaluator {
 			break
 		}
 		op1 := op
-		op = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		op = func(x selEvalState, s selectionSet) selectionSet {
 			return p.imp().evalDisjunct(x, s, op1, op2)
 		}
 	}
@@ -736,8 +737,8 @@ func (p *SelectionParser) parseDisjunct() selEvaluator {
 
 // evalDisjunct evaluates a disjunctive expression
 func (p *SelectionParser) evalDisjunct(state selEvalState,
-	preselection *fastOrderedIntSet, op1, op2 selEvaluator) *fastOrderedIntSet {
-	selected := newFastOrderedIntSet()
+	preselection selectionSet, op1, op2 selEvaluator) selectionSet {
+	selected := newSelectionSet()
 	conjunct := op1(state, preselection)
 	if conjunct != nil {
 		selected = selected.Union(conjunct)
@@ -767,7 +768,7 @@ func (p *SelectionParser) parseConjunct() selEvaluator {
 			break
 		}
 		op1 := op
-		op = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		op = func(x selEvalState, s selectionSet) selectionSet {
 			return p.imp().evalConjunct(x, s, op1, op2)
 		}
 	}
@@ -776,7 +777,7 @@ func (p *SelectionParser) parseConjunct() selEvaluator {
 
 // evalConjunct evaluates a conjunctive expression
 func (p *SelectionParser) evalConjunct(state selEvalState,
-	preselection *fastOrderedIntSet, op1, op2 selEvaluator) *fastOrderedIntSet {
+	preselection selectionSet, op1, op2 selEvaluator) selectionSet {
 	// assign term before intersecting with preselection so
 	// that the order specified by the user's first term is
 	// preserved
@@ -802,7 +803,7 @@ func (p *SelectionParser) parseTerm() selEvaluator {
 	if p.peek() == '~' {
 		p.pop()
 		op := p.imp().parseExpression()
-		term = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		term = func(x selEvalState, s selectionSet) selectionSet {
 			return p.imp().evalTermNegate(x, s, op)
 		}
 	} else if p.peek() == '(' {
@@ -830,12 +831,12 @@ func (p *SelectionParser) parseTerm() selEvaluator {
 }
 
 func (p *SelectionParser) evalTermNegate(state selEvalState,
-	preselection *fastOrderedIntSet, op selEvaluator) *fastOrderedIntSet {
+	preselection selectionSet, op selEvaluator) selectionSet {
 	if op == nil {
 		panic(throw("command", "inner expression to be negated is invalid"))
 	}
 	negated := op(state, state.allItems())
-	remainder := newFastOrderedIntSet()
+	remainder := newSelectionSet()
 	for i, n := 0, state.nItems(); i < n; i++ {
 		if !negated.Contains(i) {
 			remainder.Add(i)
@@ -874,7 +875,7 @@ func (p *SelectionParser) parseVisibility() selEvaluator {
 		if !strings.ContainsRune("()|& ", p.peek()) {
 			panic(throw("command", "garbled type mask at '%s'", p.line))
 		}
-		visibility = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		visibility = func(x selEvalState, s selectionSet) selectionSet {
 			return p.imp().evalVisibility(x, s, visible)
 		}
 	}
@@ -883,7 +884,7 @@ func (p *SelectionParser) parseVisibility() selEvaluator {
 
 // evalVisibility evaluates a visibility spec
 func (p *SelectionParser) evalVisibility(state selEvalState,
-	preselection *fastOrderedIntSet, visible string) *fastOrderedIntSet {
+	preselection selectionSet, visible string) selectionSet {
 	type typelettersGetter interface {
 		visibilityTypeletters() map[rune]func(int) bool
 	}
@@ -892,7 +893,7 @@ func (p *SelectionParser) evalVisibility(state selEvalState,
 	for i, r := range visible {
 		predicates[i] = typeletters[r]
 	}
-	visibility := newFastOrderedIntSet()
+	visibility := newSelectionSet()
 	it := preselection.Iterator()
 	for it.Next() {
 		for _, f := range predicates {
@@ -931,7 +932,7 @@ func (p *SelectionParser) parsePolyrange() selEvaluator {
 				ops = append(ops, op)
 			}
 		}
-		polyrange = func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		polyrange = func(x selEvalState, s selectionSet) selectionSet {
 			return p.imp().evalPolyrange(x, s, ops)
 		}
 	}
@@ -943,10 +944,10 @@ const polyrangeDollar = maxInt
 
 // evalPolyrange evaluates a polyrange specification (list of intervals)
 func (p *SelectionParser) evalPolyrange(state selEvalState,
-	preselection *fastOrderedIntSet, ops []selEvaluator) *fastOrderedIntSet {
+	preselection selectionSet, ops []selEvaluator) selectionSet {
 	// preselection is not used since it is perfectly legal to have range
 	// bounds be outside of the reduced set.
-	selection := newFastOrderedIntSet()
+	selection := newSelectionSet()
 	for _, op := range ops {
 		sel := op(state, preselection)
 		if sel != nil {
@@ -954,7 +955,7 @@ func (p *SelectionParser) evalPolyrange(state selEvalState,
 		}
 	}
 	// Resolve spans
-	resolved := newFastOrderedIntSet()
+	resolved := newSelectionSet()
 	last := minInt
 	spanning := false
 	it := selection.Iterator()
@@ -1007,20 +1008,20 @@ func (p *SelectionParser) parseAtom() selEvaluator {
 		if err != nil {
 			panic(throw("command", "Atoi(%q) failed: %v", match, err))
 		}
-		op = func(selEvalState, *fastOrderedIntSet) *fastOrderedIntSet {
-			return newFastOrderedIntSet(number - 1)
+		op = func(selEvalState, selectionSet) selectionSet {
+			return newSelectionSet(number - 1)
 		}
 		p.line = p.line[len(match):]
 	} else if p.peek() == '$' { // $ means last commit, a la ed(1).
-		op = func(selEvalState, *fastOrderedIntSet) *fastOrderedIntSet {
-			return newFastOrderedIntSet(polyrangeDollar)
+		op = func(selEvalState, selectionSet) selectionSet {
+			return newSelectionSet(polyrangeDollar)
 		}
 		p.pop()
 	} else if p.peek() == ',' { // Comma just delimits a location spec
 		p.pop()
 	} else if strings.HasPrefix(p.line, "..") { // Following ".." means a span
-		op = func(selEvalState, *fastOrderedIntSet) *fastOrderedIntSet {
-			return newFastOrderedIntSet(polyrangeRange)
+		op = func(selEvalState, selectionSet) selectionSet {
+			return newSelectionSet(polyrangeRange)
 		}
 		p.line = p.line[len(".."):]
 	} else if p.peek() == '.' {
@@ -1033,7 +1034,7 @@ func (p *SelectionParser) parseAtom() selEvaluator {
 func (p *SelectionParser) parseTextSearch() selEvaluator {
 	p.eatWS()
 	type textSearcher interface {
-		evalTextSearch(selEvalState, *fastOrderedIntSet, *regexp.Regexp, string) *fastOrderedIntSet
+		evalTextSearch(selEvalState, selectionSet, *regexp.Regexp, string) selectionSet
 	}
 	searcher, ok := p.subclass.(textSearcher)
 	if !ok {
@@ -1059,7 +1060,7 @@ func (p *SelectionParser) parseTextSearch() selEvaluator {
 		for x := range seen {
 			modifiers.WriteRune(x)
 		}
-		return func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+		return func(x selEvalState, s selectionSet) selectionSet {
 			return searcher.evalTextSearch(x, s, re, modifiers.String())
 		}
 	}
@@ -1112,7 +1113,7 @@ func (p *SelectionParser) parseFuncall() selEvaluator {
 	if op == nil {
 		panic(throw("command", "no such function @%s()", funname.String()))
 	}
-	return func(x selEvalState, s *fastOrderedIntSet) *fastOrderedIntSet {
+	return func(x selEvalState, s selectionSet) selectionSet {
 		return op(x, subarg(x, s))
 	}
 }
@@ -1127,7 +1128,7 @@ var selFuncs = map[string]selEvaluator{
 	"rev": revHandler,
 }
 
-func selMin(s *fastOrderedIntSet) int {
+func selMin(s selectionSet) int {
 	if s.Size() == 0 {
 		panic(throw("command", "cannot take minimum of empty set"))
 	}
@@ -1142,7 +1143,7 @@ func selMin(s *fastOrderedIntSet) int {
 	return n
 }
 
-func selMax(s *fastOrderedIntSet) int {
+func selMax(s selectionSet) int {
 	if s.Size() == 0 {
 		panic(throw("command", "cannot take maximum of empty set"))
 	}
@@ -1158,26 +1159,26 @@ func selMax(s *fastOrderedIntSet) int {
 }
 
 // Minimum member of a selection set.
-func minHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
-	return newFastOrderedIntSet(selMin(subarg))
+func minHandler(state selEvalState, subarg selectionSet) selectionSet {
+	return newSelectionSet(selMin(subarg))
 }
 
 // Maximum member of a selection set.
-func maxHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
-	return newFastOrderedIntSet(selMax(subarg))
+func maxHandler(state selEvalState, subarg selectionSet) selectionSet {
+	return newSelectionSet(selMax(subarg))
 }
 
 // Amplify - map empty set to empty, nonempty set to all.
-func ampHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+func ampHandler(state selEvalState, subarg selectionSet) selectionSet {
 	if subarg.Size() != 0 {
 		return state.allItems()
 	}
-	return newFastOrderedIntSet()
+	return newSelectionSet()
 }
 
 // Predecessors function; all elements previous to argument set.
-func preHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
-	pre := newFastOrderedIntSet()
+func preHandler(state selEvalState, subarg selectionSet) selectionSet {
+	pre := newSelectionSet()
 	if subarg.Size() == 0 {
 		return pre
 	}
@@ -1192,8 +1193,8 @@ func preHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSe
 }
 
 // Successors function; all elements following argument set.
-func sucHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
-	suc := newFastOrderedIntSet()
+func sucHandler(state selEvalState, subarg selectionSet) selectionSet {
+	suc := newSelectionSet()
 	if subarg.Size() == 0 {
 		return suc
 	}
@@ -1209,19 +1210,20 @@ func sucHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSe
 }
 
 // Sort the argument set.
-func srtHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
-	return subarg.Sort()
+func srtHandler(state selEvalState, subarg selectionSet) selectionSet {
+	subarg.Sort()
+	return subarg
 }
 
 // Reverse the argument set.
-func revHandler(state selEvalState, subarg *fastOrderedIntSet) *fastOrderedIntSet {
+func revHandler(state selEvalState, subarg selectionSet) selectionSet {
 	n := subarg.Size()
 	v := make([]int, n)
 	it := subarg.Iterator()
 	for it.Next() {
 		v[n-it.Index()-1] = it.Value()
 	}
-	return newFastOrderedIntSet(v...)
+	return newSelectionSet(v...)
 }
 
 type attrEditAttr interface {
@@ -1366,8 +1368,8 @@ func (p *attrEditSelParser) visibilityTypeletters() map[rune]func(int) bool {
 }
 
 func (p *attrEditSelParser) evalTextSearch(state selEvalState,
-	preselection *fastOrderedIntSet,
-	search *regexp.Regexp, modifiers string) *fastOrderedIntSet {
+	preselection selectionSet,
+	search *regexp.Regexp, modifiers string) selectionSet {
 	var checkName, checkEmail bool
 	if len(modifiers) == 0 {
 		checkName, checkEmail = true, true
@@ -1382,7 +1384,7 @@ func (p *attrEditSelParser) evalTextSearch(state selEvalState,
 			}
 		}
 	}
-	found := newFastOrderedIntSet()
+	found := newSelectionSet()
 	it := preselection.Iterator()
 	for it.Next() {
 		a := p.attributions[it.Value()]

@@ -670,8 +670,8 @@ func wrap(cmds []string, maxWidth int) []string {
 // Helpers
 //
 
-func (rs *Reposurgeon) accumulateCommits(subarg *fastOrderedIntSet,
-	operation func(*Commit) []CommitLike, recurse bool) *fastOrderedIntSet {
+func (rs *Reposurgeon) accumulateCommits(subarg selectionSet,
+	operation func(*Commit) []CommitLike, recurse bool) selectionSet {
 	return rs.chosen().accumulateCommits(subarg, operation, recurse)
 }
 
