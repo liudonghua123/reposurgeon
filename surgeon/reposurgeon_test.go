@@ -1563,12 +1563,10 @@ data 0
 `
 	a.Reset()
 	singleton := newSelectionSet(4)
-	fmt.Printf("XXX isDefined(%v) -> %v\n", singleton, isDefined(singleton))
 	// Check partial export - Event 4 is the second commit
 	if err := repo.fastExport(singleton, &a, nullStringSet, nil, control.baton); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	fmt.Printf("XXX Done\n")
 	assertEqual(t, onecommit, a.String())
 
 	timeCollisions, _ := repo.checkUniqueness()
@@ -1616,7 +1614,7 @@ data 0
 	assertBool(t, isPassthrough(repo.events[11], "boogabooga"), true)
 
 	assertEqual(t, repo.earliestCommit().Comment, "First revision.\n")
-	allcommits := repo.commits(undefinedSelectionSet())
+	allcommits := repo.commits(undefinedSelectionSet)
 	lastcommit := repo.eventToIndex(allcommits[len(allcommits)-1])
 	ancestors := repo.ancestors(lastcommit)
 	assertBool(t, SetEqual(ancestors, newSelectionSet(4, 2)), true)

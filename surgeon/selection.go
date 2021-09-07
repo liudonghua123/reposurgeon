@@ -1,7 +1,9 @@
 package main
 
-// The event selector. Exports one class, which is used
-// to compile and evaluate selection expressions.
+// The event selector. Exports one classes, selectionSet.
+// Adds to the Reposurgeclass towo wnetods, parseSelectionSeet() that is used
+// to compile selection-expression syntax to a maching machine, and
+// evalSelectionSet() that is uses to produce a selection set using the machine.
 //
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause
@@ -9,6 +11,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"regexp"
 	"sort"
@@ -16,7 +19,154 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	orderedset "github.com/emirpasic/gods/sets/linkedhashset"
 )
+
+type selectionSet struct{ set *orderedset.Set }
+
+type selectionSetIt struct{ orderedset.Iterator }
+
+func newSelectionSet(x ...int) selectionSet {
+	s := orderedset.New()
+	for _, i := range x {
+		s.Add(i)
+	}
+	return selectionSet{s}
+}
+
+func (s selectionSet) isDefined() bool {
+	return s.set != nil
+}
+
+var undefinedSelectionSet selectionSet // Do not add to this, havoc would ensue
+
+func (s selectionSet) Fetch(idx int) int {
+	return s.Values()[idx]
+}
+
+func (x *selectionSetIt) Value() int {
+	return x.Iterator.Value().(int)
+}
+
+func (s selectionSet) Size() int {
+	if s.set == nil {
+		return 0
+	}
+	return s.set.Size()
+}
+
+func (s selectionSet) Iterator() selectionSetIt {
+	return selectionSetIt{Iterator: s.set.Iterator()}
+}
+
+func (s selectionSet) Values() []int {
+	v := make([]int, s.Size())
+	it := s.Iterator()
+	for it.Next() {
+		v[it.Index()] = it.Value()
+	}
+	return v
+}
+
+func (s selectionSet) Contains(x int) bool {
+	return s.set != nil && s.set.Contains(x)
+}
+
+func (s *selectionSet) Remove(x int) bool {
+	if s.Contains(x) {
+		s.set.Remove(x)
+		return true
+	}
+	return false
+}
+
+func (s *selectionSet) Add(x int) {
+	if s.set == nil {
+		s.set = orderedset.New(x)
+		return
+	}
+	s.set.Add(x)
+}
+
+func (s selectionSet) Subtract(other selectionSet) selectionSet {
+	p := orderedset.New()
+	it := s.set.Iterator()
+	for it.Next() {
+		if !other.set.Contains(it.Value()) {
+			p.Add(it.Value())
+		}
+	}
+
+	return selectionSet{p}
+}
+
+func (s selectionSet) Intersection(other selectionSet) selectionSet {
+	p := orderedset.New()
+	it := s.set.Iterator()
+	for it.Next() {
+		if other.set.Contains(it.Value()) {
+			p.Add(it.Value())
+		}
+	}
+	return selectionSet{p}
+}
+
+func (s selectionSet) Union(other selectionSet) selectionSet {
+	p := orderedset.New(s.set.Values()...)
+	p.Add(other.set.Values()...)
+	return selectionSet{p}
+}
+
+func (s selectionSet) EqualWithOrdering(other selectionSet) bool {
+	if s.Size() != other.Size() {
+		return false
+	}
+	sl := s.Values()
+	ol := other.Values()
+	for i := range sl {
+		if sl[i] != ol[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (s selectionSet) Min() int {
+	var min = math.MaxInt32
+	for _, v := range s.Values() {
+		if v < min {
+			min = v
+		}
+	}
+	return min
+}
+
+func (s *selectionSet) Sort() {
+	v := s.set.Values()
+	sort.Slice(v, func(i, j int) bool { return v[i].(int) < v[j].(int) })
+	s.set = orderedset.New(v...)
+}
+
+func (s *selectionSet) Pop() int {
+	x := (*s).Values()[(*s).Size()-1]
+	(*s).Remove(x)
+	return x
+}
+
+func (s selectionSet) String() string {
+	var b strings.Builder
+	b.WriteRune('[')
+	it := s.Iterator()
+	for it.Next() {
+		if it.Index() > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(strconv.Itoa(it.Value()))
+	}
+	b.WriteRune(']')
+	return b.String()
+}
 
 // unclean tells us how to detect ungitified comments.  Check for Git
 // conventions - require a spacer line after first \n if multiline,
@@ -56,7 +206,7 @@ func (rs *Reposurgeon) isNamed(s string) (result bool) {
 	}(&result)
 	repo := rs.chosen()
 	if repo != nil {
-		result = isDefined(repo.named(s))
+		result = repo.named(s).isDefined()
 	}
 	return
 }
@@ -413,7 +563,7 @@ func (rs *Reposurgeon) evalAtomRef(state selEvalState,
 	preselection selectionSet, ref string) selectionSet {
 	selection := newSelectionSet()
 	lookup := rs.chosen().named(ref)
-	if isDefined(lookup) {
+	if lookup.isDefined() {
 		// Choose to include *all* commits matching the date.
 		// Alas, results in unfortunate behavior when a date
 		// with multiple commits ends a span.
@@ -676,7 +826,7 @@ func (p *SelectionParser) compile(line string) (selEvaluator, string) {
 // evaluate evaluates a pre-compiled selection query against item list
 func (p *SelectionParser) evaluate(machine selEvaluator, state selEvalState) selectionSet {
 	if machine == nil {
-		return undefinedSelectionSet()
+		return undefinedSelectionSet
 	}
 	return newSelectionSet(machine(state, p.allItems()).Values()...)
 }
@@ -739,10 +889,10 @@ func (p *SelectionParser) evalDisjunct(state selEvalState,
 	preselection selectionSet, op1, op2 selEvaluator) selectionSet {
 	selected := newSelectionSet()
 	conjunct := op1(state, preselection)
-	if isDefined(conjunct) {
+	if conjunct.isDefined() {
 		selected = selected.Union(conjunct)
 		conjunct = op2(state, preselection)
-		if isDefined(conjunct) {
+		if conjunct.isDefined() {
 			selected = selected.Union(conjunct)
 		}
 	}
@@ -781,7 +931,7 @@ func (p *SelectionParser) evalConjunct(state selEvalState,
 	// that the order specified by the user's first term is
 	// preserved
 	conjunct := op1(state, preselection)
-	if !isDefined(conjunct) {
+	if !conjunct.isDefined() {
 		conjunct = preselection
 	} else {
 		// this line is necessary if the user specified only
@@ -789,7 +939,7 @@ func (p *SelectionParser) evalConjunct(state selEvalState,
 		// preselection
 		conjunct = conjunct.Intersection(preselection)
 		term := op2(state, preselection)
-		if isDefined(term) {
+		if term.isDefined() {
 			conjunct = conjunct.Intersection(term)
 		}
 	}
@@ -949,7 +1099,7 @@ func (p *SelectionParser) evalPolyrange(state selEvalState,
 	selection := newSelectionSet()
 	for _, op := range ops {
 		sel := op(state, preselection)
-		if isDefined(sel) {
+		if sel.isDefined() {
 			selection = selection.Union(sel)
 		}
 	}
@@ -1530,7 +1680,7 @@ func (p *AttributionEditor) inspect(w io.Writer) {
 func (p *AttributionEditor) doInspect(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
 	w := extra[0].(io.Writer)
 	mark := p.getMark(e)
-	if !isDefined(sel) {
+	if !sel.isDefined() {
 		sel = newSelectionSet()
 		for i := range attrs {
 			sel.Add(i)
@@ -1551,7 +1701,7 @@ func (p *AttributionEditor) doAssign(eventNo int, e Event, attrs []attrEditAttr,
 	name := extra[0].(string)
 	email := extra[1].(string)
 	date := extra[2].(Date)
-	if !isDefined(sel) {
+	if !sel.isDefined() {
 		panic(throw("command", "no attribution selected"))
 	}
 	for _, i := range sel.Values() {
@@ -1564,7 +1714,7 @@ func (p *AttributionEditor) remove() {
 }
 
 func (p *AttributionEditor) doRemove(eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}) {
-	if !isDefined(sel) {
+	if !sel.isDefined() {
 		sel = newSelectionSet(p.authorIndices(attrs)...)
 	}
 	rev := make([]int, sel.Size())
@@ -1585,7 +1735,7 @@ func (p *AttributionEditor) doInsert(eventNo int, e Event, attrs []attrEditAttr,
 	name := extra[1].(string)
 	email := extra[2].(string)
 	date := extra[3].(Date)
-	if !isDefined(sel) {
+	if !sel.isDefined() {
 		sel = newSelectionSet(p.authorIndices(attrs)...)
 	}
 	var basis = -1
