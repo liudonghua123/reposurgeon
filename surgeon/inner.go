@@ -6059,8 +6059,8 @@ func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, even
 	}
 
 	// Populate the channel with the events
-	for i := range selection.Values() {
-		channel <- i
+	for it := selection.Iterator(); it.Next(); {
+		channel <- it.Index()
 	}
 	close(channel)
 
@@ -6734,8 +6734,8 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 		commit := repo.events[ei].(*Commit)
 		keepers := make([]*FileOp, 0)
 		blobs := make([]*Blob, 0)
-		for _, j := range deletia.Values() {
-			fileop := commit.fileops[j]
+		for it := deletia.Iterator(); it.Next(); {
+			fileop := commit.fileops[it.Value()]
 			var sourcedelete bool
 			var targetdelete bool
 			if fileop.op == opD {
@@ -6946,8 +6946,8 @@ func (repo *Repository) resort() {
 	// its original index)
 	s := new(IntHeap)
 	heap.Init(s)
-	for _, elt := range start.Values() {
-		heap.Push(s, elt)
+	for it := start.Iterator(); it.Next(); {
+		heap.Push(s, it.Value())
 	}
 	tsorted := newSelectionSet()
 	oldIndexToNew := make(map[int]int)
@@ -6978,8 +6978,8 @@ func (repo *Repository) resort() {
 			return
 		}
 		newEvents := make([]Event, len(repo.events))
-		for i, j := range tsorted.Values() {
-			newEvents[i] = repo.events[j]
+		for it := tsorted.Iterator(); it.Next(); {
+			newEvents[it.Index()] = repo.events[it.Value()]
 		}
 		repo.events = newEvents
 		respond("re-sorted events")
@@ -6990,8 +6990,8 @@ func (repo *Repository) resort() {
 		for k, v := range repo.assignments {
 			old := v
 			requiredCopy := newSelectionSet()
-			for i := range v.Values() {
-				requiredCopy.Add(oldIndexToNew[old.Fetch(i)])
+			for it := v.Iterator(); it.Next(); {
+				requiredCopy.Add(oldIndexToNew[old.Fetch(it.Index())])
 			}
 			repo.assignments[k] = requiredCopy
 		}

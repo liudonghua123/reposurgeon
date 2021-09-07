@@ -688,7 +688,8 @@ func (rs *Reposurgeon) reportSelect(parse *LineParse, display func(*LineParse, i
 	if !selection.isDefined() {
 		selection = repo.all()
 	}
-	for _, eventid := range selection.Values() {
+	for it := selection.Iterator(); it.Next(); {
+		eventid := it.Value()
 		summary := display(parse, eventid, repo.events[eventid])
 		if summary != "" {
 			if strings.HasSuffix(summary, control.lineSep) {
@@ -883,8 +884,8 @@ func (rs *Reposurgeon) DoResolve(line string) bool {
 		respond("No selection\n")
 	} else {
 		out := ""
-		for _, i := range rs.selection.Values() {
-			out += fmt.Sprintf("%d,", i+1)
+		for it := rs.selection.Iterator(); it.Next(); {
+			out += fmt.Sprintf("%d,", it.Value()+1)
 		}
 		if len(out) > 0 {
 			out = out[:len(out)-1]
@@ -1082,7 +1083,8 @@ func (rs *Reposurgeon) DoIndex(lineIn string) bool {
 	// get a default-set computation we don't want.  Second, for this
 	// function it's helpful to have the method strings close together so
 	// we can maintain columnation.
-	for _, eventid := range rs.selection.Values() {
+	for it := rs.selection.Iterator(); it.Next(); {
+		eventid := it.Value()
 		event := repo.events[eventid]
 		switch e := event.(type) {
 		case *Blob:
@@ -1381,7 +1383,8 @@ func (rs *Reposurgeon) DoStats(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	var blobs, commits, tags, resets, passthroughs int
-	for _, i := range rs.selection.Values() {
+	for it := rs.selection.Iterator(); it.Next(); {
+		i := it.Value()
 		event := repo.events[i]
 		switch event.(type) {
 		case *Blob:
@@ -1548,7 +1551,8 @@ func (rs *Reposurgeon) DoSizes(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	sizes := make(map[string]int)
-	for _, i := range rs.selection.Values() {
+	for it := rs.selection.Iterator(); it.Next(); {
+		i := it.Value()
 		if commit, ok := repo.events[i].(*Commit); ok {
 			if _, ok := sizes[commit.Branch]; !ok {
 				sizes[commit.Branch] = 0
@@ -2419,7 +2423,8 @@ func (rs *Reposurgeon) DoInspect(line string) bool {
 			selection = repo.all()
 		}
 	}
-	for _, eventid := range selection.Values() {
+	for it := selection.Iterator(); it.Next(); {
+		eventid := it.Value()
 		event := repo.events[eventid]
 		header := fmt.Sprintf("Event %d %s\n", eventid+1, strings.Repeat("=", 72))
 		fmt.Fprintln(parse.stdout, utf8trunc(header, 73))
@@ -2474,8 +2479,8 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 		striptypes = newOrderedStringSet(strings.Fields(line)...)
 	}
 	if striptypes.Contains("--blobs") {
-		for _, ei := range rs.selection.Values() {
-			if blob, ok := repo.events[ei].(*Blob); ok {
+		for it := rs.selection.Iterator(); it.Next(); {
+			if blob, ok := repo.events[it.Value()].(*Blob); ok {
 				blob.setContent([]byte(fmt.Sprintf("Blob at %s\n", blob.mark)), noOffset)
 			}
 		}
@@ -3053,8 +3058,8 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 		croak("while setting field: %v", err)
 		return false
 	}
-	for _, ei := range rs.selection.Values() {
-		event := repo.events[ei]
+	for it := rs.selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		if _, ok := getAttr(event, field); ok {
 			setAttr(event, field, value)
 			if event.isCommit() {
@@ -3123,8 +3128,8 @@ func (rs *Reposurgeon) DoSetperm(line string) bool {
 	baton := control.baton
 	//baton.startProcess("patching modes", "")
 	rs.chosen().clearColor(colorQSET)
-	for _, ei := range rs.selection.Values() {
-		if commit, ok := rs.chosen().events[ei].(*Commit); ok {
+	for it := rs.selection.Iterator(); it.Next(); {
+		if commit, ok := rs.chosen().events[it.Value()].(*Commit); ok {
 			for i, op := range commit.fileops {
 				if op.op == opM && paths.Contains(op.Path) {
 					if commit.fileops[i].mode != perm {
@@ -3183,8 +3188,8 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 		return false
 	}
 	rs.chosen().clearColor(colorQSET)
-	for _, ei := range rs.selection.Values() {
-		event := rs.chosen().events[ei]
+	for it := rs.selection.Iterator(); it.Next(); {
+		event := rs.chosen().events[it.Value()]
 		switch event.(type) {
 		case *Commit:
 			commit := event.(*Commit)
@@ -3252,8 +3257,8 @@ func (rs *Reposurgeon) DoPrepend(line string) bool {
 		return false
 	}
 	rs.chosen().clearColor(colorQSET)
-	for _, ei := range rs.selection.Values() {
-		event := rs.chosen().events[ei]
+	for it := rs.selection.Iterator(); it.Next(); {
+		event := rs.chosen().events[it.Value()]
 		switch event.(type) {
 		case *Commit:
 			commit := event.(*Commit)
@@ -3613,11 +3618,12 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 		opindex, line = popToken(line)
 	}
 	rs.chosen().clearColor(colorQSET)
-	for _, ie := range rs.selection.Values() {
-		ev := repo.events[ie]
+	for it := rs.selection.Iterator(); it.Next(); {
+		ei := it.Value()
+		ev := repo.events[ei]
 		event, ok := ev.(*Commit)
 		if !ok {
-			croak("Event %d is not a commit.", ie+1)
+			croak("Event %d is not a commit.", ei+1)
 			return false
 		}
 		if opindex == "deletes" {
@@ -3702,7 +3708,7 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 			// Blob might have to move, too - we need to keep the
 			// relocated op from having an unresolvable forward
 			// mark reference.
-			if removed.ref != "" && target < ie {
+			if removed.ref != "" && target < ei {
 				i := repo.markToIndex(removed.ref)
 				blob := repo.events[i]
 				repo.events = append(repo.events[:i], repo.events[i+1:]...)
@@ -3753,8 +3759,8 @@ func (rs *Reposurgeon) DoDedup(line string) bool {
 	defer parse.Closem()
 	blobMap := make(map[string]string) // hash -> mark
 	dupMap := make(map[string]string)  // duplicate mark -> canonical mark
-	for _, ei := range rs.selection.Values() {
-		event := rs.chosen().events[ei]
+	for it := rs.selection.Iterator(); it.Next(); {
+		event := rs.chosen().events[it.Value()]
 		if blob, ok := event.(*Blob); ok {
 			sha := blob.gitHash().hexify()
 			if blobMap[sha] != "" {
@@ -3851,8 +3857,8 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 		}
 		loc = time.FixedZone(args[1], zoffset)
 	}
-	for _, ei := range rs.selection.Values() {
-		event := rs.chosen().events[ei]
+	for it := rs.selection.Iterator(); it.Next(); {
+		event := rs.chosen().events[it.Value()]
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagger != nil {
 				tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(offset)
@@ -4366,7 +4372,8 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 		tcommits.Remove(tcommits.Fetch(0))
 	}
 	pref := filepath.Base(source)
-	for _, ci := range scommits.Values() {
+	for it := scommits.Iterator(); it.Next(); {
+		ci := it.Value()
 		for idx := range repo.events[ci].(*Commit).operations() {
 			fileop := repo.events[ci].(*Commit).fileops[idx]
 			fileop.Path = filepath.Join(pref, fileop.Path)
@@ -4378,7 +4385,8 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 	merged := scommits.Union(tcommits)
 	merged.Sort()
 	sourceReset := -1
-	for _, i := range merged.Values() {
+	for it := merged.Iterator(); it.Next(); {
+		i := it.Value()
 		commit := repo.events[i].(*Commit)
 		if len(lastParent) > 0 {
 			trailingMarks := commit.parentMarks()
@@ -4515,7 +4523,8 @@ func (rs *Reposurgeon) DoManifest(line string) bool {
 		}
 	}
 	events := rs.chosen().events
-	for _, ei := range rs.selection.Values() {
+	for it := rs.selection.Iterator(); it.Next(); {
+		ei := it.Value()
 		commit, ok := events[ei].(*Commit)
 		if !ok {
 			continue
@@ -5212,8 +5221,8 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 
 	// Collect all matching tags in the selection set
 	tags := make([]*Tag, 0)
-	for _, idx := range rs.selection.Values() {
-		event := repo.events[idx]
+	for it := rs.selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) == !parse.options.Contains("--not") {
 			tags = append(tags, tag)
 		}
@@ -5378,8 +5387,8 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	if !selection.isDefined() {
 		selection = rs.repo.all()
 	}
-	for _, ei := range selection.Values() {
-		reset, ok := repo.events[ei].(*Reset)
+	for it := selection.Iterator(); it.Next(); {
+		reset, ok := repo.events[it.Value()].(*Reset)
 		if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
 			resets = append(resets, reset)
 		}
@@ -5448,8 +5457,8 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		if !selection.isDefined() {
 			selection = repo.all()
 		}
-		for _, ei := range selection.Values() {
-			reset, ok := repo.events[ei].(*Reset)
+		for it := selection.Iterator(); it.Next(); {
+			reset, ok := repo.events[it.Value()].(*Reset)
 			if ok && reset.ref == newname {
 				croak("reset reference collision, not renaming.")
 				return false
@@ -5860,7 +5869,8 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 		}
 	}
 	sel := newSelectionSet()
-	for _, i := range selection.Values() {
+	for it := selection.Iterator(); it.Next(); {
+		i := it.Value()
 		switch repo.events[i].(type) {
 		case *Commit, *Tag:
 			sel.Add(i)
@@ -6143,7 +6153,8 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 			parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 			defer parse.Closem()
 			w := screenwidth()
-			for _, ei := range selection.Values() {
+			for it := selection.Iterator(); it.Next(); {
+				ei := it.Value()
 				event := repo.events[ei]
 				summary := ""
 				switch event.(type) {
@@ -7565,7 +7576,8 @@ func (rs *Reposurgeon) DoHash(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	for _, eventid := range rs.selection.Values() {
+	for it := rs.selection.Iterator(); it.Next(); {
+		eventid := it.Value()
 		event := repo.events[eventid]
 		var hashrep string
 		switch event.(type) {

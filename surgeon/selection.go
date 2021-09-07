@@ -1,9 +1,10 @@
 package main
 
-// The event selector. Exports one classes, selectionSet.
-// Adds to the Reposurgeclass towo wnetods, parseSelectionSeet() that is used
-// to compile selection-expression syntax to a maching machine, and
-// evalSelectionSet() that is uses to produce a selection set using the machine.
+// The event selector. Exports one class, selectionSet.  Adds to the
+// Reposurgeon cclass two methods: parseSelectionSet() that is used to
+// compile selection-expression syntax to a maching machine, and
+// evalSelectionSet() that is uses to produce a selection set using
+// the machine.
 //
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause
@@ -1599,7 +1600,8 @@ func (p *AttributionEditor) getMark(e Event) string {
 }
 
 func (p *AttributionEditor) apply(f func(p *AttributionEditor, eventNo int, e Event, attrs []attrEditAttr, sel selectionSet, extra ...interface{}), extra ...interface{}) {
-	for _, i := range p.eventSel.Values() {
+	for it := p.eventSel.Iterator(); it.Next(); {
+		i := it.Value()
 		e := p.events[i]
 		attrs := p.attributions(e)
 		var sel selectionSet
