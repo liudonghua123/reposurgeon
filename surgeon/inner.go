@@ -6681,7 +6681,7 @@ func (repo *Repository) gcBlobs() {
 // Expunge a set of files from the commits in the selection set.
 func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, delete bool, notagify bool, baton *Baton) error {
 	// First pass: compute fileop deletions
-	alterations := make([]selectionSet, 0)
+	alterations := make([]selectionSet, 0, selection.Size())
 	repo.clearColor(colorDELETE)
 	for it := selection.Iterator(); it.Next(); {
 		event := repo.events[it.Value()]
@@ -6732,35 +6732,22 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 		}
 		ei := it.Value()
 		commit := repo.events[ei].(*Commit)
-		keepers := make([]*FileOp, 0)
-		blobs := make([]*Blob, 0)
 		for it := deletia.Iterator(); it.Next(); {
 			fileop := commit.fileops[it.Value()]
-			var sourcedelete bool
-			var targetdelete bool
 			if fileop.op == opD {
-				keepers = append(keepers, fileop)
 				respond("at %d, expunging D %s",
 					ei+1, fileop.Path)
 			} else if fileop.op == opM {
-				keepers = append(keepers, fileop)
 				if fileop.ref != "inline" {
 					bi := repo.markToIndex(fileop.ref)
 					blob := repo.events[bi].(*Blob)
 					blob.removeOperation(fileop)
-					//assert(isinstance(blob, Blob))
-					blobs = append(blobs, blob)
 				}
 				respond("at %d, expunging M %s", ei+1, fileop.Path)
-			} else if fileop.op == opR || fileop.op == opC {
-				//assert(sourcedelete || targetdelete)
-				if sourcedelete && targetdelete {
-					keepers = append(keepers, fileop)
-				}
 			}
 		}
 
-		nondeletia := make([]*FileOp, 0)
+		nondeletia := make([]*FileOp, 0, len(commit.operations())-deletia.Size())
 		for i, op := range commit.operations() {
 			if !deletia.Contains(i) {
 				nondeletia = append(nondeletia, op)
