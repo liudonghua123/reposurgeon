@@ -1374,7 +1374,7 @@ including comments, `progress` commands,
 and `checkpoint` commands
 | N | Legacy IDs                      | Any comment matching a cookie
 (legacy-ID) format
-| Q | Recently touched                | Set/cleared by some commands
+| Q | Recently touched                | Set/cleared by many commands
 |===================================================================
 
 references::
@@ -1511,12 +1511,23 @@ sorted so the result is in ascending order.
 Do set negation with prefix '```~```'; it has higher precedence than
 `&` and `|` but lower than `?`.
 
-
 [[redirection]]
 === Redirection and shell-like features
 
 // TOPIC
 include::docinclude/redirection.adoc[]
+
+=== Q bits
+
+Each event has an associated "Q" bit that says whether it was touched
+by the last Q-aware command.  Almost all commands that modify the
+history set Q buts in some interesting way; so do some report
+generators, such as the "lint" command.
+
+Thus, "=Q count" and "=Q list" can provide you with a check on the
+scope of modifications while you are trying things out.  Or you can
+use "=Q list" and "=Q inspect to zero in on anomalies reported by
+lint.
 
 [[import-export]]
 == Import and Export
