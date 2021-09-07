@@ -210,8 +210,8 @@ func SetEqual(s, other selectionSet) bool {
 		return false
 	}
 	// Naive O(n**2) method - don't use on large sets if you care about speed
-	for _, item := range s.Values() {
-		if !other.Contains(item) {
+	for it := s.Iterator(); it.Next(); {
+		if !other.Contains(it.Value()) {
 			return false
 		}
 	}

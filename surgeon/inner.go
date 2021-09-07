@@ -5361,8 +5361,8 @@ func (repo *Repository) readAuthorMap(selection selectionSet, fp io.Reader) erro
 // List the identities we know.
 func (repo *Repository) writeAuthorMap(selection selectionSet, fp io.Writer) error {
 	contributors := make(map[string]string)
-	for _, ei := range selection.Values() {
-		event := repo.events[ei]
+	for it := selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		switch event.(type) {
 		case *Commit:
 			commit := event.(*Commit)
@@ -5488,8 +5488,8 @@ func (repo *Repository) commits(selection selectionSet) []*Commit {
 			}
 		}
 	} else {
-		for _, idx := range selection.Values() {
-			event := repo.events[idx]
+		for it := selection.Iterator(); it.Next(); {
+			event := repo.events[it.Value()]
 			commit, ok := event.(*Commit)
 			if ok {
 				out = append(out, commit)
@@ -5700,8 +5700,8 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 			tagifyEvent(index)
 		}
 	} else {
-		for _, index := range selection.Values() {
-			tagifyEvent(index)
+		for it := selection.Iterator(); it.Next(); {
+			tagifyEvent(it.Value())
 		}
 	}
 	repo.delete(deletia, []string{"--tagback", "--no-preserve-refs"}, baton)
@@ -5825,8 +5825,8 @@ func (repo *Repository) fastExport(selection selectionSet,
 		selection = repo.all()
 	} else {
 		repo.internals = newOrderedStringSet()
-		for _, ei := range selection.Values() {
-			event := repo.events[ei]
+		for it := selection.Iterator(); it.Next(); {
+			event := repo.events[it.Value()]
 			if mark := event.getMark(); mark != "" {
 				repo.internals.Add(mark)
 			}
@@ -5850,7 +5850,9 @@ func (repo *Repository) fastExport(selection selectionSet,
 	repo.realized = make(map[string]bool)          // Track what branches are made
 	repo.branchPosition = make(map[string]*Commit) // Track what branches are made
 	baton.startProgress("export", uint64(len(repo.events)))
-	for idx, ei := range selection.Values() {
+	for it := selection.Iterator(); it.Next(); {
+		idx := it.Index()
+		ei := it.Value()
 		baton.twirl()
 		event := repo.events[ei]
 		if passthrough, ok := event.(*Passthrough); ok {
@@ -5960,8 +5962,8 @@ func (repo *Repository) addEvent(event Event) {
 // Filter assignments, warning if any of them goes empty.
 func (repo *Repository) filterAssignments(f func(Event) bool) {
 	intContains := func(list selectionSet, val int) bool {
-		for _, v := range list.Values() {
-			if v == val {
+		for it := list.Iterator(); it.Next(); {
+			if it.Value() == val {
 				return true
 			}
 		}
@@ -6033,8 +6035,8 @@ func (repo *Repository) ancestors(ei int) selectionSet {
 // This method needs to be kept in sync with the walkEvents function.
 func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, event Event)) {
 	if control.flagOptions["serial"] {
-		for i, e := range selection.Values() {
-			hook(i, repo.events[e])
+		for it := selection.Iterator(); it.Next(); {
+			hook(it.Index(), repo.events[it.Value()])
 		}
 		return
 	}
@@ -6271,8 +6273,8 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 	delblobs := policy.Contains("--blobs")
 	// Sanity checks
 	if !dquiet {
-		for _, ei := range selected.Values() {
-			event := repo.events[ei]
+		for it := selected.Iterator(); it.Next(); {
+			event := repo.events[it.Value()]
 			commit, ok := event.(*Commit)
 			if !ok {
 				continue
@@ -6302,8 +6304,8 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 	}
 	// A special check on the first commit is required when pushing back
 	if pushback {
-		for _, ei := range selected.Values() {
-			event := repo.events[ei]
+		for it := selected.Iterator(); it.Next(); {
+			event := repo.events[it.Value()]
 			commit, ok := event.(*Commit)
 			if !ok {
 				continue
@@ -6335,9 +6337,9 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 	// Here are the deletions
 	repo.clearColor(colorDELETE)
 	var delCount int
-	for _, ei := range selected.Values() {
+	for it := selected.Iterator(); it.Next(); {
 		var newTarget *Commit
-		event := repo.events[ei]
+		event := repo.events[it.Value()]
 		switch event.(type) {
 		case *Blob:
 			if delblobs {
@@ -6681,8 +6683,8 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 	// First pass: compute fileop deletions
 	alterations := make([]selectionSet, 0)
 	repo.clearColor(colorDELETE)
-	for _, ei := range selection.Values() {
-		event := repo.events[ei]
+	for it := selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		deletia := newSelectionSet()
 		commit, ok := event.(*Commit)
 		if ok {
@@ -6723,11 +6725,12 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 		alterations = append(alterations, deletia)
 	}
 	// Second pass: perform actual fileop expunges
-	for i, ei := range selection.Values() {
-		deletia := alterations[i]
+	for it := selection.Iterator(); it.Next(); {
+		deletia := alterations[it.Index()]
 		if deletia.Size() == 0 {
 			continue
 		}
+		ei := it.Value()
 		commit := repo.events[ei].(*Commit)
 		keepers := make([]*FileOp, 0)
 		blobs := make([]*Blob, 0)
@@ -7001,7 +7004,9 @@ func (repo *Repository) reorderCommits(v selectionSet, bequiet bool) {
 		return
 	}
 	events := make([]*Commit, v.Size())
-	for i, e := range v.Values() {
+	for it := v.Iterator(); it.Next(); {
+		i := it.Index()
+		e := it.Value()
 		commit, ok := repo.events[e].(*Commit)
 		if ok {
 			events[i] = commit
@@ -7009,7 +7014,9 @@ func (repo *Repository) reorderCommits(v selectionSet, bequiet bool) {
 	}
 	sortedEvents := make([]*Commit, len(v.Values()))
 	v.Sort()
-	for i, e := range v.Values() {
+	for it := v.Iterator(); it.Next(); {
+		i := it.Index()
+		e := it.Value()
 		commit, ok := repo.events[e].(*Commit)
 		if ok {
 			sortedEvents[i] = commit
@@ -7418,8 +7425,8 @@ func (repo *Repository) pathWalk(selection selectionSet, hook func(string) strin
 		hook = func(s string) string { return s }
 	}
 	modified := newOrderedStringSet()
-	for _, ei := range selection.Values() {
-		event := repo.events[ei]
+	for it := selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		if commit, ok := event.(*Commit); ok {
 			for i, fileop := range commit.operations() {
 				newpath := hook(fileop.Path)
@@ -8326,7 +8333,9 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 		allCoAuthors[eventRank] = sorted
 	})
 	baton.endProgress()
-	for eventRank, eventID := range selection.Values() {
+	for it := selection.Iterator(); it.Next(); {
+		eventRank := it.Index()
+		eventID := it.Value()
 		commit, iscommit := repo.events[eventID].(*Commit)
 		attribution := attributions[eventRank]
 		if !iscommit || attribution == "" {
@@ -8411,8 +8420,8 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook func(string, map[string]string) string, attributes orderedStringSet, safety bool, quiet bool, baton *Baton) {
 	blobs := false
 	nonblobs := false
-	for _, ei := range selection.Values() {
-		event := repo.events[ei]
+	for it := selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		switch event.(type) {
 		case *Blob:
 			blobs = true
@@ -8970,8 +8979,8 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 
 func (repo *Repository) doGraph(selection selectionSet, output io.Writer) {
 	fmt.Fprint(output, "digraph {\n")
-	for _, ei := range selection.Values() {
-		event := repo.events[ei]
+	for it := selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		if commit, ok := event.(*Commit); ok {
 			for _, parent := range commit.parentMarks() {
 				if selection.Contains(repo.markToIndex(parent)) {
@@ -8987,8 +8996,8 @@ func (repo *Repository) doGraph(selection selectionSet, output io.Writer) {
 				tag.tagname, tag.committish[1:])
 		}
 	}
-	for _, ei := range selection.Values() {
-		event := repo.events[ei]
+	for it := selection.Iterator(); it.Next(); {
+		event := repo.events[it.Value()]
 		if commit, ok := event.(*Commit); ok {
 			firstline, _ := splitRuneFirst(commit.Comment, '\n')
 			if len(firstline) > 42 {

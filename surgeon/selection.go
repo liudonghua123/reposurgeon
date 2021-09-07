@@ -42,7 +42,14 @@ func (s selectionSet) isDefined() bool {
 var undefinedSelectionSet selectionSet // Do not add to this, havoc would ensue
 
 func (s selectionSet) Fetch(idx int) int {
-	return s.Values()[idx]
+	it := s.set.Iterator()
+	for it.Next() {
+		if idx == 0 {
+			break
+		}
+		idx--
+	}
+	return it.Value().(int)
 }
 
 func (x *selectionSetIt) Value() int {
@@ -134,7 +141,8 @@ func (s selectionSet) EqualWithOrdering(other selectionSet) bool {
 
 func (s selectionSet) Min() int {
 	var min = math.MaxInt32
-	for _, v := range s.Values() {
+	for it := s.Iterator(); it.Next(); {
+		v := it.Value()
 		if v < min {
 			min = v
 		}
@@ -1686,7 +1694,8 @@ func (p *AttributionEditor) doInspect(eventNo int, e Event, attrs []attrEditAttr
 			sel.Add(i)
 		}
 	}
-	for _, i := range sel.Values() {
+	for it := sel.Iterator(); it.Next(); {
+		i := it.Value()
 		a := attrs[i]
 		io.WriteString(w, fmt.Sprintf("%6d %6s %2d:%-9s %s\n", eventNo+1, mark, i+1, a.desc(), a))
 	}
@@ -1704,8 +1713,8 @@ func (p *AttributionEditor) doAssign(eventNo int, e Event, attrs []attrEditAttr,
 	if !sel.isDefined() {
 		panic(throw("command", "no attribution selected"))
 	}
-	for _, i := range sel.Values() {
-		attrs[i].assign(name, email, date)
+	for it := sel.Iterator(); it.Next(); {
+		attrs[it.Value()].assign(name, email, date)
 	}
 }
 
@@ -1773,11 +1782,11 @@ func (p *AttributionEditor) doResolve(eventNo int, e Event, attrs []attrEditAttr
 		b.WriteString(fmt.Sprintf("%s: ", label))
 	}
 	b.WriteString(fmt.Sprintf("%6d %6s [", eventNo+1, p.getMark(e)))
-	for i, n := range sel.Values() {
-		if i > 0 {
+	for it := sel.Iterator(); it.Next(); {
+		if it.Index() > 0 {
 			b.WriteString(", ")
 		}
-		b.WriteString(strconv.Itoa(n + 1))
+		b.WriteString(strconv.Itoa(it.Value() + 1))
 	}
 	b.WriteString("]\n")
 	io.WriteString(w, b.String())
