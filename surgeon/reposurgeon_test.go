@@ -726,26 +726,6 @@ func TestBlobColor(t *testing.T) {
 	assertTrue(t, blob.colors == 0)
 }
 
-func TestUndecodable(t *testing.T) {
-	var TestTable = []struct {
-		text     string
-		codec    string
-		expected bool
-	}{
-		{"Potrzebie", "US-ASCII", true},
-		{"Potr\x8fzebie", "US-ASCII", false},
-	}
-	for _, item := range TestTable {
-		_ = item
-		// XXX(mem): what's "ianaDecode"?
-		// _, ok, err := ianaDecode(item.text, item.codec)
-		// if ok != item.expected {
-		// 	t.Errorf("decodability of %q: expected %v saw %v: %v",
-		// 		item.text, item.expected, ok, err)
-		// }
-	}
-}
-
 func TestTag(t *testing.T) {
 	repo := newRepository("fubar")
 	defer repo.cleanup()
@@ -788,10 +768,9 @@ Test to be sure we can read in a tag in inbox format.
 	assertEqual(t, "sample2", t2.tagname)
 	assertEqual(t, ":2317", t2.committish)
 
-	// XXX(mem): what's undecodable?
-	// if t1.undecodable("US-ASCII") {
-	// 	t.Errorf("%q was expected to be decodable, is not", t1.String())
-	// }
+	if !t1.decodable() {
+		t.Errorf("%q was expected to be decodable, is not", t1.String())
+	}
 }
 
 func TestBranchname(t *testing.T) {
@@ -1365,17 +1344,6 @@ M 100644 :3 README
 	if !reflect.DeepEqual(saw3, exp3) {
 		t.Errorf("saw branchmap %v, expected %v", saw3, exp3)
 	}
-
-	// Hack in illegal UTF-8 sequence - can't do this in Go source text,
-	// the compiler doesn't like it.
-	// XXX(mem): what's undecodable?
-	// assertBool(t, commit2.undecodable("ASCII"), false)
-	// assertIntEqual(t, int(commit2.Comment[161]), 120)
-	// commit2.Comment = strings.Replace(commit2.Comment, "bacx", "bac\xe9", 1)
-	// assertIntEqual(t, int(commit2.Comment[161]), 0xe9)
-	// assertBool(t, commit2.undecodable("ASCII"), true)
-	// assertBool(t, commit2.undecodable("ISO-8859-1"), false)
-	// assertBool(t, commit2.undecodable("UTF-8"), false)
 }
 
 func TestReadAuthorMap(t *testing.T) {
