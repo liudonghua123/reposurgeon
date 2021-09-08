@@ -1,10 +1,11 @@
 = reposurgeon project news =
 
-Repository head::
+4.29: 2021-09-08::
      Added swapsvn subcommand to repocutter.
      Don't screw up non-ASCII UTF-8 characters in pathnames.
      Node-parsing phase patches up missing copy sources.
      lint/setperm/prepend/squash/coalesce/add/remove now set Q bits.
+     Several changes to reduce rge working--set cost of large selections.
 
 4.28: 2021-08-07::
      Bug fixes for incremental mirroring, text search by tag name.
