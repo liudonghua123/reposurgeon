@@ -177,6 +177,45 @@ func (s selectionSet) String() string {
 	return b.String()
 }
 
+type skipIt struct {
+	repo *Repository
+	iter selectionSetIt
+	pred func(event Event) bool
+}
+
+func (repo Repository) skipIterator(sel selectionSet, pred func(event Event) bool) skipIt {
+	var it skipIt
+	it.repo = &repo
+	it.iter = sel.Iterator()
+	it.pred = pred
+	return it
+}
+
+func (s skipIt) Index() int {
+	return s.iter.Index()
+}
+
+func (s skipIt) Value() int {
+	return s.iter.Value()
+}
+
+func (s *skipIt) Next() bool {
+	for s.iter.Next() {
+		if s.pred(s.repo.events[s.iter.Value()]) {
+			return true
+		}
+	}
+	return false
+}
+
+func (repo Repository) commitIterator(sel selectionSet) skipIt {
+	return repo.skipIterator(sel, func(event Event) bool { return event.isCommit() })
+}
+
+func (s skipIt) commit() *Commit {
+	return s.repo.events[s.iter.Value()].(*Commit)
+}
+
 // unclean tells us how to detect ungitified comments.  Check for Git
 // conventions - require a spacer line after first \n if multiline,
 // subject line no more than 50 chars, body lines no more than 72.

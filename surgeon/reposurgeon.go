@@ -3432,13 +3432,13 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 	var perms, argpath, mark, source, target string
 	if optype == opD {
 		argpath = fields[1]
-		for _, event := range repo.commits(rs.selection) {
-			if event.paths(nil).Contains(argpath) {
+		for it := repo.commitIterator(rs.selection); it.Next(); {
+			if it.commit().paths(nil).Contains(argpath) {
 				croak("%s already has an op for %s",
-					event.mark, argpath)
+					it.commit().mark, argpath)
 				return false
 			}
-			if event.ancestorCount(argpath) == 0 {
+			if it.commit().ancestorCount(argpath) == 0 {
 				croak("no previous M for %s", argpath)
 				return false
 			}
@@ -3471,8 +3471,8 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			return false
 		}
 		argpath = fields[3]
-		for _, event := range repo.commits(rs.selection) {
-			if event.paths(nil).Contains(argpath) {
+		for it := repo.commitIterator(rs.selection); it.Next(); {
+			if it.commit().paths(nil).Contains(argpath) {
 				croak("%s already has an op for %s",
 					blob.mark, argpath)
 				return false
@@ -3485,13 +3485,13 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 		}
 		source = fields[1]
 		target = fields[2]
-		for _, event := range repo.commits(rs.selection) {
-			if event.paths(nil).Contains(source) || event.paths(nil).Contains(target) {
+		for it := repo.commitIterator(rs.selection); it.Next(); {
+			if it.commit().paths(nil).Contains(source) || it.commit().paths(nil).Contains(target) {
 				croak("%s already has an op for %s or %s",
-					event.mark, source, target)
+					it.commit().mark, source, target)
 				return false
 			}
-			if event.ancestorCount(source) == 0 {
+			if it.commit().ancestorCount(source) == 0 {
 				croak("no previous M for %s", source)
 				return false
 			}
@@ -3500,7 +3500,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 		croak("unknown operation type %c in add command", optype)
 		return false
 	}
-	for _, commit := range repo.commits(rs.selection) {
+	for it := repo.commitIterator(rs.selection); it.Next(); {
 		fileop := newFileOp(rs.chosen())
 		if optype == opD {
 			fileop.construct(opD, argpath)
@@ -3509,7 +3509,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 		} else if optype == opR || optype == opC {
 			fileop.construct(optype, source, target)
 		}
-		commit.appendOperation(fileop)
+		it.commit().appendOperation(fileop)
 	}
 	return false
 }
@@ -4480,8 +4480,8 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
 	} else if fields[0] == "list" {
 		allpaths := newOrderedStringSet()
-		for _, commit := range rs.chosen().commits(rs.selection) {
-			allpaths = allpaths.Union(commit.paths(nil))
+		for it := repo.commitIterator(rs.selection); it.Next(); {
+			allpaths = allpaths.Union(it.commit().paths(nil))
 		}
 		sort.Strings(allpaths)
 		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
@@ -6125,15 +6125,15 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 		}
 		for _, item := range getterPairs {
 			matchRE := regexp.MustCompile(item.pattern)
-			for _, commit := range rs.chosen().commits(rs.selection) {
-				oldcomment := commit.Comment
-				commit.Comment = matchRE.ReplaceAllStringFunc(
-					commit.Comment,
+			for it := repo.commitIterator(rs.selection); it.Next(); {
+				oldcomment := it.commit().Comment
+				it.commit().Comment = matchRE.ReplaceAllStringFunc(
+					it.commit().Comment,
 					func(m string) string {
 						return substitute(item.getter, m)
 					})
-				if commit.Comment != oldcomment {
-					commit.addColor(colorQSET)
+				if it.commit().Comment != oldcomment {
+					it.commit().addColor(colorQSET)
 				}
 			}
 		}
@@ -6141,7 +6141,9 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 		repo.writeLegacy = true
 	} else {
 		selection := newSelectionSet()
-		for idx, commit := range repo.commits(undefinedSelectionSet) {
+		for it := repo.commitIterator(rs.selection); it.Next(); {
+			idx := it.Index()
+			commit := it.commit()
 			if rs.hasReference(commit) {
 				selection.Add(idx)
 			}
@@ -6694,7 +6696,8 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 	//baton.startProcess("reposurgeon: disambiguating", "")
 	modified := 0
 	repo.clearColor(colorQSET)
-	for _, event := range repo.commits(rs.selection) {
+	for it := repo.commitIterator(rs.selection); it.Next(); {
+		event := it.commit()
 		parents := event.parents()
 		if len(parents) == 1 {
 			if parent, ok := parents[0].(*Commit); ok {

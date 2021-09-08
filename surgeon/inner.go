@@ -5624,8 +5624,8 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 	// Turn into tags commits without (meaningful) fileops.
 	// Use a separate loop because delete() invalidates manifests.
 	if canonicalize {
-		for _, commit := range repo.commits(selection) {
-			commit.canonicalize()
+		for it := repo.commitIterator(selection); it.Next(); {
+			it.commit().canonicalize()
 		}
 	}
 	// Tagify commits without fileops
@@ -8582,27 +8582,27 @@ func (repo *Repository) accumulateCommits(subarg selectionSet,
 func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)
 	repo.clearColor(colorQSET)
-	for _, commit := range repo.commits(selection) {
-		commit.removeColor(colorQSET)
-		for idx := range commit.fileops {
+	for it := repo.commitIterator(selection); it.Next(); {
+		it.commit().removeColor(colorQSET)
+		for idx := range it.commit().fileops {
 			for _, attr := range []string{"Path", "Source", "Target"} {
-				fileop := commit.fileops[idx]
+				fileop := it.commit().fileops[idx]
 				if oldpath, ok := getAttr(fileop, attr); ok {
 					if ok && oldpath != "" && sourceRE.MatchString(oldpath) {
 						newpath := GoReplacer(sourceRE, oldpath, targetPattern)
-						if !force && commit.visible(newpath) != nil {
+						if !force && it.commit().visible(newpath) != nil {
 							if logEnable(logWARN) {
-								logit("rename of %s at %s failed, %s visible in ancestry", oldpath, commit.idMe(), newpath)
+								logit("rename of %s at %s failed, %s visible in ancestry", oldpath, it.commit().idMe(), newpath)
 							}
 							return
-						} else if !force && commit.paths(nil).Contains(newpath) {
+						} else if !force && it.commit().paths(nil).Contains(newpath) {
 							if logEnable(logWARN) {
-								logit("rename of %s at %s failed, %s exists there", oldpath, commit.idMe(), newpath)
+								logit("rename of %s at %s failed, %s exists there", oldpath, it.commit().idMe(), newpath)
 							}
 							return
 						} else {
-							actions = append(actions, pathAction{fileop, commit, attr, newpath})
-							commit.addColor(colorQSET)
+							actions = append(actions, pathAction{fileop, it.commit(), attr, newpath})
+							it.commit().addColor(colorQSET)
 						}
 					}
 				}
@@ -9052,7 +9052,8 @@ func (repo *Repository) doCoalesce(selection selectionSet, timefuzz int, changel
 	}
 	eligible := make(map[string][]string)
 	squashes := make([][]string, 0)
-	for _, commit := range repo.commits(selection) {
+	for it := repo.commitIterator(selection); it.Next(); {
+		commit := it.commit()
 		trial, ok := eligible[commit.Branch]
 		if !ok {
 			// No active commit span for this branch - start one

@@ -1618,6 +1618,15 @@ data 0
 	lastcommit := repo.eventToIndex(allcommits[len(allcommits)-1])
 	ancestors := repo.ancestors(lastcommit)
 	assertBool(t, SetEqual(ancestors, newSelectionSet(4, 2)), true)
+
+	it := repo.commitIterator(repo.all())
+	assertBool(t, it.Next(), true)
+	assertEqual(t, ":2", it.commit().getMark())
+	assertBool(t, it.Next(), true)
+	assertEqual(t, ":4", it.commit().getMark())
+	assertBool(t, it.Next(), true)
+	assertEqual(t, ":6", it.commit().getMark())
+	assertBool(t, it.Next(), false)
 }
 
 func TestDelete(t *testing.T) {
