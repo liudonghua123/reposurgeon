@@ -778,10 +778,13 @@ matches what you see in the source repository; this is the easiest way
 to spot when one has been attached to the wrong commit, something that
 can be manually fixed by editing its "from" field.
 
-The command `=I` will select all commits that don't decode to UTF-8 in
-both the commit comment and attribution parts.  You can eyeball those to
-figure out what the encoding is and apply the `<<transcode_cmd>>`
-command to fix things.
+The command `=I` will select all commits mitch attributions and
+comments that don't decode to UTF-8 in both the commit comment and
+attribution parts.  You can eyeball those to figure out what the
+encoding is and apply the `<<transcode_cmd>>` command to fix things.
+Note that this will *not* flag and detect commmits with metadata in
+ISO 8859 single-byte encodings, which can't be distinguished from
+Unicode Latin-1 by looking at the bytes.
 
 Reposurgeon has a `<<merge_cmd>>` command specifically for performing
 branch merges.  The `<<msgin_cmd>>` command will also allow you to add

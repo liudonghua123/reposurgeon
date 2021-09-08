@@ -2988,12 +2988,9 @@ get true, all other events get false.
 
 // DoTranscode is the handler for the "transcode" command.
 func (rs *Reposurgeon) DoTranscode(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo is loaded")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 
-	enc, err := ianaindex.IANA.Encoding(line)
+	enc, err := ianaindex.IANA.Encoding(parse.line)
 	if err != nil {
 		croak("can's set up codec %s: error %v", line, err)
 		return false
