@@ -5683,13 +5683,9 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 	}
 
 	if !selection.isDefined() || selection.Size() == 0 {
-		for index := range repo.events {
-			tagifyEvent(index)
-		}
+		walkEvents(repo.events, func(index int, e Event) { tagifyEvent(index) })
 	} else {
-		for it := selection.Iterator(); it.Next(); {
-			tagifyEvent(it.Value())
-		}
+		repo.walkEvents(selection, func(index int, e Event) { tagifyEvent(index) })
 	}
 	repo.delete(deletia, []string{"--tagback", "--no-preserve-refs"}, baton)
 	return errout
