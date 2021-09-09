@@ -5597,32 +5597,19 @@ func defaultEmptyTagName(commit *Commit) string {
 	}
 }
 
-/*
-   func tagifyEmpty(self, commits = nil,
-                          tipdeletes = false,
-                          tagifyMerges = false,
-                          canonicalize = true,
-                          nameFunc = nil,
-                          legendFunc = nil,
-                          createTags = true,
-                          gripe = complain
-                         ):
-           Arguments: * commits:       nil for all, or a set of event indices
-                                       tagifyEmpty() ignores non-commits
-                      * tipdeletes:    whether tipdeletes should be tagified
-                      * canonicalize:  whether to canonicalize fileops first
-                      * nameFunc:      custom function for choosing the tag
-                                       name; if it returns an empty string,
-                                       a default scheme is used
-                      * legendFunc:    custom function for choosing the legend
-                                       of a tag; no fallback is provided. By
-                                       default it always returns "".
-                      * createTags:    whether to create tags.
-*/
-
 func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tagifyMerges bool, canonicalize bool, nameFunc func(*Commit) string, legendFunc func(*Commit) string, createTags bool, baton *Baton) error {
 	// Turn into tags commits without (meaningful) fileops.
 	// Use a separate loop because delete() invalidates manifests.
+	// selection:     A selection set - tagifyEmpty() ignores non-commits
+	// tagifyMerges:  also tagify mutuiparent commits
+	// tipdeletes:    whether tipdeletes should be tagified
+	// canonicalize:  whether to canonicalize fileops first
+	// nameFunc:      custom function for choosing the tag name; if it
+	//                returns an empty string, a default scheme is used
+	// legendFunc:    custom function for choosing the legend
+	//                of a tag; no fallback is provided. By
+	//                default it always returns "".
+	// createTags:    whether to create tags.
 	if canonicalize {
 		for it := repo.commitIterator(selection); it.Next(); {
 			it.commit().canonicalize()
