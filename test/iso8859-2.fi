@@ -1,0 +1,16 @@
+blob
+mark :1
+data 2
+ý
+
+reset refs/heads/master
+commit refs/heads/master
+mark :2
+author Sergio Baldovi <sergio@no-domain.com> 1461097177 +0200
+committer Sergio Baldovi <sergio@no-domain.com> 1461097177 +0200
+data 187
+The blob contains a lowercase e-with-ogonek in ISO 8859-2 encoding:
+octal 375, decimal 253, hex FD. When dumped in a Unicode-capable
+terminal it looks like lowercase y-with-acute-accent.
+M 100644 :1 file1.txt
+
