@@ -3227,9 +3227,9 @@ func (commit *Commit) removeParent(event CommitLike) {
 	// remove *all* occurrences of event in parents
 	commit._parentNodes = commitRemove(commit._parentNodes, event)
 	// and all occurrences of self in event's children
-	if commit, ok := event.(*Commit); ok {
-		commit._childNodes = commitRemove(commit._childNodes, commit)
-		commit.invalidateManifests()
+	if c2, ok := event.(*Commit); ok {
+		c2._childNodes = commitRemove(c2._childNodes, commit)
+		c2.invalidateManifests()
 	}
 	commit.hash.invalidate()
 }
@@ -9473,9 +9473,9 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 	}
 	doColor(early, colorSet(colorEARLY))
 	doColor(late, colorSet(colorLATE))
-	conflict := false
+	hasConflict := false
 	keepgoing := true
-	for keepgoing && !conflict {
+	for keepgoing && !hasConflict {
 		keepgoing = false
 		for _, event := range rl.repo.commits(undefinedSelectionSet) {
 			if event.colors != colorNONE {
@@ -9485,7 +9485,7 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 						keepgoing = true
 						break
 					} else if neighbor.getColor() != event.colors {
-						conflict = true
+						hasConflict = true
 						break
 					}
 				}
@@ -9495,14 +9495,14 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 						keepgoing = true
 						break
 					} else if neighbor.getColor() != event.colors {
-						conflict = true
+						hasConflict = true
 						break
 					}
 				}
 			}
 		}
 	}
-	return conflict, cutIndex, nil
+	return hasConflict, cutIndex, nil
 }
 
 // Undo a cut operation and clear all colors.
@@ -9516,7 +9516,7 @@ func (repo *Repository) cutClear(early *Commit, late *Commit, cutIndex int) {
 // Attempt to topologically cut the selected repo.
 func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 	ok, idx, err := rl.cutConflict(early, late)
-	if !ok {
+	if ok {
 		rl.repo.cutClear(early, late, idx)
 		return false
 	}

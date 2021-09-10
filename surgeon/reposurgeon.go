@@ -3974,7 +3974,6 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 		croak("too many arguments")
 	}
 	//assert(early && late)
-	rs.selection = undefinedSelectionSet
 	// Try the topological cut first
 	if rs.cut(earlyCommit, lateCommit) {
 		respond("topological cut succeeded")
@@ -3999,6 +3998,7 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 		}
 	}
 	if control.isInteractive() && !control.flagOptions["quiet"] {
+		rs.selection = undefinedSelectionSet
 		rs.DoChoose("")
 	}
 	return false
