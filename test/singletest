@@ -12,11 +12,12 @@ experimental=""
 serial=""
 mode=diffing
 log=""
-while getopts a:bhl:nosx opt
+while getopts a:bhil:nosx opt
 do
     case $opt in
 	a) arg=$OPTARG;;
-	b) mode=build;; 
+	b) mode=build;;
+	i) interactive="set interactive" ;;
 	l) log="log $OPTARG" ;;
 	n) mode=errs;;
 	o) mode=view;;
@@ -33,6 +34,8 @@ With -a, pass an argument for the script
 With -b. regenerate the corresponding check file
 
 With -h, display this option summary.
+
+With -i, set the interactive flag.
 
 With -l, set log bits (only with -o)
 
@@ -81,9 +84,9 @@ do
     fi
     legend=$(grep '^##' "${tst}" 2>/dev/null || echo "## (no description)")
     case $mode in
-    build) echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set serial" "$experimental" "script ${tst}" >"${chk}" 2>&1 ;;
-    view)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "script ${tst}" 2>&1 ;;
-    errs)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst}" >/dev/null ;;
+    build) echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set serial" "$experimental" "$interactive" "script ${tst}" >"${chk}" 2>&1 ;;
+    view)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "$interactive" "script ${tst}" 2>&1 ;;
+    errs)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "$interactive" "script ${tst}" >/dev/null ;;
     *)     legend=$(echo "${legend}" | sed -e 's/## //')
 	   cat </dev/null >/tmp/tapdiff$$
 	   if ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst} ${arg}" 2>&1 | diff -u "${chk}" -  >/tmp/tapdiff$$ 2>&1 && [ ! -s /tmp/tapdiff$$ ]
