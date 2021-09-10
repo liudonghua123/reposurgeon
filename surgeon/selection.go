@@ -517,6 +517,7 @@ func (rs *Reposurgeon) hasReference(event Event) bool {
 func (rs *Reposurgeon) visibilityTypeletters() map[rune]func(int) bool {
 	type decodable interface {
 		decodable() bool
+		ascii() bool
 	}
 	type alldel interface {
 		alldeletes(...rune) bool
@@ -528,20 +529,21 @@ func (rs *Reposurgeon) visibilityTypeletters() map[rune]func(int) bool {
 	return map[rune]func(int) bool{
 		'B': func(i int) bool { _, ok := e(i).(*Blob); return ok },
 		'C': func(i int) bool { _, ok := e(i).(*Commit); return ok },
-		'T': func(i int) bool { _, ok := e(i).(*Tag); return ok },
-		'R': func(i int) bool { _, ok := e(i).(*Reset); return ok },
-		'P': func(i int) bool { _, ok := e(i).(*Passthrough); return ok },
+		'D': func(i int) bool { p, ok := e(i).(alldel); return ok && p.alldeletes() },
+		'F': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.children()) > 1 },
 		'H': func(i int) bool { c, ok := e(i).(*Commit); return ok && !c.hasChildren() },
+		'I': func(i int) bool { p, ok := e(i).(decodable); return ok && !p.decodable() },
+		'J': func(i int) bool { p, ok := e(i).(decodable); return ok && !p.ascii() },
+		'L': func(i int) bool { c, ok := e(i).(*Commit); return ok && unclean.MatchString(c.Comment) },
+		'M': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.parents()) > 1 },
+		'N': func(i int) bool { return rs.hasReference(e(i)) },
 		'O': func(i int) bool { c, ok := e(i).(*Commit); return ok && !c.hasParents() },
+		'P': func(i int) bool { _, ok := e(i).(*Passthrough); return ok },
+		'Q': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.hasColor(colorQSET) },
+		'R': func(i int) bool { _, ok := e(i).(*Reset); return ok },
+		'T': func(i int) bool { _, ok := e(i).(*Tag); return ok },
 		'U': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.hasCallouts() },
 		'Z': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.operations()) == 0 },
-		'M': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.parents()) > 1 },
-		'F': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.children()) > 1 },
-		'L': func(i int) bool { c, ok := e(i).(*Commit); return ok && unclean.MatchString(c.Comment) },
-		'Q': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.hasColor(colorQSET) },
-		'I': func(i int) bool { p, ok := e(i).(decodable); return ok && !p.decodable() },
-		'D': func(i int) bool { p, ok := e(i).(alldel); return ok && p.alldeletes() },
-		'N': func(i int) bool { return rs.hasReference(e(i)) },
 	}
 }
 

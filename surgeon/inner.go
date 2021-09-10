@@ -1927,10 +1927,24 @@ func (t *Tag) emailIn(msg *MessageBlock, fill bool) bool {
 	return modified
 }
 
-// decodable tells whether this tag is entirely composed of decodable UTF-8.
+// decodable tells whether this tag is entirely composed of decodable
+// UTF-8.
 func (t *Tag) decodable() bool {
 	valid := func(s string) bool {
 		return utf8.Valid([]byte(s))
+	}
+	return valid(t.tagname) && valid(t.tagger.fullname) && valid(t.tagger.email) && valid(t.Comment)
+}
+
+// ascii tells whether this tag is entirely composed of ASCII
+func (t *Tag) ascii() bool {
+	valid := func(s string) bool {
+		for i := 0; i < len(s); i++ {
+			if s[i] > 127 {
+				return false
+			}
+		}
+		return true
 	}
 	return valid(t.tagname) && valid(t.tagger.fullname) && valid(t.tagger.email) && valid(t.Comment)
 }
@@ -3772,6 +3786,22 @@ func (commit *Commit) blobByName(pathname string) ([]byte, bool) {
 
 // decodable tells whether this commit is entirely composed of decodable UTF-8.
 func (commit *Commit) decodable() bool {
+	valid := func(s string) bool {
+		return utf8.Valid([]byte(s))
+	}
+	if !(valid(commit.committer.fullname) && valid(commit.committer.email) && valid(commit.Comment)) {
+		return false
+	}
+	for _, author := range commit.authors {
+		if !valid(author.fullname) || !valid(author.email) {
+			return false
+		}
+	}
+	return true
+}
+
+// ascii tells whether this commit is entirely composed of ASCII.
+func (commit *Commit) ascii() bool {
 	valid := func(s string) bool {
 		return utf8.Valid([]byte(s))
 	}

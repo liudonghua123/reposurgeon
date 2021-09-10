@@ -4035,7 +4035,7 @@ is specified.  Commits with deleted fileops pointing both in and outside the
 path set are not deleted.
 
 This command sets Q bits: true on any commit which lost fileops but was
-not entirely deleted, false on all other events.
+not entirely deleted, false on all other (remaining) events.
 
 Example:
 
@@ -7047,22 +7047,23 @@ More ways to construct event sets:
            Suffix flags: a=all fileops must match other selectors, not just
            any one; c=match against checkout paths, DMRCN=match only against
            given fileop types (no-op when used with 'c').
-=C         all commits
-=H         all head (branch tip) commits
-=T         all tags
 =B         all blobs
-=R         all resets
-=P         all passthroughs
+=C         all commits
+=D         all commits in which every fileop is a D or deleteall
+=F         all fork (multiple-child) commits
+=H         all head (branch tip) commits
+=I         all commits not decodable to UTF-8
+=J         all commits with non=ASCII (possible ISO 8859) characters
+=L         all commits with unclean multi-line comments
+=M         all merge commits
+=N         all commits and tags matching a cookie (legacy-ID) format.
 =O         all orphan (parentless) commits
+=P         all passthroughs
+=Q         all events marked with the "recently touched" bit.
+=R         all resets
+=T         all tags
 =U         all commits with callouts as parents
 =Z         all commits with no fileops
-=M         all merge commits
-=F         all fork (multiple-child) commits
-=L         all commits with unclean multi-line comments
-=I         all commits not decodable to UTF-8
-=D         all commits in which every fileop is a D or deleteall
-=N         all commits and tags matching a cookie (legacy-ID) format.
-=Q         all events marked with the "recently touched" bit.
 
 @min()     create singleton set of the least element in the argument
 @max()     create singleton set of the greatest element in the argument

@@ -13,8 +13,8 @@ V 27
 PROPS-END
 
 Revision-number: 1
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 134
+Content-length: 134
 
 K 10
 svn:author
@@ -58,8 +58,8 @@ PROPS-END
 
 
 Revision-number: 2
-Prop-content-length: 105
-Content-length: 105
+Prop-content-length: 106
+Content-length: 106
 
 K 10
 svn:author
@@ -89,8 +89,8 @@ foo
 
 
 Revision-number: 3
-Prop-content-length: 123
-Content-length: 123
+Prop-content-length: 124
+Content-length: 124
 
 K 10
 svn:author
@@ -114,8 +114,8 @@ Node-copyfrom-path: trunk
 
 
 Revision-number: 4
-Prop-content-length: 117
-Content-length: 117
+Prop-content-length: 118
+Content-length: 118
 
 K 10
 svn:author
@@ -144,8 +144,8 @@ bar
 
 
 Revision-number: 5
-Prop-content-length: 113
-Content-length: 113
+Prop-content-length: 114
+Content-length: 114
 
 K 10
 svn:author
@@ -169,8 +169,8 @@ Node-copyfrom-path: branches/release-1.0
 
 
 Revision-number: 6
-Prop-content-length: 165
-Content-length: 165
+Prop-content-length: 166
+Content-length: 166
 
 K 10
 svn:author
