@@ -5624,6 +5624,7 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 	}
 	var errout error
 	deletia := newSelectionSet()
+	var deletiaMutex sync.Mutex
 	tagifyEvent := func(index int) {
 		commit, ok := repo.events[index].(*Commit)
 		if !ok {
@@ -5659,7 +5660,9 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 						false,
 						baton)
 				}
+				deletiaMutex.Lock()
 				deletia.Add(index)
+				deletiaMutex.Unlock()
 			} else {
 				if commit.Branch != "refs/heads/master" {
 					msg := ""
@@ -5675,7 +5678,9 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 						msg += fmt.Sprintf("zero-op commit on %s.", commit.Branch)
 					}
 					errout = errors.New(msg[1:])
+					deletiaMutex.Lock()
 					deletia.Add(index)
+					deletiaMutex.Unlock()
 				}
 			}
 		}
