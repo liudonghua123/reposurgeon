@@ -3682,7 +3682,7 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 				blob := repo.markToEvent(removed.ref).(*Blob)
 				blob.removeOperation(removed)
 				blob.addColor(colorQSET)
-				// FIXME: Someday, scavenge blos with no references left
+				// FIXME: Someday, scavenge blobs with no references left
 				//if len(blob.opset) == 0 {
 				//	i := repo.markToIndex(removed.ref)
 				//	repo.events = append(repo.events[:i], repo.events[i+1:]...)

@@ -1,4 +1,4 @@
-== Testing the code ==
+== Testing the code
 
 "make" here in the test directory runs a complete set of regression
 tests. It's what "make check" in the main directory redirects to.
@@ -50,7 +50,7 @@ To allow the code to emit a stack trace, set any log bit.
 The script "delver" is available to run the Golang debugger,
 dlv, on reposurgeon.
 
-== Notes on the test machinery ==
+== Notes on the test machinery
 
 A .fi extension means it's a git fast-import stream.  
 A .svn extension means it's a Subversion repo dump.
@@ -59,25 +59,25 @@ A .tst extension means it's a test driver script.
 
 All reports from test scripts are in the form of TAP (Test Amything Protocol).
 
-== The scripts ==
+== The scripts
 
-=== fi-to-fi ===
+=== fi-to-fi
 
 Builds a git repo from a fast-import stream on stdin, or streams an
 existing repo to stdout. No report.
 
-=== hg-to-fi ===
+=== hg-to-fi
 
 Builds an hg repo from a fast-import stream on stdin, or streams an
 existing repo to stdout. No report.
 
-=== svn-to-svn ===
+=== svn-to-svn
 
 Build a Subversion repo from a Subversion stream dump on stdin, or
 dump an existing repo as a stream to stdout.  Can also be used to edit
 a Subversion test load, regenerating its checksums. No report.
 
-=== svn-to-git ===
+=== svn-to-git
 
 Build a Subversion repo from a Subversion stream dump on stdin,
 convert it to a local git repository, and stream the result to
@@ -100,37 +100,37 @@ The "singletest" script takes the stem of a .tst file name, captures
 stdout and stderr, and diffs the result against the corresponding
 check (.chk) file.  It emits a TAP report.
 
-=== singlelift ===
+=== singlelift
 
 The "singlelift" script normally takes the stem of a .svn file name,
 captures stdout and stderr, and diffs the result against the
 corresponding check (.chk) file. It emits a TAP report.
 
-=== liftcheck ===
+=== liftcheck
 
 The "liftcheck" script takes a Subversion stream file, builds a Git
 repository from it, and checks for differences using repotool's
 compare-all function (all tags and branches). It emits a TAP report.
 
-=== tapdiffer ===
+=== tapdiffer
 
 Compares standard input with a check file and turns the diff into a
 TAP report.  If the diff is nonempty it is shipped ater the TAP
 "not OK" as a details message.
 
-=== tapcount ===
+=== tapcount
 
 This is a silly little script that emits a count of its arguments.
 It exists to reduce the density of mind-bending shell syntax in
 test/Makefile.
 
-=== delver ===
+=== delver
 
 Run delve, the Golang symbolic debugger, on reposurgeon. The wrapper
 is required to work around the problem that a program running under
 an ordinary delver instance loses access to stdin.
 
-== The tests ==
+== The tests
 
 Keeping live Subversion repos under version control doesn't work very well; 
 in particular, things like the entries file change too often.  So what we 
@@ -147,7 +147,7 @@ in Subversion's parser - header lines that begin with whitespace are ignored.
 When you create a new one, insert a second line that begins with a space and
 two pound signs.
 
-=== Making new Subversion test loads ===
+=== Making new Subversion test loads
 
 1. To create a new Subversion test repo, 'make svn-flat' or 'make svn-branchy'.
 
@@ -164,7 +164,7 @@ two pound signs.
 
 5. 'make svn-dump' will dump the new test load to stdout.
 
-== The agito test case ==
+== The agito test case
 
 Samuel Howard had this to say:
 
@@ -244,7 +244,7 @@ the tag. This produces a version of the history that is correct when
 viewed from the head revision, but may not reproduce exactly the
 states of tagged releases at all times past.
 
-== The tagretract test case ==
+== The tagretract test case
 
 According to Mike Fleetwood, fleetwood.svn was created with the following
 sequence of operations:
@@ -273,7 +273,7 @@ After conversion the tag named '1.0' referred to the first commit with
 the first tagging message 'Release 1.0', rather than the second commit
 with the second tagging message 'Fixed release 1.0'.
 
-== A note about nut.svn ==
+== A note about nut.svn
 
 This was produced from the NUT Subversion repo.  Later it was stripped
 and renumbered.  Later still, a 0 revision and an 89 revision were
@@ -304,7 +304,7 @@ Subversion commands. Besides documernting the semantics of the
 stream better than the stream itself does, this is a canary in
 case the Subversion dump format ever changes incompatibly.
 
-== Troubleshooting incorrect conversions ==
+== Troubleshooting incorrect conversions
 
 There is at present no known case of a valid Subversion stream file that
 reposurgeon fails to convert in a version that can be verified correct.
@@ -338,7 +338,7 @@ You can use singlelift -o to dump a fast import stream made
 from a named Subversion dump.  In this more you can also use
 -l to set reposurgeon log flags.
 
-== Tuning for speed ==
+== Tuning for speed
 
 In the early 4.x releases reposurgeon achieved feature-completeness
 and correctness.  New version-control systems should be supported by
@@ -454,7 +454,11 @@ to be passed down the call tree. The Context objects can have metadata
 associated with them which is supposed to show up in the trace viewer,
 but this feature is not yet exploited.
 
-=== Some references ===
+== Missing tests
+
+FIXME: resort needs a test, so does the cut-failure case of divide.
+
+== Some references
 
 https://testanything.org/
 

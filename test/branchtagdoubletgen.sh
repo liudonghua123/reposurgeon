@@ -1,6 +1,6 @@
 #!/bin/sh
 # Generate an SVN stream which may provoke reposurgeon to create a duplicate 'refs/tags/release-1.0-root'
-# FIXME: This lidts to an invalid input stream, see https://gitlab.com/esr/reposurgeon/-/issues/355
+# This used to lift to an invalid input stream, see https://gitlab.com/esr/reposurgeon/-/issues/355
 
 set -e
 

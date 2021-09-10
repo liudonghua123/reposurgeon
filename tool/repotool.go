@@ -578,7 +578,6 @@ func mirror(args []string) {
 		parts := strings.SplitN(operand[8:], "/", 2)
 		operand = parts[0] + ":/" + parts[1]
 		runShellProcessOrDie(fmt.Sprintf("rsync --delete -az %s/ %s", operand, locald), "mirroring")
-		// FIXME: Is there some useful way we can set the svn:sync-from-url property here?
 	} else if strings.HasPrefix(operand, "cvs://") || localrepo(operand, "file://", "cvs") {
 		if mirrordir != "" {
 			locald = mirrordir

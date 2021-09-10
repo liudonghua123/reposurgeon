@@ -29,16 +29,12 @@ for project in $projects; do
     svn commit --quiet -m "initial $project commit"
 done
 
-
-
-# # FIXME: if you add intermediate commits here (and adjust `merge` commands accordingly), no invalid import stream is generated.
-# # So the bug seems to only affect merges from root commits.
+# If you add intermediate commits here (and adjust `merge` commands accordingly), no invalid import stream is generated.
+# So the bug seems to only affect merges from root commits.
 # for project in $projects; do
 #     echo "some early changes on $project" >>$project/trunk/$project.txt
 #     svn commit --quiet -m "second $project commit"
 # done
-
-
 
 # r5
 mkdir trunk branches tags
