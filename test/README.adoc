@@ -456,7 +456,7 @@ but this feature is not yet exploited.
 
 == Missing tests
 
-FIXME: need tests for =J, resort, and cut-failure case of divide.
+FIXME: need tests for resort and cut-failure case of divide.
 
 == Some references
 
