@@ -1,5 +1,6 @@
 SVN-fs-dump-format-version: 2
- ## branch creation via copy-to-empty-dir example # This file is generated - do not hand-hack it.
+ ## branch creation via copy-to-empty-dir example
+ # Generated - do not hand-hack!
 
 
 Revision-number: 0

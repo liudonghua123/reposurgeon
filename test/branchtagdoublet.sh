@@ -2,6 +2,11 @@
 # Generate an SVN stream which may provoke reposurgeon to create a duplicate 'refs/tags/release-1.0-root'
 # This used to lift to an invalid input stream, see https://gitlab.com/esr/reposurgeon/-/issues/355
 
+# This is a GENERATOR
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
 set -e
 
 trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
@@ -38,18 +43,8 @@ svn up --quiet
 echo bar >>tags/release-1.0/file
 svn commit --quiet -m 'Oops, forgot something! (this turns the "tag" back into a "branch")'
 
-
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 
-# Necessary so we can see repocutter
-command -v realpath >/dev/null 2>&1 ||
-    realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
-PATH=$(realpath ..):$(realpath .):${PATH}
-
-# shellcheck disable=1117,1004
-svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed '1a\
- ## tag with commit after creation example
- # Generated - do not hand-hack!
-'
+svndump test-repo-$$ "tag with commit after creation example"
 
 # end

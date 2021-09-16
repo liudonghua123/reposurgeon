@@ -1,7 +1,15 @@
 #!/bin/sh
 # Generate a Subversion output stream with a "clean" tag (1.0) and one that was commited to after tagging (2.0).
 
+# This is a GENERATOR
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
+
 set -e
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
 
 trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
 
@@ -33,15 +41,6 @@ svn commit --quiet -m 'Commit to Release 2.0 after tagging'
 
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 
-# Necessary so we can see repocutter
-command -v realpath >/dev/null 2>&1 ||
-    realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
-PATH=$(realpath ..):$(realpath .):${PATH}
-
-# shellcheck disable=1117,1004
-svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed '1a\
- ## tag with commit after creation example
- # Generated - do not hand-hack!
-'
+svndump test-repo-$$ "tag with commit after creation example"
 
 # end

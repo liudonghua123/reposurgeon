@@ -1,5 +1,6 @@
 #!/bin/sh
 ## Create example multi-project repository
+# This is a GENERATOR
 
 dump=no
 verbose=null
@@ -12,42 +13,10 @@ do
     esac
 done
 
-trap 'rm -fr test-repo test-checkout' EXIT HUP INT QUIT TERM 
+# shellcheck disable=SC1091
+. ./common-setup.sh
 
-svnaction () {
-    # This version of svnaction does filenames or directories 
-    case $1 in
-	*/)
-	    directory=$1
-	    comment=${2:-$1 creation}
-	    if [ ! -d "$directory" ]
-	    then
-		mkdir "$directory"
-		svn add "$directory"
-	    fi
-	    svn commit -m "$comment"
-	;;
-	*)
-	    filename=$1
-	    content=$2
-	    comment=$3
-	    # shellcheck disable=SC2046
-	    if [ ! -f "$filename" ]
-	    then
-		if [ ! -d $(dirname "$filename") ]
-		then
-		    mkdir $(dirname "$filename")
-		    svn add $(dirname "$filename")
-		fi
-		echo "$content" >"$filename"
-		svn add "$filename"
-	    else
-		echo "$content" >"$filename"
-	    fi
-	    svn commit -m "$comment"
-	;;
-    esac
-}
+trap 'rm -fr test-repo test-checkout' EXIT HUP INT QUIT TERM 
 
 {
 set -e
@@ -83,9 +52,7 @@ cd ..
 } >/dev/$verbose 2>&1
 if [ "$dump" = yes ]
 then
-    # shellcheck disable=SC1004
-    svnadmin dump -q test-repo | repocutter -q testify | sed '1a\
- ## Multi-project repository example
- # Generated - do not hand-hack!
-'
+    svndump test-repo "Multi-project repository example"
 fi
+
+# end

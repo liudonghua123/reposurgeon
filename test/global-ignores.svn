@@ -1,5 +1,6 @@
 SVN-fs-dump-format-version: 2
- ## svn:$1 property-setting example
+ ## svn:global-ignores property-setting example
+ # Generated - do not hand-hack!
 
 
 Revision-number: 0

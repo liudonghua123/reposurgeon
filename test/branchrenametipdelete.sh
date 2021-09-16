@@ -1,7 +1,12 @@
 #!/bin/sh
 # Generate a Subversion output stream with a deleted branch (that also contains spaces)
 
+# This is a GENERATOR
+
 set -e
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
 
 trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
 
@@ -52,20 +57,8 @@ svn --quiet commit -m "continue development on branch"
 echo "even more trunk content" >>trunk/file
 svn --quiet commit -m "continue trunk development"
 
-
-# ===========================
-
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 
-# Necessary so we can see repocutter
-command -v realpath >/dev/null 2>&1 ||
-    realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
-PATH=$(realpath ..):$(realpath .):${PATH}
-
-# shellcheck disable=1117,1004
-svnadmin dump --quiet  test-repo-$$ | repocutter -q testify | sed '1a\
- ## branch with spaces deletion example
- # Generated - do not hand-hack!
-'
+svndump test-repo-$$ "branch with spaces deletion example"
 
 # end

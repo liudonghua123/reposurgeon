@@ -1,7 +1,12 @@
 #!/bin/sh
 # Generate an SVN dump of multiple projects that are later merged into a single trunk
 
+# This is a GENERATOR
+
 set -e
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
 
 trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
 
@@ -54,18 +59,8 @@ for project in $projects; do
 done
 svn commit --quiet -m "continue development on new trunk"
 
-
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 
-# Necessary so we can see repocutter
-command -v realpath >/dev/null 2>&1 ||
-    realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
-PATH=$(realpath ..):$(realpath .):${PATH}
-
-# shellcheck disable=1117,1004
-svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed '1a\
- ## multiple projects merged into common trunk example
- # Generated - do not hand-hack!
-'
+svndump test-repo-$$ "multiple projects merged into common trunk example"
 
 # end

@@ -6,6 +6,10 @@
 # Normally global-ignores is a property that is created and interpreted
 # on the client side only.  Forcing it with a propset is a bit
 # perverse. Nevertheless we've had a request to handle this case
+# This is a GENERATOR
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
 
 set -e
 
@@ -100,9 +104,6 @@ echo "ignored" > trunk/subdir/something.bar
 # create dump and ship to standard output
 # shellcheck disable=2103
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
-# shellcheck disable=1117
-svnadmin dump --quiet test-repo-$$  | repocutter -q testify | sed "1a\
-\ ## svn:$1 property-setting example - generated, do not hand-hack!
-"
+svndump test-repo-$$ "svn:$1 property-setting example"
 
 # end

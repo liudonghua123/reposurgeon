@@ -17,9 +17,15 @@
 # This ought to be turned into a branch copy, but every
 # attempt to do so has created more problems than it solved.
 #
-# If you fix this, don't forget to modiy or delete the note
+# If you fix this, don't forget to modify or delete the note
 # in README.adoc.
+
+# This is a GENERATOR
+
 set -e
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
 
 trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
 
@@ -61,21 +67,8 @@ svn commit --quiet -m "continue development on branch"
 echo "even more trunk content" >>trunk/file
 svn commit --quiet -m "continue trunk development"
 
-
-# ===========================
-
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 
-# Necessary so we can see repocutter
-command -v realpath >/dev/null 2>&1 ||
-    realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
-PATH=$(realpath ..):$(realpath .):${PATH}
-
-# shellcheck disable=1117,1004
-svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed "1a\
-\ ## branch creation via copy-to-empty-dir example\
-\ # This file is generated - do not hand-hack it.\
-"
-
+svndump test-repo-$$ "branch creation via copy-to-empty-dir example"
 
 # end

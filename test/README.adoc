@@ -458,6 +458,8 @@ but this feature is not yet exploited.
 
 FIXME: need tests for resort and cut-failure case of divide.
 
+FIXME: the branch creation case tickled by branchreateempty.sh is unresolved.
+
 == Some references
 
 https://testanything.org/

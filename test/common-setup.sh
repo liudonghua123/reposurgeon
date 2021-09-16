@@ -65,6 +65,50 @@ svninit() {
 	    echo "Initial README content." | svn commit -F -
 }
 
+svnaction () {
+    # This version of svnaction does filenames or directories 
+    case $1 in
+	*/)
+	    directory=$1
+	    comment=${2:-$1 creation}
+	    if [ ! -d "$directory" ]
+	    then
+		mkdir "$directory"
+		svn add "$directory"
+	    fi
+	    svn commit -m "$comment"
+	;;
+	*)
+	    filename=$1
+	    content=$2
+	    comment=$3
+	    # shellcheck disable=SC2046
+	    if [ ! -f "$filename" ]
+	    then
+		if [ ! -d $(dirname "$filename") ]
+		then
+		    mkdir $(dirname "$filename")
+		    svn add $(dirname "$filename")
+		fi
+		echo "$content" >"$filename"
+		svn add "$filename"
+	    else
+		echo "$content" >"$filename"
+	    fi
+	    svn commit -m "$comment"
+	;;
+    esac
+}
+
+svndump() {
+    # shellcheck disable=SC1117,SC1004,SC2006
+    svnadmin dump -q "$1" | repocutter -q testify | sed "1a\
+\ ## $2
+" | sed "2a\
+\ # Generated - do not hand-hack!
+"
+}
+
 svnwrap() {
     rm -fr test-repo$$ test-checkout$$
 }
