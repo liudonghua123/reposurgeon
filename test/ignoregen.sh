@@ -102,7 +102,7 @@ echo "ignored" > trunk/subdir/something.bar
 cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
 # shellcheck disable=1117
 svnadmin dump --quiet test-repo-$$  | repocutter -q testify | sed "1a\
-\ ## svn:$1 property-setting example
+\ ## svn:$1 property-setting example - generated, do not hand-hack!
 "
 
 # end

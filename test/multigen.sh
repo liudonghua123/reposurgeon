@@ -86,5 +86,6 @@ then
     # shellcheck disable=SC1004
     svnadmin dump -q test-repo | repocutter -q testify | sed '1a\
  ## Multi-project repository example
+ # Generated - do not hand-hack!
 '
 fi

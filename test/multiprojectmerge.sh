@@ -62,9 +62,10 @@ command -v realpath >/dev/null 2>&1 ||
     realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
 PATH=$(realpath ..):$(realpath .):${PATH}
 
-# shellcheck disable=1117
-svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed "1a\
-\ ## multiple projects merged into common trunk example
-"
+# shellcheck disable=1117,1004
+svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed '1a\
+ ## multiple projects merged into common trunk example
+ # Generated - do not hand-hack!
+'
 
 # end

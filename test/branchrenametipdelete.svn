@@ -1,5 +1,5 @@
 SVN-fs-dump-format-version: 2
- ## branch with spaces deletion example
+
 
 
 Revision-number: 0
@@ -13,8 +13,8 @@ V 27
 PROPS-END
 
 Revision-number: 1
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 130
+Content-length: 130
 
 K 10
 svn:author
@@ -58,8 +58,8 @@ PROPS-END
 
 
 Revision-number: 2
-Prop-content-length: 121
-Content-length: 121
+Prop-content-length: 118
+Content-length: 118
 
 K 10
 svn:author
@@ -89,8 +89,8 @@ initial content
 
 
 Revision-number: 3
-Prop-content-length: 122
-Content-length: 122
+Prop-content-length: 119
+Content-length: 119
 
 K 10
 svn:author
@@ -119,8 +119,8 @@ more content
 
 
 Revision-number: 4
-Prop-content-length: 132
-Content-length: 132
+Prop-content-length: 129
+Content-length: 129
 
 K 10
 svn:author
@@ -153,8 +153,8 @@ Text-copy-source-sha1: 567507e38bcced0e93842a3123f4e5f6aef0475d
 
 
 Revision-number: 5
-Prop-content-length: 138
-Content-length: 138
+Prop-content-length: 135
+Content-length: 135
 
 K 10
 svn:author
@@ -184,8 +184,8 @@ even more branch content
 
 
 Revision-number: 6
-Prop-content-length: 121
-Content-length: 121
+Prop-content-length: 118
+Content-length: 118
 
 K 10
 svn:author
@@ -206,8 +206,8 @@ Node-action: delete
 
 
 Revision-number: 7
-Prop-content-length: 126
-Content-length: 126
+Prop-content-length: 123
+Content-length: 123
 
 K 10
 svn:author
@@ -231,8 +231,8 @@ Node-copyfrom-path: trunk
 
 
 Revision-number: 8
-Prop-content-length: 132
-Content-length: 132
+Prop-content-length: 129
+Content-length: 129
 
 K 10
 svn:author
@@ -262,8 +262,8 @@ even more branch content
 
 
 Revision-number: 9
-Prop-content-length: 128
-Content-length: 128
+Prop-content-length: 125
+Content-length: 125
 
 K 10
 svn:author

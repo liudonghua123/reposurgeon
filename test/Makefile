@@ -51,7 +51,7 @@ FAILLOG=/tmp/reposurgeon-make.log
 check:
 	@$(MAKE) -j1 --no-print-directory parallel-tap
 
-.SUFFIXES: .svn .chk .fi .map
+.SUFFIXES: .svn .chk .fi .map .sh
 
 .svn.chk:
 	$(REPOSURGEON) "read <$<" "prefer git" "write -" >$@ 2>&1
@@ -59,6 +59,8 @@ check:
 	$(REPOSURGEON) "read <$<" "prefer git" "write -" >$@
 .svn.map:
 	$(REPOSURGEON) "log -all" "read <$<" "legacy write -" >$@
+.sh.svn:
+	sh $< -d >$@
 
 clean:
 	@rm -fr .rs* test=repo test-checkout test-repo* test-checkout* git-repo left-repo right-repo *~
@@ -93,32 +95,17 @@ $(MESSAGEBOX_TARGETS): messagebox-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | tapdiffer "$< message-box roundtripping" $<) || echo "$@" >>$(FAILLOG);
 
 # Generated command-test loads
-multigen.svn: multigen.sh
-	sh multigen.sh -d >multigen.svn
+GENERATEDSVN=multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn tagdoublet.svn \
+	mixedbranchlift.svn tagwithcommits.svn branchtagdoublet.svn multiprojectmerge.svn branchrenametipdelete.svn \
+	branchcreateempty.svn
 ignore.svn: ignoregen.sh
-	sh ignoregen.sh ignore >ignore.svn
+	sh $< ignore >$@
 global-ignores.svn: ignoregen.sh
-	sh ignoregen.sh global-ignores >global-ignores.svn
+	sh $< global-ignores >$@
 ignore-copy.svn: ignoregen.sh
-	sh ignoregen.sh ignore copy >ignore-copy.svn
+	sh $< ignore copy >$@
 global-ignores-copy.svn: ignoregen.sh
-	sh ignoregen.sh global-ignores copy >global-ignores-copy.svn
-tagdoublet.svn: tagdoubletgen.sh
-	sh tagdoubletgen.sh >tagdoublet.svn
-mixedbranchlift.svn: branchliftgen.sh
-	sh branchliftgen.sh >mixedbranchlift.svn
-tagwithcommits.svn: tagwithcommitsgen.sh
-	sh tagwithcommitsgen.sh >tagwithcommits.svn
-branchtagdoublet.svn: branchtagdoubletgen.sh
-	sh branchtagdoubletgen.sh >branchtagdoublet.svn
-multiprojectmerge.svn: multiprojectmergegen.sh
-	sh $< >$@
-branchrenametipdelete.svn: branchrenametipdeletegen.sh
-	sh $< >$@
-branchcreateempty.svn: branchcreateemptygen.sh
-	sh $< >$@
-branchifyspace.svn: branchifyspacegen.sh
-	sh $< >$@
+	sh $< global-ignores copy >$@
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
@@ -126,7 +113,7 @@ COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
 COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
 $(COMMAND_TARGETS): command-regress-%: %.tst
 	@singletest -a testing123 $< || echo "$@" >>$(FAILLOG);
-command-buildregress: multigen.svn ignore.svn global-ignores.svn tagdoublet.svn branchtagdoublet.svn multiprojectmerge.svn branchrenametipdelete.svn branchcreateempty.svn
+command-buildregress: $(GENERATEDSVN)
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \

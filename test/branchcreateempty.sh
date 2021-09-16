@@ -71,7 +71,7 @@ command -v realpath >/dev/null 2>&1 ||
     realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
 PATH=$(realpath ..):$(realpath .):${PATH}
 
-# shellcheck disable=1117
+# shellcheck disable=1117,1004
 svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed "1a\
 \ ## branch creation via copy-to-empty-dir example\
 \ # This file is generated - do not hand-hack it.\

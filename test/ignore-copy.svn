@@ -1,5 +1,5 @@
 SVN-fs-dump-format-version: 2
- ## svn:ignore property-setting example
+ ## svn:$1 property-setting example
 
 
 Revision-number: 0

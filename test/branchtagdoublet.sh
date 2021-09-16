@@ -46,9 +46,10 @@ command -v realpath >/dev/null 2>&1 ||
     realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
 PATH=$(realpath ..):$(realpath .):${PATH}
 
-# shellcheck disable=1117
-svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed "1a\
-\ ## tag with commit after creation example
-"
+# shellcheck disable=1117,1004
+svnadmin dump --quiet test-repo-$$ | repocutter -q testify | sed '1a\
+ ## tag with commit after creation example
+ # Generated - do not hand-hack!
+'
 
 # end
