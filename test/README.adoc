@@ -57,7 +57,7 @@ A .svn extension means it's a Subversion repo dump.
 A .chk extension means it's expected output from a test.
 A .tst extension means it's a test driver script.
 
-All reports from test scripts are in the form of TAP (Test Amything Protocol).
+All reports from test scripts are in the form of TAP (Test Anything Protocol).
 
 == The scripts
 
