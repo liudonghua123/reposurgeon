@@ -3294,7 +3294,7 @@ directly affected by this command; they move or are deleted only when
 removal of fileops associated with commits requires this.
 
 Sets Q bits: true on commits that get fileops pushed to them, false 
-otherwise.
+oytherwise.
 `)
 }
 
@@ -3588,16 +3588,12 @@ a file path preceded by an op type set (some subset of the letters
 DMRCN), or (c) a 1-origin numeric index.  The 'deletes' keyword
 selects all D fileops in the commit; the others select one each.
 
-If noo to clause is preference, any blobs left without references
-are expunged.
-
 If the to clause is present, the removed op is appended to the
 commit specified by the following singleton selection set.  This option
 cannot be combined with 'deletes'.
 
-Sets Q bits: true for each commit modified and (remaining) blob with
-altered references, false otherwise.
-
+Sets Q bits: trur for each commit modified and blob with altered 
+references, false otherwise.
 `)
 }
 
@@ -3619,23 +3615,6 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 		opindex, line = popToken(line)
 	}
 	rs.chosen().clearColor(colorQSET)
-	deletia := make([]*Blob, 0)
-	defer func() {
-		indices := make([]int, len(deletia))
-		if len(deletia) > 0 {
-			for i, b := range deletia {
-				indices[i] = repo.markToIndex(b.mark)
-			}
-			sort.Ints(indices)
-			for i := len(indices) - 1; i >= 0; i-- {
-				repo.events = append(repo.events[:i], repo.events[i+1:]...)
-			}
-			// We could delete any files for these blobs here,
-			// but there isn't much point when they'll be deleted on
-			// reposurgeon's exit.
-			repo.declareSequenceMutation("scavenging blobs")
-		}
-	}()
 	for it := rs.selection.Iterator(); it.Next(); {
 		ei := it.Value()
 		ev := repo.events[ei]
@@ -3703,11 +3682,12 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 				blob := repo.markToEvent(removed.ref).(*Blob)
 				blob.removeOperation(removed)
 				blob.addColor(colorQSET)
-				// No references left? Then drop the blob.
-				if len(blob.opset) == 0 {
-					deletia = append(deletia, blob)
-				}
-
+				// FIXME: Someday, scavenge blobs with no references left
+				//if len(blob.opset) == 0 {
+				//	i := repo.markToIndex(removed.ref)
+				//	repo.events = append(repo.events[:i], repo.events[i+1:]...)
+				//}
+				repo.declareSequenceMutation("scavenging blob")
 			}
 		} else {
 			present := target >= 0 && target < len(repo.events)
