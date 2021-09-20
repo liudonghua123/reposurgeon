@@ -68,8 +68,11 @@ current-golang:
 	sudo apt install golang-go
 	go version
 
+# As of Ubuntu 20.04 there is no longer a package names "awk".
+# Rather than get involved with the alternatives system we'll just
+# install gawk, which is perobably what's on board anyway.
 helpers:
-	sudo apt-get install asciidoctor awk
+	sudo apt-get install asciidoctor gawk
 
 test-helpers: 
 	sudo apt install cvs-fast-export subversion cvs mercurial hg-git-fast-import rsync golint shellcheck

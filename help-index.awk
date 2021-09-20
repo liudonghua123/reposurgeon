@@ -1,6 +1,6 @@
 #!/bin/awk -f
 
-# This scrit relies ON START-TOC and END-TOC being used to delimit portions of the
+# This script relies ON START-TOC and END-TOC being used to delimit portions of the
 # input that should be scanned for sectioin headers, command definitions, and
 # inclusions.
 #
