@@ -1103,7 +1103,7 @@ func TestParentChildMethods(t *testing.T) {
 	commit2.setMark(":2")
 
 	commit2.addParentByMark(":1")
-	if len(commit1.children()) != 1 || commit1.children()[0].getMark() != ":2" {
+	if commit1.childCount() != 1 || commit1.firstChild().getMark() != ":2" {
 		t.Errorf("parent addition failed")
 	}
 
@@ -1123,13 +1123,17 @@ func TestParentChildMethods(t *testing.T) {
 
 	commit3.addParentByMark(":2")
 	commit3.insertParent(0, ":1")
-	if len(commit3.parents()) != 2 || commit3.parents()[0].getMark() != ":1" {
+	if commit3.parentCount() != 2 || commit3.firstParent().getMark() != ":1" {
 		t.Errorf("parent insertion :1 before :2 in :3 failed")
 	}
+	assertIntEqual(t, commit3.parentCount(), 2)
 
 	commit3.removeParent(commit1)
-	if len(commit3.parents()) != 1 || commit3.parents()[0].getMark() != ":2" {
-		t.Errorf("parent deletion of :1 in :3 failed")
+	if commit3.parentCount() != 1 {
+		t.Errorf("parent deletion of :1 in :3 failed - wrong length %d", commit3.parentCount())
+	}
+	if commit3.parentCount() != 1 || commit3.firstParent().getMark() != ":2" {
+		t.Errorf("parent deletion of :1 in :3 failed - wrong next member")
 	}
 
 	assertBool(t, commit1.descendedFrom(commit3), false)

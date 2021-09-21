@@ -5489,7 +5489,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 				tip = commit
 			}
 		}
-		if tip != nil && len(tip.children()) == 1 {
+		if tip != nil && tip.childCount() == 1 {
 			successor := tip.children()[0]
 			if cSuccessor, ok := successor.(*Commit); ok {
 				for _, commit := range repo.commits(undefinedSelectionSet) {
@@ -6698,8 +6698,8 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 	repo.clearColor(colorQSET)
 	for it := repo.commitIterator(rs.selection); it.Next(); {
 		event := it.commit()
-		parents := event.parents()
-		if len(parents) == 1 {
+		if event.parentCount() == 1 {
+			parents := event.parents()
 			if parent, ok := parents[0].(*Commit); ok {
 				if event.committer.date.timestamp.Equal(parent.committer.date.timestamp) {
 					event.bump(1)

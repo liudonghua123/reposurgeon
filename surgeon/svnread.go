@@ -3053,7 +3053,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 				// Nothing to do, but we don't want to create an annotated tag
 				// because messages from cvs2svn are not useful.
 			} else if commit.hasParents() {
-				if len(commit.parents()) > 1 {
+				if commit.parentCount() > 1 {
 					continue
 				}
 				sp.repo.tagifyNoCheck(commit,

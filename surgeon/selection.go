@@ -465,10 +465,10 @@ func (rs *Reposurgeon) evalPathsetFull(state selEvalState,
 			break
 		}
 		var tree *PathMap
-		parents := c.parents()
-		if len(parents) == 0 {
+		if !c.hasParents() {
 			tree = newPathMap()
 		} else {
+			parents := c.parents()
 			parentTree, ok := matchTrees[parents[0].getMark()]
 			if !ok {
 				panic(fmt.Sprintf("commit tree missing: %s",
@@ -530,12 +530,12 @@ func (rs *Reposurgeon) visibilityTypeletters() map[rune]func(int) bool {
 		'B': func(i int) bool { _, ok := e(i).(*Blob); return ok },
 		'C': func(i int) bool { _, ok := e(i).(*Commit); return ok },
 		'D': func(i int) bool { p, ok := e(i).(alldel); return ok && p.alldeletes() },
-		'F': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.children()) > 1 },
+		'F': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.childCount() > 1 },
 		'H': func(i int) bool { c, ok := e(i).(*Commit); return ok && !c.hasChildren() },
 		'I': func(i int) bool { p, ok := e(i).(decodable); return ok && !p.decodable() },
 		'J': func(i int) bool { p, ok := e(i).(decodable); return ok && !p.ascii() },
 		'L': func(i int) bool { c, ok := e(i).(*Commit); return ok && unclean.MatchString(c.Comment) },
-		'M': func(i int) bool { c, ok := e(i).(*Commit); return ok && len(c.parents()) > 1 },
+		'M': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.parentCount() > 1 },
 		'N': func(i int) bool { return rs.hasReference(e(i)) },
 		'O': func(i int) bool { c, ok := e(i).(*Commit); return ok && !c.hasParents() },
 		'P': func(i int) bool { _, ok := e(i).(*Passthrough); return ok },

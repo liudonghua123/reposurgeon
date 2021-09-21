@@ -2444,6 +2444,7 @@ func (callout *Callout) children() []CommitLike {
 	var out []CommitLike
 	return out
 }
+
 func (callout *Callout) hasChildren() bool {
 	return false
 }
@@ -2532,8 +2533,8 @@ type Commit struct {
 	repo           *Repository
 	properties     *OrderedMap  // commit properties (extension)
 	attachments    []Event      // Tags and Resets pointing at this commit
-	_parentNodes   []CommitLike // list of parent nodes
-	_childNodes    []CommitLike // list of child nodes
+	_parentNodes   []CommitLike // list of parent nodes - sparse, may contain nils
+	_childNodes    []CommitLike // list of child nodes - sparse, may contain nils
 	hash           gitHashType
 	colors         colorSet // Flag used during deletion operations
 	implicitParent bool     // Whether the first parent was implicit
@@ -2776,7 +2777,8 @@ func (commit *Commit) tags(_modifiers orderedStringSet, eventnum int, _cols int)
 	}
 	if commit.hasChildren() {
 		successorBranches := newStringSet()
-		for _, child := range commit.children() {
+		for it := commit.childIterator(); it.Next(); {
+			child := it.Value()
 			switch child.(type) {
 			case *Commit:
 				successorBranches.Add(child.(*Commit).Branch)
@@ -3073,6 +3075,61 @@ func (commit *Commit) parents() []CommitLike {
 	return commit._parentNodes
 }
 
+type parentIt struct {
+	commit *Commit
+	idx    int
+}
+
+func (commit *Commit) parentIterator() *parentIt {
+	var it parentIt
+	it.commit = commit
+	it.idx = -1
+	return &it
+}
+
+func (it *parentIt) Next() bool {
+	for {
+		it.idx++
+		if it.idx > len(it.commit._parentNodes)-1 {
+			return false
+		}
+		if it.commit._parentNodes[it.idx] != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (it *parentIt) Index() int {
+	return it.idx
+}
+
+func (it *parentIt) Value() CommitLike {
+	return it.commit._parentNodes[it.idx]
+}
+
+// parentCount gets a count of this commit's parents
+func (commit *Commit) parentCount() int {
+	var count int
+	for _, item := range commit._parentNodes {
+		if item != nil {
+			count++
+		}
+	}
+	return count
+}
+
+// hasParent is a predicate - does this commit have parents?
+func (commit *Commit) hasParents() bool {
+	return commit.parentCount() > 0
+}
+
+func (commit *Commit) firstParent() CommitLike {
+	it := commit.parentIterator()
+	it.Next()
+	return it.Value()
+}
+
 // invalidateManifests cleans out manifests in this commit and all descendants
 func (commit *Commit) invalidateManifests() {
 	// Do a traversal of the descendant graph, depth-first because it is the
@@ -3091,10 +3148,10 @@ func (commit *Commit) invalidateManifests() {
 				continue
 			}
 			c._manifest = nil
-		}
-		// and add all children to the "todo" stack
-		for _, child := range current.children() {
-			stack = append(stack, child)
+			// and add all children to the "todo" stack
+			for it := c.childIterator(); it.Next(); {
+				stack = append(stack, it.Value())
+			}
 		}
 	}
 	commit.hash.invalidate()
@@ -3119,7 +3176,9 @@ func listMarks(items []CommitLike) []string {
 func (commit *Commit) parentMarks() []string {
 	var out []string
 	for _, x := range commit._parentNodes {
-		out = append(out, x.getMark())
+		if x != nil {
+			out = append(out, x.getMark())
+		}
 	}
 	return out
 }
@@ -3264,10 +3323,6 @@ func (commit *Commit) replaceParent(e1, e2 *Commit) {
 	commit.invalidateManifests()
 }
 
-func (commit *Commit) hasParents() bool {
-	return len(commit._parentNodes) > 0
-}
-
 func (commit *Commit) hasCallouts() bool {
 	for _, c := range commit._parentNodes {
 		switch c.(type) {
@@ -3284,17 +3339,59 @@ func (commit *Commit) children() []CommitLike {
 	return commit._childNodes
 }
 
+type childIt struct {
+	commit *Commit
+	idx    int
+}
+
+func (commit *Commit) childIterator() *childIt {
+	var it childIt
+	it.commit = commit
+	it.idx = -1
+	return &it
+}
+
+func (it *childIt) Next() bool {
+	for {
+		it.idx++
+		if it.idx > len(it.commit._childNodes)-1 {
+			return false
+		}
+		if it.commit._childNodes[it.idx] != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (it *childIt) Value() CommitLike {
+	return it.commit._childNodes[it.idx]
+}
+
+// childCount gets a count of this commit's children
+func (commit *Commit) childCount() int {
+	var count int
+	for _, item := range commit._childNodes {
+		if item != nil {
+			count++
+		}
+	}
+	return count
+}
+
+// hasChildren is a predicate - does this commit have children?
+func (commit *Commit) hasChildren() bool {
+	return commit.childCount() > 0
+}
+
 func (commit *Commit) childMarks() []string {
 	var out []string
 	for _, x := range commit._childNodes {
-		out = append(out, x.getMark())
+		if x != nil {
+			out = append(out, x.getMark())
+		}
 	}
 	return out
-}
-
-// hasChildren is a predicate - does this commit have children?"
-func (commit *Commit) hasChildren() bool {
-	return len(commit._childNodes) > 0
 }
 
 // firstChild gets the first child of this commit, or None if not hasChildren()."
@@ -3310,12 +3407,14 @@ func (commit *Commit) descendedFrom(other *Commit) bool {
 	if !commit.hasParents() {
 		return false
 	}
-	for _, item := range commit.parents() {
+	for it := commit.parentIterator(); it.Next(); {
+		item := it.Value()
 		if item == other {
 			return true
 		}
 	}
-	for _, item := range commit.parents() {
+	for it := commit.parentIterator(); it.Next(); {
+		item := it.Value()
 		switch item.(type) {
 		case *Commit:
 			if item.(*Commit).descendedFrom(other) {
@@ -3354,15 +3453,15 @@ func (commit *Commit) paths(pathtype orderedStringSet) orderedStringSet {
 func (commit *Commit) visible(argpath string) *Commit {
 	ancestor := commit
 	for {
-		parents := ancestor.parents()
-		if len(parents) == 0 {
+		if !ancestor.hasParents() {
 			return nil
 		}
-		switch parents[0].(type) {
+		firstParent := ancestor.firstParent()
+		switch firstParent.(type) {
 		case *Callout:
 			return nil
 		case *Commit:
-			ancestor = parents[0].(*Commit)
+			ancestor = firstParent.(*Commit)
 			// This loop assumes that the op sequence has no
 			// M/C/R foo after D foo pairs. If this condition
 			// is violated it can throw false negatives.
@@ -3402,7 +3501,7 @@ func (commit *Commit) manifest() *Manifest {
 		if !ancestor.hasParents() {
 			break
 		}
-		switch p := ancestor.parents()[0].(type) {
+		switch p := ancestor.firstParent().(type) {
 		case *Commit:
 			ancestor = p
 		case *Callout:
@@ -3447,9 +3546,10 @@ func (repo *Repository) walkManifests(
 	for index, event := range repo.events {
 		if commit, ok := event.(*Commit); ok {
 			inheritingChildren := 0
-			for _, child := range commit.children() {
+			for it := commit.childIterator(); it.Next(); {
+				child := it.Value()
 				if childcommit, ok := child.(*Commit); ok &&
-					childcommit.parents()[0] == commit {
+					childcommit.firstParent() == commit {
 					inheritingChildren++
 				}
 			}
@@ -3459,7 +3559,7 @@ func (repo *Repository) walkManifests(
 			firstParentIdx := -1
 			var firstParent *Commit
 			if commit.hasParents() {
-				if parent, ok := commit.parents()[0].(*Commit); ok {
+				if parent, ok := commit.firstParent().(*Commit); ok {
 					firstParent = parent
 					firstParentIdx = repo.eventToIndex(parent)
 				}
@@ -3561,7 +3661,8 @@ func (commit *Commit) gitHash() gitHashType {
 		// line separator. If this isn't true these "\n"s need to be
 		// replaced by control.lineSep.
 		sb.WriteString("tree " + commit.manifest().gitHash().hexify() + "\n")
-		for _, parent := range commit.parents() {
+		for it := commit.parentIterator(); it.Next(); {
+			parent := it.Value()
 			switch parent.(type) {
 			case *Commit:
 				sb.WriteString("parent " + parent.(*Commit).gitHash().hexify() + "\n")
@@ -3599,7 +3700,7 @@ func (commit *Commit) canonicalize() {
 	if !commit.hasParents() {
 		previous = &FlatPathMap{}
 	} else {
-		p := commit.parents()[0]
+		p := commit.firstParent()
 		switch p.(type) {
 		case *Commit:
 			previous = p.(*Commit).manifest()
@@ -3836,7 +3937,7 @@ func (commit *Commit) Save(w io.Writer) {
 	if !commit.repo.writeOptions.Contains("--noincremental") {
 		if commit.repo.realized != nil && commit.hasParents() {
 			if _, ok := commit.repo.realized[commit.Branch]; !ok {
-				parent := commit.parents()[0]
+				parent := commit.firstParent()
 				switch parent.(type) {
 				case *Commit:
 					pbranch := parent.(*Commit).Branch
@@ -3851,7 +3952,7 @@ func (commit *Commit) Save(w io.Writer) {
 	previousOnBranch := commit.repo.branchPosition[commit.Branch]
 	if incrementalStart {
 		fmt.Fprintf(w, "reset %s\nfrom %s^0\n\n", commit.Branch, commit.Branch)
-	} else if len(commit.parents()) == 0 && previousOnBranch != nil {
+	} else if !commit.hasParents() && previousOnBranch != nil {
 		fmt.Fprintf(w, "reset %s\n", commit.Branch)
 	}
 	if commit.repo.branchPosition != nil {
@@ -3897,20 +3998,22 @@ func (commit *Commit) Save(w io.Writer) {
 	if commit.repo.exportStyle().Contains("nl-after-comment") {
 		w.Write([]byte{'\n'})
 	}
-	parents := commit.parents()
 	doCallouts := commit.repo.writeOptions.Contains("--callout")
 	noImplicit := commit.repo.writeOptions.Contains("--no-implicit")
-	if len(parents) > 0 {
-		ancestor := parents[0]
+	if commit.hasParents() {
+		it := commit.parentIterator()
+		it.Next()
+		ancestor := it.Value()
 		if (commit.repo.internals == nil && !incrementalStart) || commit.repo.internals.Contains(ancestor.getMark()) {
 			if noImplicit || !(commit.implicitParent &&
-				previousOnBranch == ancestor && len(parents) == 1) {
+				previousOnBranch == ancestor && commit.parentCount() == 1) {
 				fmt.Fprintf(w, "from %s\n", ancestor.getMark())
 			}
 		} else if doCallouts {
 			fmt.Fprintf(w, "from %s\n", ancestor.callout())
 		}
-		for _, ancestor := range parents[1:] {
+		for it.Next() {
+			ancestor := it.Value()
 			var nugget string
 			if commit.repo.internals == nil || commit.repo.internals.Contains(ancestor.getMark()) {
 				nugget = ancestor.getMark()
@@ -5663,7 +5766,7 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 		var name string
 		if len(commit.operations()) == 0 || isTipdelete(commit) {
 			if commit.hasParents() {
-				if len(commit.parents()) > 1 && !tagifyMerges {
+				if commit.parentCount() > 1 && !tagifyMerges {
 					return
 				}
 				if nameFunc != nil {
@@ -5685,7 +5788,7 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 				if createTags {
 					repo.tagify(commit,
 						name,
-						commit.parents()[0].getMark(),
+						commit.firstParent().getMark(),
 						legend,
 						false,
 						baton)
@@ -6106,7 +6209,7 @@ func (commit *Commit) ancestorCount(path string) int {
 			return count
 		}
 		if commit.hasParents() {
-			event := commit.parents()[0]
+			event := commit.firstParent()
 			lst, ok := event.(*Commit)
 			if !ok {
 				// Could be a Callout object
@@ -6335,12 +6438,13 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 			// fileop and push it forward to the other
 			// children.
 			if commit.hasParents() {
-				parent := commit.parents()[0]
-				for _, child := range parent.children() {
+				parent := commit.firstParent()
+				for it := commit.childIterator(); it.Next(); {
+					child := it.Value()
 					if child == commit {
 						continue
 					}
-					if childcommit, ok := child.(*Commit); ok && childcommit.parents()[0] == parent {
+					if childcommit, ok := child.(*Commit); ok && childcommit.firstParent() == parent {
 						croak("can't push back to a first parent that is a multi-child commit")
 					}
 				}
@@ -6384,7 +6488,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 			if tagforward && commit.hasChildren() {
 				newTarget = commit.firstChild()
 			} else if tagback && commit.hasParents() {
-				noncallout, ok := commit.parents()[0].(*Commit)
+				noncallout, ok := commit.firstParent().(*Commit)
 				if ok {
 					newTarget = noncallout
 				}
@@ -6440,8 +6544,9 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				newParentIndex += copy(newParents, oldParents[:eventPos])
 				// Add our parents. The Python version
 				// tossed out duplicates of preceding
-				// parents.  Skip callouts.
-				for _, ancestor := range commit.parents() {
+				// parents. Skip callouts.
+				for it := commit.parentIterator(); it.Next(); {
+					ancestor := it.Value()
 					newParents[newParentIndex] = ancestor
 					newParentIndex++
 				}
@@ -6456,7 +6561,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				// all children with the event as their first
 				// parent,and mark each such child as needing
 				// resolution.
-				if pushforward && child.parents()[0] == commit {
+				if pushforward && child.firstParent() == commit {
 					myOperations := make([]*FileOp, len(commit.operations()))
 					for i, op := range commit.operations() {
 						myOperations[i] = op.Copy()
@@ -6469,8 +6574,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 					if policy.Contains("--empty-only") && !emptyComment(child.Comment) {
 						croak(fmt.Sprintf("--empty is on and %s comment is nonempty", child.idMe()))
 					}
-					child.Comment = composeComment(commit.Comment,
-						child.Comment)
+					child.Comment = composeComment(commit.Comment, child.Comment)
 					altered = append(altered, child)
 				}
 				// Really set the parents to the newly
@@ -6503,7 +6607,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				// ops to its primary parent fileop
 				// list and mark the parent as needing
 				// resolution.
-				cparent := commit.parents()[0]
+				cparent := commit.firstParent()
 				parent, ok := cparent.(*Commit)
 				if !ok {
 					continue // Ignore callouts
@@ -6911,7 +7015,8 @@ func (repo *Repository) resort() {
 		switch node.(type) {
 		case *Commit:
 			commit := node.(*Commit)
-			for _, parent := range commit.parents() {
+			for it := commit.parentIterator(); it.Next(); {
+				parent := it.Value()
 				p := repo.eventToIndex(parent)
 				//assert(n != p)
 				start.Remove(n)
@@ -7039,19 +7144,20 @@ func (repo *Repository) reorderCommits(v selectionSet, bequiet bool) {
 		return true
 	}
 	for _, e := range sortedEvents[1:] {
-		if len(e.parents()) > 1 {
+		if e.parentCount() > 1 {
 			croak("non-linear history detected, multiple parents at %s", e.idMe())
 			return
 		}
 	}
 	for _, e := range sortedEvents[:len(sortedEvents)-1] {
-		if len(e.children()) > 1 {
+		if e.childCount() > 1 {
 			croak("non-linear history detected, multiple children at %s", e.idMe())
 			return
 		}
 	}
 	isChildOf := func(later, earlier *Commit) bool {
-		for _, c := range later.parents() {
+		for it := later.parentIterator(); it.Next(); {
+			c := it.Value()
 			if c.getMark() == earlier.getMark() {
 				return true
 			}
@@ -7070,10 +7176,15 @@ func (repo *Repository) reorderCommits(v selectionSet, bequiet bool) {
 	}
 	lastEvent := sortedEvents[len(sortedEvents)-1]
 	events[0].setParents(sortedEvents[0].parents())
-	// replaceParent modifies the list that we're iterating over, so we walk backwards
+	// replaceParent modifies the list that we're iterating over, so we walk backwards.
+	// Skipping nils explicitly here is slightly unclean, strictly speaking this should
+	// have been done with a dedicated reverse iterator so knowledge of how sparseness is
+	// implemented is confined to Commit methods.
 	children := lastEvent.children()
 	for i := len(children) - 1; i >= 0; i-- {
-		children[i].(*Commit).replaceParent(lastEvent, events[len(events)-1])
+		if children[i] != nil {
+			children[i].(*Commit).replaceParent(lastEvent, events[len(events)-1])
+		}
 	}
 	for i, e := range events[:len(events)-1] {
 		events[i+1].setParents([]CommitLike{e})
@@ -7404,7 +7515,9 @@ func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options str
 	// Resolve all callouts
 	unresolved := make([]string, 0)
 	for _, commit := range repo.commits(undefinedSelectionSet) {
-		for idx, parent := range commit.parents() {
+		for it := commit.parentIterator(); it.Next(); {
+			idx := it.Index()
+			parent := it.Value()
 			parentMark := parent.getMark()
 			if isCallout(parentMark) {
 				attach := repo.named(parentMark)
@@ -7474,7 +7587,8 @@ func (repo *Repository) splitCommit(where int, splitfunc func([]*FileOp) ([]*Fil
 	//assert(commit.mark == commit2.mark)
 	commit2.setMark(commit.repo.newmark())
 	// Fix up parent/child relationships
-	for _, child := range commit.children() {
+	for it := commit.childIterator(); it.Next(); {
+		child := it.Value()
 		child.(*Commit).replaceParent(commit, commit2)
 	}
 	commit2.setParents([]CommitLike{commit})
@@ -7527,11 +7641,10 @@ func (repo *Repository) blobAncestor(commit *Commit, path string) *Blob {
 	var ok bool
 	ancestor := commit
 	for {
-		back := ancestor.parents()
-		if len(back) == 0 {
+		if !ancestor.hasParents() {
 			break
 		}
-		trial := back[0]
+		trial := ancestor.firstParent()
 		if ancestor, ok = trial.(*Commit); !ok {
 			break // could be a callout
 		}
@@ -8692,7 +8805,8 @@ func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Bato
 		// Check all children and take a consistent branch in case the order
 		// of these children is not reproducible.
 		newBranch := ""
-		for _, child := range lastCommit.children() {
+		for it := lastCommit.childIterator(); it.Next(); {
+			child := it.Value()
 			if commit, ok := child.(*Commit); ok && !shouldDelete(commit.Branch) {
 				if commit.Branch > newBranch {
 					newBranch = commit.Branch
@@ -9338,7 +9452,9 @@ func (repo *Repository) branchlift(sourcebranch string, pathprefix string, newna
 	for _, commit := range repo.commits(undefinedSelectionSet) {
 		if commit.Branch == sourcebranch {
 			// Preserve merge links on the source branch.
-			if len(commit.parents()) > 1 {
+			if commit.parentCount() > 1 {
+				// It's safe to not use parentIterator here, because
+				// we're appending to another parent list that can also be sparse.
 				sourceparents = append(sourceparents, commit.parents()[1:]...)
 			}
 			commit.setParents(sourceparents)
@@ -9360,11 +9476,11 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 		} else if reset, ok := event.(*Reset); ok {
 			interesting.Add(reset.ref)
 		} else if commit, ok := event.(*Commit); ok {
-			if len(commit.children()) != 1 || len(commit.parents()) != 1 {
+			if commit.childCount() != 1 || commit.parentCount() != 1 {
 				interesting.Add(commit.mark)
 			} else if !ignoreFileops {
 				for _, op := range commit.operations() {
-					direct := commit.parents()[0]
+					direct := commit.firstParent()
 					var noAncestor bool
 					if _, ok := direct.(*Callout); ok {
 						noAncestor = true
@@ -9509,7 +9625,8 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 		keepgoing = false
 		for _, event := range rl.repo.commits(undefinedSelectionSet) {
 			if event.colors != colorNONE {
-				for _, neighbor := range event.parents() {
+				for it := event.parentIterator(); it.Next(); {
+					neighbor := it.Value()
 					if neighbor.getColor() == colorNONE {
 						doColor(neighbor, event.colors)
 						keepgoing = true
@@ -9519,7 +9636,8 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 						break
 					}
 				}
-				for _, neighbor := range event.children() {
+				for it := event.childIterator(); it.Next(); {
+					neighbor := it.Value()
 					if neighbor.getColor() == colorNONE {
 						doColor(neighbor, event.colors)
 						keepgoing = true
