@@ -236,7 +236,7 @@ $(GIT_EXTRACTOR_TARGETS): git-extractor-test-%: %
 
 ifneq ($(call AVAILABLE hg),)
 
-# Test the hg supprt
+# Test the hg support
 HGSTREAMS = testrepo2
 HGSTREAMS_EXTRACTOR_TARGETS = $(HGSTREAMS:%=hg-extractor-test-%)
 $(HGSTREAMS_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi

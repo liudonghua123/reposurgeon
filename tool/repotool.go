@@ -464,7 +464,7 @@ func mirror(args []string) {
 	username := os.Getenv("RUSERNAME")
 	password := os.Getenv("RPASSWORD")
 	plausibleSVNPrefix := func(operand string) bool {
-		return strings.HasPrefix(operand, "svn://") || strings.HasPrefix(operand, "file://") || strings.HasPrefix(operand, "https://") || strings.HasPrefix(operand, "http://")
+		return strings.HasPrefix(operand, "svn://") || strings.HasPrefix(operand, "svn+ssh://") || strings.HasPrefix(operand, "file://") || strings.HasPrefix(operand, "https://") || strings.HasPrefix(operand, "http://")
 	}
 	// Gets commit length of a Subversion repo from its URL. Can be run
 	// on a local mirror directory.
