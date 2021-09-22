@@ -2427,22 +2427,28 @@ func (fileop *FileOp) Copy() *FileOp {
 
 // Callout is a stub object for callout marks in incomplete repository segments.
 type Callout struct {
-	mark        string
-	branch      string
-	_childNodes []string
-	colors      colorSet
+	mark   string
+	branch string
+	colors colorSet
 }
 
 func newCallout(mark string) *Callout {
 	callout := new(Callout)
 	callout.mark = mark
-	callout._childNodes = make([]string, 0)
 	return callout
 }
 
 func (callout *Callout) children() []CommitLike {
 	var out []CommitLike
 	return out
+}
+
+func (callout *Callout) removeChild(oldChild *Commit) {
+	// nothing needs to be done; callouts don’t maintain a child list
+}
+
+func (callout *Callout) addChild(newChild *Commit) {
+	// nothing needs to be done; callouts don’t maintain a child list
 }
 
 func (callout *Callout) hasChildren() bool {
@@ -3207,21 +3213,12 @@ func (commit *Commit) setParents(parents []CommitLike) {
 	oldparent := commit.firstParent()
 	for _, parent := range commit._parentNodes {
 		// remove all occurrences of self in old parent's children cache
-		switch parent.(type) {
-		case *Commit:
-			parent.(*Commit)._childNodes = commitRemove(parent.(*Commit)._childNodes, commit)
-		case *Callout:
-			croak("not removing callout %s", parent.(*Callout).mark)
-		}
+		parent.removeChild(commit)
 	}
 	commit._parentNodes = parents
 	for _, parent := range commit._parentNodes {
-		switch parent.(type) {
-		case *Commit:
-			parent.(*Commit)._childNodes = append(parent.(*Commit)._childNodes, commit)
-		case *Callout:
-			// do nothing
-		}
+		// add self to new parent's children cache
+		parent.addChild(commit)
 	}
 	// Only invalidate when needed: the manifest will not change if the first
 	// parent is the same or the commit's first fileop is a deleteall cutting
@@ -3243,7 +3240,7 @@ func (commit *Commit) setParentMarks(marks []string) {
 
 func (commit *Commit) addParentCommit(newparent *Commit) {
 	commit._parentNodes = append(commit._parentNodes, newparent)
-	newparent._childNodes = append(newparent._childNodes, commit)
+	newparent.addChild(commit)
 	// Only invalidate when needed: the manifest will not change if the first
 	// parent is the same or the commit's first fileop is a deleteall cutting
 	// ties with any first parent.
@@ -3288,7 +3285,7 @@ func (commit *Commit) insertParent(idx int, mark string) {
 	commit._parentNodes = append(commit._parentNodes[:idx], append([]CommitLike{newparent.(*Commit)}, commit._parentNodes[idx:]...)...)
 	switch newparent.(type) {
 	case *Commit:
-		newparent.(*Commit)._childNodes = append(newparent.(*Commit)._childNodes, commit)
+		newparent.(*Commit).addChild(commit)
 	}
 	commit.invalidateManifests()
 }
@@ -3311,8 +3308,8 @@ func (commit *Commit) replaceParent(e1, e2 *Commit) {
 	for i, item := range commit._parentNodes {
 		if item == e1 {
 			commit._parentNodes[i] = e2
-			e1._childNodes = commitRemove(e1._childNodes, commit)
-			e2._childNodes = append(e2._childNodes, commit)
+			e1.removeChild(commit)
+			e2.addChild(commit)
 			commit.invalidateManifests()
 			return
 		}
@@ -3377,6 +3374,14 @@ func (commit *Commit) childCount() int {
 		}
 	}
 	return count
+}
+
+func (commit *Commit) removeChild(oldChild *Commit) {
+	commit._childNodes = commitRemove(commit._childNodes, oldChild)
+}
+
+func (commit *Commit) addChild(newChild *Commit) {
+	commit._childNodes = append(commit._childNodes, newChild)
 }
 
 // hasChildren is a predicate - does this commit have children?
@@ -4871,6 +4876,8 @@ type CommitLike interface {
 	getMark() string
 	hasChildren() bool
 	children() []CommitLike
+	removeChild(*Commit)
+	addChild(*Commit)
 	getComment() string
 	callout() string
 	String() string
