@@ -541,3 +541,484 @@ Node-copyfrom-rev: 17
 Node-copyfrom-path: trunk/project2
 
 
+Revision-number: 21
+Prop-content-length: 123
+Content-length: 123
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:03:30.000000Z
+K 7
+svn:log
+V 24
+project3/trunk/ creation
+PROPS-END
+
+Node-path: trunk/project3
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 22
+Prop-content-length: 126
+Content-length: 126
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:03:40.000000Z
+K 7
+svn:log
+V 27
+project3/branches/ creation
+PROPS-END
+
+Node-path: branches/project3
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 23
+Prop-content-length: 122
+Content-length: 122
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:03:50.000000Z
+K 7
+svn:log
+V 23
+project3/tags/ creation
+PROPS-END
+
+Node-path: tags/project3
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 24
+Prop-content-length: 140
+Content-length: 140
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:04:00.000000Z
+K 7
+svn:log
+V 41
+I learned to relish the beauty of manners
+PROPS-END
+
+Node-path: trunk/project3/foo.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: 3c994644e5aa12eae7b06e5cd1157b8a
+Text-content-sha1: e891e056ed91b66d8c230f8b452925483bb977b0
+Prop-content-length: 10
+Text-content-length: 26
+Content-length: 36
+
+PROPS-END
+From my grandfather Verus
+
+
+Revision-number: 25
+Prop-content-length: 145
+Content-length: 145
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:04:10.000000Z
+K 7
+svn:log
+V 46
+From the fame and character my father obtain'd
+PROPS-END
+
+Node-path: trunk/project3/bar.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: aeb8622e642b90dd0c8d5493c451872f
+Text-content-sha1: 8b0bac4a90d036366115abcd38f445dc752ef087
+Prop-content-length: 10
+Text-content-length: 27
+Content-length: 37
+
+PROPS-END
+and to restrain all anger.
+
+
+Revision-number: 26
+Prop-content-length: 112
+Content-length: 112
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:04:20.000000Z
+K 7
+svn:log
+V 13
+Of my mother;
+PROPS-END
+
+Node-path: trunk/project3/baz.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: 2b680552bb0d669c8e452543375116f6
+Text-content-sha1: e6c8bde35fdb1feb1b3f67a3ce4ad0226b251262
+Prop-content-length: 10
+Text-content-length: 32
+Content-length: 42
+
+PROPS-END
+modesty, and a many deportment.
+
+
+Revision-number: 27
+Prop-content-length: 142
+Content-length: 142
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:04:30.000000Z
+K 7
+svn:log
+V 43
+and to guard not only against evil actions,
+PROPS-END
+
+Node-path: trunk/project3/foo.txt
+Node-kind: file
+Node-action: change
+Text-content-md5: 229eaa8ca397d2ba389ab65e84457c1f
+Text-content-sha1: 8a5db02122f6fb127256f50348ff946568c02def
+Text-content-length: 40
+Content-length: 40
+
+I learned to be religuious and liberal;
+
+
+Revision-number: 28
+Prop-content-length: 119
+Content-length: 119
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:04:40.000000Z
+K 7
+svn:log
+V 20
+entering my thoughts
+PROPS-END
+
+Node-path: trunk/project3/foo.txt
+Node-kind: file
+Node-action: change
+Text-content-md5: 2ea076f6107879a187b257dfb6770508
+Text-content-sha1: a69c5800c07296d5e28dbd199bf95e9370d9c112
+Text-content-length: 37
+Content-length: 37
+
+but even against any evil intentions
+
+
+Revision-number: 29
+Prop-content-length: 131
+Content-length: 131
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:04:50.000000Z
+K 7
+svn:log
+V 32
+project1/trunk/subdir1/ creation
+PROPS-END
+
+Node-path: trunk/project1/subdir1
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 30
+Prop-content-length: 98
+Content-length: 98
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:05:00.000000Z
+K 7
+svn:log
+V 0
+
+PROPS-END
+
+Node-path: trunk/project1/subdir1/placeholder1
+Node-kind: file
+Node-action: add
+Text-content-md5: c468f4e2ef427396712cb27c2fdd087f
+Text-content-sha1: d4fcc8c766788136373c6bc0d03da182e3059953
+Prop-content-length: 10
+Text-content-length: 18
+Content-length: 28
+
+PROPS-END
+Tack down subdir1
+
+
+Revision-number: 31
+Prop-content-length: 131
+Content-length: 131
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:05:10.000000Z
+K 7
+svn:log
+V 32
+project2/trunk/subdir2/ creation
+PROPS-END
+
+Node-path: trunk/project2/subdir2
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 32
+Prop-content-length: 98
+Content-length: 98
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:05:20.000000Z
+K 7
+svn:log
+V 0
+
+PROPS-END
+
+Node-path: trunk/project2/subdir2/placeholder2
+Node-kind: file
+Node-action: add
+Text-content-md5: 5980b3ef4e69a29c59bd15a2f0458e74
+Text-content-sha1: 91b3e0cf73e07763b20625932fa1455079191429
+Prop-content-length: 10
+Text-content-length: 18
+Content-length: 28
+
+PROPS-END
+Tack down subdir2
+
+
+Revision-number: 33
+Prop-content-length: 131
+Content-length: 131
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:05:30.000000Z
+K 7
+svn:log
+V 32
+project3/trunk/subdir3/ creation
+PROPS-END
+
+Node-path: trunk/project3/subdir3
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 34
+Prop-content-length: 98
+Content-length: 98
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:05:40.000000Z
+K 7
+svn:log
+V 0
+
+PROPS-END
+
+Node-path: trunk/project3/subdir3/placeholder3
+Node-kind: file
+Node-action: add
+Text-content-md5: 18e598fb1e7c3c09f132420aa3500f29
+Text-content-sha1: 8e5ab7e2316b74811a90dc3f2bb861e0bed7a47a
+Prop-content-length: 10
+Text-content-length: 18
+Content-length: 28
+
+PROPS-END
+Tack down subdir3
+
+
+Revision-number: 35
+Prop-content-length: 133
+Content-length: 133
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:05:50.000000Z
+K 7
+svn:log
+V 34
+Create exiguous branch of project1
+PROPS-END
+
+Node-path: branches/exiguous/project1
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 34
+Node-copyfrom-path: trunk/project1/subdir1
+
+
+Revision-number: 36
+Prop-content-length: 133
+Content-length: 133
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:06:00.000000Z
+K 7
+svn:log
+V 34
+Create exiguous branch of project2
+PROPS-END
+
+Node-path: branches/exiguous/project2
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 35
+Node-copyfrom-path: trunk/project2/subdir2
+
+
+Revision-number: 37
+Prop-content-length: 133
+Content-length: 133
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:06:10.000000Z
+K 7
+svn:log
+V 34
+Create exiguous branch of project3
+PROPS-END
+
+Node-path: branches/exiguous/project3
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 36
+Node-copyfrom-path: trunk/project3/subdir3
+
+

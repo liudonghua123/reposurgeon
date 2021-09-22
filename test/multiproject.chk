@@ -89,12 +89,50 @@ M 100644 :10 evilcopy/bar.txt
 M 100644 :12 evilcopy/baz.txt
 M 100644 :16 evilcopy/foo.txt
 
+blob
+mark :30
+data 18
+Tack down subdir1
+
+commit refs/heads/master
+#legacy-id 30
+mark :31
+committer Fred J. Foonly <foonly@foo.com> 10800 +0000
+data 0
+from :19
+M 100644 :30 subdir1/placeholder1
+
+commit refs/heads/exiguous
+#legacy-id 35
+mark :36
+committer Fred J. Foonly <foonly@foo.com> 12600 +0000
+data 35
+Create exiguous branch of project1
+from :31
+D bar.txt
+D baz.txt
+D evilcopy/bar.txt
+D evilcopy/baz.txt
+D evilcopy/foo.txt
+D foo.txt
+M 100644 :30 placeholder1
+D subdir1/placeholder1
+
 tag stable-root
 #legacy-id 8
 from :7
 tagger Fred J. Foonly <foonly@foo.com> 2880 +0000
 data 21
 First directory copy
+
+tag emptycommit-29
+#legacy-id 29
+from :19
+tagger Fred J. Foonly <foonly@foo.com> 10440 +0000
+data 84
+project1/trunk/subdir1/ creation
+
+[[Tag from zero-fileop commit at Subversion r29]]
 
 reset refs/heads/stable
 #legacy-id 8

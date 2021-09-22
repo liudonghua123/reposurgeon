@@ -6768,7 +6768,7 @@ func (repo *Repository) dedup(dupMap map[string]string, baton *Baton) {
 // Note: if you find yourself using this you are probably
 // doing down a bad path. It's generally better for whatever
 // operation you are doing that might free blobs to finish
-// with a squash() call that infokes the normal code path
+// with a squash() call that invokes the normal code path
 // for cleaning up unreferenced blobs.
 func (repo *Repository) gcBlobs() {
 	backreferences := make(map[string]bool)

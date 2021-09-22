@@ -5,5 +5,6 @@ read <multigen.svn \
 branch rename heads/project1/trunk heads/master
 branch rename :heads/project1/branches/(.*): heads/\1
 branch delete heads/project2
+branch delete heads/project3
 prefer git
 write -

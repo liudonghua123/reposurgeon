@@ -167,4 +167,168 @@ M 100644 :11 trunk/evilcopy/bar.txt
 M 100644 :13 trunk/evilcopy/baz.txt
 M 100644 :17 trunk/evilcopy/foo.txt
 
+blob
+mark :21
+data 26
+From my grandfather Verus
+
+commit refs/heads/project3
+#legacy-id 24
+mark :22
+committer fred <fred> 240 +0000
+data 42
+I learned to relish the beauty of manners
+deleteall
+M 100644 :1 .gitignore
+M 100644 :21 trunk/foo.txt
+
+blob
+mark :23
+data 27
+and to restrain all anger.
+
+commit refs/heads/project3
+#legacy-id 25
+mark :24
+committer fred <fred> 250 +0000
+data 47
+From the fame and character my father obtain'd
+from :22
+M 100644 :23 trunk/bar.txt
+
+blob
+mark :25
+data 32
+modesty, and a many deportment.
+
+commit refs/heads/project3
+#legacy-id 26
+mark :26
+committer fred <fred> 260 +0000
+data 14
+Of my mother;
+from :24
+M 100644 :25 trunk/baz.txt
+
+blob
+mark :27
+data 40
+I learned to be religuious and liberal;
+
+commit refs/heads/project3
+#legacy-id 27
+mark :28
+committer fred <fred> 270 +0000
+data 44
+and to guard not only against evil actions,
+from :26
+M 100644 :27 trunk/foo.txt
+
+blob
+mark :29
+data 37
+but even against any evil intentions
+
+commit refs/heads/project3
+#legacy-id 28
+mark :30
+committer fred <fred> 280 +0000
+data 21
+entering my thoughts
+from :28
+M 100644 :29 trunk/foo.txt
+
+blob
+mark :31
+data 18
+Tack down subdir1
+
+commit refs/heads/project1
+#legacy-id 30
+mark :32
+committer fred <fred> 300 +0000
+data 0
+from :20
+M 100644 :31 trunk/subdir1/placeholder1
+
+blob
+mark :33
+data 18
+Tack down subdir2
+
+commit refs/heads/project2
+#legacy-id 32
+mark :34
+committer fred <fred> 320 +0000
+data 0
+from :19
+M 100644 :33 trunk/subdir2/placeholder2
+
+blob
+mark :35
+data 18
+Tack down subdir3
+
+commit refs/heads/project3
+#legacy-id 34
+mark :36
+committer fred <fred> 340 +0000
+data 0
+from :30
+M 100644 :35 trunk/subdir3/placeholder3
+
+commit refs/heads/project1
+#legacy-id 35
+mark :37
+committer fred <fred> 350 +0000
+data 35
+Create exiguous branch of project1
+from :32
+M 100644 :31 branches/exiguous/placeholder1
+
+commit refs/heads/project2
+#legacy-id 36
+mark :38
+committer fred <fred> 360 +0000
+data 35
+Create exiguous branch of project2
+from :34
+M 100644 :33 branches/exiguous/placeholder2
+
+commit refs/heads/project3
+#legacy-id 37
+mark :39
+committer fred <fred> 370 +0000
+data 35
+Create exiguous branch of project3
+from :36
+M 100644 :35 branches/exiguous/placeholder3
+
+tag emptycommit-29
+#legacy-id 29
+from :20
+tagger fred <fred> 290 +0000
+data 84
+project1/trunk/subdir1/ creation
+
+[[Tag from zero-fileop commit at Subversion r29]]
+
+tag emptycommit-31
+#legacy-id 31
+from :19
+tagger fred <fred> 310 +0000
+data 84
+project2/trunk/subdir2/ creation
+
+[[Tag from zero-fileop commit at Subversion r31]]
+
+tag emptycommit-33
+#legacy-id 33
+from :30
+tagger fred <fred> 330 +0000
+data 84
+project3/trunk/subdir3/ creation
+
+[[Tag from zero-fileop commit at Subversion r33]]
+
 done
