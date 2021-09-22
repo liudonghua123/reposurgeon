@@ -3187,11 +3187,10 @@ func (commit *Commit) parentMarks() []string {
 func commitRemove(commitlist []CommitLike, commit CommitLike) []CommitLike {
 	for i := len(commitlist) - 1; i >= 0; i-- {
 		if commitlist[i] == commit {
-			if i < len(commitlist)-1 {
-				copy(commitlist[i:], commitlist[i+1:])
-			}
-			commitlist[len(commitlist)-1] = nil
-			commitlist = commitlist[:len(commitlist)-1]
+			// We used to compact the list here rather than leaving nils in it;
+			// this turned out to be very costly during the Subversion reader's
+			// tagification phase.
+			commitlist[i] = nil
 		}
 	}
 	return commitlist
