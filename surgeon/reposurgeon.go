@@ -3854,8 +3854,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 		}
 		loc = time.FixedZone(args[1], zoffset)
 	}
-	for it := rs.selection.Iterator(); it.Next(); {
-		event := rs.chosen().events[it.Value()]
+	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagger != nil {
 				tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(offset)
@@ -3874,7 +3873,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 				}
 			}
 		}
-	}
+	})
 	return false
 }
 
