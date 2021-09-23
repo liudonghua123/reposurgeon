@@ -217,10 +217,10 @@ removed as well.
 `,
 	"split": `split: usage: repocutter split PATH...
 
-Transform every stream operation with Node-path PATH in the path list into three operations
-on PATH/trunk. PATH/branches, and PATH/tags. This operation assumes if the operation is a copy 
-that structure exists under the source directory and also mutates Node-copyfrom headers
-accordingly. 
+Transform every stream operation with Node-path PATH in the path list 
+into three operations on PATH/trunk. PATH/branches, and PATH/tags. This
+operation assumes if the operation is a copy  that structure exists under
+the source directory and also mutates Node-copyfrom headers accordingly. 
 `,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
 
@@ -238,12 +238,27 @@ only paths matching the pattern are swapped.
 `,
 	"swapsvn": `swap: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
 
-Like swap, but is aware of Subversion structure.  Requires that the second component
-of each matching path be "trunk", "branches", or "tags", terminates with error if
-this is not so. Swaps "trunk" and the top-level directory straight up.  For tags and 
-branches, the following *two* components are swapped to the top - thus, "foo/branches/release23"
-becomes "branches/release23/foo". If a PATTERN argument is given, only paths matching
-the pattern are swapped.
+Like swap, but is aware of Subversion structure.  Used for transforming
+multiproject repositories intoo a standard layout with trunk, tags, and
+branches at the top level.
+
+Requires that the second component of each matching path be "trunk", 
+"branches", or "tags", terminates with error if this is not so. Swaps
+"trunk" and the top-level (project) directory straight up.  For tags
+and  branches, the following *two* components are swapped to the top.
+thus, "foo/branches/release23" becomes "branches/release23/foo",
+putting the project directory beneath the branch.
+
+After the swap, more attempts to recognize spans of copies into branch
+and tag subdirectories that are parallel in all top-level (project)
+directories should be coalesced into single copies in the inverted
+structure. Accordingly, copies with three-segment sources and
+three-segment targets are  transformed; for tags/ and branches/ paths
+the last segment (the subdirectory below the branch name)  is dropped,
+while for trunk/ paths the last two segments are dropped leaving only
+trunk/.  Following duplicate copies are skipped.
+
+If a PATTERN argument is given, only paths matching the pattern are swapped.
 `,
 	"testify": `testify: usage: repocutter [-r SELECTION] testify
 
@@ -1822,13 +1837,16 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, false)
 }
 
-// Hack paths by swapping the top two components - if "structural" is on, be Subvesion-aware.
+// Hack paths by swapping the top two components - if "structural" is on, be Subversion-aware
+// and also attemptt  spans of partial branch creations.
 func swap(source DumpfileSource, selection SubversionRange, patterns []string, structural bool) {
 	var match *regexp.Regexp
+	realized := newStringSet("trunk")
+	var thisCreation, lastCreation string
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
 	}
-	mutator := func(path []byte) []byte {
+	mutator := func(path []byte, isDirCopy bool) []byte {
 		if match != nil && !match.Match(path) {
 			return path
 		}
@@ -1862,6 +1880,23 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				croak("unexpected path part %s in %s at r%d, line %d",
 					parts[1], path, source.Revision, source.Lbs.linenumber)
 			}
+			// This is where we attempt to coalesce runs of copies between directories below
+			// project level.  Only happens the first time we see a copy to a branch.
+			if isDirCopy && len(parts) == 3 {
+				top := string(parts[0])
+				if top == "trunk" {
+					parts = parts[:1]
+				} else if top == "branches" || top == "tags" {
+					thisCreation = string(bytes.Join(parts[:2], []byte("/")))
+					if !realized.Contains(thisCreation) {
+						parts = parts[:2]
+					}
+				}
+				if thisCreation != lastCreation {
+					realized.Add(lastCreation)
+				}
+				lastCreation = thisCreation
+			}
 		} else { // naive swap
 			parts[0] = parts[1]
 			parts[1] = top
@@ -1871,7 +1906,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	revhook := func(props *Properties) {
 		var mergepath []byte
 		if m, ok := props.properties["svn:mergeinfo"]; ok {
-			mergepath = mutator([]byte(m))
+			mergepath = mutator([]byte(m), false)
 		}
 		if mergepath != nil {
 			props.properties["svn:mergeinfo"] = string(mergepath)
@@ -1885,6 +1920,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		// the branch structure.
 	}
 	var swaplatch bool // Ugh, but less than global
+	lastPathPair := make([]byte, 0)
 	nodehook := func(header []byte, properties []byte, content []byte) []byte {
 		// This is dodgy.  The assumption here is that the first node
 		// of r1 is the directory creation for the first project.
@@ -1921,6 +1957,11 @@ PROPS-END
 			swaplatch = true
 			return []byte(swapHeader)
 		}
+		isCopy := bytes.Index(header, []byte("Node-copyfrom-path: ")) != -1
+		typeIndex := bytes.Index(header, []byte("Node-kind: "))
+		// Subversion sometimes omits the type field on directory operations
+		isDir := (typeIndex != -1) || header[typeIndex+11] == 'd'
+		pathPair := make([]byte, 0)
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
 			offs := bytes.Index(header, []byte(htype))
 			if offs > -1 {
@@ -1929,10 +1970,11 @@ PROPS-END
 				before := header[:offs]
 				pathline := header[offs:endoffs]
 				after := header[endoffs:]
-				pathline = mutator(pathline)
+				pathline = mutator(pathline, isDir && isCopy)
 				if pathline == nil {
 					return nil
 				}
+				pathPair = append(pathPair, pathline...)
 				header = []byte(string(before) + string(pathline) + string(after))
 			}
 		}
@@ -1940,6 +1982,15 @@ PROPS-END
 		all = append(all, header...)
 		all = append(all, properties...)
 		all = append(all, content...)
+
+		// Following the coalescing copy rewrites in the mutator above,
+		// this is where we drop any duplicates after the first one
+		// produced.
+		if structural && isDir && isCopy && bytes.Equal(lastPathPair, pathPair) {
+			return nil
+		}
+		lastPathPair = pathPair
+
 		return all
 	}
 	source.Report(selection, nodehook, revhook, true, true)
