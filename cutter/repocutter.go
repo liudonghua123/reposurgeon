@@ -1037,6 +1037,25 @@ func payload(hd string, header []byte) []byte {
 	return header[offs : offs+end]
 }
 
+// Mutate a specified header through a hook
+func replaceHook(header []byte, htype string, hook func([]byte) []byte) ([]byte, []byte, []byte) {
+	offs := bytes.Index(header, []byte(htype))
+	if offs > -1 {
+		offs += len(htype)
+		endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
+		before := header[:offs]
+		pathline := header[offs:endoffs]
+		after := make([]byte, len(header)-endoffs)
+		copy(after, header[endoffs:])
+		newpathline := hook(pathline)
+		header = before
+		header = append(header, newpathline...)
+		header = append(header, after...)
+		return header, newpathline, pathline
+	}
+	return header, nil, nil
+}
+
 // Subcommand implementations begin here
 
 func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
@@ -1197,19 +1216,9 @@ func pop(source DumpfileSource, selection SubversionRange) {
 	}
 	nodehook := func(header []byte, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
-			offs := bytes.Index(header, []byte(htype))
-			if offs > -1 {
-				offs += len(htype)
-				endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
-				before := header[:offs]
-				pathline := header[offs:endoffs]
-				after := make([]byte, len(header)-endoffs)
-				copy(after, header[endoffs:])
-				pathline = []byte(popSegment(string(pathline)))
-				header = before
-				header = append(header, pathline...)
-				header = append(header, after...)
-			}
+			header, _, _ = replaceHook(header, htype, func(in []byte) []byte {
+				return []byte(popSegment(string(in)))
+			})
 		}
 		all := make([]byte, 0)
 		all = append(all, header...)
@@ -1350,19 +1359,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 	}
 	nodehook := func(header []byte, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
-			offs := bytes.Index(header, []byte(htype))
-			if offs > -1 {
-				offs += len(htype)
-				endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
-				before := header[:offs]
-				pathline := header[offs:endoffs]
-				after := make([]byte, len(header)-endoffs)
-				copy(after, header[endoffs:])
-				pathline = pathMutator(pathline)
-				header = before
-				header = append(header, pathline...)
-				header = append(header, after...)
-			}
+			header, _, _ = replaceHook(header, htype, pathMutator)
 		}
 		if contentMutator != nil {
 			content = contentMutator(content)
@@ -1849,10 +1846,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
 	}
-	mutator := func(path []byte, isDirCopy bool) ([]byte, bool) {
-		var coalesced bool
+	mutator := func(path []byte, isDirCopy bool) []byte {
 		if match != nil && !match.Match(path) {
-			return path, false
+			return path
 		}
 		parts := bytes.Split(path, []byte("/"))
 		if len(parts) < 2 {
@@ -1868,7 +1864,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			// Subversion's stream dump reader don't mind if no
 			// explicit trunk/ directory creation is ever done as
 			// long as some trunk subdirectory *is* created.
-			return nil, false
+			return nil
 		}
 		top := parts[0]
 		if structural {
@@ -1890,12 +1886,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				top := string(parts[0])
 				if top == "trunk" {
 					parts = parts[:1]
-					coalesced = true
 				} else if top == "branches" || top == "tags" {
 					thisCreation = string(bytes.Join(parts[:2], []byte("/")))
 					if !realized.Contains(thisCreation) {
 						parts = parts[:2]
-						coalesced = true
 					}
 				}
 				if thisCreation != lastCreation {
@@ -1907,27 +1901,18 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			parts[0] = parts[1]
 			parts[1] = top
 		}
-		return bytes.Join(parts, []byte("/")), coalesced
+		return bytes.Join(parts, []byte("/"))
 	}
 	hackpath := func(header []byte, htype string, coalesce bool) (bool, []byte, []byte, bool) {
-		offs := bytes.Index(header, []byte(htype))
-		if offs > -1 {
-			var coalesced bool
-			offs += len(htype)
-			endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
-			before := header[:offs]
-			pathline := header[offs:endoffs]
-			after := header[endoffs:]
-			pathline, coalesced = mutator(pathline, coalesce)
-			header = []byte(string(before) + string(pathline) + string(after))
-			return true, header, pathline, coalesced
-		}
-		return false, header, nil, false
+		newheader, newval, oldval := replaceHook(header, htype, func(in []byte) []byte {
+			return mutator(in, coalesce)
+		})
+		return oldval != nil, newheader, newval, !bytes.Equal(oldval, newval)
 	}
 	revhook := func(props *Properties) {
 		var mergepath []byte
 		if m, ok := props.properties["svn:mergeinfo"]; ok {
-			mergepath, _ = mutator([]byte(m), false)
+			mergepath = mutator([]byte(m), false)
 		}
 		if mergepath != nil {
 			props.properties["svn:mergeinfo"] = string(mergepath)
