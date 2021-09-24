@@ -256,7 +256,10 @@ structure. Accordingly, copies with three-segment sources and
 three-segment targets are  transformed; for tags/ and branches/ paths
 the last segment (the subdirectory below the branch name)  is dropped,
 while for trunk/ paths the last two segments are dropped leaving only
-trunk/.  Following duplicate copies are skipped.
+trunk/.  Following duplicate copies are skipped.  This transformation
+is done only once; once a branch creation has been synthesized later
+copies to subdirectories of that branch are not altered and are thus
+treated as updates to the branch.
 
 If a PATTERN argument is given, only paths matching the pattern are swapped.
 `,
@@ -1846,9 +1849,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
 	}
-	mutator := func(path []byte, isDirCopy bool) []byte {
+	mutator := func(path []byte, isDirCopy bool) ([]byte, bool) {
+		var coalesced bool
 		if match != nil && !match.Match(path) {
-			return path
+			return path, false
 		}
 		parts := bytes.Split(path, []byte("/"))
 		if len(parts) < 2 {
@@ -1864,7 +1868,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			// Subversion's stream dump reader don't mind if no
 			// explicit trunk/ directory creation is ever done as
 			// long as some trunk subdirectory *is* created.
-			return nil
+			return nil, false
 		}
 		top := parts[0]
 		if structural {
@@ -1886,10 +1890,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				top := string(parts[0])
 				if top == "trunk" {
 					parts = parts[:1]
+					coalesced = true
 				} else if top == "branches" || top == "tags" {
 					thisCreation = string(bytes.Join(parts[:2], []byte("/")))
 					if !realized.Contains(thisCreation) {
 						parts = parts[:2]
+						coalesced = true
 					}
 				}
 				if thisCreation != lastCreation {
@@ -1901,12 +1907,27 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			parts[0] = parts[1]
 			parts[1] = top
 		}
-		return bytes.Join(parts, []byte("/"))
+		return bytes.Join(parts, []byte("/")), coalesced
+	}
+	hackpath := func(header []byte, htype string, coalesce bool) (bool, []byte, []byte, bool) {
+		offs := bytes.Index(header, []byte(htype))
+		if offs > -1 {
+			var coalesced bool
+			offs += len(htype)
+			endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
+			before := header[:offs]
+			pathline := header[offs:endoffs]
+			after := header[endoffs:]
+			pathline, coalesced = mutator(pathline, coalesce)
+			header = []byte(string(before) + string(pathline) + string(after))
+			return true, header, pathline, coalesced
+		}
+		return false, header, nil, false
 	}
 	revhook := func(props *Properties) {
 		var mergepath []byte
 		if m, ok := props.properties["svn:mergeinfo"]; ok {
-			mergepath = mutator([]byte(m), false)
+			mergepath, _ = mutator([]byte(m), false)
 		}
 		if mergepath != nil {
 			props.properties["svn:mergeinfo"] = string(mergepath)
@@ -1961,23 +1982,20 @@ PROPS-END
 		typeIndex := bytes.Index(header, []byte("Node-kind: "))
 		// Subversion sometimes omits the type field on directory operations
 		isDir := (typeIndex != -1) || header[typeIndex+11] == 'd'
-		pathPair := make([]byte, 0)
-		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
-			offs := bytes.Index(header, []byte(htype))
-			if offs > -1 {
-				offs += len(htype)
-				endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
-				before := header[:offs]
-				pathline := header[offs:endoffs]
-				after := header[endoffs:]
-				pathline = mutator(pathline, isDir && isCopy)
-				if pathline == nil {
-					return nil
-				}
-				pathPair = append(pathPair, pathline...)
-				header = []byte(string(before) + string(pathline) + string(after))
-			}
+
+		var changed, coalesced bool
+		var pathline []byte
+		changed, header, pathline, coalesced = hackpath(header, "Node-path: ", isDir && isCopy)
+		if changed && pathline == nil {
+			return nil
 		}
+		pathPair := append(pathline, []byte{0}...)
+		changed, header, pathline, _ = hackpath(header, "Node-copyfrom-path: ", coalesced)
+		if changed && pathline == nil {
+			return nil
+		}
+		pathPair = append(pathPair, pathline...)
+
 		all := make([]byte, 0)
 		all = append(all, header...)
 		all = append(all, properties...)

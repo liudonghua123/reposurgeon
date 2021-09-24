@@ -63,6 +63,8 @@ svnaction "project2/trunk/baz.txt" "and by opposing end them" "The build-up"
 svnaction "project2/trunk/foo.txt" "to be,"  "Famous soliloquy begins"
 svnaction "project2/trunk/foo.txt" "or not to be." "And continues"
 svn up
+svnaction "project2/trunk/foodir/qux.txt" "He was born with the gift of laughter" "and a sense that the world is mad."
+svn up
 svn copy project2/trunk project2/tags/1.0
 svn commit -m "First tag copy"
 svn copy project2/trunk project1/trunk/evilcopy
@@ -94,6 +96,11 @@ svn commit -m "Create exiguous branch of project2"
 svn up
 svn copy project3/trunk/subdir3 project3/branches/exiguous
 svn commit -m "Create exiguous branch of project3"
+svn up
+svnaction "project3/branches/exiguous/foo.txt" "Fourscore and seven years ago"
+svn up
+svn copy project2/trunk/foodir project3/branches/exiguous
+svn commit -m "Copy after branch creation"
 svn up
 # We're done
 cd ..

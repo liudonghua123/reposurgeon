@@ -145,190 +145,228 @@ And continues
 from :16
 M 100644 :17 trunk/foo.txt
 
+blob
+mark :19
+data 38
+He was born with the gift of laughter
+
 commit refs/heads/project2
 #legacy-id 18
-mark :19
+mark :20
 committer fred <fred> 180 +0000
+data 35
+and a sense that the world is mad.
+from :18
+M 100644 :19 trunk/foodir/qux.txt
+
+commit refs/heads/project2
+#legacy-id 19
+mark :21
+committer fred <fred> 190 +0000
 data 15
 First tag copy
-from :18
+from :20
 M 100644 :11 tags/1.0/bar.txt
 M 100644 :13 tags/1.0/baz.txt
 M 100644 :17 tags/1.0/foo.txt
+M 100644 :19 tags/1.0/foodir/qux.txt
 
 commit refs/heads/project1
-#legacy-id 19
-mark :20
-committer fred <fred> 190 +0000
+#legacy-id 20
+mark :22
+committer fred <fred> 200 +0000
 data 27
 Example cross-project copy
 from :8
 M 100644 :11 trunk/evilcopy/bar.txt
 M 100644 :13 trunk/evilcopy/baz.txt
 M 100644 :17 trunk/evilcopy/foo.txt
-
-blob
-mark :21
-data 26
-From my grandfather Verus
-
-commit refs/heads/project3
-#legacy-id 24
-mark :22
-committer fred <fred> 240 +0000
-data 42
-I learned to relish the beauty of manners
-deleteall
-M 100644 :1 .gitignore
-M 100644 :21 trunk/foo.txt
+M 100644 :19 trunk/evilcopy/foodir/qux.txt
 
 blob
 mark :23
-data 27
-and to restrain all anger.
+data 26
+From my grandfather Verus
 
 commit refs/heads/project3
 #legacy-id 25
 mark :24
 committer fred <fred> 250 +0000
-data 47
-From the fame and character my father obtain'd
-from :22
-M 100644 :23 trunk/bar.txt
+data 42
+I learned to relish the beauty of manners
+deleteall
+M 100644 :1 .gitignore
+M 100644 :23 trunk/foo.txt
 
 blob
 mark :25
-data 32
-modesty, and a many deportment.
+data 27
+and to restrain all anger.
 
 commit refs/heads/project3
 #legacy-id 26
 mark :26
 committer fred <fred> 260 +0000
-data 14
-Of my mother;
+data 47
+From the fame and character my father obtain'd
 from :24
-M 100644 :25 trunk/baz.txt
+M 100644 :25 trunk/bar.txt
 
 blob
 mark :27
-data 40
-I learned to be religuious and liberal;
+data 32
+modesty, and a many deportment.
 
 commit refs/heads/project3
 #legacy-id 27
 mark :28
 committer fred <fred> 270 +0000
-data 44
-and to guard not only against evil actions,
+data 14
+Of my mother;
 from :26
-M 100644 :27 trunk/foo.txt
+M 100644 :27 trunk/baz.txt
 
 blob
 mark :29
-data 37
-but even against any evil intentions
+data 40
+I learned to be religuious and liberal;
 
 commit refs/heads/project3
 #legacy-id 28
 mark :30
 committer fred <fred> 280 +0000
-data 21
-entering my thoughts
+data 44
+and to guard not only against evil actions,
 from :28
 M 100644 :29 trunk/foo.txt
 
 blob
 mark :31
-data 18
-Tack down subdir1
+data 37
+but even against any evil intentions
 
-commit refs/heads/project1
-#legacy-id 30
+commit refs/heads/project3
+#legacy-id 29
 mark :32
-committer fred <fred> 300 +0000
-data 0
-from :20
-M 100644 :31 trunk/subdir1/placeholder1
+committer fred <fred> 290 +0000
+data 21
+entering my thoughts
+from :30
+M 100644 :31 trunk/foo.txt
 
 blob
 mark :33
 data 18
-Tack down subdir2
+Tack down subdir1
 
-commit refs/heads/project2
-#legacy-id 32
+commit refs/heads/project1
+#legacy-id 31
 mark :34
-committer fred <fred> 320 +0000
+committer fred <fred> 310 +0000
 data 0
-from :19
-M 100644 :33 trunk/subdir2/placeholder2
+from :22
+M 100644 :33 trunk/subdir1/placeholder1
 
 blob
 mark :35
 data 18
+Tack down subdir2
+
+commit refs/heads/project2
+#legacy-id 33
+mark :36
+committer fred <fred> 330 +0000
+data 0
+from :21
+M 100644 :35 trunk/subdir2/placeholder2
+
+blob
+mark :37
+data 18
 Tack down subdir3
 
 commit refs/heads/project3
-#legacy-id 34
-mark :36
-committer fred <fred> 340 +0000
+#legacy-id 35
+mark :38
+committer fred <fred> 350 +0000
 data 0
-from :30
-M 100644 :35 trunk/subdir3/placeholder3
+from :32
+M 100644 :37 trunk/subdir3/placeholder3
 
 commit refs/heads/project1
-#legacy-id 35
-mark :37
-committer fred <fred> 350 +0000
-data 35
-Create exiguous branch of project1
-from :32
-M 100644 :31 branches/exiguous/placeholder1
-
-commit refs/heads/project2
 #legacy-id 36
-mark :38
+mark :39
 committer fred <fred> 360 +0000
 data 35
-Create exiguous branch of project2
+Create exiguous branch of project1
 from :34
-M 100644 :33 branches/exiguous/placeholder2
+M 100644 :33 branches/exiguous/placeholder1
 
-commit refs/heads/project3
+commit refs/heads/project2
 #legacy-id 37
-mark :39
+mark :40
 committer fred <fred> 370 +0000
 data 35
-Create exiguous branch of project3
+Create exiguous branch of project2
 from :36
-M 100644 :35 branches/exiguous/placeholder3
+M 100644 :35 branches/exiguous/placeholder2
 
-tag emptycommit-29
-#legacy-id 29
-from :20
-tagger fred <fred> 290 +0000
+commit refs/heads/project3
+#legacy-id 38
+mark :41
+committer fred <fred> 380 +0000
+data 35
+Create exiguous branch of project3
+from :38
+M 100644 :37 branches/exiguous/placeholder3
+
+blob
+mark :42
+data 30
+Fourscore and seven years ago
+
+commit refs/heads/project3
+#legacy-id 39
+mark :43
+committer fred <fred> 390 +0000
+data 0
+from :41
+M 100644 :42 branches/exiguous/foo.txt
+
+commit refs/heads/project3
+#legacy-id 40
+mark :44
+committer fred <fred> 400 +0000
+data 27
+Copy after branch creation
+from :43
+M 100644 :19 branches/exiguous/foodir/qux.txt
+
+tag emptycommit-30
+#legacy-id 30
+from :22
+tagger fred <fred> 300 +0000
 data 84
 project1/trunk/subdir1/ creation
 
-[[Tag from zero-fileop commit at Subversion r29]]
+[[Tag from zero-fileop commit at Subversion r30]]
 
-tag emptycommit-31
-#legacy-id 31
-from :19
-tagger fred <fred> 310 +0000
+tag emptycommit-32
+#legacy-id 32
+from :21
+tagger fred <fred> 320 +0000
 data 84
 project2/trunk/subdir2/ creation
 
-[[Tag from zero-fileop commit at Subversion r31]]
+[[Tag from zero-fileop commit at Subversion r32]]
 
-tag emptycommit-33
-#legacy-id 33
-from :30
-tagger fred <fred> 330 +0000
+tag emptycommit-34
+#legacy-id 34
+from :32
+tagger fred <fred> 340 +0000
 data 84
 project3/trunk/subdir3/ creation
 
-[[Tag from zero-fileop commit at Subversion r33]]
+[[Tag from zero-fileop commit at Subversion r34]]
 
 done

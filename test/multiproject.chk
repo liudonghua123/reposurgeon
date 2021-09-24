@@ -78,44 +78,51 @@ mark :16
 data 14
 or not to be.
 
+blob
+mark :18
+data 38
+He was born with the gift of laughter
+
 commit refs/heads/master
-#legacy-id 19
-mark :19
-committer Fred J. Foonly <foonly@foo.com> 6840 +0000
+#legacy-id 20
+mark :21
+committer Fred J. Foonly <foonly@foo.com> 7200 +0000
 data 27
 Example cross-project copy
 from :7
 M 100644 :10 evilcopy/bar.txt
 M 100644 :12 evilcopy/baz.txt
 M 100644 :16 evilcopy/foo.txt
+M 100644 :18 evilcopy/foodir/qux.txt
 
 blob
-mark :30
+mark :32
 data 18
 Tack down subdir1
 
 commit refs/heads/master
-#legacy-id 30
-mark :31
-committer Fred J. Foonly <foonly@foo.com> 10800 +0000
+#legacy-id 31
+mark :33
+committer Fred J. Foonly <foonly@foo.com> 11160 +0000
 data 0
-from :19
-M 100644 :30 subdir1/placeholder1
+from :21
+M 100644 :32 subdir1/placeholder1
 
 commit refs/heads/exiguous
-#legacy-id 35
-mark :36
-committer Fred J. Foonly <foonly@foo.com> 12600 +0000
+#legacy-id 36
+mark :38
+committer Fred J. Foonly <foonly@foo.com> 12960 +0000
 data 35
 Create exiguous branch of project1
-from :31
+from :33
 D bar.txt
 D baz.txt
 D evilcopy/bar.txt
 D evilcopy/baz.txt
 D evilcopy/foo.txt
+D evilcopy/foodir/qux.txt
 D foo.txt
-M 100644 :30 placeholder1
+M 100644 :32 placeholder1
 D subdir1/placeholder1
 
 tag stable-root
@@ -125,14 +132,14 @@ tagger Fred J. Foonly <foonly@foo.com> 2880 +0000
 data 21
 First directory copy
 
-tag emptycommit-29
-#legacy-id 29
-from :19
-tagger Fred J. Foonly <foonly@foo.com> 10440 +0000
+tag emptycommit-30
+#legacy-id 30
+from :21
+tagger Fred J. Foonly <foonly@foo.com> 10800 +0000
 data 84
 project1/trunk/subdir1/ creation
 
-[[Tag from zero-fileop commit at Subversion r29]]
+[[Tag from zero-fileop commit at Subversion r30]]
 
 reset refs/heads/stable
 #legacy-id 8

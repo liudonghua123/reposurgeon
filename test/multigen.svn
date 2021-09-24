@@ -499,8 +499,8 @@ or not to be.
 
 
 Revision-number: 18
-Prop-content-length: 113
-Content-length: 113
+Prop-content-length: 133
+Content-length: 133
 
 K 10
 svn:author
@@ -512,20 +512,35 @@ V 27
 1970-01-01T00:03:00.000000Z
 K 7
 svn:log
-V 14
-First tag copy
+V 34
+and a sense that the world is mad.
 PROPS-END
 
-Node-path: project2/tags/1.0
+Node-path: project2/trunk/foodir
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 17
-Node-copyfrom-path: project2/trunk
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: project2/trunk/foodir/qux.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: df3af3c153c7ecc9cdcac2e11e4a52e1
+Text-content-sha1: 3418a52a45ccdada05c2d9e0b9d92edaeaf978bb
+Prop-content-length: 10
+Text-content-length: 38
+Content-length: 48
+
+PROPS-END
+He was born with the gift of laughter
 
 
 Revision-number: 19
-Prop-content-length: 125
-Content-length: 125
+Prop-content-length: 113
+Content-length: 113
 
 K 10
 svn:author
@@ -537,6 +552,31 @@ V 27
 1970-01-01T00:03:10.000000Z
 K 7
 svn:log
+V 14
+First tag copy
+PROPS-END
+
+Node-path: project2/tags/1.0
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 18
+Node-copyfrom-path: project2/trunk
+
+
+Revision-number: 20
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:03:20.000000Z
+K 7
+svn:log
 V 26
 Example cross-project copy
 PROPS-END
@@ -544,11 +584,11 @@ PROPS-END
 Node-path: project1/trunk/evilcopy
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 17
+Node-copyfrom-rev: 18
 Node-copyfrom-path: project2/trunk
 
 
-Revision-number: 20
+Revision-number: 21
 Prop-content-length: 117
 Content-length: 117
 
@@ -559,7 +599,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:03:20.000000Z
+1970-01-01T00:03:30.000000Z
 K 7
 svn:log
 V 18
@@ -575,7 +615,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 21
+Revision-number: 22
 Prop-content-length: 123
 Content-length: 123
 
@@ -586,7 +626,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:03:30.000000Z
+1970-01-01T00:03:40.000000Z
 K 7
 svn:log
 V 24
@@ -602,7 +642,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 22
+Revision-number: 23
 Prop-content-length: 126
 Content-length: 126
 
@@ -613,7 +653,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:03:40.000000Z
+1970-01-01T00:03:50.000000Z
 K 7
 svn:log
 V 27
@@ -629,7 +669,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 23
+Revision-number: 24
 Prop-content-length: 122
 Content-length: 122
 
@@ -640,7 +680,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:03:50.000000Z
+1970-01-01T00:04:00.000000Z
 K 7
 svn:log
 V 23
@@ -656,7 +696,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 24
+Revision-number: 25
 Prop-content-length: 140
 Content-length: 140
 
@@ -667,7 +707,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:04:00.000000Z
+1970-01-01T00:04:10.000000Z
 K 7
 svn:log
 V 41
@@ -687,7 +727,7 @@ PROPS-END
 From my grandfather Verus
 
 
-Revision-number: 25
+Revision-number: 26
 Prop-content-length: 145
 Content-length: 145
 
@@ -698,7 +738,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:04:10.000000Z
+1970-01-01T00:04:20.000000Z
 K 7
 svn:log
 V 46
@@ -718,7 +758,7 @@ PROPS-END
 and to restrain all anger.
 
 
-Revision-number: 26
+Revision-number: 27
 Prop-content-length: 112
 Content-length: 112
 
@@ -729,7 +769,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:04:20.000000Z
+1970-01-01T00:04:30.000000Z
 K 7
 svn:log
 V 13
@@ -749,7 +789,7 @@ PROPS-END
 modesty, and a many deportment.
 
 
-Revision-number: 27
+Revision-number: 28
 Prop-content-length: 142
 Content-length: 142
 
@@ -760,7 +800,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:04:30.000000Z
+1970-01-01T00:04:40.000000Z
 K 7
 svn:log
 V 43
@@ -778,7 +818,7 @@ Content-length: 40
 I learned to be religuious and liberal;
 
 
-Revision-number: 28
+Revision-number: 29
 Prop-content-length: 119
 Content-length: 119
 
@@ -789,7 +829,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:04:40.000000Z
+1970-01-01T00:04:50.000000Z
 K 7
 svn:log
 V 20
@@ -807,7 +847,7 @@ Content-length: 37
 but even against any evil intentions
 
 
-Revision-number: 29
+Revision-number: 30
 Prop-content-length: 131
 Content-length: 131
 
@@ -818,7 +858,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:04:50.000000Z
+1970-01-01T00:05:00.000000Z
 K 7
 svn:log
 V 32
@@ -834,7 +874,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 30
+Revision-number: 31
 Prop-content-length: 98
 Content-length: 98
 
@@ -845,7 +885,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:05:00.000000Z
+1970-01-01T00:05:10.000000Z
 K 7
 svn:log
 V 0
@@ -865,7 +905,7 @@ PROPS-END
 Tack down subdir1
 
 
-Revision-number: 31
+Revision-number: 32
 Prop-content-length: 131
 Content-length: 131
 
@@ -876,7 +916,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:05:10.000000Z
+1970-01-01T00:05:20.000000Z
 K 7
 svn:log
 V 32
@@ -892,7 +932,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 32
+Revision-number: 33
 Prop-content-length: 98
 Content-length: 98
 
@@ -903,7 +943,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:05:20.000000Z
+1970-01-01T00:05:30.000000Z
 K 7
 svn:log
 V 0
@@ -923,7 +963,7 @@ PROPS-END
 Tack down subdir2
 
 
-Revision-number: 33
+Revision-number: 34
 Prop-content-length: 131
 Content-length: 131
 
@@ -934,7 +974,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:05:30.000000Z
+1970-01-01T00:05:40.000000Z
 K 7
 svn:log
 V 32
@@ -950,7 +990,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 34
+Revision-number: 35
 Prop-content-length: 98
 Content-length: 98
 
@@ -961,7 +1001,7 @@ fred
 K 8
 svn:date
 V 27
-1970-01-01T00:05:40.000000Z
+1970-01-01T00:05:50.000000Z
 K 7
 svn:log
 V 0
@@ -981,31 +1021,6 @@ PROPS-END
 Tack down subdir3
 
 
-Revision-number: 35
-Prop-content-length: 133
-Content-length: 133
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:05:50.000000Z
-K 7
-svn:log
-V 34
-Create exiguous branch of project1
-PROPS-END
-
-Node-path: project1/branches/exiguous
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 34
-Node-copyfrom-path: project1/trunk/subdir1
-
-
 Revision-number: 36
 Prop-content-length: 133
 Content-length: 133
@@ -1021,14 +1036,14 @@ V 27
 K 7
 svn:log
 V 34
-Create exiguous branch of project2
+Create exiguous branch of project1
 PROPS-END
 
-Node-path: project2/branches/exiguous
+Node-path: project1/branches/exiguous
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 35
-Node-copyfrom-path: project2/trunk/subdir2
+Node-copyfrom-path: project1/trunk/subdir1
 
 
 Revision-number: 37
@@ -1046,13 +1061,94 @@ V 27
 K 7
 svn:log
 V 34
+Create exiguous branch of project2
+PROPS-END
+
+Node-path: project2/branches/exiguous
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 36
+Node-copyfrom-path: project2/trunk/subdir2
+
+
+Revision-number: 38
+Prop-content-length: 133
+Content-length: 133
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:06:20.000000Z
+K 7
+svn:log
+V 34
 Create exiguous branch of project3
 PROPS-END
 
 Node-path: project3/branches/exiguous
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 36
+Node-copyfrom-rev: 37
 Node-copyfrom-path: project3/trunk/subdir3
+
+
+Revision-number: 39
+Prop-content-length: 98
+Content-length: 98
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:06:30.000000Z
+K 7
+svn:log
+V 0
+
+PROPS-END
+
+Node-path: project3/branches/exiguous/foo.txt
+Node-kind: file
+Node-action: add
+Text-content-md5: c50efe0c6059707a162bbdc63bef2e2e
+Text-content-sha1: e287fbbe4e5515f9d41f454528a0e0aec0c48e9f
+Prop-content-length: 10
+Text-content-length: 30
+Content-length: 40
+
+PROPS-END
+Fourscore and seven years ago
+
+
+Revision-number: 40
+Prop-content-length: 125
+Content-length: 125
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:06:40.000000Z
+K 7
+svn:log
+V 26
+Copy after branch creation
+PROPS-END
+
+Node-path: project3/branches/exiguous/foodir
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 39
+Node-copyfrom-path: project2/trunk/foodir
 
 
