@@ -21,6 +21,12 @@
 # needs to be transformed into this:
 #
 # 38087-1 copy     branches/HC2.2.15/ from 38087:branches/HC2.2.14
+#
+# FIXME: multigen needs more tests
+# * Second coalescense clique
+# * True cross-branch copy
+# * Branch rename
+# * Document realoized-set behavior.
 
 dump=no
 verbose=null
