@@ -1842,11 +1842,11 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 func swap(source DumpfileSource, selection SubversionRange, patterns []string, structural bool) {
 	var match *regexp.Regexp
 	realized := newStringSet("trunk")
-	var thisCreation, lastCreation string
+	var lastCreation []byte
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
 	}
-	mutator := func(path []byte, isDirCopy bool) []byte {
+	mutator := func(path []byte, isDirCopy bool, isDelete bool) []byte {
 		if match != nil && !match.Match(path) {
 			return path
 		}
@@ -1887,15 +1887,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				if top == "trunk" {
 					parts = parts[:1]
 				} else if top == "branches" || top == "tags" {
-					thisCreation = string(bytes.Join(parts[:2], []byte("/")))
-					if !realized.Contains(thisCreation) {
+					if realized.Contains(string(bytes.Join(parts[:2], []byte("/")))) == isDelete {
 						parts = parts[:2]
 					}
 				}
-				if thisCreation != lastCreation {
-					realized.Add(lastCreation)
-				}
-				lastCreation = thisCreation
 			}
 		} else { // naive swap
 			parts[0] = parts[1]
@@ -1903,16 +1898,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return bytes.Join(parts, []byte("/"))
 	}
-	hackpath := func(header []byte, htype string, coalesce bool) (bool, []byte, []byte, bool) {
-		newheader, newval, oldval := replaceHook(header, htype, func(in []byte) []byte {
-			return mutator(in, coalesce)
-		})
-		return oldval != nil, newheader, newval, !bytes.Equal(oldval, newval)
-	}
 	revhook := func(props *Properties) {
 		var mergepath []byte
 		if m, ok := props.properties["svn:mergeinfo"]; ok {
-			mergepath = mutator([]byte(m), false)
+			mergepath = mutator([]byte(m), false, false)
 		}
 		if mergepath != nil {
 			props.properties["svn:mergeinfo"] = string(mergepath)
@@ -1964,22 +1953,36 @@ PROPS-END
 			return []byte(swapHeader)
 		}
 		isCopy := bytes.Index(header, []byte("Node-copyfrom-path: ")) != -1
+		isDelete := bytes.Equal(payload("Node-action: ", header), []byte("delete"))
 		typeIndex := bytes.Index(header, []byte("Node-kind: "))
 		// Subversion sometimes omits the type field on directory operations
 		isDir := (typeIndex != -1) || header[typeIndex+11] == 'd'
 
-		var changed, coalesced bool
-		var pathline []byte
-		changed, header, pathline, coalesced = hackpath(header, "Node-path: ", isDir && isCopy)
-		if changed && pathline == nil {
+		header, newval, oldval := replaceHook(header, "Node-path: ", func(in []byte) []byte {
+			return mutator(in, isDir && (isCopy || isDelete), isDelete)
+		})
+		if oldval != nil && newval == nil {
 			return nil
 		}
-		pathPair := append(pathline, []byte{0}...)
-		changed, header, pathline, _ = hackpath(header, "Node-copyfrom-path: ", coalesced)
-		if changed && pathline == nil {
+		pathPair := append(newval, []byte{0}...)
+		coalesced := !bytes.Equal(oldval, newval)
+		if coalesced {
+			if !bytes.Equal(newval, lastCreation) {
+				if isDelete {
+					realized.Remove(string(lastCreation))
+				} else {
+					realized.Add(string(lastCreation))
+				}
+			}
+			lastCreation = newval
+		}
+		header, newval, oldval = replaceHook(header, "Node-copyfrom-path: ", func(in []byte) []byte {
+			return mutator(in, coalesced, isDelete)
+		})
+		if oldval != nil && newval == nil {
 			return nil
 		}
-		pathPair = append(pathPair, pathline...)
+		pathPair = append(pathPair, newval...)
 
 		all := make([]byte, 0)
 		all = append(all, header...)
