@@ -69,7 +69,11 @@ Available subcommands and help topics:
 // which began life as 'svncutter' in 2009.  The obsolete
 // 'squash' command has been omitted.
 
-var debug = false
+var debug int
+
+const debugLOGIC = 1
+const debugPARSE = 2
+
 var quiet bool
 
 var oneliners = map[string]string{
@@ -349,7 +353,7 @@ type LineBufferedSource struct {
 
 // NewLineBufferedSource - create a new source
 func NewLineBufferedSource(source io.Reader) LineBufferedSource {
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<setting up NewLineBufferedSource>\n")
 	}
 	lbs := LineBufferedSource{
@@ -367,7 +371,7 @@ func NewLineBufferedSource(source io.Reader) LineBufferedSource {
 func (lbs *LineBufferedSource) Rewind() {
 	lbs.reader.Reset(lbs.source)
 	if lbs.stream != nil {
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<Rewind>\n")
 		}
 		lbs.stream.Seek(0, 0)
@@ -378,7 +382,7 @@ func (lbs *LineBufferedSource) Rewind() {
 func (lbs *LineBufferedSource) Readline() (line []byte) {
 	if len(lbs.Linebuffer) != 0 {
 		line = lbs.Linebuffer
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<Readline: popping %q>\n", line)
 		}
 		lbs.Linebuffer = []byte{}
@@ -386,7 +390,7 @@ func (lbs *LineBufferedSource) Readline() (line []byte) {
 	}
 	line, err := lbs.reader.ReadBytes('\n')
 	lbs.linenumber++
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<Readline %d: read %q>\n", lbs.linenumber, line)
 	}
 	if err == io.EOF {
@@ -429,7 +433,7 @@ func (lbs *LineBufferedSource) Peek() []byte {
 	if err != nil && err != io.EOF {
 		croak("I/O error in Peek of LineBufferedSource: %s", err)
 	}
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<Peek %d: buffer=%q + next=%q>\n",
 			lbs.linenumber, lbs.Linebuffer, nxtline)
 	}
@@ -448,7 +452,7 @@ func (lbs *LineBufferedSource) Flush() []byte {
 // Push a line back to the line buffer.
 func (lbs *LineBufferedSource) Push(line []byte) {
 	//assert(lbs.linebuffer is None)
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<Push: pushing %q>\n", line)
 	}
 	lbs.Linebuffer = line
@@ -608,7 +612,7 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 		stash = SetLength("Content", stash, len(props.Stringer()))
 	}
 	stash = append(stash, []byte(props.Stringer())...)
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<after append: %d>\n", ds.Lbs.linenumber)
 	}
 	for string(ds.Lbs.Peek()) == linesep {
@@ -617,7 +621,7 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 	if ds.Baton != nil {
 		ds.Baton.Twirl("")
 	}
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<ReadRevisionHeader %d: returns stash=%q>\n",
 			ds.Lbs.linenumber, stash)
 	}
@@ -630,7 +634,7 @@ func (ds *DumpfileSource) Require(prefix string) []byte {
 	if !strings.HasPrefix(string(line), prefix) {
 		croak("required prefix '%s' not seen after line %d (r%v)", prefix, ds.Lbs.linenumber, ds.Revision)
 	}
-	//if debug {
+	//if debug >= debugPARSE {
 	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
 	//}
 	return line
@@ -638,7 +642,7 @@ func (ds *DumpfileSource) Require(prefix string) []byte {
 
 // ReadNode - read a node header and body.
 func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) ([]byte, []byte, []byte) {
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<READ NODE BEGINS>\n")
 	}
 	header := ds.Require("Node-")
@@ -677,7 +681,7 @@ func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) ([]byte, []by
 		n, _ := strconv.Atoi(string(cl[1]))
 		content = append(content, ds.Lbs.Read(n)...)
 	}
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<READ NODE ENDS>\n")
 	}
 	if PropertyHook != nil {
@@ -716,13 +720,13 @@ func (ds *DumpfileSource) ReadUntilNextRevision(contentLength int) []byte {
 
 // ReadUntilNext - accumulate lines until the next matches a specified prefix.
 func (ds *DumpfileSource) ReadUntilNext(prefix string, revmap map[int]int) []byte {
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<ReadUntilNext: until %s>\n", prefix)
 	}
 	stash := []byte{}
 	for {
 		line := ds.Lbs.Readline()
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<ReadUntilNext: sees %q>\n", line)
 		}
 		if len(line) == 0 {
@@ -730,7 +734,7 @@ func (ds *DumpfileSource) ReadUntilNext(prefix string, revmap map[int]int) []byt
 		}
 		if strings.HasPrefix(string(line), prefix) {
 			ds.Lbs.Push(line)
-			if debug {
+			if debug >= debugPARSE {
 				fmt.Fprintf(os.Stderr, "<ReadUntilNext pushes: %q>\n", line)
 			}
 			return stash
@@ -749,7 +753,7 @@ func (ds *DumpfileSource) ReadUntilNext(prefix string, revmap map[int]int) []byt
 			}
 		}
 		stash = append(stash, line...)
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<ReadUntilNext: appends %q>\n", line)
 		}
 
@@ -831,7 +835,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	emit := passthrough && selection.intervals[0][0] == 0
 	stash := ds.ReadUntilNextRevision(0)
 	if emit {
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<early stash dump: %q>\n", stash)
 		}
 		os.Stdout.Write(stash)
@@ -866,7 +870,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			}
 			if string(line) == "\n" {
 				if passthrough && emit {
-					if debug {
+					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<passthrough dump: %q>\n", line)
 					}
 					os.Stdout.Write(line)
@@ -877,7 +881,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				ds.Lbs.Push(line)
 				if len(stash) != 0 && nodecount == 0 && passempty {
 					if passthrough {
-						if debug {
+						if debug >= debugPARSE {
 							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
 						}
 						ds.say(stash)
@@ -892,7 +896,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				}
 				ds.Lbs.Push(line)
 				header, properties, content := ds.ReadNode(prophook)
-				if debug {
+				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
 					fmt.Fprintf(os.Stderr, "<content: %q>\n", content)
@@ -901,19 +905,19 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				if nodehook != nil {
 					nodetxt = nodehook(header, properties, content)
 				}
-				if debug {
+				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<nodetxt: %q>\n", nodetxt)
 				}
 				emit = len(nodetxt) > 0
 				if emit && len(stash) > 0 {
-					if debug {
+					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<appending to: %q>\n", stash)
 					}
 					nodetxt = append(stash, nodetxt...)
 					stash = []byte{}
 				}
 				if passthrough && len(nodetxt) > 0 {
-					if debug {
+					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<node dump: %q>\n", nodetxt)
 					}
 					ds.say(nodetxt)
@@ -1059,13 +1063,13 @@ func replaceHook(header []byte, htype string, hook func([]byte) []byte) ([]byte,
 // Subcommand implementations begin here
 
 func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<entering select>")
 	}
 	emit := (selection.Contains(0) != invert)
 	for {
 		stash := source.ReadUntilNext("Revision-number:", nil)
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<stash: %q>\n", stash)
 		}
 		if emit {
@@ -1078,7 +1082,7 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		// Error already checked during source parsing
 		revision, _ := strconv.Atoi(string(fields[1]))
 		emit = (selection.Contains(revision) != invert)
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<%d:%t>\n", revision, emit)
 		}
 		if emit {
@@ -1667,7 +1671,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 func see(source DumpfileSource, selection SubversionRange) {
 	props := ""
 	seenode := func(header []byte, _, _ []byte) []byte {
-		if debug {
+		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 		}
 		path := payload("Node-path", header)
@@ -1764,7 +1768,7 @@ func split(source DumpfileSource, selection SubversionRange, paths []string) {
 			if p := string(properties); p != "" && p != "PROPS-END\n" {
 				croak("can't split a node with nonempty properties (%v).", string(properties))
 			}
-			if debug {
+			if debug >= debugPARSE {
 				fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
 			}
 			originalHeader := string(header)
@@ -2088,8 +2092,8 @@ func main() {
 	var rangestr string
 	var infile string
 	input := os.Stdin
-	flag.BoolVar(&debug, "d", false, "enable debug messages")
-	flag.BoolVar(&debug, "debug", false, "enable debug messages")
+	flag.IntVar(&debug, "d", 0, "enable debug messages")
+	flag.IntVar(&debug, "debug", 0, "enable debug messages")
 	flag.StringVar(&infile, "i", "", "set input file")
 	flag.StringVar(&infile, "infile", "", "set input file")
 	flag.StringVar(&logentries, "l", "", "pass in log patch")
@@ -2117,14 +2121,14 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	if debug {
+	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<selection: %v>\n", selection)
 	}
 
 	if flag.NArg() == 0 {
 		fmt.Fprint(os.Stderr, "Type 'repocutter help' for usage.\n")
 		os.Exit(1)
-	} else if debug {
+	} else if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<command=%s>\n", flag.Arg(0))
 	}
 	var baton *Baton
