@@ -141,8 +141,19 @@ project1/trunk/subdir1/ creation
 
 [[Tag from zero-fileop commit at Subversion r30]]
 
+tag exiguous2-root
+#legacy-id 41
+from :38
+tagger Fred J. Foonly <foonly@foo.com> 14760 +0000
+data 33
+Copy exiguous branch of project1
+
 reset refs/heads/stable
 #legacy-id 8
 from :7
+
+reset refs/heads/exiguous2
+#legacy-id 41
+from :38
 
 done

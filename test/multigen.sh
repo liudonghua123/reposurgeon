@@ -108,6 +108,16 @@ svn up
 svn copy project2/trunk/foodir project3/branches/exiguous
 svn commit -m "Copy after branch creation"
 svn up
+# Now we're going to do a branch to branch copy
+svn copy project1/branches/exiguous project1/branches/exiguous2
+svn commit -m "Copy exiguous branch of project1"
+svn up
+svn copy project2/branches/exiguous project2/branches/exiguous2
+svn commit -m "Copy exiguous branch of project2"
+svn up
+svn copy project3/branches/exiguous project3/branches/exiguous2
+svn commit -m "Copy exiguous branch of project3"
+svn up
 # We're done
 cd ..
 } >/dev/$verbose 2>&1

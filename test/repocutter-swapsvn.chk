@@ -1068,3 +1068,78 @@ Node-copyfrom-rev: 39
 Node-copyfrom-path: trunk/project2/foodir
 
 
+Revision-number: 41
+Prop-content-length: 131
+Content-length: 131
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:06:50.000000Z
+K 7
+svn:log
+V 32
+Copy exiguous branch of project1
+PROPS-END
+
+Node-path: branches/exiguous2
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 40
+Node-copyfrom-path: branches/exiguous/project1
+
+
+Revision-number: 42
+Prop-content-length: 131
+Content-length: 131
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:07:00.000000Z
+K 7
+svn:log
+V 32
+Copy exiguous branch of project2
+PROPS-END
+
+Node-path: branches/exiguous2
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 41
+Node-copyfrom-path: branches/exiguous/project2
+
+
+Revision-number: 43
+Prop-content-length: 131
+Content-length: 131
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:07:10.000000Z
+K 7
+svn:log
+V 32
+Copy exiguous branch of project3
+PROPS-END
+
+Node-path: branches/exiguous2
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 42
+Node-copyfrom-path: branches/exiguous/project3
+
+

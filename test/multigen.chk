@@ -342,6 +342,35 @@ Copy after branch creation
 from :43
 M 100644 :19 branches/exiguous/foodir/qux.txt
 
+commit refs/heads/project1
+#legacy-id 41
+mark :45
+committer fred <fred> 410 +0000
+data 33
+Copy exiguous branch of project1
+from :39
+M 100644 :33 branches/exiguous2/placeholder1
+
+commit refs/heads/project2
+#legacy-id 42
+mark :46
+committer fred <fred> 420 +0000
+data 33
+Copy exiguous branch of project2
+from :40
+M 100644 :35 branches/exiguous2/placeholder2
+
+commit refs/heads/project3
+#legacy-id 43
+mark :47
+committer fred <fred> 430 +0000
+data 33
+Copy exiguous branch of project3
+from :44
+M 100644 :42 branches/exiguous2/foo.txt
+M 100644 :19 branches/exiguous2/foodir/qux.txt
+M 100644 :37 branches/exiguous2/placeholder3
+
 tag emptycommit-30
 #legacy-id 30
 from :22
