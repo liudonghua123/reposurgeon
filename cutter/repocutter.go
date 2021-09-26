@@ -601,6 +601,13 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 		os.Exit(1)
 	}
 	ds.Revision = rval
+	if debugline := ds.Optional("Debug-level:"); debugline != nil {
+		debug, err = strconv.Atoi(string(bytes.Fields(debugline)[1]))
+		if err != nil {
+			fmt.Printf("repocutter: invalid debug level %s at line %d\n", rev, ds.Lbs.linenumber)
+			os.Exit(1)
+		}
+	}
 	ds.Index = 0
 	stash = append(stash, ds.Require("Prop-content-length:")...)
 	stash = append(stash, ds.Require("Content-length:")...)
@@ -632,12 +639,22 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 func (ds *DumpfileSource) Require(prefix string) []byte {
 	line := ds.Lbs.Readline()
 	if !strings.HasPrefix(string(line), prefix) {
-		croak("required prefix '%s' not seen after line %d (r%v)", prefix, ds.Lbs.linenumber, ds.Revision)
+		croak("required prefix '%s' not seen on %q after line %d (r%v)", prefix, line, ds.Lbs.linenumber, ds.Revision)
 	}
 	//if debug >= debugPARSE {
 	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
 	//}
 	return line
+}
+
+// Optional - read a line, reporting if it to have a specified prefix.
+func (ds *DumpfileSource) Optional(prefix string) []byte {
+	line := ds.Lbs.Readline()
+	if strings.HasPrefix(string(line), prefix) {
+		return line
+	}
+	ds.Lbs.Push(line)
+	return nil
 }
 
 // ReadNode - read a node header and body.
@@ -2145,6 +2162,9 @@ func main() {
 			croak("extra arguments detected after command keyword!\n")
 		}
 	}
+
+	// Undocumented: Debug level can be set with a "Debug-level:" header
+	// immediately after a Reviosion-number header.
 
 	switch flag.Arg(0) {
 	case "closure":
