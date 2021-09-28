@@ -1907,25 +1907,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return bytes.Join(parts, []byte("/"))
 	}
-	clipper := func(path []byte, isDirCopy bool, isDelete bool) []byte {
-		if match != nil && !match.Match(path) {
-			return path
-		}
-		parts := bytes.Split(path, []byte("/"))
-		// This is where we attempt to coalesce runs of copies between directories below
-		// project level.  Only happens the first time we see a copy to a branch.
-		if structural && isDirCopy && len(parts) == 3 {
-			top := string(parts[0])
-			if top == "trunk" {
-				parts = parts[:1]
-			} else if top == "branches" || top == "tags" {
-				if realized.Contains(string(bytes.Join(parts[:2], []byte("/")))) == isDelete {
-					parts = parts[:2]
-				}
-			}
-		}
-		return bytes.Join(parts, []byte("/"))
-	}
 	revhook := func(props *Properties) {
 		var mergepath []byte
 		if m, ok := props.properties["svn:mergeinfo"]; ok {
@@ -1980,21 +1961,38 @@ PROPS-END
 			swaplatch = true
 			return []byte(swapHeader)
 		}
-		isCopy := bytes.Index(header, []byte("Node-copyfrom-path: ")) != -1
-		isDelete := bytes.Equal(payload("Node-action: ", header), []byte("delete"))
-		typeIndex := bytes.Index(header, []byte("Node-kind: "))
-		// Subversion sometimes omits the type field on directory operations
-		isDir := (typeIndex != -1) || header[typeIndex+11] == 'd'
 
 		header, newval, oldval := replaceHook(header, "Node-path: ", swapper)
 		if oldval != nil && newval == nil {
 			return nil
 		}
-		header, newval, oldval = replaceHook(header, "Node-path: ", func(in []byte) []byte {
-			return clipper(in, isDir && (isCopy || isDelete), isDelete)
-		})
-		if oldval != nil && newval == nil {
-			return nil
+		originalNodePath := oldval
+		isDelete := bytes.Equal(payload("Node-action: ", header), []byte("delete"))
+		if match == nil || match.Match(originalNodePath) {
+			isCopy := bytes.Index(header, []byte("Node-copyfrom-path: ")) != -1
+			typeIndex := bytes.Index(header, []byte("Node-kind: "))
+			// Subversion sometimes omits the type field on directory operations
+			isDir := (typeIndex != -1) || header[typeIndex+11] == 'd'
+			branchcopy := isDir && (isCopy || isDelete)
+			header, newval, oldval = replaceHook(header, "Node-path: ", func(in []byte) []byte {
+				parts := bytes.Split(in, []byte("/"))
+				// This is where we attempt to coalesce runs of copies between directories below
+				// project level.  Only happens the first time we see a copy to a branch.
+				if structural && branchcopy && len(parts) == 3 {
+					top := string(parts[0])
+					if top == "trunk" {
+						parts = parts[:1]
+					} else if top == "branches" || top == "tags" {
+						if realized.Contains(string(bytes.Join(parts[:2], []byte("/")))) == isDelete {
+							parts = parts[:2]
+						}
+					}
+				}
+				return bytes.Join(parts, []byte("/"))
+			})
+			if oldval != nil && newval == nil {
+				return nil
+			}
 		}
 		pathPair := append(newval, []byte{0}...)
 		coalesced := !bytes.Equal(oldval, newval)
@@ -2012,11 +2010,28 @@ PROPS-END
 		if oldval != nil && newval == nil {
 			return nil
 		}
-		header, newval, oldval = replaceHook(header, "Node-copyfrom-path: ", func(in []byte) []byte {
-			return clipper(in, coalesced, isDelete)
-		})
-		if oldval != nil && newval == nil {
-			return nil
+		if coalesced {
+			header, newval, oldval = replaceHook(header, "Node-copyfrom-path: ", func(in []byte) []byte {
+				return func(path []byte, isDelete bool) []byte {
+					parts := bytes.Split(path, []byte("/"))
+					// This is where we attempt to coalesce runs of copies between directories below
+					// project level.  Only happens the first time we see a copy to a branch.
+					if structural && len(parts) == 3 {
+						top := string(parts[0])
+						if top == "trunk" {
+							parts = parts[:1]
+						} else if top == "branches" || top == "tags" {
+							if realized.Contains(string(bytes.Join(parts[:2], []byte("/")))) == isDelete {
+								parts = parts[:2]
+							}
+						}
+					}
+					return bytes.Join(parts, []byte("/"))
+				}(in, isDelete)
+			})
+			if oldval != nil && newval == nil {
+				return nil
+			}
 		}
 		pathPair = append(pathPair, newval...)
 
@@ -2028,7 +2043,7 @@ PROPS-END
 		// Following the coalescing copy rewrites in clipper above,
 		// this is where we drop any duplicates after the first one
 		// produced.
-		if structural && isDir && isCopy && bytes.Equal(lastPathPair, pathPair) {
+		if !bytes.Equal(payload("Node-path", header), originalNodePath) && bytes.Equal(lastPathPair, pathPair) {
 			return nil
 		}
 		lastPathPair = pathPair
