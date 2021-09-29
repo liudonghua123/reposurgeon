@@ -2012,7 +2012,7 @@ PROPS-END
 		}
 		if coalesced {
 			header, newval, oldval = replaceHook(header, "Node-copyfrom-path: ", func(in []byte) []byte {
-				return func(path []byte, isDelete bool) []byte {
+				return func(path []byte) []byte {
 					parts := bytes.Split(path, []byte("/"))
 					// This is where we attempt to coalesce runs of copies between directories below
 					// project level.  Only happens the first time we see a copy to a branch.
@@ -2021,13 +2021,11 @@ PROPS-END
 						if top == "trunk" {
 							parts = parts[:1]
 						} else if top == "branches" || top == "tags" {
-							if realized.Contains(string(bytes.Join(parts[:2], []byte("/")))) == isDelete {
-								parts = parts[:2]
-							}
+							parts = parts[:2]
 						}
 					}
 					return bytes.Join(parts, []byte("/"))
-				}(in, isDelete)
+				}(in)
 			})
 			if oldval != nil && newval == nil {
 				return nil

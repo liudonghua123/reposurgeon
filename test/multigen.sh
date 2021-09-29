@@ -23,10 +23,9 @@
 # 38087-1 copy     branches/HC2.2.15/ from 38087:branches/HC2.2.14
 #
 # FIXME: multigen needs more tests
-# * Second coalescense clique
-# * True cross-branch copy
+# * Second coalescence clique
 # * Branch rename
-# * Document realoized-set behavior.
+# * Document realized-set behavior.
 
 dump=no
 verbose=null
