@@ -602,8 +602,9 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]
 	props := NewProperties(ds)
 	if PropertyHook != nil {
 		PropertyHook(&props)
-		stash = SetLength("Prop-content", stash, len(props.Stringer()))
-		stash = SetLength("Content", stash, len(props.Stringer()))
+		proplen := len(props.Stringer())
+		stash = SetLength("Prop-content", stash, proplen)
+		stash = SetLength("Content", stash, proplen)
 	}
 	stash = append(stash, []byte(props.Stringer())...)
 	if debug >= debugPARSE {
