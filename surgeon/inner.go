@@ -3204,10 +3204,7 @@ func commitRemove(commitlist []CommitLike, commit CommitLike) []CommitLike {
 
 func (commit *Commit) setParents(parents []CommitLike) {
 	// remember the first parent
-	var oldparent CommitLike
-	if len(commit._parentNodes) > 0 {
-		oldparent = commit._parentNodes[0]
-	}
+	oldparent := commit.firstParent()
 	for _, parent := range commit._parentNodes {
 		// remove all occurrences of self in old parent's children cache
 		switch parent.(type) {
@@ -3229,7 +3226,7 @@ func (commit *Commit) setParents(parents []CommitLike) {
 	// Only invalidate when needed: the manifest will not change if the first
 	// parent is the same or the commit's first fileop is a deleteall cutting
 	// ties with any first parent.
-	if len(commit._parentNodes) == 0 || oldparent != commit._parentNodes[0] {
+	if len(commit._parentNodes) == 0 || oldparent != commit.firstParent() {
 		if len(commit.fileops) == 0 || commit.fileops[0].op != deleteall {
 			commit.invalidateManifests()
 		}
