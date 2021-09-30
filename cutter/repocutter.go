@@ -578,19 +578,6 @@ func SetLength(header string, data []byte, val int) []byte {
 	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
 }
 
-// stripChecksums - remove checksums from a blob header
-func stripChecksums(header []byte) []byte {
-	r1 := regexp.MustCompile("Text-content-md5:.*\n")
-	header = r1.ReplaceAll(header, []byte{})
-	r2 := regexp.MustCompile("Text-content-sha1:.*\n")
-	header = r2.ReplaceAll(header, []byte{})
-	r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
-	header = r3.ReplaceAll(header, []byte{})
-	r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
-	header = r4.ReplaceAll(header, []byte{})
-	return header
-}
-
 // ReadRevisionHeader - read a revision header, parsing its properties.
 func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]byte, map[string]string) {
 	stash := ds.Require("Revision-number:")
@@ -1095,6 +1082,26 @@ func (ss streamSection) isDir() bool {
 		return false
 	}
 	return []byte(ss)[typeIndex+11] == 'd'
+}
+
+// SetLength - alter the length field of a specified header
+func (ss streamSection) setLength(header string, val int) []byte {
+	re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
+	return streamSection(re.ReplaceAll([]byte(ss), []byte("$1 "+strconv.Itoa(val))))
+}
+
+// stripChecksums - remove checksums from a blob header
+func (ss streamSection) stripChecksums() streamSection {
+	header := []byte(ss)
+	r1 := regexp.MustCompile("Text-content-md5:.*\n")
+	header = r1.ReplaceAll(header, []byte{})
+	r2 := regexp.MustCompile("Text-content-sha1:.*\n")
+	header = r2.ReplaceAll(header, []byte{})
+	r3 := regexp.MustCompile("Text-copy-source-md5:.*\n")
+	header = r3.ReplaceAll(header, []byte{})
+	r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
+	header = r4.ReplaceAll(header, []byte{})
+	return streamSection(header)
 }
 
 // Subcommand implementations begin here
@@ -1690,15 +1697,14 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 
 	innerreplace := func(header streamSection, properties []byte, content []byte) []byte {
 		newcontent := tre.ReplaceAll(content, []byte(patternParts[1]))
-		headerContent := []byte(header)
 		if string(content) != string(newcontent) {
-			headerContent = []byte(SetLength("Text-content", headerContent, len(newcontent)))
-			headerContent = []byte(SetLength("Content", headerContent, len(properties)+len(newcontent)))
-			headerContent = stripChecksums(headerContent)
+			header = header.setLength("Text-content", len(newcontent))
+			header = header.setLength("Content", len(properties)+len(newcontent))
+			header = header.stripChecksums()
 		}
 
 		all := make([]byte, 0)
-		all = append(all, headerContent...)
+		all = append(all, []byte(header)...)
 		all = append(all, properties...)
 		all = append(all, newcontent...)
 		return all
@@ -1852,7 +1858,6 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 				}
 			}
 		}
-		headerContent := []byte(header)
 		if ok {
 			if len(content) > 0 { //len([]nil == 0)
 				// Avoid replacing symlinks, a reposurgeon sanity check barfs.
@@ -1860,15 +1865,15 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 					tell := fmt.Sprintf("Revision is %d, file path is %s.\n",
 						source.Revision, header.payload("Node-path"))
 					content = []byte(tell)
-					headerContent = SetLength("Text-content", headerContent, len(content))
-					headerContent = SetLength("Content", headerContent, len(properties)+len(content))
+					header = header.setLength("Text-content", len(content))
+					header = header.setLength("Content", len(properties)+len(content))
 				}
 			}
-			headerContent = stripChecksums(headerContent)
+			header = header.stripChecksums()
 		}
 
 		all := make([]byte, 0)
-		all = append(all, headerContent...)
+		all = append(all, []byte(header)...)
 		all = append(all, properties...)
 		all = append(all, content...)
 		return all
