@@ -3105,6 +3105,9 @@ func (it *parentIt) Index() int {
 }
 
 func (it *parentIt) Value() CommitLike {
+	if it.idx > len(it.commit._parentNodes)-1 {
+		return nil
+	}
 	return it.commit._parentNodes[it.idx]
 }
 
@@ -3126,8 +3129,11 @@ func (commit *Commit) hasParents() bool {
 
 func (commit *Commit) firstParent() CommitLike {
 	it := commit.parentIterator()
-	it.Next()
-	return it.Value()
+	exists := it.Next()
+	if exists {
+		return it.Value()
+	}
+	return nil
 }
 
 // invalidateManifests cleans out manifests in this commit and all descendants
@@ -3359,6 +3365,9 @@ func (it *childIt) Next() bool {
 }
 
 func (it *childIt) Value() CommitLike {
+	if it.idx > len(it.commit._childNodes)-1 {
+		return nil
+	}
 	return it.commit._childNodes[it.idx]
 }
 
@@ -3390,10 +3399,12 @@ func (commit *Commit) childMarks() []string {
 
 // firstChild gets the first child of this commit, or None if not hasChildren()."
 func (commit *Commit) firstChild() *Commit {
-	if len(commit._childNodes) == 0 {
-		return nil
+	it := commit.childIterator()
+	exists := it.Next()
+	if exists {
+		return it.Value().(*Commit)
 	}
-	return commit._childNodes[0].(*Commit)
+	return nil
 }
 
 // descendedFrom tells if this commit a descendant of the specified other?
