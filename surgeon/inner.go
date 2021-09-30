@@ -3211,11 +3211,6 @@ func (commit *Commit) setParents(parents []CommitLike) {
 			croak("not removing callout %s", parent.(*Callout).mark)
 		}
 	}
-	for _, c := range parents {
-		if c == nil {
-			panic("null commit in setParents()")
-		}
-	}
 	commit._parentNodes = parents
 	for _, parent := range commit._parentNodes {
 		switch parent.(type) {
