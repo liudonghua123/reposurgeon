@@ -38,7 +38,7 @@ AWK = awk
 endif
 
 # Binaries need to be built before generated documentation parts can be made.
-all: build $(MANPAGES) $(HTMLFILES)
+all: build cuttercommands.inc $(MANPAGES) $(HTMLFILES)
 
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
@@ -247,8 +247,6 @@ summary:
 surgeon/help-index.go: help-index.awk repository-editing.adoc
 	$(AWK) -f $^ >$@
 
-repocutter.html: cuttercommands.inc repocutter.adoc
-	asciidoctor -D. -a webfonts! repocutter.adoc
 cuttercommands.inc: cutter/repocutter.go
 	repocutter --docgen >cuttercommands.inc
 
