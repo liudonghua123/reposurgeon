@@ -371,6 +371,35 @@ M 100644 :42 branches/exiguous2/foo.txt
 M 100644 :19 branches/exiguous2/foodir/qux.txt
 M 100644 :37 branches/exiguous2/placeholder3
 
+commit refs/heads/project1
+#legacy-id 44
+mark :48
+committer fred <fred> 440 +0000
+data 35
+Delete exiguous branch of project1
+from :45
+D branches/exiguous/placeholder1
+
+commit refs/heads/project2
+#legacy-id 45
+mark :49
+committer fred <fred> 450 +0000
+data 35
+Delete exiguous branch of project2
+from :46
+D branches/exiguous/placeholder2
+
+commit refs/heads/project3
+#legacy-id 46
+mark :50
+committer fred <fred> 460 +0000
+data 35
+Delete exiguous branch of project3
+from :47
+D branches/exiguous/foo.txt
+D branches/exiguous/foodir/qux.txt
+D branches/exiguous/placeholder3
+
 tag emptycommit-30
 #legacy-id 30
 from :22

@@ -1079,10 +1079,10 @@ func (ss streamSection) index(field string) int {
 func (ss streamSection) isDir() bool {
 	typeIndex := ss.index("Node-kind: ")
 	// Subversion sometimes omits the type field on directory operations
-	if typeIndex == -1 {
-		return false
+	if typeIndex == -1 && bytes.Equal(ss.payload("Node-action"), []byte("delete")) {
+		return true
 	}
-	return []byte(ss)[typeIndex+11] == 'd'
+	return bytes.Equal(ss.payload("Node-kind"), []byte("dir"))
 }
 
 // SetLength - alter the length field of a specified header
@@ -1996,9 +1996,9 @@ PROPS-END
 			return nil
 		}
 		originalNodePath := oldval
-		isDelete := bytes.Equal(header.payload("Node-action: "), []byte("delete"))
+		isDelete := bytes.Equal(header.payload("Node-action"), []byte("delete"))
 		if match == nil || match.Match(originalNodePath) {
-			isCopy := header.index("Node-copyfrom-path: ") != -1
+			isCopy := header.index("Node-copyfrom-path") != -1
 			isDir := header.isDir()
 			branchcopy := isDir && (isCopy || isDelete)
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
@@ -2210,7 +2210,7 @@ func main() {
 	}
 
 	// Undocumented: Debug level can be set with a "Debug-level:" header
-	// immediately after a Reviosion-number header.
+	// immediately after a Revision-number header.
 
 	switch flag.Arg(0) {
 	case "closure":

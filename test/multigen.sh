@@ -117,6 +117,16 @@ svn up
 svn copy project3/branches/exiguous project3/branches/exiguous2
 svn commit -m "Copy exiguous branch of project3"
 svn up
+svn delete project1/branches/exiguous
+svn commit -m "Delete exiguous branch of project1"
+svn up
+svn delete project2/branches/exiguous
+svn commit -m "Delete exiguous branch of project2"
+svn up
+svn delete project3/branches/exiguous
+svn commit -m "Delete exiguous branch of project3"
+svn up
+
 # We're done
 cd ..
 } >/dev/$verbose 2>&1

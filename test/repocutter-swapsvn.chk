@@ -1093,3 +1093,25 @@ Node-copyfrom-rev: 40
 Node-copyfrom-path: branches/exiguous
 
 
+Revision-number: 44
+Prop-content-length: 133
+Content-length: 133
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:07:20.000000Z
+K 7
+svn:log
+V 34
+Delete exiguous branch of project1
+PROPS-END
+
+Node-path: branches/exiguous
+Node-action: delete
+
+
