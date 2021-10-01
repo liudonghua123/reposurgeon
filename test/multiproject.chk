@@ -125,6 +125,23 @@ D foo.txt
 M 100644 :32 placeholder1
 D subdir1/placeholder1
 
+commit refs/heads/exiguous3
+#legacy-id 47
+mark :48
+committer Fred J. Foonly <foonly@foo.com> 16920 +0000
+data 36
+Create exiguous3 branch of project1
+from :33
+D bar.txt
+D baz.txt
+D evilcopy/bar.txt
+D evilcopy/baz.txt
+D evilcopy/foo.txt
+D evilcopy/foodir/qux.txt
+D foo.txt
+M 100644 :32 placeholder1
+D subdir1/placeholder1
+
 tag stable-root
 #legacy-id 8
 from :7

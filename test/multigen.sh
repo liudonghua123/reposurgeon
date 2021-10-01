@@ -23,7 +23,6 @@
 # 38087-1 copy     branches/HC2.2.15/ from 38087:branches/HC2.2.14
 #
 # FIXME: multigen needs more tests
-# * Second coalescence clique
 # * Branch rename
 
 dump=no
@@ -116,6 +115,7 @@ svn up
 svn copy project3/branches/exiguous project3/branches/exiguous2
 svn commit -m "Copy exiguous branch of project3"
 svn up
+# Test delete coalescence
 svn delete project1/branches/exiguous
 svn commit -m "Delete exiguous branch of project1"
 svn up
@@ -125,7 +125,16 @@ svn up
 svn delete project3/branches/exiguous
 svn commit -m "Delete exiguous branch of project3"
 svn up
-
+# Test that handling of second coalescence clique is correct
+svn copy project1/trunk/subdir1 project1/branches/exiguous3
+svn commit -m "Create exiguous3 branch of project1"
+svn up
+svn copy project2/trunk/subdir2 project2/branches/exiguous3
+svn commit -m "Create exiguous3 branch of project2"
+svn up
+svn copy project3/trunk/subdir3 project3/branches/exiguous3
+svn commit -m "Create exiguous3 branch of project3"
+svn up
 # We're done
 cd ..
 } >/dev/$verbose 2>&1

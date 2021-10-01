@@ -1293,3 +1293,78 @@ Node-path: project3/branches/exiguous
 Node-action: delete
 
 
+Revision-number: 47
+Prop-content-length: 134
+Content-length: 134
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:07:50.000000Z
+K 7
+svn:log
+V 35
+Create exiguous3 branch of project1
+PROPS-END
+
+Node-path: project1/branches/exiguous3
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 46
+Node-copyfrom-path: project1/trunk/subdir1
+
+
+Revision-number: 48
+Prop-content-length: 134
+Content-length: 134
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:08:00.000000Z
+K 7
+svn:log
+V 35
+Create exiguous3 branch of project2
+PROPS-END
+
+Node-path: project2/branches/exiguous3
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 47
+Node-copyfrom-path: project2/trunk/subdir2
+
+
+Revision-number: 49
+Prop-content-length: 134
+Content-length: 134
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:08:10.000000Z
+K 7
+svn:log
+V 35
+Create exiguous3 branch of project3
+PROPS-END
+
+Node-path: project3/branches/exiguous3
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 48
+Node-copyfrom-path: project3/trunk/subdir3
+
+

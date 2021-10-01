@@ -400,6 +400,33 @@ D branches/exiguous/foo.txt
 D branches/exiguous/foodir/qux.txt
 D branches/exiguous/placeholder3
 
+commit refs/heads/project1
+#legacy-id 47
+mark :51
+committer fred <fred> 470 +0000
+data 36
+Create exiguous3 branch of project1
+from :48
+M 100644 :33 branches/exiguous3/placeholder1
+
+commit refs/heads/project2
+#legacy-id 48
+mark :52
+committer fred <fred> 480 +0000
+data 36
+Create exiguous3 branch of project2
+from :49
+M 100644 :35 branches/exiguous3/placeholder2
+
+commit refs/heads/project3
+#legacy-id 49
+mark :53
+committer fred <fred> 490 +0000
+data 36
+Create exiguous3 branch of project3
+from :50
+M 100644 :37 branches/exiguous3/placeholder3
+
 tag emptycommit-30
 #legacy-id 30
 from :22
