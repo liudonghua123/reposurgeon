@@ -108,7 +108,7 @@ data 0
 from :21
 M 100644 :32 subdir1/placeholder1
 
-commit refs/heads/exiguous2
+commit refs/heads/renamed
 #legacy-id 36
 mark :38
 committer Fred J. Foonly <foonly@foo.com> 12960 +0000
@@ -125,7 +125,7 @@ D foo.txt
 M 100644 :32 placeholder1
 D subdir1/placeholder1
 
-commit refs/heads/exiguous3
+commit refs/heads/renamed
 #legacy-id 47
 mark :48
 committer Fred J. Foonly <foonly@foo.com> 16920 +0000
@@ -165,8 +165,21 @@ tagger Fred J. Foonly <foonly@foo.com> 14760 +0000
 data 33
 Copy exiguous branch of project1
 
+tag renamed-root
+#legacy-id 50.1
+from :48
+tagger Fred J. Foonly <foonly@foo.com> 18000 +0000
+data 74
+Rename exiguous3 branch of project1
+
+[[Split portion of a mixed commit.]]
+
 reset refs/heads/stable
 #legacy-id 8
 from :7
+
+reset refs/heads/exiguous2
+#legacy-id 41
+from :38
 
 done

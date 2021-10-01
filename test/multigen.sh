@@ -21,9 +21,6 @@
 # needs to be transformed into this:
 #
 # 38087-1 copy     branches/HC2.2.15/ from 38087:branches/HC2.2.14
-#
-# FIXME: multigen needs more tests
-# * Branch rename
 
 dump=no
 verbose=null
@@ -134,6 +131,16 @@ svn commit -m "Create exiguous3 branch of project2"
 svn up
 svn copy project3/trunk/subdir3 project3/branches/exiguous3
 svn commit -m "Create exiguous3 branch of project3"
+svn up
+# Test rename coalescence
+svn rename project1/branches/exiguous3 project1/branches/renamed
+svn commit -m "Rename exiguous3 branch of project1"
+svn up
+svn rename project2/branches/exiguous3 project2/branches/renamed
+svn commit -m "Rename exiguous3 branch of project2"
+svn up
+svn rename project3/branches/exiguous3 project3/branches/renamed
+svn commit -m "Rename exiguous3 branch of project3"
 svn up
 # We're done
 cd ..

@@ -276,6 +276,8 @@ This remains true until the branch is removed by a (coalesced) delete.
 Similarly, delete cliques that would coalesce to a delete of a
 nonexistent (coalesced) branch or tag are ignored.
 
+Parallel rename sequences are also coalesced.
+
 If a PATTERN argument is given, only paths matching the pattern are swapped.
 `,
 	"testify": `testify: usage: repocutter [-r SELECTION] testify
@@ -2010,7 +2012,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		// the branch structure.
 	}
 	var swaplatch bool // Ugh, but less than global
-	lastPathPair := make([]byte, 0)
+	type copyPair struct {
+		nodePath     string
+		copyfromPath string
+	}
+	var thisCopyPair, lastCopyPair copyPair
+	var thisDelete, lastDelete string
 	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
 		// This is dodgy.  The assumption here is that the first node
 		// of r1 is the directory creation for the first project.
@@ -2049,11 +2056,9 @@ PROPS-END
 		}
 
 		header, newval, oldval := header.replaceHook("Node-path: ", swapper)
-		if oldval != nil && newval == nil {
-			return nil
-		}
 		originalNodePath := oldval
-		isDelete := bytes.Equal(header.payload("Node-action"), []byte("delete"))
+		action := header.payload("Node-action")
+		isDelete := bytes.Equal(action, []byte("delete"))
 		if match == nil || match.Match(originalNodePath) {
 			isCopy := header.index("Node-copyfrom-path") != -1
 			isDir := header.isDir()
@@ -2079,9 +2084,13 @@ PROPS-END
 				return nil
 			}
 		}
-		pathPair := append(newval, []byte{0}...)
 		coalesced := !bytes.Equal(oldval, newval)
 		if coalesced {
+			if isDelete {
+				thisDelete = string(newval)
+			} else {
+				thisCopyPair = copyPair{string(newval), ""}
+			}
 			if !bytes.Equal(newval, lastCreation) {
 				if isDelete {
 					realized.Remove(string(lastCreation))
@@ -2092,7 +2101,14 @@ PROPS-END
 			lastCreation = newval
 		}
 		header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", swapper)
-		if coalesced {
+		if !coalesced {
+			// Actions at end of copy or delete spans could go here,
+			// but that action would also have to fire at the end of swap().
+			// Reset the clique state.
+			var zeroCopyPair copyPair
+			lastCopyPair = zeroCopyPair
+			lastDelete = ""
+		} else if !isDelete {
 			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
 				parts := bytes.Split(in, []byte("/"))
 				if len(parts) == 3 {
@@ -2105,21 +2121,31 @@ PROPS-END
 				}
 				return bytes.Join(parts, []byte("/"))
 			})
+			thisCopyPair.copyfromPath = string(newval)
+
+			if lastCopyPair == thisCopyPair {
+				// We're looking at the second or
+				// later copy in a span of nodes that
+				// refer to the same global branch;
+				// we can drop it.
+				return nil
+			}
+			lastCopyPair = thisCopyPair
+		} else { // isDelete
+			if lastDelete == thisDelete {
+				// We're looking at the second or
+				// later delete in a span of nodes that
+				// refer to the same global branch;
+				// we can drop it.
+				return nil
+			}
+			lastDelete = thisDelete
 		}
-		pathPair = append(pathPair, newval...)
 
 		all := make([]byte, 0)
 		all = append(all, []byte(header)...)
 		all = append(all, properties...)
 		all = append(all, content...)
-
-		// Following the coalescing copy rewrites in clipper above,
-		// this is where we drop any duplicates after the first one
-		// produced.
-		if !bytes.Equal(header.payload("Node-path"), originalNodePath) && bytes.Equal(lastPathPair, pathPair) {
-			return nil
-		}
-		lastPathPair = pathPair
 
 		return all
 	}
