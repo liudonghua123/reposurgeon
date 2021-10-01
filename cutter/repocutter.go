@@ -2005,12 +2005,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		return bytes.Join(parts, []byte("/"))
 	}
 	revhook := func(props *Properties) {
-		var mergepath []byte
+		swapped := make([]string, 0)
 		if m, ok := props.properties["svn:mergeinfo"]; ok {
-			mergepath = swapper([]byte(m))
-		}
-		if mergepath != nil {
-			props.properties["svn:mergeinfo"] = string(mergepath)
+			for _, part := range bytes.Split([]byte(m), []byte{':'}) {
+				swapped = append(swapped, string(swapper(part)))
+			}
+			props.properties["svn:mergeinfo"] = strings.Join(swapped, ":")
 		}
 		if source.Revision == 1 && props.Contains("svn:log") {
 			props.properties["svn:log"] = "Synthetic branch-structure creation.\n"

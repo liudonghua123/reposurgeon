@@ -248,7 +248,7 @@ surgeon/help-index.go: help-index.awk repository-editing.adoc
 	$(AWK) -f $^ >$@
 
 cuttercommands.inc: repocutter
-	repocutter --docgen >cuttercommands.inc
+	./repocutter --docgen >cuttercommands.inc
 
 #
 # Auxiliary Go tooling productions
