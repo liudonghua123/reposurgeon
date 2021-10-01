@@ -1959,6 +1959,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		if match != nil && !match.Match(path) {
 			return path
 		}
+		// mergeinfo paths are rooted - leading slash should
+		// be ignored, then restored.
+		rooted := path[0] == byte('/')
+		if rooted {
+			path = path[1:]
+		}
 		parts := bytes.Split(path, []byte("/"))
 		if len(parts) < 2 {
 			// FIXME: Known problem here when a node has both a
@@ -1992,6 +1998,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		} else { // naive swap
 			parts[0] = parts[1]
 			parts[1] = top
+		}
+		if rooted {
+			parts[0] = append([]byte{'/'}, parts[0]...)
 		}
 		return bytes.Join(parts, []byte("/"))
 	}
