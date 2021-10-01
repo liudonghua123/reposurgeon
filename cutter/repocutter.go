@@ -74,7 +74,7 @@ var debug int
 const debugLOGIC = 1
 const debugPARSE = 2
 
-var quiet bool
+var quiet, docgen bool
 
 var oneliners = map[string]string{
 	"closure":    "Compute the transitive closure of a path set",
@@ -145,7 +145,6 @@ specified and are applied in order.
 
 Delete the property PROPNAME. May be restricted by a revision
 selection. You may specify multiple properties to be deleted.
-
 `,
 	"pop": `pop: usage: repocutter [-r SELECTION ] pop
 
@@ -167,7 +166,7 @@ selection. You may specify multiple property settings.
 
 Renumber all revisions, patching Node-copyfrom headers as required.
 Any selection option is ignored. Takes no arguments.  The -b option 
-1can be used to set the base to renumber from, defaulting to 0.
+can be used to set the base to renumber from, defaulting to 0.
 `, "reduce": `reduce: usage: repocutter reduce INPUT-FILE
 
 Strip revisions out of a dump so the only parts left those likely to
@@ -185,10 +184,9 @@ The reduced dump is emitted to standard output.
 `,
 	"replace": `replace: usage: repocutter replace /REGEXP/REPLACE/
 
-Perform a regular expression search/replace on blog content. The first
+Perform a regular expression search/replace on blob content. The first
 character of the argument (normally /) is treated as the end delimiter 
 for the regular-expression and replacement parts.
-
 `,
 	"see": `see: usage: repocutter [-r SELECTION] see
 
@@ -240,7 +238,7 @@ selection set. Useful following a sift operation for straightening out
 a common form of multi-project repository.  If a PATTERN argument is given, 
 only paths matching the pattern are swapped.
 `,
-	"swapsvn": `swap: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
+	"swapsvn": `swapsvn: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
 
 Like swap, but is aware of Subversion structure.  Used for transforming
 multiproject repositories intoo a standard layout with trunk, tags, and
@@ -288,8 +286,54 @@ Replace all attributions with 'fred'.  Discard the repository UUID.
 Use this to neutralize procedurally-generated streams so they can be
 compared.
 `,
-	"version": `report major and minor repocutter version
+	"version": `version: usage: version
+
+Report major and minor repocutter version.
 `,
+}
+
+var narrativeOrder []string = []string{
+	"select",
+	"deselect",
+	"see",
+	"renumber",
+
+	"log",
+	"setlog",
+
+	"propdel",
+	"proprename",
+	"propset",
+
+	"expunge",
+	"sift",
+	"closure",
+
+	"pathrename",
+	"pop",
+
+	"split",
+	"swap",
+	"swapsvn",
+
+	"replace",
+	"strip",
+	"obscure",
+	"reduce",
+	"testify",
+
+	"version",
+}
+
+func dumpDocs() {
+	re := regexp.MustCompile("([a-z][a-z]*):[^\n]*\n")
+	for _, item := range narrativeOrder {
+		text := helpdict[item]
+		text = re.ReplaceAllString(text, `${1}::`)
+		text = strings.Replace(text, "\n\n", "\n+\n", -1)
+		os.Stdout.WriteString(text)
+		os.Stdout.WriteString("\n")
+	}
 }
 
 var base int
@@ -2181,8 +2225,15 @@ func main() {
 	flag.IntVar(&base, "b", 0, "base value to renumber from")
 	flag.IntVar(&base, "base", 0, "base value to renumber from")
 	flag.StringVar(&tag, "t", "", "set error tag")
-	flag.StringVar(&tag, "tag", "", "set errur tag")
+	flag.StringVar(&tag, "tag", "", "set error tag")
+	flag.BoolVar(&docgen, "docgen", false, "generate asciidoc from embedded help")
 	flag.Parse()
+
+	if docgen {
+		dumpDocs()
+		os.Exit(0)
+	}
+
 	if tag != "" {
 		tag = "(" + tag + ")"
 	}

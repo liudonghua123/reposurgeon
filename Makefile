@@ -247,6 +247,11 @@ summary:
 surgeon/help-index.go: help-index.awk repository-editing.adoc
 	$(AWK) -f $^ >$@
 
+repocutter.html: cuttercommands.inc repocutter.adoc
+	asciidoctor -D. -a webfonts! repocutter.adoc
+cuttercommands.inc: cutter/repocutter.go
+	repocutter --docgen >cuttercommands.inc
+
 #
 # Auxiliary Go tooling productions
 #
@@ -270,7 +275,7 @@ fmt:
 #
 clean:
 	rm -f $(BINARIES) surgeon/version.go
-	rm -fr docinclude *~ *.1 *.html *.tar.xz MANIFEST *.md5
+	rm -fr docinclude cuttercommands.inc *~ *.1 *.html *.tar.xz MANIFEST *.md5
 	rm -fr .rs .rs* test/.rs test/.rs*
 	rm -f typescript test/typescript
 
