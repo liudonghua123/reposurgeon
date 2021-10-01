@@ -253,17 +253,30 @@ and  branches, the following *two* components are swapped to the top.
 thus, "foo/branches/release23" becomes "branches/release23/foo",
 putting the project directory beneath the branch.
 
-After the swap, more attempts to recognize spans of copies into branch
-and tag subdirectories that are parallel in all top-level (project)
-directories should be coalesced into single copies in the inverted
-structure. Accordingly, copies with three-segment sources and
+After the swap, more attempts to recognize spans of deletes, copies
+into branch directories, and copies into tag subdirectories that are
+parallel in all top-level (project) directories. These are coalesced
+into single deketes or copies in the inverted structure.
+
+Accordingly, deletes and copies with three-segment sources and
 three-segment targets are  transformed; for tags/ and branches/ paths
 the last segment (the subdirectory below the branch name)  is dropped,
 while for trunk/ paths the last two segments are dropped leaving only
-trunk/.  Following duplicate copies are skipped.  This transformation
-is done only once; once a branch creation has been synthesized later
-copies to subdirectories of that branch are not altered and are thus
-treated as updates to the branch.
+trunk/.  Following duplicate deletes and copies are skipped. 
+
+This has two minor negative conserquemnces. One is that metadata
+belonging to all deletes or copies afrter the first one in a coalesced
+span is lost.  The otherr is that branches and tags local to
+individual project directories are promoted to global branches and
+tags across the entire transformed repository; no content is lost this
+way.
+
+Each coalesced branch or tag creation is done only once; once a branch
+creation has been synthesized, later copies to subdirectories of that
+branch are not altered and are thus treated as updates to the branch.
+This remains true until the branch is removed by a (coalesced) delete.
+Similarly, delete cliques that would coalesce to a delete of a
+nonexistent (coalesced) branch or tag are ignored.
 
 If a PATTERN argument is given, only paths matching the pattern are swapped.
 `,

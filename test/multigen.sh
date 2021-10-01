@@ -25,7 +25,6 @@
 # FIXME: multigen needs more tests
 # * Second coalescence clique
 # * Branch rename
-# * Document realized-set behavior.
 
 dump=no
 verbose=null
