@@ -2882,6 +2882,8 @@ projects, with the root directory containing one subdirectory per
 project and each subdirectory having its own trunk/branches/tags
 layout.
 
+==== Dissecting out individual projects with repocutter
+
 Suppose you have a stream dump from a repository with two project
 subdirectories, project1 and project2.  One pattern for dissecting out
 project1 looks like this:
@@ -2913,7 +2915,27 @@ While something like this could be done with
 correctly resolve Subversion copies across projects.  This reposurgeon
 procedure handles those correctly.
 
-Another useful tool is the repocutter "swapsvn" primitive.
+==== Whole-repository conversion with repocutter swapsvn
+
+Another useful tool is the repocutter "swapsvn" primitive.  If the
+multiproject structure is peerfectly regular - top-level directories
+are always projects, and always have trunk/tags/branches structure
+immediately underneath - swapsvn will trransform the repository to
+a regular Subversion structure with trunk/tags/branhes at the top
+level.
+
+Be aware that if you do this, all project-local trags and branches
+will be promoted to become tags and branches acrodss thje entire
+repository
+
+Sometimes you may be able to transform a nearly-regular multiproject
+structure into a perfectlty regular ione with repocutter pathrename
+commands, then apply ewpocutter swapsvn.
+
+See the embedded help listed by "repocutter help swapsvn" for some
+details and caveats.
+
+==== No-branch reads
 
 Finally, you can do a "--nobranch" read of the Subversion
 repository and then individually turn subdirectories into branches
