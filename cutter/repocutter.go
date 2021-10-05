@@ -338,6 +338,12 @@ func dumpDocs() {
 	}
 }
 
+// The svnmerge-integrated property is set by svmerge.py.
+// Its semantucs are poorly documented, but we process it
+// exactly lile svn:mergeinfo and punt that problem to reposurgeon
+// on the "first, doo no harm" principle.
+var mergeProperties = []string{"svn:mergeinfo", "svnmerge-integrated"}
+
 var base int
 var tag string
 
@@ -1318,8 +1324,20 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		return ""
 	}
 	revhook := func(props *Properties) {
-		if _, present := props.properties["svn:mergeinfo"]; present {
-			props.properties["svn:mergeinfo"] = popSegment(props.properties["svn:mergeinfo"])
+		for _, mergeproperty := range mergeProperties {
+			if _, present := props.properties[mergeproperty]; present {
+				oldval := props.properties["svn:mergeinfo"]
+				rooted := false
+				if oldval[0] == '/' {
+					rooted = true
+					oldval = oldval[1:]
+				}
+				newval := popSegment(oldval)
+				if rooted {
+					newval = "/" + newval
+				}
+				props.properties[mergeproperty] = newval
+			}
 		}
 	}
 	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
@@ -1442,24 +1460,30 @@ func log(source DumpfileSource, selection SubversionRange) {
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func([]byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
 	revhook := func(props *Properties) {
-		if _, present := props.properties["svn:mergeinfo"]; present {
-			mergeinfo := string(props.properties["svn:mergeinfo"])
-			var buffer bytes.Buffer
-			if len(mergeinfo) != 0 {
-				for _, line := range strings.Split(strings.TrimSuffix(mergeinfo, "\n"), "\n") {
-					if strings.Contains(line, ":") {
-						lastidx := strings.LastIndex(line, ":")
-						path, revrange := line[:lastidx], line[lastidx+1:]
-						buffer.Write(pathMutator([]byte(path)))
-						buffer.WriteString(":")
-						buffer.WriteString(revrange)
-					} else {
-						buffer.WriteString(line)
+		for _, mergeproperty := range mergeProperties {
+			if _, present := props.properties[mergeproperty]; present {
+				mergeinfo := string(props.properties[mergeproperty])
+				var buffer bytes.Buffer
+				if len(mergeinfo) != 0 {
+					for _, line := range strings.Split(strings.TrimSuffix(mergeinfo, "\n"), "\n") {
+						if strings.Contains(line, ":") {
+							lastidx := strings.LastIndex(line, ":")
+							path, revrange := line[:lastidx], line[lastidx+1:]
+							if path[0] == '/' {
+								buffer.WriteByte(byte('/'))
+								path = path[1:]
+							}
+							buffer.Write(pathMutator([]byte(path)))
+							buffer.WriteString(":")
+							buffer.WriteString(revrange)
+						} else {
+							buffer.WriteString(line)
+						}
+						buffer.WriteString("\n")
 					}
-					buffer.WriteString("\n")
 				}
+				props.properties[mergeproperty] = buffer.String()
 			}
-			props.properties["svn:mergeinfo"] = buffer.String()
 		}
 		if userid, present := props.properties["svn:author"]; present && nameMutator != nil {
 			props.properties["svn:author"] = nameMutator(userid)
@@ -1717,20 +1741,27 @@ func renumber(source DumpfileSource) {
 					propParserState = awaitingNext
 				} else if propParserState == awaitingKeyValue {
 					needsWrite = false
-					if bytes.HasPrefix(line, []byte("svn:mergeinfo")) {
+					performDefaultTransformation := true
+					var mergeinfolength int
+					for _, mergeproperty := range mergeProperties {
+						if bytes.HasPrefix(line, []byte(mergeproperty)) {
+							os.Stdout.Write(line)
+							lengthline := source.Lbs.Readline()
+							os.Stdout.Write(lengthline)
+							mergeinfolength, _ = strconv.Atoi(string(bytes.Fields(lengthline)[1]))
+							os.Stdout.Write(renumberMergeInfo(source.Lbs.Read(mergeinfolength), renumbering))
+							// ignore trailing newline, already artificially appended in renumberMergeInfo
+							source.Lbs.Readline()
+							propParserState = awaitingNext
+							performDefaultTransformation = false
+							break
+						}
+					}
+					if performDefaultTransformation {
 						os.Stdout.Write(line)
 						lengthline := source.Lbs.Readline()
 						os.Stdout.Write(lengthline)
-						mergeinfolength, _ := strconv.Atoi(string(bytes.Fields(lengthline)[1]))
-						os.Stdout.Write(renumberMergeInfo(source.Lbs.Read(mergeinfolength), renumbering))
-						// ignore trailing newline, already artificially appended in renumberMergeInfo
-						source.Lbs.Readline()
-						propParserState = awaitingNext
-					} else {
-						os.Stdout.Write(line)
-						lengthline := source.Lbs.Readline()
-						os.Stdout.Write(lengthline)
-						mergeinfolength, _ := strconv.Atoi(string(bytes.Fields(lengthline)[1]))
+						mergeinfolength, _ = strconv.Atoi(string(bytes.Fields(lengthline)[1]))
 						os.Stdout.Write(source.Lbs.Read(mergeinfolength))
 						os.Stdout.Write(source.Lbs.Readline()) // trailing newline
 						propParserState = awaitingNext
@@ -2006,11 +2037,13 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	}
 	revhook := func(props *Properties) {
 		swapped := make([]string, 0)
-		if m, ok := props.properties["svn:mergeinfo"]; ok {
-			for _, part := range bytes.Split([]byte(m), []byte{':'}) {
-				swapped = append(swapped, string(swapper(part)))
+		for _, mergeproperty := range mergeProperties {
+			if m, ok := props.properties[mergeproperty]; ok {
+				for _, part := range bytes.Split([]byte(m), []byte{'\n'}) {
+					swapped = append(swapped, string(swapper(part)))
+				}
+				props.properties[mergeproperty] = strings.Join(swapped, ":")
 			}
-			props.properties["svn:mergeinfo"] = strings.Join(swapped, ":")
 		}
 		if source.Revision == 1 && props.Contains("svn:log") {
 			props.properties["svn:log"] = "Synthetic branch-structure creation.\n"

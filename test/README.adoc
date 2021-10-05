@@ -460,7 +460,9 @@ FIXME: need tests for resort and for cut-failure case of divide.
 
 FIXME: the branch creation case tickled by branchreateempty.sh is unresolved.
 
-FIXME: Needs some resrts of hg import with hg-git-fast-import.
+FIXME: Needs some tests of hg import with hg-git-fast-import.
+
+FIXME: Need some tests of multiline mergeinfo properties
 
 == Some references
 
