@@ -634,7 +634,7 @@ func (he *HgExtractor) mustCapture(cmd []string, errorclass string) string {
 	data, err := he.capture(cmd...)
 	if err != nil {
 		if logEnable(logSHOUT) {
-			logit("%s", strings.TrimSpace(data))
+			shout("%s", strings.TrimSpace(data))
 		}
 		panic(throw(errorclass,
 			"In %s, command %s failed: %v",
@@ -657,7 +657,7 @@ func (he *HgExtractor) byLine(rs *RepoStreamer, cmd []string, errfmt string,
 	stdout, stderr, err := he.hgcl.runcommand(cmd)
 	if err != nil {
 		if logEnable(logSHOUT) {
-			logit("%s", strings.TrimSpace(string(stderr)))
+			shout("%s", strings.TrimSpace(string(stderr)))
 		}
 		return err
 	}
@@ -960,7 +960,7 @@ func (he *HgExtractor) isClean() bool {
 	data, err := he.capture("hg", "status", "--modified")
 	if err != nil {
 		if logEnable(logSHOUT) {
-			logit("%s", strings.TrimSpace(data))
+			shout("%s", strings.TrimSpace(data))
 		}
 		panic(throw("extractor", "Couldn't spawn hg status --modified: %v", err))
 	}
@@ -1027,7 +1027,7 @@ func (he HgExtractor) manifest(rev string) []manifestEntry {
 				data, err = he.capture("hg", "cat", "-r", rev, me.pathname, "-o", dest)
 				if err != nil {
 					if logEnable(logSHOUT) {
-						logit("%s", strings.TrimSpace(data))
+						shout("%s", strings.TrimSpace(data))
 					}
 					panic(throw("extractor", "Couldn't cat blob to hash it: %v", err))
 				}
@@ -1056,7 +1056,7 @@ func (he *HgExtractor) catFile(rev string, path string, dest string) error {
 	data, err := he.capture("hg", "cat", "-r", rev, path, "-o", dest)
 	if err != nil {
 		if logEnable(logSHOUT) {
-			logit("%s", strings.TrimSpace(data))
+			shout("%s", strings.TrimSpace(data))
 		}
 	}
 	return err
@@ -1067,7 +1067,7 @@ func (he HgExtractor) getComment(rev string) string {
 	data, err := he.capture("hg", "log", "-r", rev, "--template", `{desc}\n`)
 	if err != nil {
 		if logEnable(logSHOUT) {
-			logit("%s", strings.TrimSpace(data))
+			shout("%s", strings.TrimSpace(data))
 		}
 		panic(throw("extractor", "Couldn't spawn hg log: %v", err))
 	}

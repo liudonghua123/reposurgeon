@@ -554,7 +554,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 							} else if node.kind == sdDIR &&
 								node.action != sdCHANGE && logEnable(logTOPOLOGY) {
 								if logEnable(logSHOUT) {
-									logit(node.String())
+									shout(node.String())
 								}
 							}
 						}
@@ -674,7 +674,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 			baton.percentProgress(uint64(sp.ccount))
 			if control.readLimit > 0 && uint64(sp.repo.legacyCount) > control.readLimit {
 				if logEnable(logSHOUT) {
-					logit("read limit %d reached.", control.readLimit)
+					shout("read limit %d reached.", control.readLimit)
 				}
 				break
 			}
@@ -683,7 +683,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 	control.baton.endProgress()
 	if control.readLimit > 0 && uint64(sp.repo.legacyCount) <= control.readLimit {
 		if logEnable(logSHOUT) {
-			logit("EOF before readlimit.")
+			shout("EOF before readlimit.")
 		}
 	}
 	if logEnable(logSVNPARSE) {
@@ -758,7 +758,7 @@ func (action NodeAction) isBogon() bool {
 		(action.kind == sdFILE || action.kind == sdDIR || action.action == sdDELETE) &&
 		((action.fromRev == 0) == (action.fromPath == ""))) {
 		if logEnable(logSHOUT) {
-			logit("forbidden operation in dump stream (version 7?) at r%d: %s", action.revision, action)
+			shout("forbidden operation in dump stream (version 7?) at r%d: %s", action.revision, action)
 		}
 		return true
 	}
@@ -775,20 +775,20 @@ func (action NodeAction) isBogon() bool {
 	if !(action.blob != nil || action.hasProperties() ||
 		action.fromRev != 0 || action.action == sdADD || action.action == sdDELETE) {
 		if logEnable(logSHOUT) {
-			logit("malformed node in dump stream at r%d: %s", action.revision, action)
+			shout("malformed node in dump stream at r%d: %s", action.revision, action)
 		}
 		return true
 	}
 	if action.kind == sdNONE && action.action != sdDELETE {
 		if logEnable(logSHOUT) {
-			logit("missing type on a non-delete node r%d: %s", action.revision, action)
+			shout("missing type on a non-delete node r%d: %s", action.revision, action)
 		}
 		return true
 	}
 
 	if (action.action != sdADD && action.action != sdREPLACE) && action.isCopy() {
 		if logEnable(logSHOUT) {
-			logit("invalid type in node with from revision r%d: %s", action.revision, action)
+			shout("invalid type in node with from revision r%d: %s", action.revision, action)
 		}
 		return true
 	}
@@ -1317,7 +1317,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 		// We reach here with lookback still nil if the node is a non-copy add.
 		if lookback == nil && node.isCopy() && !strings.HasSuffix(node.path, ".gitignore") {
 			if logEnable(logSHOUT) {
-				logit("r%d~%s: missing ancestor node for non-.gitignore",
+				shout("r%d~%s: missing ancestor node for non-.gitignore",
 					node.revision, node.path)
 			}
 		}
@@ -1616,7 +1616,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				if isGitIgnore {
 					if !options.Contains("--user-ignores") {
 						if logEnable(logSHOUT) {
-							logit("r%d~%s: user-created .gitignore ignored.", node.revision, node.path)
+							shout("r%d~%s: user-created .gitignore ignored.", node.revision, node.path)
 						}
 						continue
 					}
@@ -1697,7 +1697,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						// This should never happen. If we can't find an ancestor for any node
 						// it means the dumpfile is malformed.
 						if logEnable(logSHOUT) {
-							logit("r%d~%s: ancestor node is missing.", node.revision, node.path)
+							shout("r%d~%s: ancestor node is missing.", node.revision, node.path)
 						}
 						continue
 					}
@@ -1707,7 +1707,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 					// stream.
 					if node.blobmark == emptyMark {
 						if logEnable(logSHOUT) {
-							logit("r%d: %s gets impossibly empty blob mark from ancestor %s, skipping",
+							shout("r%d: %s gets impossibly empty blob mark from ancestor %s, skipping",
 								record.revision, node, ancestor)
 						}
 						continue

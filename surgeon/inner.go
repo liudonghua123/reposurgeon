@@ -1890,7 +1890,7 @@ func (t *Tag) emailIn(msg *MessageBlock, fill bool) bool {
 				// so suppress the usual message.
 				if t.repo != nil {
 					if logEnable(logSHOUT) {
-						logit("in %s, Tagger-Date is modified '%v' -> '%v' (delta %v)",
+						shout("in %s, Tagger-Date is modified '%v' -> '%v' (delta %v)",
 							t.idMe(), t.tagger.date, taggerdate, date.timestamp.Sub(t.tagger.date.timestamp))
 					}
 				}
@@ -4255,7 +4255,7 @@ func (sp *StreamParser) warn(msg string) {
 func (sp *StreamParser) shout(msg string) {
 	// A gripe with line number
 	if logEnable(logSHOUT) {
-		logit(sp.errorLocation() + msg)
+		shout(sp.errorLocation() + msg)
 	}
 
 }
@@ -4503,7 +4503,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 						if string(name) == "cvs-revisions" {
 							if !sp.repo.stronghint {
 								if logEnable(logSHOUT) {
-									logit("cvs_revisions property hints at CVS.")
+									shout("cvs_revisions property hints at CVS.")
 								}
 							}
 							sp.repo.hint("cvs", "", true)
@@ -4677,7 +4677,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 		baton.percentProgress(uint64(sp.ccount))
 		if control.readLimit > 0 && uint64(commitcount) >= control.readLimit {
 			if logEnable(logSHOUT) {
-				logit("read limit %d reached", control.readLimit)
+				shout("read limit %d reached", control.readLimit)
 			}
 			break
 		}
@@ -5096,7 +5096,7 @@ func (repo *Repository) fixupMarkToIndex(event Event, oldmark, newmark string) {
 	} else if index, ok := repo._markToIndex[oldmark]; ok {
 		if event != repo.events[index] {
 			if logEnable(logSHOUT) {
-				logit("Multiple events with the same mark corrupted the cache")
+				shout("Multiple events with the same mark corrupted the cache")
 			}
 			repo.invalidateMarkToIndex()
 			return
@@ -5147,7 +5147,7 @@ func (repo *Repository) hint(clue1 string, clue2 string, strong bool) bool {
 	}
 	if newhint && repo.stronghint && strong {
 		if logEnable(logSHOUT) {
-			logit("new hint %s conflicts with old %s", clue1, repo.hintlist[len(repo.hintlist)-1])
+			shout("new hint %s conflicts with old %s", clue1, repo.hintlist[len(repo.hintlist)-1])
 		}
 		return false
 	}
@@ -5429,7 +5429,7 @@ func (repo *Repository) readAuthorMap(selection selectionSet, fp io.Reader) erro
 	var currentLineNumber uint64
 	complain := func(msg string, args ...interface{}) {
 		if logEnable(logSHOUT) {
-			logit("in readAuthorMap, while parsing line %d: "+msg,
+			shout("in readAuthorMap, while parsing line %d: "+msg,
 				append([]interface{}{currentLineNumber}, args)...)
 		}
 	}
@@ -5693,7 +5693,7 @@ func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string
 			commitID += fmt.Sprintf(" <%s>", commit.legacyID)
 		}
 		if logEnable(logSHOUT) {
-			logit(fmt.Sprintf("tagifying: %s -> %s", commitID, name))
+			shout(fmt.Sprintf("tagifying: %s -> %s", commitID, name))
 		}
 	}
 	var pref string
@@ -5997,7 +5997,7 @@ func (repo *Repository) fastExport(selection selectionSet,
 		if logEnable(logUNITE) {
 			if event.getMark() != "" {
 				if logEnable(logSHOUT) {
-					logit(fmt.Sprintf("writing %d %s", ei, event.getMark()))
+					shout(fmt.Sprintf("writing %d %s", ei, event.getMark()))
 				}
 			}
 		}
@@ -7871,7 +7871,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 		if repo.vcs.name == "git" {
 			if exists(".git/cvs-revisions") {
 				if logEnable(logSHOUT) {
-					logit("reading cvs-revisions map.")
+					shout("reading cvs-revisions map.")
 				}
 				type pathRev struct {
 					path string
@@ -8474,7 +8474,7 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 		matches := addressRE.FindAllStringSubmatch(strings.TrimSpace(attribution), -1)
 		if matches == nil {
 			if logEnable(logSHOUT) {
-				logit("invalid attribution %q in commit %s <%s>", attribution, commit.mark, commit.legacyID)
+				shout("invalid attribution %q in commit %s <%s>", attribution, commit.mark, commit.legacyID)
 			}
 			continue
 		}
@@ -8537,7 +8537,7 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 	// Sort is requirs to make message order deterministic
 	for _, line := range errlines {
 		if logEnable(logSHOUT) {
-			logit(line)
+			shout(line)
 		}
 	}
 

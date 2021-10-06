@@ -153,6 +153,11 @@ func logit(msg string, args ...interface{}) {
 	control.logmutex.Unlock()
 }
 
+func shout(msg string, args ...interface{}) {
+	logit(msg, args...)
+	//control.baton.Write(fmt.Sprintf("reposurgeon: "+msg, args...) + control.lineSep)
+}
+
 // respond is to be used for console messages that shouldn't be logged
 func respond(msg string, args ...interface{}) {
 	if control.isInteractive() {
@@ -7531,11 +7536,11 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 		if control.getAbort() {
 			if originalline != "" && !strings.Contains(originalline, "</tmp") {
 				if logEnable(logSHOUT) {
-					logit("script abort on line %d %q", lineno, originalline)
+					shout("script abort on line %d %q", lineno, originalline)
 				}
 			} else {
 				if logEnable(logSHOUT) {
-					logit("script abort on line %d", lineno)
+					shout("script abort on line %d", lineno)
 				}
 			}
 			break
