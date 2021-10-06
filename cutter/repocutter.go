@@ -1804,15 +1804,14 @@ func see(source DumpfileSource, selection SubversionRange) {
 			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 		}
 		path := header.payload("Node-path")
-		kind := header.payload("Node-kind")
-		if string(kind) == "dir" {
+		if header.isDir() {
 			path = append(path, os.PathSeparator)
 		}
 		frompath := header.payload("Node-copyfrom-path")
 		fromrev := header.payload("Node-copyfrom-rev")
 		action := header.payload("Node-action")
 		if frompath != nil && fromrev != nil {
-			if string(kind) == "dir" {
+			if header.isDir() {
 				frompath = append(frompath, os.PathSeparator)
 			}
 			path = append(path, []byte(fmt.Sprintf(" from %s:%s", fromrev, frompath))...)
