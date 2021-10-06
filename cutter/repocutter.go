@@ -1979,7 +1979,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	swapper := func(path []byte) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
-		rooted := path[0] == byte('/')
+		rooted := len(path) > 0 && (path[0] == byte('/'))
 		if rooted {
 			path = path[1:]
 		}
