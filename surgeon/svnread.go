@@ -1316,8 +1316,8 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 
 		// We reach here with lookback still nil if the node is a non-copy add.
 		if lookback == nil && node.isCopy() && !strings.HasSuffix(node.path, ".gitignore") {
-			if logEnable(logSHOUT) {
-				shout("r%d~%s: missing ancestor node for non-.gitignore",
+			if logEnable(logWARN) {
+				logit("r%d~%s: missing ancestor node for non-.gitignore",
 					node.revision, node.path)
 			}
 		}
@@ -1695,19 +1695,22 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						}
 					} else {
 						// This should never happen. If we can't find an ancestor for any node
-						// it means the dumpfile is malformed.
-						if logEnable(logSHOUT) {
-							shout("r%d~%s: ancestor node is missing.", node.revision, node.path)
+						// it means the dumpfile is malformed.  Might be triggered during partial
+						// lifts of multip[roject repos.
+						if logEnable(logWARN) {
+							logit("r%d~%s: ancestor node is missing.", node.revision, node.path)
 						}
 						continue
 					}
 					// This should never happen.
 					// It indicates that file
 					// content is missing from the
-					// stream.
+					// stream.  Might be triggered
+					// during partial lifts of
+					// multip[roject repos.
 					if node.blobmark == emptyMark {
-						if logEnable(logSHOUT) {
-							shout("r%d: %s gets impossibly empty blob mark from ancestor %s, skipping",
+						if logEnable(logWARN) {
+							logit("r%d: %s gets impossibly empty blob mark from ancestor %s, skipping",
 								record.revision, node, ancestor)
 						}
 						continue

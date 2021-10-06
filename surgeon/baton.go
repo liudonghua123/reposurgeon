@@ -180,7 +180,7 @@ func (baton *Baton) printLog(str []byte) {
 	}
 }
 
-// printLogrting prints out a simple log message
+// printLogString prints out a simple log message
 func (baton *Baton) printLogString(str string) {
 	if baton != nil {
 		if baton.progressEnabled {

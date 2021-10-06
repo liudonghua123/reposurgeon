@@ -155,7 +155,9 @@ func logit(msg string, args ...interface{}) {
 
 func shout(msg string, args ...interface{}) {
 	logit(msg, args...)
-	//control.baton.Write(fmt.Sprintf("reposurgeon: "+msg, args...) + control.lineSep)
+	if _, ok := control.logfp.(*os.File); ok {
+		control.baton.printLogString(fmt.Sprintf("reposurgeon: "+msg, args...) + control.lineSep)
+	}
 }
 
 // respond is to be used for console messages that shouldn't be logged
