@@ -1977,9 +1977,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		match = regexp.MustCompile(patterns[0])
 	}
 	swapper := func(path []byte) []byte {
-		if match != nil && !match.Match(path) {
-			return path
-		}
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
 		rooted := path[0] == byte('/')
@@ -2043,6 +2040,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		// generated so reposurgeon doesn't get confused about
 		// the branch structure.
 	}
+	var oldval, newval []byte
 	var swaplatch bool // Ugh, but less than global
 	type copyPair struct {
 		nodePath     string
@@ -2087,18 +2085,15 @@ PROPS-END
 			return []byte(swapHeader)
 		}
 
-		header, newval, oldval := header.replaceHook("Node-path: ", swapper)
-		originalNodePath := oldval
-		action := header.payload("Node-action")
-		isDelete := bytes.Equal(action, []byte("delete"))
-		if match == nil || match.Match(originalNodePath) {
+		if match == nil || match.Match(header.payload("Node-path")) {
+			header, newval, oldval = header.replaceHook("Node-path: ", swapper)
+			action := header.payload("Node-action")
+			isDelete := bytes.Equal(action, []byte("delete"))
 			isCopy := header.index("Node-copyfrom-path") != -1
 			isDir := header.isDir()
 			branchcopy := isDir && (isCopy || isDelete)
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
 				parts := bytes.Split(in, []byte("/"))
-				// This is where we attempt to coalesce runs of copies between directories below
-				// project level.  Only happens the first time we see a copy to a branch.
 				if structural && branchcopy && len(parts) == 3 {
 					top := string(parts[0])
 					if top == "trunk" {
@@ -2112,55 +2107,55 @@ PROPS-END
 			if oldval != nil && newval == nil {
 				return nil
 			}
-		}
-		coalesced := !bytes.Equal(oldval, newval)
-		if coalesced {
-			if isDelete {
-				thisDelete = string(newval)
-			} else {
-				thisCopyPair = copyPair{string(newval), ""}
-			}
-		}
-		header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", swapper)
-		if !coalesced {
-			// Actions at end of copy or delete spans could go here,
-			// but that action would also have to fire at the end of swap().
-			// Reset the clique state.
-			var zeroCopyPair copyPair
-			lastCopyPair = zeroCopyPair
-			lastDelete = ""
-		} else if !isDelete {
-			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
-				parts := bytes.Split(in, []byte("/"))
-				if len(parts) == 3 {
-					top := string(parts[0])
-					if top == "trunk" {
-						parts = parts[:1]
-					} else if top == "branches" || top == "tags" {
-						parts = parts[:2]
-					}
+			coalesced := !bytes.Equal(oldval, newval)
+			if coalesced {
+				if isDelete {
+					thisDelete = string(newval)
+				} else {
+					thisCopyPair = copyPair{string(newval), ""}
 				}
-				return bytes.Join(parts, []byte("/"))
-			})
-			thisCopyPair.copyfromPath = string(newval)
+			}
+			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", swapper)
+			if !coalesced {
+				// Actions at end of copy or delete spans could go here,
+				// but that action would also have to fire at the end of swap().
+				// Reset the clique state.
+				var zeroCopyPair copyPair
+				lastCopyPair = zeroCopyPair
+				lastDelete = ""
+			} else if !isDelete {
+				header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
+					parts := bytes.Split(in, []byte("/"))
+					if len(parts) == 3 {
+						top := string(parts[0])
+						if top == "trunk" {
+							parts = parts[:1]
+						} else if top == "branches" || top == "tags" {
+							parts = parts[:2]
+						}
+					}
+					return bytes.Join(parts, []byte("/"))
+				})
+				thisCopyPair.copyfromPath = string(newval)
 
-			if lastCopyPair == thisCopyPair {
-				// We're looking at the second or
-				// later copy in a span of nodes that
-				// refer to the same global branch;
-				// we can drop it.
-				return nil
+				if lastCopyPair == thisCopyPair {
+					// We're looking at the second or
+					// later copy in a span of nodes that
+					// refer to the same global branch;
+					// we can drop it.
+					return nil
+				}
+				lastCopyPair = thisCopyPair
+			} else { // isDelete
+				if lastDelete == thisDelete {
+					// We're looking at the second or
+					// later delete in a span of nodes that
+					// refer to the same global branch;
+					// we can drop it.
+					return nil
+				}
+				lastDelete = thisDelete
 			}
-			lastCopyPair = thisCopyPair
-		} else { // isDelete
-			if lastDelete == thisDelete {
-				// We're looking at the second or
-				// later delete in a span of nodes that
-				// refer to the same global branch;
-				// we can drop it.
-				return nil
-			}
-			lastDelete = thisDelete
 		}
 
 		all := make([]byte, 0)
