@@ -262,19 +262,12 @@ the last segment (the subdirectory below the branch name)  is dropped,
 while for trunk/ paths the last two segments are dropped leaving only
 trunk/.  Following duplicate deletes and copies are skipped. 
 
-This has two minor negative conserquemnces. One is that metadata
+This has two minor negative consequences. One is that metadata
 belonging to all deletes or copies afrter the first one in a coalesced
-span is lost.  The otherr is that branches and tags local to
+span is lost.  The other is that branches and tags local to
 individual project directories are promoted to global branches and
 tags across the entire transformed repository; no content is lost this
 way.
-
-Each coalesced branch or tag creation is done only once; once a branch
-creation has been synthesized, later copies to subdirectories of that
-branch are not altered and are thus treated as updates to the branch.
-This remains true until the branch is removed by a (coalesced) delete.
-Similarly, delete cliques that would coalesce to a delete of a
-nonexistent (coalesced) branch or tag are ignored.
 
 Parallel rename sequences are also coalesced.
 
@@ -1981,8 +1974,6 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 // and also attemptt  spans of partial branch creations.
 func swap(source DumpfileSource, selection SubversionRange, patterns []string, structural bool) {
 	var match *regexp.Regexp
-	realized := newStringSet("trunk")
-	var lastCreation []byte
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
 	}
@@ -2114,10 +2105,7 @@ PROPS-END
 					if top == "trunk" {
 						parts = parts[:1]
 					} else if top == "branches" || top == "tags" {
-						clipped := bytes.Join(parts[:2], []byte("/"))
-						if realized.Contains(string(clipped)) == isDelete {
-							parts = parts[:2]
-						}
+						parts = parts[:2]
 					}
 				}
 				return bytes.Join(parts, []byte("/"))
@@ -2133,14 +2121,6 @@ PROPS-END
 			} else {
 				thisCopyPair = copyPair{string(newval), ""}
 			}
-			if !bytes.Equal(newval, lastCreation) {
-				if isDelete {
-					realized.Remove(string(lastCreation))
-				} else {
-					realized.Add(string(lastCreation))
-				}
-			}
-			lastCreation = newval
 		}
 		header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", swapper)
 		if !coalesced {
