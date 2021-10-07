@@ -8840,12 +8840,17 @@ func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Bato
 
 // readMessageBox modifies repo metadata by reading/merging in a mailbox stream.
 func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadCloser,
-	create bool, emptyOnly bool) {
-	updateList := make([]*MessageBlock, 0)
+	create bool, emptyOnly bool) (int, int, int) {
+	type updateBlock struct {
+		eventValid bool
+		update     *MessageBlock
+		event      Event // Not reliably nil when invalid, it's an interface
+	}
+	updateList := make([]updateBlock, 0)
 	r := bufio.NewReader(input)
 	if r == nil {
 		croak("reader creation failed")
-		return
+		return 1, 0, 0
 	}
 	for {
 		msg, err := newMessageBlock(r)
@@ -8853,9 +8858,9 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			break
 		} else if err != nil {
 			croak("malformed message block: %v", err)
-			return
+			return 1, 0, 0
 		}
-		updateList = append(updateList, msg)
+		updateList = append(updateList, updateBlock{false, msg, nil})
 	}
 	// First, a validation pass
 	attributionByAuthor := make(map[string]Event)
@@ -8898,12 +8903,12 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 	}
 	// Special case - event creation
 	if create {
-		for _, message := range updateList {
-			if strings.Contains(message.String(), "Tag-Name") {
+		for _, operation := range updateList {
+			if strings.Contains(operation.update.String(), "Tag-Name") {
 				blank := newTag(nil, "", "", nil, "")
 				attrib, _ := newAttribution("")
 				blank.tagger = attrib
-				blank.emailIn(message, true)
+				blank.emailIn(operation.update, true)
 				commits := repo.commits(undefinedSelectionSet)
 				if len(commits) == 0 {
 					panic(throw("command", "repository has no commits"))
@@ -8914,7 +8919,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				blank := newCommit(repo)
 				attrib, _ := newAttribution("")
 				blank.committer = *attrib
-				blank.emailIn(message, true)
+				blank.emailIn(operation.update, true)
 				blank.mark = repo.newmark()
 				if blank.Branch == "" {
 					// Avoids crapping out on name lookup.
@@ -8932,19 +8937,19 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			}
 		}
 		repo.declareSequenceMutation("event creation")
-		return
+		return 0, 0, 1
 	}
 	// Normal case - no --create
-	events := make([]Event, 0)
 	errorCount := 0
-	var event Event
+	warnCount := 0
+	var trialEvent Event
 	var ok bool
-	for i, message := range updateList {
-		eventValid := false
-		if message.getHeader("Event-Number") != "" {
-			eventnum, err := strconv.Atoi(message.getHeader("Event-Number"))
+	for i := range updateList {
+		updateList[i].eventValid = false
+		if updateList[i].update.getHeader("Event-Number") != "" {
+			eventnum, err := strconv.Atoi(updateList[i].update.getHeader("Event-Number"))
 			if err != nil {
-				croak("event number garbled in update %d: %v", i+1, err)
+				croak("msgin: event number garbled in update %d: %v", i+1, err)
 				errorCount++
 			} else {
 				if eventnum < 1 || eventnum > len(repo.events) {
@@ -8952,158 +8957,157 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 						eventnum, i+1)
 					errorCount++
 				} else {
-					event = repo.events[eventnum-1]
-					eventValid = true
+					updateList[i].event = repo.events[eventnum-1]
+					updateList[i].eventValid = true
 				}
 			}
-		} else if message.getHeader("Legacy-ID") != "" {
-			event, ok = legacyMap[message.getHeader("Legacy-ID")]
+		} else if updateList[i].update.getHeader("Legacy-ID") != "" {
+			trialEvent, ok = legacyMap[updateList[i].update.getHeader("Legacy-ID")]
 			if ok {
-				eventValid = true
+				updateList[i].event = trialEvent
+				updateList[i].eventValid = true
 			} else {
-				croak("no commit matches legacy-ID %s",
-					message.getHeader("Legacy-ID"))
-				errorCount++
+				logit("msgin: no commit matches legacy-ID %s",
+					updateList[i].update.getHeader("Legacy-ID"))
+				warnCount++
 			}
-		} else if message.getHeader("Event-Mark") != "" {
-			event := repo.markToEvent(message.getHeader("Event-Mark"))
-			if event != nil {
-				eventValid = true
+		} else if updateList[i].update.getHeader("Event-Mark") != "" {
+			trialEvent := repo.markToEvent(updateList[i].update.getHeader("Event-Mark"))
+			if trialEvent != nil {
+				updateList[i].event = trialEvent
+				updateList[i].eventValid = true
 			} else {
-				croak("no commit matches mark %s",
-					message.getHeader("Event-Mark"))
-				errorCount++
+				logit("msgin: no commit matches mark %s",
+					updateList[i].update.getHeader("Event-Mark"))
+				warnCount++
 			}
-		} else if message.getHeader("Author") != "" && message.getHeader("Author-Date") != "" {
+		} else if updateList[i].update.getHeader("Author") != "" && updateList[i].update.getHeader("Author-Date") != "" {
 			blank := newCommit(repo)
 			attrib, _ := newAttribution("")
 			blank.authors = append(blank.authors, *attrib)
-			blank.emailIn(message, false)
+			blank.emailIn(updateList[i].update, false)
 			stamp := blank.actionStamp()
-			event, ok = attributionByAuthor[stamp]
+			trialEvent, ok = attributionByAuthor[stamp]
 			if ok {
-				eventValid = true
+				updateList[i].event = trialEvent
+				updateList[i].eventValid = true
 			} else {
-				croak("no commit matches stamp %s", stamp)
-				errorCount++
+				logit("msgin: no commit matches stamp %s", stamp)
+				warnCount++
 			}
 			if authorCounts[stamp] > 1 {
-				croak("multiple events (%d) match %s", authorCounts[stamp], stamp)
+				croak("msgin: multiple events (%d) match %s", authorCounts[stamp], stamp)
 				errorCount++
 			}
-		} else if message.getHeader("Committer") != "" && message.getHeader("Committer-Date") != "" {
+		} else if updateList[i].update.getHeader("Committer") != "" && updateList[i].update.getHeader("Committer-Date") != "" {
 			blank := newCommit(repo)
 			attrib, _ := newAttribution("")
 			blank.committer = *attrib
-			blank.emailIn(message, false)
+			blank.emailIn(updateList[i].update, false)
 			stamp := blank.committer.actionStamp()
-			event, ok = attributionByCommitter[stamp]
+			trialEvent, ok = attributionByCommitter[stamp]
 			if ok {
-				eventValid = true
+				updateList[i].event = trialEvent
+				updateList[i].eventValid = true
 			} else {
-				croak("no commit matches stamp %s", stamp)
-				errorCount++
+				logit("msgin: no commit matches stamp %s", stamp)
+				warnCount++
 			}
 			if committerCounts[stamp] > 1 {
-				croak(fmt.Sprintf("multiple events (%d) match %s", committerCounts[stamp], stamp))
+				croak(fmt.Sprintf("msgin: multiple events (%d) match %s", committerCounts[stamp], stamp))
 				errorCount++
 			}
-		} else if message.getHeader("Tagger") != "" && message.getHeader("Tagger-Date") != "" {
+		} else if updateList[i].update.getHeader("Tagger") != "" && updateList[i].update.getHeader("Tagger-Date") != "" {
 			blank := newTag(repo, "", "", nil, "")
 			attrib, _ := newAttribution("")
 			blank.tagger = attrib
-			blank.emailIn(message, false)
+			blank.emailIn(updateList[i].update, false)
 			stamp := blank.tagger.actionStamp()
-			event, ok = attributionByAuthor[stamp]
+			trialEvent, ok = attributionByAuthor[stamp]
 			if ok {
-				eventValid = true
+				updateList[i].event = trialEvent
+				updateList[i].eventValid = true
 			} else {
-				croak("no tag matches stamp %s", stamp)
-				errorCount++
+				logit("msgin: no tag matches stamp %s", stamp)
+				warnCount++
 			}
 			if authorCounts[stamp] > 1 {
-				croak("multiple events match %s", stamp)
+				croak("msgin: multiple events match %s", stamp)
 				errorCount++
 			}
-		} else if message.getHeader("Tag-Name") != "" {
+		} else if updateList[i].update.getHeader("Tag-Name") != "" {
 			blank := newTag(repo, "", "", nil, "")
 			attrib, _ := newAttribution("")
 			blank.tagger = attrib
-			blank.emailIn(message, false)
-			event, ok = nameMap[blank.tagname]
+			blank.emailIn(updateList[i].update, false)
+			trialEvent, ok = nameMap[blank.tagname]
 			if ok {
-				eventValid = true
+				updateList[i].event = trialEvent
+				updateList[i].eventValid = true
 			} else {
-				croak("no tag matches name %s", blank.tagname)
-				errorCount++
+				logit("msgin: no tag matches name %s", blank.tagname)
+				warnCount++
 			}
 		} else {
-			croak("no commit matches update %d:\n%s", i+1, message.String())
-			errorCount++
+			logit("no commit matches update %d:\n%s", i+1, updateList[i].update.String())
+			warnCount++
 		}
-		if eventValid {
-			ei := repo.eventToIndex(event)
+		if updateList[i].eventValid {
+			ei := repo.eventToIndex(updateList[i].event)
 			if ei == -1 {
-				croak("event at update %d can't be found in repository", i+1)
+				croak("msgin: event at update %d can't be found in repository", i+1)
 				errorCount++
-				return
-			} else if _, ok := getAttr(event, "emailIn"); ok {
-				croak("event %d cannot be modified", ei+1)
+			} else if _, ok := getAttr(updateList[i].event, "emailIn"); ok {
+				croak("msgin: event %d cannot be modified", ei+1)
 				errorCount++
-				return
 			}
 		}
-		// Always append, even nil, to stay in sync with updateList
-		events = append(events, event)
 	}
 	if errorCount > 0 {
-		croak("%d errors in metadata updates", errorCount)
-		return
+		return errorCount, warnCount, 0
 	}
 	// Now apply the updates
-	changers := make([]*MessageBlock, 0)
-	for i := range updateList {
-		event := events[i]
-		update := updateList[i]
-		check := strings.TrimSpace(update.getHeader("Check-Text"))
-		if check != "" && !strings.HasPrefix(strings.TrimSpace(event.getComment()), check) {
-			croak("check text mismatch at %s (input %d of %d), expected %q saw %q, bailing out", event.idMe(), i+1, len(updateList), check, event.getComment())
-			return
+	//repo.clearColor(colorQSET)
+	changeCount := 0
+	for i, change := range updateList {
+		if !change.eventValid || change.update == nil {
+			continue
+		}
+		check := strings.TrimSpace(change.update.getHeader("Check-Text"))
+		if check != "" && !strings.HasPrefix(strings.TrimSpace(change.event.getComment()), check) {
+			croak("msgin: check text mismatch at %s (input %d of %d), expected %q saw %q, bailing out", change.event.idMe(), i+1, len(updateList), check, change.event.getComment())
+			return errorCount + 1, warnCount, 0
 		}
 		if emptyOnly {
-			if event.getComment() != update.getPayload() && !emptyComment(event.getComment()) {
-				croak("nonempty comment at %s (input %d of %d), bailing out", event.idMe(), i+1, len(updateList))
+			if change.event.getComment() != change.update.getPayload() && !emptyComment(change.event.getComment()) {
+				croak("msgin: nonempty comment at %s (input %d of %d), bailing out", change.event.idMe(), i+1, len(updateList))
+				return errorCount + 1, warnCount, 0
 			}
 		}
 
-		switch event.(type) {
+		switch change.event.(type) {
 		case *Commit:
-			commit := event.(*Commit)
-			if commit.emailIn(update, false) {
-				changers = append(changers, update)
-				event.addColor(colorQSET)
+			commit := change.event.(*Commit)
+			if commit.emailIn(change.update, false) {
+				changeCount++
+				change.event.addColor(colorQSET)
 			}
 		case *Tag:
-			tag := event.(*Tag)
-			if tag.emailIn(update, false) {
-				changers = append(changers, update)
-				event.addColor(colorQSET)
+			tag := change.event.(*Tag)
+			if tag.emailIn(change.update, false) {
+				changeCount++
+				change.event.addColor(colorQSET)
 			}
 		case *Blob:
-			blob := event.(*Blob)
-			if blob.emailIn(update, false) {
-				changers = append(changers, update)
-				event.addColor(colorQSET)
+			blob := change.event.(*Blob)
+			if blob.emailIn(change.update, false) {
+				changeCount++
+				change.event.addColor(colorQSET)
 			}
 		}
 	}
-	if control.isInteractive() {
-		if len(changers) == 0 {
-			respond("no events modified by msgin.")
-		} else {
-			respond("%d events modified by msgin.", len(changers))
-		}
-	}
+
+	return errorCount, warnCount, changeCount
 }
 
 func (repo *Repository) doGraph(selection selectionSet, output io.Writer) {

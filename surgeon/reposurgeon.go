@@ -2715,16 +2715,11 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	repo.readMessageBox(rs.selection, parse.stdin,
+	errorCount, warnCount, changeCount := repo.readMessageBox(rs.selection, parse.stdin,
 		parse.options.Contains("--create"),
 		parse.options.Contains("--empty-only"))
 	if control.isInteractive() {
-		changed := repo.countColor(colorQSET)
-		if changed == 0 {
-			respond("no events modified by msgin.")
-		} else {
-			respond("%d events modified by msgin.", changed)
-		}
+		respond("%d errors, %d warnings, %d events modified.", errorCount, warnCount, changeCount)
 	}
 	return false
 }
