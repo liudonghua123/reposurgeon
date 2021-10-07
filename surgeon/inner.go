@@ -8840,7 +8840,7 @@ func (repo *Repository) deleteBranch(shouldDelete func(string) bool, baton *Bato
 
 // readMessageBox modifies repo metadata by reading/merging in a mailbox stream.
 func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadCloser,
-	create bool, emptyOnly bool) (int, int, int) {
+	create bool, emptyOnly bool, relax bool) (int, int, int) {
 	type updateBlock struct {
 		eventValid bool
 		update     *MessageBlock
@@ -8967,8 +8967,10 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
-				logit("msgin: no commit matches legacy-ID %s",
-					updateList[i].update.getHeader("Legacy-ID"))
+				if !relax {
+					logit("msgin: no commit matches legacy-ID %s",
+						updateList[i].update.getHeader("Legacy-ID"))
+				}
 				warnCount++
 			}
 		} else if updateList[i].update.getHeader("Event-Mark") != "" {
@@ -8977,8 +8979,10 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
-				logit("msgin: no commit matches mark %s",
-					updateList[i].update.getHeader("Event-Mark"))
+				if !relax {
+					logit("msgin: no commit matches mark %s",
+						updateList[i].update.getHeader("Event-Mark"))
+				}
 				warnCount++
 			}
 		} else if updateList[i].update.getHeader("Author") != "" && updateList[i].update.getHeader("Author-Date") != "" {
@@ -8990,9 +8994,12 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			trialEvent, ok = attributionByAuthor[stamp]
 			if ok {
 				updateList[i].event = trialEvent
+
 				updateList[i].eventValid = true
 			} else {
-				logit("msgin: no commit matches stamp %s", stamp)
+				if !relax {
+					logit("msgin: no commit matches stamp %s", stamp)
+				}
 				warnCount++
 			}
 			if authorCounts[stamp] > 1 {
@@ -9010,7 +9017,9 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
-				logit("msgin: no commit matches stamp %s", stamp)
+				if !relax {
+					logit("msgin: no commit matches stamp %s", stamp)
+				}
 				warnCount++
 			}
 			if committerCounts[stamp] > 1 {
@@ -9028,7 +9037,9 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
-				logit("msgin: no tag matches stamp %s", stamp)
+				if !relax {
+					logit("msgin: no tag matches stamp %s", stamp)
+				}
 				warnCount++
 			}
 			if authorCounts[stamp] > 1 {
@@ -9045,11 +9056,15 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
-				logit("msgin: no tag matches name %s", blank.tagname)
+				if !relax {
+					logit("msgin: no tag matches name %s", blank.tagname)
+				}
 				warnCount++
 			}
 		} else {
-			logit("no commit matches update %d:\n%s", i+1, updateList[i].update.String())
+			if !relax {
+				logit("no commit matches update %d:\n%s", i+1, updateList[i].update.String())
+			}
 			warnCount++
 		}
 		if updateList[i].eventValid {

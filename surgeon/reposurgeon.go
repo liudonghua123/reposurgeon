@@ -2705,6 +2705,10 @@ If the option --empty-only is given, this command will throw a recoverable error
 if it tries to alter a message body that is neither empty nor consists of the
 CVS empty-comment marker.
 
+The --relax option suppresses warnings about message blocks not matching 
+any object, but leaves fatal errors due to ill-formed mailbox elements and
+multiple matches unsuppressed.
+
 This operation sets Q bits; true where an object was modified by it, false 
 otherwise.
 `)
@@ -2717,7 +2721,8 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 	repo := rs.chosen()
 	errorCount, warnCount, changeCount := repo.readMessageBox(rs.selection, parse.stdin,
 		parse.options.Contains("--create"),
-		parse.options.Contains("--empty-only"))
+		parse.options.Contains("--empty-only"),
+		parse.options.Contains("--relax"))
 	if control.isInteractive() {
 		respond("%d errors, %d warnings, %d events modified.", errorCount, warnCount, changeCount)
 	}

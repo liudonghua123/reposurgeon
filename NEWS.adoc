@@ -3,6 +3,7 @@
 Repository head::
      Speed up DoTagify by parallelizing it.
      =J selection gets all commmits and tags with non-ASCII metadata
+     Added msgin --relax option.
 
 4.29: 2021-09-08::
      Added swapsvn subcommand to repocutter.
