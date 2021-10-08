@@ -888,8 +888,6 @@ func (s *SubversionRange) Upperbound() int {
 	return s.intervals[len(s.intervals)-1][1]
 }
 
-var endcommithook func() // can be set in a nodehook or prophook
-
 // Report a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header streamSection, properties []byte, content []byte) []byte,
@@ -920,26 +918,12 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	var nodecount int
 	var line []byte
 	for {
-		if endcommithook != nil {
-			endcommithook() // since set via nodehook/prophook, can only be non-nil at the end of a commit
-		}
 		ds.Index = 0
 		nodecount = 0
 		stash, _ := ds.ReadRevisionHeader(prophook)
-		if !selection.Contains(ds.Revision) {
-			if ds.Revision > selection.Upperbound() {
-				return
-			}
-			ds.ReadUntilNextRevision(0)
-			ds.Index = 0
-			continue
-		}
 		for {
 			line = ds.Lbs.Readline()
 			if len(line) == 0 {
-				if endcommithook != nil { // need this since the same `if` above will be skipped on the very last revision
-					endcommithook()
-				}
 				return
 			}
 			if string(line) == "\n" {
