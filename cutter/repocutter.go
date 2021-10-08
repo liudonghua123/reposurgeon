@@ -894,7 +894,7 @@ var endcommithook func() // can be set in a nodehook or prophook
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header streamSection, properties []byte, content []byte) []byte,
 	prophook func(properties *Properties),
-	passthrough bool, passempty bool) {
+	passthrough bool) {
 
 	/*
 	 * passthrough - pass through all node text that the nodehook has
@@ -904,11 +904,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * node header or revision header is shipped. It is exeptional for
 	 * passthrough to be off; other than in closure(), log(), reduce(),
 	 * and see() it is always on.
-	 *
-	 * passempty - if passthrough is on and this is on, pass through
-	 * revision headers even when all their nodes have been excluded
-	 * because nodehook passed back nil on each.  Only off in closure()
-	 * and pop().
 	 */
 
 	emit := passthrough && selection.intervals[0][0] == 0
@@ -958,7 +953,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
 				ds.Lbs.Push(line)
-				if len(stash) != 0 && nodecount == 0 && passempty {
+				if len(stash) != 0 && nodecount == 0 {
 					if passthrough {
 						if debug >= debugPARSE {
 							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
@@ -1224,7 +1219,7 @@ func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 		}
 		return nil
 	}
-	source.Report(selection, gather, nil, false, false)
+	source.Report(selection, gather, nil, false)
 	s := newStringSet(paths...)
 	for {
 		count := s.Len()
@@ -1270,7 +1265,7 @@ func expunge(source DumpfileSource, selection SubversionRange, patterns []string
 		}
 		return []byte{}
 	}
-	source.Report(selection, expungehook, nil, true, true)
+	source.Report(selection, expungehook, nil, true)
 }
 
 func dumpall(header streamSection, properties []byte, content []byte) []byte {
@@ -1361,7 +1356,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, nodehook, revhook, true, false)
+	source.Report(selection, nodehook, revhook, true)
 }
 
 // propdel - Delete properties
@@ -1383,7 +1378,7 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 			}
 		}
 	}
-	source.Report(selection, dumpall, revhook, true, true)
+	source.Report(selection, dumpall, revhook, true)
 }
 
 // Set properties.
@@ -1397,7 +1392,7 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 			props.properties[fields[0]] = fields[1]
 		}
 	}
-	source.Report(selection, dumpall, revhook, true, true)
+	source.Report(selection, dumpall, revhook, true)
 }
 
 // Rename properties.
@@ -1421,7 +1416,7 @@ func proprename(source DumpfileSource, propnames []string, selection SubversionR
 			}
 		}
 	}
-	source.Report(selection, dumpall, revhook, true, true)
+	source.Report(selection, dumpall, revhook, true)
 }
 
 func getAuthor(props map[string]string) string {
@@ -1463,7 +1458,7 @@ func log(source DumpfileSource, selection SubversionRange) {
 			strings.Count(logentry, "\n"))
 		os.Stdout.WriteString("\n" + logentry + "\n")
 	}
-	source.Report(selection, nil, prophook, false, true)
+	source.Report(selection, nil, prophook, false)
 }
 
 // Hack paths by applying a specified transformation.
@@ -1511,7 +1506,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, nodehook, revhook, true, true)
+	source.Report(selection, nodehook, revhook, true)
 }
 
 // Hack paths by applying regexp transformations.
@@ -1552,7 +1547,7 @@ func reduce(source DumpfileSource) {
 		maxRev = source.Revision
 		return nil
 	}
-	source.Report(NewSubversionRange("0:HEAD"), reducehook, nil, false, true)
+	source.Report(NewSubversionRange("0:HEAD"), reducehook, nil, false)
 	var selection string
 	for i := 0; i <= maxRev; i++ {
 		if interesting[i] {
@@ -1809,7 +1804,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 		all = append(all, newcontent...)
 		return all
 	}
-	source.Report(selection, innerreplace, nil, true, true)
+	source.Report(selection, innerreplace, nil, true)
 }
 
 // Strip out ops defined by a revision selection and a path regexp.
@@ -1849,7 +1844,7 @@ func see(source DumpfileSource, selection SubversionRange) {
 		}
 		props = properties.String()
 	}
-	source.Report(selection, seenode, seeprops, false, true)
+	source.Report(selection, seenode, seeprops, false)
 }
 
 // Mutate log entries.
@@ -1869,7 +1864,7 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 			prop.properties["svn:log"] = string(logentry.text)
 		}
 	}
-	source.Report(selection, dumpall, loghook, true, true)
+	source.Report(selection, dumpall, loghook, true)
 }
 
 // Strip a portion of the dump file defined by a revision selection.
@@ -1896,7 +1891,7 @@ func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
 		}
 		return []byte{}
 	}
-	source.Report(selection, sifthook, nil, true, true)
+	source.Report(selection, sifthook, nil, true)
 }
 
 func split(source DumpfileSource, selection SubversionRange, paths []string) {
@@ -1938,7 +1933,7 @@ func split(source DumpfileSource, selection SubversionRange, paths []string) {
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, splithook, nil, true, true)
+	source.Report(selection, splithook, nil, true)
 }
 
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
@@ -1977,7 +1972,7 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, innerstrip, nil, true, true)
+	source.Report(selection, innerstrip, nil, true)
 }
 
 // Select a portion of the dump file not defined by a revision selection.
@@ -2181,7 +2176,7 @@ PROPS-END
 
 		return all
 	}
-	source.Report(selection, nodehook, revhook, true, true)
+	source.Report(selection, nodehook, revhook, true)
 }
 
 // Neutralize the input test load
