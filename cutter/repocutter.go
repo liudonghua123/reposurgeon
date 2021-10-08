@@ -895,6 +895,22 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header streamSection, properties []byte, content []byte) []byte,
 	prophook func(properties *Properties),
 	passthrough bool, passempty bool) {
+
+	/*
+	 * passthrough - pass through all node text that the nodehook has
+	 * not filtered to nil. When any node in a revision passes through
+	 * and its revision header has not already beem passed through,
+	 * pass that. Properties are shipped (filtered by revhook) if their
+	 * node header or revision header is shipped. It is exeptional for
+	 * passthrough to be off; other than in closure(), log(), reduce(),
+	 * and see() it is always on.
+	 *
+	 * passempty - if passthrough is on and this is on, pass through
+	 * revision headers even when all their nodes have been excluded
+	 * because nodehook passed back nil on each.  Only off in closure()
+	 * and pop().
+	 */
+
 	emit := passthrough && selection.intervals[0][0] == 0
 	stash := ds.ReadUntilNextRevision(0)
 	if emit {
