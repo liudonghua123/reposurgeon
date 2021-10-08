@@ -1,8 +1,3 @@
-SVN-fs-dump-format-version: 2
- ## Standard layout. Linear. Simplest case, no tags or branches
-
-UUID: be5bedff-a577-4def-8afe-cf522686966a
-
 Revision-number: 0
 Prop-content-length: 56
 Content-length: 56
@@ -78,7 +73,7 @@ V 27
 2011-11-30T16:43:52.297468Z
 PROPS-END
 
-Node-path: trunk/WIBBLE
+Node-path: trunk/README
 Node-kind: file
 Node-action: add
 Prop-content-length: 10

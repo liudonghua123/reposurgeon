@@ -119,7 +119,7 @@ that range to pass to standard output.
 Delete all operations with Node-path headers matching specified
 Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
-record removed as well.
+record is removed as well.
 `,
 	"log": `log: usage: repocutter [-r SELECTION] log
 
@@ -130,7 +130,8 @@ repository, to standard output.
 
 Replace path segments and committer IDs with arbitrary but consistent
 names in order to obscure them. The replacement algorithm is tuned to
-make the replacements readily distinguishable by eyeball.
+make the replacements readily distinguishable by eyeball.  This
+ttansform can be restricted by a selection set.
 `,
 	"pathrename": `pathrename: usage: repocutter [-r SELECTION ] pathrename {FROM TO}+
 
@@ -139,7 +140,8 @@ svn:mergeinfo properties matching the specified Golang regular
 expression FROM; replace with TO.  TO may contain Golang-style
 backreferences (${1}, ${2} etc - curly brackets not optional) to
 parenthesized portions of FROM. Multiple FROM/TO pairs may be
-specified and are applied in order.
+specified and are applied in order.  This ttansform can be 
+restricted by a selection set.
 `,
 	"propdel": `propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
 
@@ -151,6 +153,7 @@ selection. You may specify multiple properties to be deleted.
 Pop initial segment off each path. May be useful after a sift command to turn
 a dump from a subproject stripped from a dump for a multiple-project repository
 into the normal form with trunk/tags/branches at the top level.
+This transform can be restricted by a selection set.
 `,
 	"proprename": `proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
 
@@ -186,7 +189,8 @@ The reduced dump is emitted to standard output.
 
 Perform a regular expression search/replace on blob content. The first
 character of the argument (normally /) is treated as the end delimiter 
-for the regular-expression and replacement parts.
+for the regular-expression and replacement parts. This transform can be 
+restricted by a selection set.
 `,
 	"see": `see: usage: repocutter [-r SELECTION] see
 
@@ -196,7 +200,8 @@ is ignored.  You get one line per repository operation, reporting the
 revision, operation type, file path, and the copy source (if any).
 Directory paths are distinguished by a trailing slash.  The 'copy'
 operation is really an 'add' with a directory source and target;
-the display name is changed to make them easier to see.
+the display name is changed to make them easier to see. This report
+can be restricted by a selection set.
 `,
 	"select": `select: usage: repocutter [-q] [-r SELECTION] select
 
@@ -215,7 +220,7 @@ Replacements may be restricted to a specified range.
 Delete all operations with Node-path headers *not* matching specified
 Golang regular expressions (opposite of 'expunge').  Any revision left
 with no Node records after this filtering has its Revision record
-removed as well.
+removed as well. This transform can be restricted by a selection set.
 `,
 	"split": `split: usage: repocutter split PATH...
 
@@ -223,20 +228,23 @@ Transform every stream operation with Node-path PATH in the path list
 into three operations on PATH/trunk. PATH/branches, and PATH/tags. This
 operation assumes if the operation is a copy  that structure exists under
 the source directory and also mutates Node-copyfrom headers accordingly. 
+This transform can be restricted by a selection set.
 `,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
 
 Replace content with unique generated cookies on all node paths
 matching the specified regular expressions; if no expressions are
 given, match all paths.  Useful when you need to examine a
-particularly complex node structure.
+particularly complex node structure. This transform can be restricted
+by a selection set.
 `,
 	"swap": `swap: usage: repocutter [-r SELECTION] swap [PATTERN]
 
 Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
 a common form of multi-project repository.  If a PATTERN argument is given, 
-only paths matching the pattern are swapped.
+only paths matching the pattern are swapped. This transform can be restricted
+by a selection set.
 `,
 	"swapsvn": `swapsvn: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
 
@@ -272,6 +280,8 @@ way.
 Parallel rename sequences are also coalesced.
 
 If a PATTERN argument is given, only paths matching the pattern are swapped.
+
+This transform can be restricted by a selection set.
 `,
 	"testify": `testify: usage: repocutter [-r SELECTION] testify
 
@@ -279,7 +289,7 @@ Replace commit timestamps with a monotonically increasing clock tick
 starting at the Unix epoch and advancing by 10 seconds per commit.
 Replace all attributions with 'fred'.  Discard the repository UUID.
 Use this to neutralize procedurally-generated streams so they can be
-compared.
+compared. This transform can be restricted by a selection set.
 `,
 	"version": `version: usage: version
 
@@ -915,12 +925,18 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	if !ds.Lbs.HasLineBuffered() {
 		return
 	}
+	// A hack tp only apply the proprty hook on selectrd revisions.
+	selectedProphook := func(properties *Properties) {
+		if prophook != nil && selection.Contains(ds.Revision) {
+			prophook(properties)
+		}
+	}
 	var nodecount int
 	var line []byte
 	for {
 		ds.Index = 0
 		nodecount = 0
-		stash, _ := ds.ReadRevisionHeader(prophook)
+		stash, _ := ds.ReadRevisionHeader(selectedProphook)
 		for {
 			line = ds.Lbs.Readline()
 			if len(line) == 0 {
@@ -953,15 +969,21 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					ds.Index++
 				}
 				ds.Lbs.Push(line)
-				header, properties, content := ds.ReadNode(prophook)
+				header, properties, content := ds.ReadNode(selectedProphook)
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
 					fmt.Fprintf(os.Stderr, "<content: %q>\n", content)
 				}
 				var nodetxt []byte
-				if nodehook != nil {
+				// The nodehook is only applied on selected revisions;
+				// others are passed through unaltered.
+				if nodehook != nil && selection.Contains(ds.Revision) {
 					nodetxt = nodehook(streamSection(header), properties, content)
+				} else {
+					nodetxt = append(nodetxt, header...)
+					nodetxt = append(nodetxt, properties...)
+					nodetxt = append(nodetxt, content...)
 				}
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<nodetxt: %q>\n", nodetxt)
