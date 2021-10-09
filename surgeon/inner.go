@@ -8717,7 +8717,9 @@ func (repo *Repository) accumulateCommits(subarg selectionSet,
 		result := newSelectionSet()
 		for _, commit := range commits {
 			for _, x := range operation(commit) {
-				result.Add(repo.eventToIndex(x))
+				if x != nil {
+					result.Add(repo.eventToIndex(x))
+				}
 			}
 		}
 		return result
