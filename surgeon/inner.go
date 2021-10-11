@@ -6536,12 +6536,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				}
 				child := repo.markToEvent(cchild).(*Commit)
 				// Insert commit's parents in place of
-				// commit in child's parent list. We
-				// keep existing duplicates in case
-				// they are wanted, <s>but ensure we
-				// don't introduce new ones.</s> -
-				// that was true in Python but no
-				// longer unless it induces a bug.
+				// commit in child's parent list.
 				oldParents := child.parents()
 				eventPos := 0
 				for i, p := range oldParents {
@@ -6551,29 +6546,22 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 					}
 				}
 				//if logEnable(logDELETE) {logit("reparenting: %s", child.getMark())}
-				// Start with existing parents before us,
-				// including existing duplicates
+				// Start with existing parents before us.
 				newParents := make([]CommitLike, len(oldParents)-1+len(commit.parents()))
 				newParentIndex := 0
 				newParentIndex += copy(newParents, oldParents[:eventPos])
-				// Add our parents. The Python version
-				// tossed out duplicates of preceding
-				// parents. Skip callouts.
+				// Add our parents. Skip callouts.
 				for it := commit.parentIterator(); it.Next(); {
 					ancestor := it.Value()
 					newParents[newParentIndex] = ancestor
 					newParentIndex++
 				}
-				// In Python, we "Avoid duplicates due to
-				// commit.parents() insertion." Requires some
-				// odd contortions in Go so we won't do it
-				// unless there's a bug case.
 				if len(oldParents) > eventPos {
 					copy(newParents[newParentIndex:], oldParents[eventPos+1:])
 				}
 				// Prepend a copy of this event's file ops to
 				// all children with the event as their first
-				// parent,and mark each such child as needing
+				// parent, and mark each such child as needing
 				// resolution.
 				if pushforward && child.firstParent() == commit {
 					myOperations := make([]*FileOp, len(commit.operations()))
