@@ -4691,21 +4691,22 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 		case *Reset:
 			reset := event.(*Reset)
 			if reset.committish != "" {
-				commit := sp.repo.markToEvent(reset.committish).(*Commit)
-				if commit == nil {
-
-					sp.shout(fmt.Sprintf("unresolved committish in reset %s", reset.committish))
+				event2 := sp.repo.markToEvent(reset.committish)
+				if commit, ok := event2.(*Commit); ok {
+					commit.attach(reset)
+				} else {
+					sp.shout(fmt.Sprintf("unresolved committish %s in reset %s", reset.committish, reset.idMe()))
 				}
-				commit.attach(reset)
 			}
 		case *Tag:
 			tag := event.(*Tag)
 			if tag.committish != "" {
-				commit := sp.repo.markToEvent(tag.committish).(*Commit)
-				if commit == nil {
-					sp.shout(fmt.Sprintf("unresolved committish in tag %s", tag.committish))
+				event2 := sp.repo.markToEvent(tag.committish)
+				if commit, ok := event2.(*Commit); ok {
+					commit.attach(tag)
+				} else {
+					sp.shout(fmt.Sprintf("unresolved committish %s in tag %s", tag.committish, tag.idMe()))
 				}
-				commit.attach(tag)
 			}
 		}
 	}
