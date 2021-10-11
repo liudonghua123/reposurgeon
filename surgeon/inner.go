@@ -3212,13 +3212,17 @@ func (commit *Commit) setParents(parents []CommitLike) {
 	// remember the first parent
 	oldparent := commit.firstParent()
 	for _, parent := range commit._parentNodes {
-		// remove all occurrences of self in old parent's children cache
-		parent.removeChild(commit)
+		if parent != nil {
+			// remove all occurrences of self in old parent's children cache
+			parent.removeChild(commit)
+		}
 	}
 	commit._parentNodes = parents
 	for _, parent := range commit._parentNodes {
-		// add self to new parent's children cache
-		parent.addChild(commit)
+		if parent != nil {
+			// add self to new parent's children cache
+			parent.addChild(commit)
+		}
 	}
 	// Only invalidate when needed: the manifest will not change if the first
 	// parent is the same or the commit's first fileop is a deleteall cutting
@@ -6593,6 +6597,24 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 					logit("Parents of %s changed from %v to %v",
 						child.getMark(), listMarks(oldParents), listMarks(newParents))
 				}
+				// Deduplicate and compact the (sparse) parent
+				// list.  Otherwise execution time can
+				// blow up very badly in some cases as
+				// parent lists get spammed.
+				if len(newParents) > 1 {
+					dupmap := make(map[string]bool)
+					compacted := make([]CommitLike, 0)
+					for _, c := range newParents {
+						if c == nil {
+							continue
+						}
+						if !dupmap[c.getMark()] {
+							dupmap[c.getMark()] = true
+							compacted = append(compacted, c)
+						}
+					}
+					newParents = compacted
+				}
 				child.setParents(newParents)
 				// If event was the first parent of
 				// child yet has no parents of its
@@ -6748,6 +6770,10 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 
 	// Cleanup
 	repo.cleanLegacyMap()
+
+	if logEnable(logDELETE) {
+		logit("Deletion is finished\n")
+	}
 	return nil
 }
 
