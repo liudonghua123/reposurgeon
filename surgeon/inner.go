@@ -6579,12 +6579,6 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 					child.Comment = composeComment(commit.Comment, child.Comment)
 					altered = append(altered, child)
 				}
-				// Really set the parents to the newly
-				// constructed list
-				if logEnable(logDELETE) {
-					logit("Parents of %s changed from %v to %v",
-						child.getMark(), listMarks(oldParents), listMarks(newParents))
-				}
 				// Deduplicate and compact the (sparse) parent
 				// list.  Otherwise execution time can
 				// blow up very badly in some cases as
@@ -6602,6 +6596,12 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 						}
 					}
 					newParents = compacted
+				}
+				// Really set the parents to the newly
+				// constructed list
+				if logEnable(logDELETE) {
+					logit("Parents of %s changed from %v to %v",
+						child.getMark(), listMarks(oldParents), listMarks(newParents))
 				}
 				child.setParents(newParents)
 				// If event was the first parent of
