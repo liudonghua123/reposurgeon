@@ -194,7 +194,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 		if node.isCopy() {
 			//assert node.fromRev < revision
 			h.visibleHere.copyFrom(node.path, h.visible[node.fromRev],
-				node.fromPath, fmt.Sprintf("<SVN:%d> to <SVN:%d>", node.fromRev, revision))
+				node.fromPath, node.String()+" (mutate)")
 			if logEnable(logFILEMAP) {
 				logit("r%d-%d: r%d~%s copied to %s", node.revision, node.index, node.fromRev, node.fromPath, node.path)
 			}
@@ -245,7 +245,7 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 		// so we can later expand the copy node into multiple file creations.
 		if node.isCopy() {
 			node.fileSet = newPathMap()
-			node.fileSet.copyFrom(node.path, h.visible[node.fromRev], node.fromPath, fmt.Sprintf("<SVN:%d>", node.fromRev))
+			node.fileSet.copyFrom(node.path, h.visible[node.fromRev], node.fromPath, node.String()+" (stash)")
 		}
 		control.baton.twirl()
 	}

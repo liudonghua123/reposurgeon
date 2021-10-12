@@ -4991,6 +4991,16 @@ func newRepository(name string) *Repository {
 	return repo
 }
 
+// clone an exact copy of the repository
+func (repo *Repository) clone() *Repository {
+	newRepo := *repo
+	newRepo.name = repo.name + "-clone"
+	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
+	// seekstream is shared
+	newRepo.maplock = *new(sync.Mutex)
+	return &newRepo
+}
+
 func (repo *Repository) subdir(name string) string {
 	if name == "" {
 		name = repo.name
