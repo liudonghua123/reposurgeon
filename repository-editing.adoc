@@ -2918,19 +2918,23 @@ procedure handles those correctly.
 ==== Whole-repository conversion with repocutter swapsvn
 
 Another useful tool is the repocutter "swapsvn" primitive.  If the
-multiproject structure is peerfectly regular - top-level directories
+multiproject structure is perfectly regular - top-level directories
 are always projects, and always have trunk/tags/branches structure
 immediately underneath - swapsvn will trransform the repository to
-a regular Subversion structure with trunk/tags/branhes at the top
+a regular Subversion structure with trunk/tags/branches at the top
 level.
 
-Be aware that if you do this, all project-local trags and branches
-will be promoted to become tags and branches acrodss thje entire
+Be aware that if you do this, all project-local tags and branches
+will be promoted to become tags and branches across the entire
 repository
 
 Sometimes you may be able to transform a nearly-regular multiproject
-structure into a perfectlty regular ione with repocutter pathrename
-commands, then apply ewpocutter swapsvn.
+structure into a perfectlty regular one with repocutter pathrename
+commands, then apply repocutter swapsvn.
+
+Paths that swapsvn does not recognize as transformable will be passed
+through unalktered. This means they will end up in the synthetic
+``ubranched`` branch.
 
 See the embedded help listed by "repocutter help swapsvn" for some
 details and caveats.
