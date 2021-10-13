@@ -2,7 +2,7 @@
 # See https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
-image: golang:1.15
+image: golang:1.16
 include:
 - template: Workflows/MergeRequest-Pipelines.gitlab-ci.yml
 - template: Security/SAST.gitlab-ci.yml
