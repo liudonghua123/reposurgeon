@@ -196,7 +196,7 @@ func filecopy(src, dst string) (int64, error) {
 		return 0, fmt.Errorf("%s is not a regular file", src)
 	}
 
-	source, err := os.Open(src)
+	source, err := os.Open(filepath.Clean(src))
 	if err != nil {
 		return 0, err
 	}
@@ -1352,7 +1352,7 @@ func (b *Blob) removeOperation(op *FileOp) bool {
 }
 
 func (b *Blob) setBlobfile(argpath string) {
-	file, _ := os.Open(argpath)
+	file, _ := os.Open(filepath.Clean(argpath))
 	info, _ := file.Stat()
 	b.size = info.Size()
 	b.abspath = argpath
@@ -1433,7 +1433,7 @@ func (b *Blob) getContentStream() io.ReadCloser {
 	if !b.hasfile() {
 		return newSectionReader(b.repo.seekstream, b.start, b.size)
 	}
-	file, err := os.Open(b.getBlobfile(false))
+	file, err := os.Open(filepath.Clean(b.getBlobfile(false)))
 	if err != nil {
 		panic(fmt.Errorf("Blob read: %v", err))
 	}
@@ -1455,12 +1455,12 @@ func (b *Blob) setContent(text []byte, tell int64) {
 	b.start = tell
 	b.size = int64(len(text))
 	if b.hasfile() {
-		file, err := os.OpenFile(b.getBlobfile(true),
+		file, err := os.OpenFile(filepath.Clean(b.getBlobfile(true)),
 			os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 		if err != nil {
 			panic(fmt.Errorf("Blob write: %v", err))
 		}
-		defer file.Close()
+		defer closeOrDie(file)
 		if control.flagOptions["compress"] {
 			output := gzip.NewWriter(file)
 
@@ -1478,14 +1478,14 @@ func (b *Blob) setContent(text []byte, tell int64) {
 // setContentFromStream sets the content of the blob from a reader stream.
 func (b *Blob) setContentFromStream(s io.ReadCloser) {
 	// maybe the caller should close it?
-	defer s.Close()
+	defer closeOrDie(s)
 	b.start = noOffset
-	file, err := os.OpenFile(b.getBlobfile(true),
+	file, err := os.OpenFile(filepath.Clean(b.getBlobfile(true)),
 		os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 	if err != nil {
 		panic(fmt.Errorf("Blob write: %v", err))
 	}
-	defer file.Close()
+	defer closeOrDie(file)
 	var nBytes int64
 	if control.flagOptions["compress"] {
 		output := gzip.NewWriter(file)
@@ -1645,7 +1645,7 @@ func (b *Blob) Save(w io.Writer) {
 		}
 	}
 	content := b.getContentStream()
-	defer content.Close()
+	defer closeOrDie(content)
 	fmt.Fprintf(w, "blob\nmark %s\n", b.mark)
 	if b.hash.isValid() {
 		fmt.Fprintf(w, "original-oid %s\n", b.hash.hexify())
@@ -3838,7 +3838,7 @@ func (commit *Commit) checkout(directory string) string {
 			mode := os.FileMode(rawmode)
 			blob := commit.repo.markToEvent(entry.ref).(*Blob)
 			if entry.ref == "inline" {
-				file, err3 := os.OpenFile(blob.getBlobfile(true),
+				file, err3 := os.OpenFile(filepath.Clean(blob.getBlobfile(true)),
 					os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 				if err3 != nil {
 					panic(fmt.Errorf("File creation for inline failed during checkout: %v", err3))
@@ -3850,7 +3850,7 @@ func (commit *Commit) checkout(directory string) string {
 				if blob.hasfile() {
 					os.Link(blob.getBlobfile(false), fullpath)
 				} else {
-					file, err4 := os.OpenFile(blob.getBlobfile(true),
+					file, err4 := os.OpenFile(filepath.Clean(blob.getBlobfile(true)),
 						os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 					if err4 != nil {
 						panic(fmt.Errorf("File creation failed during checkout: %v", err4))
@@ -7836,7 +7836,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 			if logEnable(logSHOUT) {
 				logit("reading author map.")
 			}
-			fp, err := os.Open(repo.vcs.authormap)
+			fp, err := os.Open(filepath.Clean(repo.vcs.authormap))
 			if err != nil {
 				return nil, err
 			}
@@ -7846,7 +7846,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 		legacyMap := vcs.subdirectory + "/legacy_map"
 		legacyMap = filepath.FromSlash(legacyMap)
 		if exists(legacyMap) {
-			rfp, err := os.Open(legacyMap)
+			rfp, err := os.Open(filepath.Clean(legacyMap))
 			if err != nil {
 				return nil, err
 			}
@@ -8064,13 +8064,13 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 	cls.Wait()
 	if repo.writeLegacy {
 		legacyfile := filepath.FromSlash(vcs.subdirectory + "/legacy-map")
-		wfp, err := os.OpenFile(legacyfile,
+		wfp, err := os.OpenFile(filepath.Clean(legacyfile),
 			os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 		if err != nil {
 			return fmt.Errorf("legacy-map file %s could not be written: %v",
 				legacyfile, err)
 		}
-		defer wfp.Close()
+		defer closeOrDie(wfp)
 		err = repo.writeLegacyMap(wfp, baton)
 		if err != nil {
 			return err
@@ -9329,7 +9329,7 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 		blank.appendOperation(op)
 
 		// Incorporate the tarball content
-		tarfile, err := os.Open(tarpath)
+		tarfile, err := os.Open(filepath.Clean(tarpath))
 		if err != nil {
 			croak("open or read failed on %s", tarpath)
 		}

@@ -245,7 +245,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		}
 		lp.infile = lp.line[match[0]+1 : match[1]-1]
 		if lp.infile != "" && lp.infile != "-" {
-			lp.stdin, err = os.Open(lp.infile)
+			lp.stdin, err = os.Open(filepath.Clean(lp.infile))
 			if err != nil {
 				panic(throw("command", "can't open %s for read", lp.infile))
 			}
@@ -287,7 +287,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 				// continue to get valid data.
 				os.Remove(lp.outfile)
 			}
-			lp.stdout, err = os.OpenFile(lp.outfile, mode, userReadWriteMode)
+			lp.stdout, err = os.OpenFile(filepath.Clean(lp.outfile), mode, userReadWriteMode)
 			if err != nil {
 				panic(throw("command", "can't open %s for writing", lp.outfile))
 			}
@@ -312,6 +312,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		if shell == "" {
 			shell = "/bin/sh"
 		}
+		// #nosec
 		lp.proc = exec.Command(shell)
 		lp.proc.Args = append(lp.proc.Args, "-c")
 		lp.proc.Args = append(lp.proc.Args, cmd)
@@ -393,7 +394,7 @@ func (lp *LineParse) RedirectInput(reader io.Closer) {
 	}
 }
 
-// Closem ckoses all redirects associated with this command
+// Closem closes all redirects associated with this command
 func (lp *LineParse) Closem() {
 	for _, f := range lp.closem {
 		if f != nil {
@@ -2248,7 +2249,7 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 				// os.Stdin, so we can close
 				// it and substitute another
 				// redirect
-				parse.stdin.Close()
+				closeOrDie(parse.stdin)
 				command := fmt.Sprintf(infilter.importer, srcname)
 				reader, _, err := readFromProcess(command)
 				if err != nil {
@@ -6799,11 +6800,11 @@ func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 			}
 		} else if header.Typeflag == tar.TypeReg {
 			files = append(files, *header)
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.FileMode(header.Mode))
+			f, err := os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return nil, err
 			}
-			defer f.Close()
+			defer closeOrDie(f)
 			if _, err := io.Copy(f, tr); err != nil {
 				return nil, err
 			}
@@ -7353,7 +7354,7 @@ set.
 // DoLogfile is the handler for the "logfile" command.
 func (rs *Reposurgeon) DoLogfile(line string) bool {
 	if len(line) != 0 {
-		fp, err := os.OpenFile(line, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
+		fp, err := os.OpenFile(filepath.Clean(line), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 		if err != nil {
 			respond("log file open failed: %v", err)
 		} else {
@@ -7443,12 +7444,12 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 	words := strings.Split(line, " ")
 	rs.callstack = append(rs.callstack, words)
 	fname := words[0]
-	scriptfp, err := os.Open(fname)
+	scriptfp, err := os.Open(filepath.Clean(fname))
 	if err != nil {
 		croak("script failure on '%s': %s", fname, err)
 		return false
 	}
-	defer scriptfp.Close()
+	defer closeOrDie(scriptfp)
 	script := bufio.NewReader(scriptfp)
 
 	existingInputIsStdin := rs.inputIsStdin
@@ -7502,7 +7503,7 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 				lineno++
 			}
 
-			heredoc.Close()
+			closeOrDie(heredoc)
 			// Note: the command must accept < redirection!
 			scriptline += "<" + heredoc.Name()
 		}
