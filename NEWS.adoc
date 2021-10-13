@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.30: 2021-10-13::
      Speed up DoTagify by parallelizing it.
      =J selection gets all commmits and tags with non-ASCII metadata
      Added msgin --relax option.
