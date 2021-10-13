@@ -1291,7 +1291,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	// Try to figure out who the ancestor of this node is.
 	seekAncestor := func(sp *StreamParser, node *NodeAction, hash map[string]*NodeAction) *NodeAction {
 		var lookback *NodeAction
-		if node.fromPath != "" {
+		if node.isCopy() {
 			// Try first via fromRev/fromPath.  The reason
 			// we have to use the filemap at the copy
 			// source rather than simply walking through
@@ -1312,14 +1312,6 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 			}
 			// Ordinary inheritance, no node copy.
 			lookback = sp.history.getActionNode(sp.backfrom[node.revision], node.path)
-		}
-
-		// We reach here with lookback still nil if the node is a non-copy add.
-		if lookback == nil && node.isCopy() && !strings.HasSuffix(node.path, ".gitignore") {
-			if logEnable(logWARN) {
-				logit("r%d~%s: missing ancestor node for non-.gitignore",
-					node.revision, node.path)
-			}
 		}
 
 		return lookback
@@ -1696,7 +1688,8 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 					} else {
 						// This should never happen. If we can't find an ancestor for any node
 						// it means the dumpfile is malformed.  Might be triggered during partial
-						// lifts of multip[roject repos.
+						// lifts of multiproject repos - means the conversion pipeline deleted
+						// something before reposurgein saw it that needed to be used later.
 						if logEnable(logWARN) {
 							logit("r%d~%s: ancestor node is missing.", node.revision, node.path)
 						}
@@ -1707,7 +1700,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 					// content is missing from the
 					// stream.  Might be triggered
 					// during partial lifts of
-					// multip[roject repos.
+					// multiproject repos.
 					if node.blobmark == emptyMark {
 						if logEnable(logWARN) {
 							logit("r%d: %s gets impossibly empty blob mark from ancestor %s, skipping",

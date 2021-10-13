@@ -18,7 +18,7 @@ type stringSet struct {
 }
 
 // This representation optimizes for small memory footprint at the expense
-// of speed. See fastOrderedStringSet for the opposite choice.
+// of speed.
 type orderedStringSet []string
 
 var nullStringSet stringSet
@@ -38,7 +38,7 @@ func newStringSet(elements ...string) stringSet {
 	return ns
 }
 
-// Elements bares the underlying map so we can iterate over its keys
+// Iterate bares the underlying map so we can iterate over its keys
 func (s stringSet) Iterate() map[string]bool {
 	return s.store
 }
@@ -126,6 +126,11 @@ func newOrderedStringSet(elements ...string) orderedStringSet {
 		}
 	}
 	return set
+}
+
+// Iterate bares the underlying map so we can iterate over its keys
+func (s orderedStringSet) Iterate() []string {
+	return s
 }
 
 func (s orderedStringSet) Contains(item string) bool {

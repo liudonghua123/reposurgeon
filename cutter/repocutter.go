@@ -45,6 +45,7 @@ Available subcommands and help topics:
    expunge
    log
    obscure
+   pathlist
    pathrename
    pop
    propdel
@@ -82,6 +83,7 @@ var oneliners = map[string]string{
 	"expunge":    "Expunge operations by Node-path header",
 	"log":        "Extracting log entries",
 	"obscure":    "Obscure pathnames",
+	"pathlist":   "List all distinct paths in a stream",
 	"pathrename": "Transform path headers with a regexp replace",
 	"pop":        "Pop the first segment off each path",
 	"propdel":    "Deleting revision properties",
@@ -132,6 +134,11 @@ Replace path segments and committer IDs with arbitrary but consistent
 names in order to obscure them. The replacement algorithm is tuned to
 make the replacements readily distinguishable by eyeball.  This
 ttansform can be restricted by a selection set.
+`,
+	"pathlist": `pathlist: usage: repocutter [-r SELECTION ] pathlist
+
+List all distinct node-paths in the stream, once each, in the order first
+encountered. 
 `,
 	"pathrename": `pathrename: usage: repocutter [-r SELECTION ] pathrename {FROM TO}+
 
@@ -314,6 +321,7 @@ var narrativeOrder []string = []string{
 	"sift",
 	"closure",
 
+	"pathlist",
 	"pathrename",
 	"pop",
 
@@ -905,13 +913,14 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	passthrough bool) {
 
 	/*
-	 * passthrough - pass through all node text that the nodehook has
-	 * not filtered to nil. When any node in a revision passes through
-	 * and its revision header has not already beem passed through,
-	 * pass that. Properties are shipped (filtered by revhook) if their
-	 * node header or revision header is shipped. It is exeptional for
-	 * passthrough to be off; other than in closure(), log(), reduce(),
-	 * and see() it is always on.
+	 * passthrough - pass through all node text that the nodehook
+	 * has not filtered to nil. When any node in a revision passes
+	 * through and its revision header has not already beem passed
+	 * through, pass that. Properties are shipped (filtered by
+	 * revhook) if their node header or revision header is
+	 * shipped. It is exeptional for passthrough to be off; other
+	 * than in closure(), parthlist(), log(), reduce(), and see()
+	 * it is always on.
 	 */
 
 	emit := passthrough && selection.intervals[0][0] == 0
@@ -1513,6 +1522,18 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		return all
 	}
 	source.Report(selection, nodehook, revhook, true)
+}
+
+func pathlist(source DumpfileSource, selection SubversionRange) {
+	pathList := newOrderedStringSet()
+	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
+		pathList.Add(string(header.payload("Node-path")))
+		return nil
+	}
+	source.Report(selection, nodehook, nil, false)
+	for _, item := range pathList.Iterate() {
+		os.Stdout.WriteString(item + "\n")
+	}
 }
 
 // Hack paths by applying regexp transformations.
@@ -2359,6 +2380,8 @@ func main() {
 	case "obscure":
 		assertNoArgs()
 		obscure(NewNameSequence(), NewDumpfileSource(input, baton), selection)
+	case "pathlist":
+		pathlist(NewDumpfileSource(input, baton), selection)
 	case "pathrename":
 		pathrename(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "pop":
