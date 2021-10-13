@@ -1032,6 +1032,15 @@ V 103
 refs #9863 - Adicionado schema de pastas e arquivo com esboço inicial do parser e das classes da NFs-e
 PROPS-END
 
+Node-path: brazilian-nfse
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
 Node-path: branches/brazilian-nfse
 Node-kind: dir
 Node-action: add
@@ -1145,6 +1154,13 @@ V 96
 fixes #9863 - Renomeado o nome do projeto para git_nfse e alteradas as tags para o namespace tc:
 PROPS-END
 
+Node-path: git_nfse
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 17
+Node-copyfrom-path: brazilian-nfse
+
+
 Node-path: trunk/git_nfse
 Node-kind: dir
 Node-action: delete
@@ -1167,6 +1183,10 @@ Content-length: 53
 Revision is 42, file path is git_nfse/trunk/nfse.rb.
 
 
+
+
+Node-path: brazilian-nfse
+Node-action: delete
 
 
 Revision-number: 20
@@ -2671,6 +2691,28 @@ Revision is 47, file path is git_nfse/trunk/spec/git_nfse_spec.rb.
 
 
 
+Revision-number: 25
+Prop-content-length: 191
+Content-length: 191
+
+K 10
+svn:author
+V 5
+ronie
+K 8
+svn:date
+V 27
+2013-06-28T18:29:46.570079Z
+K 7
+svn:log
+V 91
+Removido diretorio da gem activeedi pois a mesma foi descontinuada ha mais de 3 anos atras.
+PROPS-END
+
+Node-path: activeedi
+Node-action: delete
+
+
 Revision-number: 26
 Prop-content-length: 202
 Content-length: 202
@@ -2688,6 +2730,20 @@ svn:log
 V 101
 Adicionados arquivos de configuracoes automaticas do aplicativo cliente de email Mozilla Thunderbird.
 PROPS-END
+
+Node-path: mozilla
+Node-kind: dir
+Node-action: add
+Prop-content-length: 35
+Content-length: 35
+
+K 10
+svn:ignore
+V 4
+'*'
+
+PROPS-END
+
 
 Node-path: thunderbird/mozilla
 Node-kind: dir
@@ -3232,6 +3288,35 @@ Revision is 99, file path is git_nfse/trunk/lib/git_nfse/base.rb.
 
 
 
+Revision-number: 36
+Prop-content-length: 242
+Content-length: 242
+
+K 10
+svn:author
+V 5
+ronie
+K 8
+svn:date
+V 27
+2013-10-31T14:19:15.913899Z
+K 7
+svn:log
+V 141
+refs #9865 - A partir desta revision, rubyrails passa a ser o diretorio para codigo open source desenvolvido pela GIT Sistemas em Ruby/Rails.
+PROPS-END
+
+Node-path: rubyrails
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 35
+Node-copyfrom-path: git_nfse
+
+
+Node-path: git_nfse
+Node-action: delete
+
+
 Revision-number: 37
 Prop-content-length: 265
 Content-length: 265
@@ -3515,6 +3600,15 @@ svn:log
 V 65
 Sublime Text 3 installations should always use the same settings.
 PROPS-END
+
+Node-path: sublime_text
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
 
 Node-path: packages/sublime_text
 Node-kind: dir

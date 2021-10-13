@@ -259,8 +259,8 @@ Like swap, but is aware of Subversion structure.  Used for transforming
 multiproject repositories intoo a standard layout with trunk, tags, and
 branches at the top level.
 
-Requires that the second component of each matching path be "trunk", 
-"branches", or "tags", terminates with error if this is not so. Swaps
+Fires when the second component of a matching path is "trunk", "branches",
+or "tags"; passes through all paths for this is not so unaltered. Swaps
 "trunk" and the top-level (project) directory straight up.  For tags
 and  branches, the following *two* components are swapped to the top.
 thus, "foo/branches/release23" becomes "branches/release23/foo",
@@ -2022,38 +2022,27 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			path = path[1:]
 		}
 		parts := bytes.Split(path, []byte("/"))
-		if len(parts) < 2 {
-			// FIXME: Known problem here when a node has both a
-			// single-component path and is a copy source for a
-			// later node - can happen in weirdly-shaped multiproject
-			// directories.
-			//
-			// Single-component directory creations should be
-			// skipped; each such operation for directory 'foo' is
-			// replaced by the creation of the swapped directory
-			// trunk/foo.  Works because both reposurgeon and
-			// Subversion's stream dump reader don't mind if no
-			// explicit trunk/ directory creation is ever done as
-			// long as some trunk subdirectory *is* created.
-			return nil
-		}
-		top := parts[0]
-		if structural {
-			under := string(parts[1])
-			if under == "trunk" || len(parts) < 3 {
+		if len(parts) >= 2 {
+			top := parts[0]
+			if structural {
+				under := string(parts[1])
+				if under == "trunk" {
+					parts[0] = parts[1]
+					parts[1] = top
+				} else if under == "branches" || under == "tags" {
+					if len(parts) >= 3 {
+						parts[0] = parts[1]
+						parts[1] = parts[2]
+						parts[2] = top
+					} else {
+						parts[0] = parts[1]
+						parts[1] = top
+					}
+				}
+			} else { // naive swap
 				parts[0] = parts[1]
 				parts[1] = top
-			} else if under == "branches" || under == "tags" {
-				parts[0] = parts[1]
-				parts[1] = parts[2]
-				parts[2] = top
-			} else {
-				croak("unexpected path part %s in %s at r%d, line %d",
-					parts[1], path, source.Revision, source.Lbs.linenumber)
 			}
-		} else { // naive swap
-			parts[0] = parts[1]
-			parts[1] = top
 		}
 		if rooted {
 			parts[0] = append([]byte{'/'}, parts[0]...)

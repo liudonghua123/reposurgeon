@@ -259,6 +259,33 @@ Node-copyfrom-rev: 7
 Node-copyfrom-path: trunk/project1
 
 
+Revision-number: 9
+Prop-content-length: 117
+Content-length: 117
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:01:30.000000Z
+K 7
+svn:log
+V 18
+project2/ creation
+PROPS-END
+
+Node-path: project2
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
 Revision-number: 10
 Prop-content-length: 123
 Content-length: 123
@@ -579,6 +606,33 @@ Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 18
 Node-copyfrom-path: trunk/project2
+
+
+Revision-number: 21
+Prop-content-length: 117
+Content-length: 117
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:03:30.000000Z
+K 7
+svn:log
+V 18
+project3/ creation
+PROPS-END
+
+Node-path: project3
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
 
 
 Revision-number: 22
