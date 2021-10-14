@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	termios "github.com/pkg/term/termios"
 	terminfo "github.com/xo/terminfo"
 )
 
@@ -341,6 +342,7 @@ func (baton *Baton) Sync() {
 	if baton != nil {
 		baton.channel <- Message{SYNC, nil}
 		<-baton.channel
+		termios.Tcflush(os.Stdout.Fd(), termios.TCOFLUSH)
 	}
 }
 
