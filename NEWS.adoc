@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Minor improvements in baton handling.
+
 4.30: 2021-10-13::
      Speed up DoTagify by parallelizing it.
      =J selection gets all commmits and tags with non-ASCII metadata

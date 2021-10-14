@@ -7827,6 +7827,9 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 		if err != nil {
 			return nil, err
 		}
+		if !suppressBaton {
+			baton.startProcess(source+":", "")
+		}
 		repo.fastImport(context.TODO(), tp, options, source, baton)
 		closeOrDie(tp)
 		if suppressBaton {
@@ -7869,7 +7872,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 					}
 					break
 				} else if err2 != nil {
-					return nil, fmt.Errorf("while collecting file manifestL %v", err2)
+					return nil, fmt.Errorf("while collecting file manifest: %v", err2)
 				}
 				registered = append(registered, strings.TrimSpace(line))
 			}
