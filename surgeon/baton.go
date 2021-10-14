@@ -336,7 +336,7 @@ func (baton *Baton) Close() error {
 	return nil
 }
 
-// Sync forces ourt pending messages from a baton
+// Sync forces out pending messages from a baton
 func (baton *Baton) Sync() {
 	if baton != nil {
 		baton.channel <- Message{SYNC, nil}
