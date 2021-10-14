@@ -337,11 +337,20 @@ func (baton *Baton) Close() error {
 	return nil
 }
 
-// Sync forces out pending messages from a baton
+// Sync forces out pending progress messages from a baton
 func (baton *Baton) Sync() {
-	if baton != nil {
+	if baton.progressEnabled {
 		baton.channel <- Message{SYNC, nil}
 		<-baton.channel
+		// This deals with a peculiar edge case.  It's
+		// possible for the last progress message shipped to
+		// not have ended with a LF - in particular on a
+		// progress message truncated to terminal width to
+		// avoid wraparound. If this happens the update will
+		// hang in the tty buffer and get flushed out when
+		// reposurgeon exits.  Forestall this by flushing
+		// that buffer.  It would be better to use tcdrain(),
+		// but I can't seem to make that work.
 		termios.Tcflush(os.Stdout.Fd(), termios.TCOFLUSH)
 	}
 }
