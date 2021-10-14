@@ -124,7 +124,7 @@ func (sp *StreamParser) isDeclaredBranch(path string) bool {
 
 func (sp *StreamParser) isDeclaredBranchComponents(components []string) bool {
 	L := len(components)
-	// When branchify contains an entry ending by /*, we say that everything
+	// When branchify contains an entry ending in /*, we say that everything
 	// up to the last /* is a namespace. Namespaces are not accepted as
 	// branches, even if another branchify entry would match.
 	// We only need to compare against entries with L+1 components.
