@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	terminal "golang.org/x/crypto/ssh/terminal" // For GetSize()
+	term "golang.org/x/term" // For IsTerminal()
 )
 
 const linesep = "\n"
@@ -374,7 +374,7 @@ func NewBaton(prompt string, endmsg string) *Baton {
 		time:   time.Now(),
 	}
 	baton.stream.WriteString(prompt + "...")
-	if terminal.IsTerminal(int(baton.stream.Fd())) {
+	if term.IsTerminal(int(baton.stream.Fd())) {
 		baton.stream.WriteString(" \b")
 	}
 	//baton.stream.Flush()
@@ -386,7 +386,7 @@ func (baton *Baton) Twirl(ch string) {
 	if baton.stream == nil {
 		return
 	}
-	if terminal.IsTerminal(int(baton.stream.Fd())) {
+	if term.IsTerminal(int(baton.stream.Fd())) {
 		if ch != "" {
 			baton.stream.WriteString(ch)
 		} else {

@@ -42,7 +42,7 @@ import (
 	difflib "github.com/ianbruene/go-difflib/difflib"
 	terminfo "github.com/xo/terminfo"
 	kommandant "gitlab.com/ianbruene/kommandant"
-	terminal "golang.org/x/crypto/ssh/terminal"
+	term "golang.org/x/term"
 	ianaindex "golang.org/x/text/encoding/ianaindex"
 )
 
@@ -171,9 +171,9 @@ func respond(msg string, args ...interface{}) {
 // screenwidth returns the current width of the terminal window.
 func screenwidth() int {
 	width := 80
-	if !control.flagOptions["testmode"] && terminal.IsTerminal(0) {
+	if !control.flagOptions["testmode"] && term.IsTerminal(int(os.Stdin.Fd())) {
 		var err error
-		width, _, err = terminal.GetSize(0)
+		width, _, err = term.GetSize(0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -517,7 +517,7 @@ func (rs *Reposurgeon) helpOutput(help string) {
 				os.Stdout.WriteString(line + "\n")
 			}
 		}
-	} else if terminal.IsTerminal(1) && control.isInteractive() {
+	} else if term.IsTerminal(int(os.Stdout.Fd())) && control.isInteractive() {
 		pager, err := NewPager(ti)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, fmt.Errorf("Unable to start a pager: %w", err).Error())
@@ -619,8 +619,8 @@ func (rs *Reposurgeon) DoHelp(ctx context.Context, argIn string) (stopOut bool) 
 	} else {
 		var out io.WriteCloser
 		var maxWidth = 76
-		if terminal.IsTerminal(1) && control.isInteractive() {
-			width, _, err := terminal.GetSize(0)
+		if term.IsTerminal(int(os.Stdout.Fd())) && control.isInteractive() {
+			width, _, err := term.GetSize(0)
 			if err == nil {
 				maxWidth = width - 4
 			}
@@ -7684,7 +7684,7 @@ func main() {
 	control.init()
 	rs := newReposurgeon()
 	interpreter := kommandant.NewKommandant(rs)
-	interpreter.EnableReadline(terminal.IsTerminal(0))
+	interpreter.EnableReadline(term.IsTerminal(int(os.Stdin.Fd())))
 
 	defer func() {
 		maybePanic := recover()
@@ -7723,10 +7723,10 @@ func main() {
 				// this way so that, e,g. "set
 				// interactive" before "-" can force
 				// interactive mode.
-				if terminal.IsTerminal(0) {
+				if term.IsTerminal(int(os.Stdin.Fd())) {
 					control.flagOptions["interactive"] = true
 				}
-				if terminal.IsTerminal(1) {
+				if term.IsTerminal(int(os.Stdout.Fd())) {
 					control.flagOptions["progress"] = true
 				}
 				control.baton.setInteractivity(control.flagOptions["interactive"])

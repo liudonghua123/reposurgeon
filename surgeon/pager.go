@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	terminfo "github.com/xo/terminfo"
-	terminal "golang.org/x/crypto/ssh/terminal"
+	term "golang.org/x/term"
 )
 
 // NewPager returnns a new pager instance.
@@ -91,9 +91,9 @@ type InternalPager struct {
 	done  chan struct{}
 }
 
-// NewInternalPager returns a internal pager instances using terminfo.
+// NewInternalPager returns an internal pager instance using terminfo.
 func NewInternalPager(ti *terminfo.Terminfo) (io.WriteCloser, error) {
-	_, height, err := terminal.GetSize(0)
+	_, height, err := term.GetSize(0)
 	if err != nil {
 		return nil, err
 	}

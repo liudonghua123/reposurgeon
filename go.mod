@@ -15,6 +15,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/orcaman/concurrent-map v0.0.0-20190826125027-8c72a8bb44f6
 	github.com/peterh/liner v1.2.0 // indirect
+	github.com/pkg/term v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/cobra v0.0.6 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
