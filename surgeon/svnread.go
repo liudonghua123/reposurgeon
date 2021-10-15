@@ -1872,6 +1872,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 				reqlock.Unlock()
 			}
 			if len(cliques) > 0 {
+				// This is the normal way the branch field of a commit is set
 				commit.setBranch(cliques[len(cliques)-1].branch)
 			} else {
 				// If there is no clique, there are no fileops. All such
@@ -1923,7 +1924,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	// by the branchify setting. The previous subphase stripped the namespace
 	// from the file paths and transferred it to the commit branch.  By doing
 	// so, it entangled the histories of files in different namespaces.  This
-	// phase is about getting the contents correctness back by separating the
+	// phase is about getting the content's correctness back by separating the
 	// linear history into disconnected chains of commits, one per namespace.
 	// The deleteall operations comes from total deletion of namespaces which
 	// should cut the chain in two and disconnect the latter history from the
@@ -2710,7 +2711,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 		}
 		walkEvents(sp.repo.events, func(i int, event Event) {
 			if commit, ok := event.(*Commit); ok && commit.Branch == illegalBranch {
-				commit.Branch = unbranched
+				commit.setBranch(unbranched)
 			}
 		})
 	}
