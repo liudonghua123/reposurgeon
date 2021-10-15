@@ -133,7 +133,7 @@ repository, to standard output.
 Replace path segments and committer IDs with arbitrary but consistent
 names in order to obscure them. The replacement algorithm is tuned to
 make the replacements readily distinguishable by eyeball.  This
-ttansform can be restricted by a selection set.
+transform can be restricted by a selection set.
 `,
 	"pathlist": `pathlist: usage: repocutter [-r SELECTION ] pathlist
 
