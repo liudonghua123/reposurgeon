@@ -1538,10 +1538,13 @@ func pathlist(source DumpfileSource, selection SubversionRange) {
 
 // Hack paths by applying regexp transformations.
 func pathrename(source DumpfileSource, selection SubversionRange, patterns []string) {
+	re := make([]*regexp.Regexp, len(patterns)/2)
+	for i := 0; i < len(patterns)/2; i++ {
+		re[i] = regexp.MustCompile(patterns[i*2])
+	}
 	mutator := func(s []byte) []byte {
 		for i := 0; i < len(patterns)/2; i++ {
-			r := regexp.MustCompile(patterns[i*2])
-			s = r.ReplaceAll(s, []byte(patterns[i*2+1]))
+			s = re[i].ReplaceAll(s, []byte(patterns[i*2+1]))
 		}
 		return s
 	}
