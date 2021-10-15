@@ -1,6 +1,5 @@
 SVN-fs-dump-format-version: 2
  ## Test the expunge command on a nonstandard directory layout
- # reposurgeon-read-options: --nobranch
 
 UUID: 40809dbb-8527-4ca2-bb65-644b1993ad2b
 
@@ -15,6 +14,34 @@ V 27
 PROPS-END
 
 Revision-number: 1
+Prop-content-length: 162
+Content-length: 162
+
+K 7
+svn:log
+V 59
+Test the expunge command on a nonstandard directory layout
+
+K 10
+svn:author
+V 3
+esr
+K 8
+svn:date
+V 27
+2011-11-30T17:00:55.652068Z
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
 Prop-content-length: 140
 Content-length: 140
 
@@ -32,7 +59,7 @@ V 7
 brooksd
 PROPS-END
 
-Node-path: README
+Node-path: trunk/README
 Node-kind: file
 Node-action: add
 Prop-content-length: 10
@@ -45,7 +72,7 @@ PROPS-END
 this repository is used for testing the expunge command. uses a non-standard directory layout
 
 
-Node-path: dev
+Node-path: trunk/dev
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
@@ -54,7 +81,7 @@ Content-length: 10
 PROPS-END
 
 
-Node-path: releases
+Node-path: trunk/releases
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
@@ -63,7 +90,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 2
+Revision-number: 3
 Prop-content-length: 139
 Content-length: 139
 
@@ -81,7 +108,7 @@ V 7
 brooksd
 PROPS-END
 
-Node-path: dev/VERSION
+Node-path: trunk/dev/VERSION
 Node-kind: file
 Node-action: add
 Prop-content-length: 10
@@ -94,7 +121,7 @@ PROPS-END
 0.999999
 
 
-Revision-number: 3
+Revision-number: 4
 Prop-content-length: 149
 Content-length: 149
 
@@ -112,7 +139,7 @@ V 7
 brooksd
 PROPS-END
 
-Node-path: dev/VERSION
+Node-path: trunk/dev/VERSION
 Node-kind: file
 Node-action: change
 Text-content-length: 4
@@ -123,18 +150,18 @@ Content-length: 4
 1.0
 
 
-Node-path: releases/v1.0
+Node-path: trunk/releases/v1.0
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 1
-Node-copyfrom-path: dev
+Node-copyfrom-rev: 2
+Node-copyfrom-path: trunk/dev
 
 
-Node-path: releases/v1.0/VERSION
+Node-path: trunk/releases/v1.0/VERSION
 Node-kind: file
 Node-action: add
-Node-copyfrom-rev: 2
-Node-copyfrom-path: dev/VERSION
+Node-copyfrom-rev: 3
+Node-copyfrom-path: trunk/dev/VERSION
 Text-copy-source-md5: 94e2746029fcce00539b7e8fefeeb4ab
 Text-copy-source-sha1: 138049cfab44c26f6959556f11f17bc6e924447a
 Text-content-length: 4

@@ -1,6 +1,5 @@
 SVN-fs-dump-format-version: 2
  ## One commit with one byte of binary content.
- # reposurgeon-read-options: --nobranch
 
 UUID: 2fe81d11-5c7c-4394-a05f-1bfbb52a6bc5
 
@@ -15,6 +14,34 @@ V 27
 PROPS-END
 
 Revision-number: 1
+Prop-content-length: 128
+Content-length: 128
+
+K 7
+svn:log
+V 25
+Contains binary content.
+
+K 10
+svn:author
+V 3
+esr
+K 8
+svn:date
+V 27
+2011-11-30T17:00:55.652068Z
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
 Prop-content-length: 117
 Content-length: 117
 
@@ -32,7 +59,7 @@ V 5
 david
 PROPS-END
 
-Node-path: baz
+Node-path: trunk/baz
 Node-kind: file
 Node-action: add
 Prop-content-length: 59

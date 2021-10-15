@@ -1,6 +1,5 @@
 SVN-fs-dump-format-version: 2
  ## Test directory copy and property change in same revision
- # reposurgeon-read-options: --nobranch
 
 UUID: 2a847626-1e14-11ea-ac71-bfc1b1298025
 
@@ -15,6 +14,34 @@ V 27
 PROPS-END
 
 Revision-number: 1
+Prop-content-length: 128
+Content-length: 128
+
+K 7
+svn:log
+V 58
+Test directory copy and property change in same revision.
+
+K 10
+svn:author
+V 3
+esr
+K 8
+svn:date
+V 27
+2011-11-30T17:00:55.652068Z
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
 Prop-content-length: 121
 Content-length: 121
 
@@ -33,7 +60,7 @@ Create testdir/foo.
 
 PROPS-END
 
-Node-path: testdir
+Node-path: trunk/testdir
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
@@ -42,7 +69,7 @@ Content-length: 10
 PROPS-END
 
 
-Node-path: testdir/foo
+Node-path: trunk/testdir/foo
 Node-kind: file
 Node-action: add
 Text-content-md5: fb7442ec6dea60e3dfabc9348249e19a
@@ -55,7 +82,7 @@ PROPS-END
 testdir/foo test file
 
 
-Revision-number: 2
+Revision-number: 3
 Prop-content-length: 115
 Content-length: 115
 
@@ -74,7 +101,7 @@ Add property.
 
 PROPS-END
 
-Node-path: testdir/foo
+Node-path: trunk/testdir/foo
 Node-kind: file
 Node-action: change
 Prop-content-length: 43
@@ -87,7 +114,7 @@ Test property.
 PROPS-END
 
 
-Revision-number: 3
+Revision-number: 4
 Prop-content-length: 118
 Content-length: 118
 
@@ -106,7 +133,7 @@ Change property.
 
 PROPS-END
 
-Node-path: testdir/foo
+Node-path: trunk/testdir/foo
 Node-kind: file
 Node-action: change
 Prop-content-length: 53
@@ -120,7 +147,7 @@ Test property modified.
 PROPS-END
 
 
-Revision-number: 4
+Revision-number: 5
 Prop-content-length: 137
 Content-length: 137
 
@@ -139,14 +166,14 @@ Copy directory and modify property.
 
 PROPS-END
 
-Node-path: testdir2
+Node-path: trunk/testdir2
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 3
-Node-copyfrom-path: testdir
+Node-copyfrom-rev: 4
+Node-copyfrom-path: trunk/testdir
 
 
-Node-path: testdir2/foo
+Node-path: trunk/testdir2/foo
 Node-kind: file
 Node-action: change
 Prop-content-length: 79
@@ -160,7 +187,7 @@ Test property modified again with directory copy.
 PROPS-END
 
 
-Revision-number: 5
+Revision-number: 6
 Prop-content-length: 125
 Content-length: 125
 
@@ -179,10 +206,10 @@ Another directory copy.
 
 PROPS-END
 
-Node-path: testdir3
+Node-path: trunk/testdir3
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 4
-Node-copyfrom-path: testdir2
+Node-copyfrom-rev: 5
+Node-copyfrom-path: trunk/testdir2
 
 

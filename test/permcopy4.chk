@@ -1,3 +1,4 @@
+reposurgeon: histories of files in the root directory have been put on branch refs/heads/unbranched
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -35,19 +36,19 @@ mark :4
 data 4
 foo
 
-commit refs/heads/master
-#legacy-id 1
+commit refs/heads/unbranched
+#legacy-id 2.3
 mark :5
 committer jmyers <jmyers> 1576635590 +0000
-data 27
+data 65
 Add files and directories.
+
+[[Split portion of a mixed commit.]]
 M 100644 :1 .gitignore
-M 100755 :2 d1/f1
-M 100644 :3 d2/f2
 M 100755 :4 foo
 
-commit refs/heads/master
-#legacy-id 2
+commit refs/heads/unbranched
+#legacy-id 3
 mark :6
 committer jmyers <jmyers> 1576635610 +0000
 data 25
@@ -55,77 +56,101 @@ Make foo not executable.
 from :5
 M 100644 :4 foo
 
-commit refs/heads/master
-#legacy-id 3
+commit refs/heads/d1
+#legacy-id 5.1
 mark :7
-committer jmyers <jmyers> 1576635635 +0000
-data 20
-Remove directories.
-from :6
-D d1/f1
-D d2/f2
+committer jmyers <jmyers> 1576635746 +0000
+data 60
+Recreate directories.
 
-commit refs/heads/master
-#legacy-id 4
+[[Split portion of a mixed commit.]]
+M 100644 :1 .gitignore
+M 100644 :2 f1
+
+commit refs/heads/d2
+#legacy-id 5.2
 mark :8
 committer jmyers <jmyers> 1576635746 +0000
-data 22
+data 60
 Recreate directories.
-from :7
-M 100644 :2 d1/f1
-M 100755 :3 d2/f2
 
-commit refs/heads/master
-#legacy-id 5
+[[Split portion of a mixed commit.]]
+M 100644 :1 .gitignore
+M 100755 :3 f2
+
+commit refs/heads/d1
+#legacy-id 6.1
 mark :9
 committer jmyers <jmyers> 1576635800 +0000
-data 12
+data 50
 Copy files.
+
+[[Split portion of a mixed commit.]]
+from :7
+M 100644 :2 f1a
+
+commit refs/heads/d2
+#legacy-id 6.2
+mark :10
+committer jmyers <jmyers> 1576635800 +0000
+data 50
+Copy files.
+
+[[Split portion of a mixed commit.]]
 from :8
-M 100644 :2 d1/f1a
-M 100755 :3 d2/f2a
+M 100755 :3 f2a
+
+commit refs/heads/unbranched
+#legacy-id 6.3
+mark :11
+committer jmyers <jmyers> 1576635800 +0000
+data 50
+Copy files.
+
+[[Split portion of a mixed commit.]]
+from :6
 M 100644 :4 foo2
 
 blob
-mark :10
+mark :12
 data 9
 replaced
 
-commit refs/heads/master
-#legacy-id 6
-mark :11
+commit refs/heads/d2
+#legacy-id 7
+mark :13
 committer jmyers <jmyers> 1576635849 +0000
 data 14
 Replace file.
-from :9
-M 100644 :10 d2/f2
-
-blob
-mark :12
-data 21
-replace another file
-
-commit refs/heads/master
-#legacy-id 7
-mark :13
-committer jmyers <jmyers> 1576635944 +0000
-data 14
-Replace file.
-from :11
-M 100755 :12 d2/f2a
+from :10
+M 100644 :12 f2
 
 blob
 mark :14
+data 21
+replace another file
+
+commit refs/heads/d2
+#legacy-id 8
+mark :15
+committer jmyers <jmyers> 1576635944 +0000
+data 14
+Replace file.
+from :13
+M 100755 :14 f2a
+
+blob
+mark :16
 data 20
 really replace file
 
-commit refs/heads/master
-#legacy-id 8
-mark :15
+commit refs/heads/d2
+#legacy-id 9
+mark :17
 committer jmyers <jmyers> 1576636414 +0000
 data 20
 Really replace file
-from :13
-M 100755 :14 d2/f2a
+from :15
+M 100755 :16 f2a
 
 done

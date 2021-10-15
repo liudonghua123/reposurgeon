@@ -246,7 +246,7 @@ do
 	# Compare the original with the lift
 	# shellcheck disable=SC2086
 	../${REPOTOOL:-repotool} compare-all ${repotoolopt} ${compareopt} ${nobranch} \
-					       ${stem}-checkout ${stem}-git  >>/tmp/diff$$ 2>>/tmp/warnings$$
+					       ${stem}-checkout ${stem}-git  tee /tmp/diff$$ 2>>/tmp/warnings$$
     fi
 
     if [ ! -s /tmp/diff$$ ]

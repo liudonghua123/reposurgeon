@@ -6,9 +6,8 @@ SVN-fs-dump-format-version: 2
  # repository; then the file with execute permission is copied, and
  # the copy is missing execute permission that it should have. All
  # those parts are needed for the ()former) bug to show up. Test with:
- # reposurgeon "read --nobranch <test.svn" "prefer git" "write -"
+ # reposurgeon "read <test.svn" "prefer git" "write -"
  # The bug is back if zfoo is missing execute permission.
- # reposurgeon-read-options: --nobranch
 
 UUID: bb5da6f6-2128-11ea-8fe9-c3dde3532b26
 
@@ -23,6 +22,34 @@ V 27
 PROPS-END
 
 Revision-number: 1
+Prop-content-length: 157
+Content-length: 157
+
+K 7
+svn:log
+V 54
+Verify that permissions aren't lost in complex copies
+
+K 10
+svn:author
+V 3
+esr
+K 8
+svn:date
+V 27
+2011-11-30T17:00:55.652068Z
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
 Prop-content-length: 108
 Content-length: 108
 
@@ -40,7 +67,7 @@ V 8
 Add foo.
 PROPS-END
 
-Node-path: foo
+Node-path: trunk/foo
 Node-kind: file
 Node-action: add
 Text-content-md5: 154d45611081dc7858043af2d9554d6f
@@ -53,7 +80,7 @@ PROPS-END
 file foo
 
 
-Revision-number: 2
+Revision-number: 3
 Prop-content-length: 121
 Content-length: 121
 
@@ -71,7 +98,7 @@ V 20
 Make foo executable.
 PROPS-END
 
-Node-path: foo
+Node-path: trunk/foo
 Node-kind: file
 Node-action: change
 Prop-content-length: 36
@@ -84,7 +111,7 @@ V 1
 PROPS-END
 
 
-Revision-number: 3
+Revision-number: 4
 Prop-content-length: 108
 Content-length: 108
 
@@ -102,7 +129,7 @@ V 8
 Add bar.
 PROPS-END
 
-Node-path: bar
+Node-path: trunk/bar
 Node-kind: file
 Node-action: add
 Text-content-md5: 2ff17989315974cf9ce5f88df9b03a71
@@ -115,7 +142,7 @@ PROPS-END
 file bar
 
 
-Revision-number: 4
+Revision-number: 5
 Prop-content-length: 118
 Content-length: 118
 
@@ -133,11 +160,11 @@ V 17
 Copy foo to zfoo.
 PROPS-END
 
-Node-path: zfoo
+Node-path: trunk/zfoo
 Node-kind: file
 Node-action: add
-Node-copyfrom-rev: 3
-Node-copyfrom-path: foo
+Node-copyfrom-rev: 4
+Node-copyfrom-path: trunk/foo
 Text-copy-source-md5: 154d45611081dc7858043af2d9554d6f
 Text-copy-source-sha1: fc4c444d36872cb10cffdc34ee2cbd8c2c820f80
 

@@ -1,12 +1,11 @@
 SVN-fs-dump-format-version: 2
  ## Test commit splitting by filepath
- # reposurgeon-read-options: --nobranch
 
 UUID: 538667c0-f51b-4ee6-ac17-ec52b2e3e0d3
 
 Revision-number: 0
-Prop-content-length: 56
-Content-length: 56
+Prop-content-length: 65
+Content-length: 65
 
 K 8
 svn:date
@@ -15,6 +14,34 @@ V 27
 PROPS-END
 
 Revision-number: 1
+Prop-content-length: 128
+Content-length: 128
+
+K 7
+svn:log
+V 34
+Test commit splitting by filepath
+
+K 10
+svn:author
+V 3
+esr
+K 8
+svn:date
+V 27
+2011-11-30T17:00:55.652068Z
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
 Prop-content-length: 117
 Content-length: 117
 
@@ -32,7 +59,7 @@ V 27
 2012-11-25T03:21:00.790927Z
 PROPS-END
 
-Node-path: bar
+Node-path: trunk/bar
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
@@ -41,7 +68,7 @@ Content-length: 10
 PROPS-END
 
 
-Node-path: baz
+Node-path: trunk/baz
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
@@ -50,7 +77,7 @@ Content-length: 10
 PROPS-END
 
 
-Node-path: foo
+Node-path: trunk/foo
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
@@ -59,7 +86,7 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 2
+Revision-number: 3
 Prop-content-length: 134
 Content-length: 134
 
@@ -77,7 +104,7 @@ V 7
 brooksd
 PROPS-END
 
-Node-path: bar/src
+Node-path: trunk/bar/src
 Node-kind: file
 Node-action: add
 Prop-content-length: 10
@@ -90,7 +117,7 @@ PROPS-END
 a
 
 
-Node-path: baz/src
+Node-path: trunk/baz/src
 Node-kind: file
 Node-action: add
 Prop-content-length: 10
@@ -103,7 +130,7 @@ PROPS-END
 a
 
 
-Node-path: foo/src
+Node-path: trunk/foo/src
 Node-kind: file
 Node-action: add
 Prop-content-length: 10
@@ -116,7 +143,7 @@ PROPS-END
 a
 
 
-Revision-number: 3
+Revision-number: 4
 Prop-content-length: 135
 Content-length: 135
 
@@ -134,7 +161,7 @@ V 7
 brooksd
 PROPS-END
 
-Node-path: bar/src
+Node-path: trunk/bar/src
 Node-kind: file
 Node-action: change
 Text-content-length: 4
@@ -146,7 +173,7 @@ a
 b
 
 
-Node-path: baz/src
+Node-path: trunk/baz/src
 Node-kind: file
 Node-action: change
 Text-content-length: 4
@@ -158,7 +185,7 @@ a
 b
 
 
-Node-path: foo/src
+Node-path: trunk/foo/src
 Node-kind: file
 Node-action: change
 Text-content-length: 4
@@ -170,7 +197,7 @@ a
 b
 
 
-Revision-number: 4
+Revision-number: 5
 Prop-content-length: 128
 Content-length: 128
 
@@ -188,24 +215,24 @@ V 7
 brooksd
 PROPS-END
 
-Node-path: bar2
+Node-path: trunk/bar2
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 3
-Node-copyfrom-path: bar
+Node-copyfrom-rev: 4
+Node-copyfrom-path: trunk/bar
 
 
-Node-path: baz2
+Node-path: trunk/baz2
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 3
-Node-copyfrom-path: baz
+Node-copyfrom-rev: 4
+Node-copyfrom-path: trunk/baz
 
 
-Node-path: foo2
+Node-path: trunk/foo2
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 3
-Node-copyfrom-path: foo
+Node-copyfrom-rev: 4
+Node-copyfrom-path: trunk/foo
 
 
