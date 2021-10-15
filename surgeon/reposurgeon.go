@@ -2315,16 +2315,26 @@ func (rs *Reposurgeon) HelpBranchify() {
 	rs.helpOutput(`
 --branchify=DIRECTORY[:DIRECTORY]...
 
-Specify a colon-separated list of directories to be treated as
+pecify a colon-separated list of directory patterns to be treated as
 potential branches (to become tags if there are no modifications
 after the creation copies) when analyzing a Subversion repo. This
 option is ignored when reading with the --nobranch option.  It
 defaults to the 'standard layout' set of directories, plus any
 unrecognized directories in the repository root.
 
-An asterisk at the end of a path in the set means 'all immediate
-subdirectories of this path, unless they are part of another (longer)
-path in the branchify set'.
+If a component (directory name) of a directory pattern is a single asterisk
+then the pattern will match any directory name at that level. This is
+what Unix filename globbing does in that case. Note that this rule only
+applies if the asterisk is the only character in that component:
+"foo/*/baz" matches "foo/bar/baz" and "foo/xia/baz" but the asterisk in
+"foo/b*/baz" is not a wildcard and is interpreted as a literal asterisk.
+
+There is another important rule to consider: a directory pattern ending
+with an asterisk defines 'branch namespaces'. SVN directories matching
+the pattern up to but excluding the last asterisk are directories containing
+only branches. These 'branch namespaces' will be deemed to never match
+any other entry in the branchify set (even if that entry has no wildcard
+in it).
 
 Spaces in directory names have to be substituted by "\s",
 as the command parser cannot handle spaces inside arguments.
