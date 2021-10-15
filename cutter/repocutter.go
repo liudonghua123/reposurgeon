@@ -146,9 +146,12 @@ Modify Node-path headers, Node-copyfrom-path headers, and
 svn:mergeinfo properties matching the specified Golang regular
 expression FROM; replace with TO.  TO may contain Golang-style
 backreferences (${1}, ${2} etc - curly brackets not optional) to
-parenthesized portions of FROM. Multiple FROM/TO pairs may be
-specified and are applied in order.  This ttansform can be 
-restricted by a selection set.
+parenthesized portions of FROM. Matches are constrained so that
+each match must be a path segment or a sequence of path segments;
+that is, the left end must be either at the start of path or 
+immediately  following a /, and the right end must precede a / or
+be at end of string. Multiple FROM/TO pairs may be specified and
+are applied in order.  This transform can be restricted by a selection set.
 `,
 	"propdel": `propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
 
@@ -1536,15 +1539,21 @@ func pathlist(source DumpfileSource, selection SubversionRange) {
 	}
 }
 
-// Hack paths by applying regexp transformations.
+// Hack paths by applying regexp transformations on segment sequences.
 func pathrename(source DumpfileSource, selection SubversionRange, patterns []string) {
-	re := make([]*regexp.Regexp, len(patterns)/2)
+	re := make([]*regexp.Regexp, 2*len(patterns))
 	for i := 0; i < len(patterns)/2; i++ {
-		re[i] = regexp.MustCompile(patterns[i*2])
+		re[(4*i)+0] = regexp.MustCompile("^" + patterns[i*2] + "$")
+		re[(4*i)+1] = regexp.MustCompile("^" + patterns[i*2] + "/")
+		re[(4*i)+2] = regexp.MustCompile("/" + patterns[i*2] + "/")
+		re[(4*i)+3] = regexp.MustCompile("/" + patterns[i*2] + "$")
 	}
 	mutator := func(s []byte) []byte {
 		for i := 0; i < len(patterns)/2; i++ {
-			s = re[i].ReplaceAll(s, []byte(patterns[i*2+1]))
+			s = re[(4*i)+0].ReplaceAll(s, []byte(patterns[i*2+1]))
+			s = re[(4*i)+1].ReplaceAll(s, append([]byte(patterns[i*2+1]), byte('/')))
+			s = re[(4*i)+2].ReplaceAll(s, append([]byte{'/'}, append([]byte(patterns[i*2+1]), byte('/'))...))
+			s = re[(4*i)+3].ReplaceAll(s, append([]byte{'/'}, []byte(patterns[i*2+1])...))
 		}
 		return s
 	}
