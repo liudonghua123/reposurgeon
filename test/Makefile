@@ -140,7 +140,7 @@ $(SVNLOAD_TARGETS): svnload-regress-%: %.svn
 	tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$ ) || echo "$@" >>$(FAILLOG);
 
 # Regression-testing of repocutter
-REPOCUTTER_LOADS := $(shell ls -1 repocutter*.sh | sed '/.sh/s///')
+REPOCUTTER_LOADS := $(shell ls -1 repocutter*.sh | sed '/.sh$$/s///')
 repocutter-buildregress:
 	@for file in $(REPOCUTTER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \

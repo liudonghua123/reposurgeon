@@ -4,6 +4,7 @@ repomapper
 repotool
 options.adoc
 surgeon/version.go
+cuttercommands.inc
 docinclude
 pkg
 *.1

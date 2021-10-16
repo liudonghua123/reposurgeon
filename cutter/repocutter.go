@@ -51,6 +51,7 @@ Available subcommands and help topics:
    propdel
    proprename
    propset
+   push
    reduce
    renumber
    replace
@@ -89,6 +90,7 @@ var oneliners = map[string]string{
 	"propdel":    "Deleting revision properties",
 	"proprename": "Renaming revision properties",
 	"propset":    "Setting revision properties",
+	"push":       "Push a first segment onto each path",
 	"reduce":     "Topologically reduce a dump.",
 	"renumber":   "Renumber revisions so they're contiguous",
 	"replace":    "Regexp replace in blobs",
@@ -174,6 +176,11 @@ revision selection. You may specify multiple properties to be renamed.
 
 Set the property PROPNAME to PROPVAL. May be restricted by a revision
 selection. You may specify multiple property settings.
+`,
+	"push": `push: usage: repocutter [-r SELECTION ] push segment
+
+Push an initial segment onto each path.  Normally used to add a "trunk" prefix
+to every path ion a flat repository. This transform can be restricted by a selection set.
 `,
 	"renumber": `renumber: usage: repocutter renumber
 
@@ -327,6 +334,7 @@ var narrativeOrder []string = []string{
 	"pathlist",
 	"pathrename",
 	"pop",
+	"push",
 
 	"split",
 	"swap",
@@ -1377,6 +1385,40 @@ func pop(source DumpfileSource, selection SubversionRange) {
 	source.Report(selection, nodehook, revhook, true)
 }
 
+// Push a prefix segment onto each pathname in an input dump
+func push(source DumpfileSource, selection SubversionRange, prefix string) {
+	revhook := func(props *Properties) {
+		for _, mergeproperty := range mergeProperties {
+			if _, present := props.properties[mergeproperty]; present {
+				oldval := props.properties["svn:mergeinfo"]
+				rooted := false
+				if oldval[0] == '/' {
+					rooted = true
+					oldval = oldval[1:]
+				}
+				newval := prefix + "/" + oldval
+				if rooted {
+					newval = "/" + newval
+				}
+				props.properties[mergeproperty] = newval
+			}
+		}
+	}
+	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
+		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
+			header, _, _ = header.replaceHook(htype, func(in []byte) []byte {
+				return []byte(prefix + "/" + string(in))
+			})
+		}
+		all := make([]byte, 0)
+		all = append(all, []byte(header)...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+	source.Report(selection, nodehook, revhook, true)
+}
+
 // propdel - Delete properties
 func propdel(source DumpfileSource, propnames []string, selection SubversionRange) {
 	revhook := func(props *Properties) {
@@ -2405,6 +2447,8 @@ func main() {
 			os.Exit(1)
 		}
 		reduce(NewDumpfileSource(f, baton))
+	case "push":
+		push(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "renumber":
 		assertNoArgs()
 		renumber(NewDumpfileSource(input, baton))
