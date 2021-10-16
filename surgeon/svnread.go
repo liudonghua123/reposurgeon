@@ -70,6 +70,7 @@ type svnReader struct {
 	// a map from SVN branch names to root commits (there can be several in case
 	// of branch deletions since the commit recreating the branch is also root)
 	branchRoots map[string][]*Commit
+	flat        bool
 }
 
 func (sp *svnReader) maxRev() revidx {
@@ -432,6 +433,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 	sp.revmap = make(map[revidx]revidx)
 	sp.backfrom = make(map[revidx]revidx)
 	sp.hashmap = make(map[string]*NodeAction)
+	sp.flat = true
 
 	trackSymlinks := newOrderedStringSet()
 	propertyStash := make(map[string]*OrderedMap)
@@ -570,6 +572,9 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 						node = new(NodeAction)
 					}
 					node.path = string(sdBody(line))
+					if !strings.HasPrefix(node.path, "trunk/") {
+						sp.flat = false
+					}
 					plen = -1
 					tlen = -1
 				} else if bytes.HasPrefix(line, []byte("Node-kind: ")) {
@@ -985,9 +990,9 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	// There is only one assumption about branch structure before this point,
 	// deep inside svnExpandCopies.
 
-	if options.Contains("--nobranch") {
+	if sp.flat {
 		if logEnable(logEXTRACT) {
-			logit("SVN Phases 6-8: skipped due to --nobranch")
+			logit("SVN Phases 6-8: skipped, flat repository")
 		}
 		// There is only one branch root: the very first commit
 		sp.branchRoots = make(map[string][]*Commit)
@@ -1010,9 +1015,9 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	sp.revisions = nil
 	sp.revmap = nil
 
-	if options.Contains("--nobranch") {
+	if sp.flat {
 		if logEnable(logEXTRACT) {
-			logit("SVN Phases 9-A: skipped due to --nobranch")
+			logit("SVN Phases 9-A: skipped, flat repository")
 		}
 	} else {
 		svnGitifyBranches(ctx, sp, options, baton)
@@ -1209,7 +1214,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 					// structure produced an error
 					// in the preocessing of split commits:
 					// https://gitlab.com/esr/reposurgeon/-/issues/341
-					if !options.Contains("--nobranch") && sp.isDeclaredBranch(node.path) {
+					if sp.isDeclaredBranch(node.path) {
 						if logEnable(logEXTRACT) {
 							logit("r%d-%d~%s: declaring as sdNUKE", node.revision, node.index, node.path)
 						}
@@ -1367,9 +1372,9 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	// file operations, though.
 	//
 	// Interpretation of svn:executable is done in this phase.
-	// The commit branch is set here in case we want to dump a
-	// nobranch analysis, but the from and merge fields are not.
-	// That will happen in a later phase.
+	// The commit branch is set here in case the repository is flat
+	// and we can skip branch analysis, but the from and merge fields
+	// are not. That will happen in a later phase.
 	//
 	// Revisions with no nodes are skipped here. This guarantees
 	// being able to assign them to a branch later.
@@ -1783,7 +1788,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 
 		// No branching, therefore linear history.
 		// If we do branch analysis in a later phase
-		// (that is, unless nobranch is on) we will
+		// (that is, unless flat is set) we will
 		// create a new set of parent links.
 		if lastcommit != nil {
 			commit.setParents([]CommitLike{lastcommit})
@@ -2922,7 +2927,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	//   with name "emptycommit-<revision>".
 	//
 	// * Commits at a branch tip that consist only of deleteall are also
-	//   tagified if nobranch is on, because having a commit at the branch
+	//   tagified if flat is set, because having a commit at the branch
 	//   tip that removes all files is less than useful. Such commits should
 	//   almost all be pruned because they put their branch in the
 	//   /refs/deleted namespace, but they can be kept if they are part of

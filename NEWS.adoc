@@ -3,6 +3,7 @@
 Repository head::
      Minor improvements in baton handling.
      repocutter pathrename REs are constrained to match full oath segments
+     --nobranch is retired; use repocutter to prepare flat repositories
 
 4.30: 2021-10-13::
      Speed up DoTagify by parallelizing it.

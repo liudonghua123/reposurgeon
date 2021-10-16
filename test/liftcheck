@@ -23,9 +23,6 @@
 #               revisions in a row. Non-existing revisions are silently ignored,
 # The -R option sets a read limit to the dump parsing, for speed
 # The -e option sets exclude patterbs to ignore uninteresting tags and branches
-# The -B option makes liftcheck use --nobranch to compare against a flat repository.
-#               It is automatically applied if --nobranch is passed via a
-#               "#reposurgeon-read-options:" comment in the stream.
 #
 # The REPOSURGEON environment variable can be used to substitute in a
 # different implementation.
@@ -48,10 +45,9 @@ compareopt=""
 svnquiet=-q
 slimit=""
 rlimit=""
-nobranch=""
 progress=no
 readopt=""
-while getopts ade:ir:R:suvBpq opt
+while getopts ade:ir:R:suvpq opt
 do
     case $opt in
 	d) debug=yes;;
@@ -64,7 +60,6 @@ do
 	                                                # to something unrelated, because we rely on it
 	                                                # to know which dir to checkout in SVN.
 	v|q) repotoolopt="${repotoolopt} -${opt}";;
-	B) nobranch="-n";;
 	*) echo "$0: unknown flag $opt" >&2; exit 1;;
     esac
 done
@@ -93,11 +88,6 @@ do
 	exit 1
     fi
 
-    if grep '^ *# reposurgeon-read-options:.*--nobranch' "${what}" >/dev/null
-    then
-	nobranch=-n
-    fi
-
     stem=liftcheck$$
 
     # shellcheck disable=SC2086
@@ -124,7 +114,7 @@ do
     case ${ENGINE} in
 	 reposurgeon)
 	     # Make a git repo from the dump using reposurgeon
-	     ${REPOSURGEON:-../reposurgeon} "${TESTOPT}" "${rlimit}" "read ${nobranch} ${readopt} <${what}" \
+	     ${REPOSURGEON:-../reposurgeon} "${TESTOPT}" "${rlimit}" "read ${readopt} <${what}" \
 					    "prefer git" "rebuild ${stem}-git" "write >${stem}.gfi" >/tmp/warnings$$
 	     ;;
 	 svn2git)
@@ -214,9 +204,7 @@ do
 	    # Use -n (nobranch) if asked to, or if there is no structure and
 	    # the asked branch is master
 	    # shellcheck disable=SC2166
-	    if [ -n "${nobranch}" -o "("                 \
-		   "(" "${ref}" = "heads/master" ")"     \
-		       -a "(" -z "${structured}" ")" ")" ]
+	    if [ "(" "${ref}" = "heads/master" ")" -a "(" -z "${structured}" ")" ]
 	    then
 		refopt=-n
 	    else
@@ -245,7 +233,7 @@ do
 
 	# Compare the original with the lift
 	# shellcheck disable=SC2086
-	../${REPOTOOL:-repotool} compare-all ${repotoolopt} ${compareopt} ${nobranch} \
+	../${REPOTOOL:-repotool} compare-all ${repotoolopt} ${compareopt} \
 					       ${stem}-checkout ${stem}-git  tee /tmp/diff$$ 2>>/tmp/warnings$$
     fi
 

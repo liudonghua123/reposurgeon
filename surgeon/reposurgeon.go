@@ -2317,8 +2317,7 @@ func (rs *Reposurgeon) HelpBranchify() {
 
 pecify a colon-separated list of directory patterns to be treated as
 potential branches (to become tags if there are no modifications
-after the creation copies) when analyzing a Subversion repo. This
-option is ignored when reading with the --nobranch option.  It
+after the creation copies) when analyzing a Subversion repo.  It
 defaults to the 'standard layout' set of directories, plus any
 unrecognized directories in the repository root.
 

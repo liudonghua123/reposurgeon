@@ -2543,13 +2543,6 @@ has the correct content. This does however mean that reposurgeon
 discards the content of any previous branch having that same name.
 However, see the `--preserve` option of the `read` command.
 
-In very unusual cases you may need to use the "<<read_cmd,--nobranch>>"
-option. However, this has the disadvantage that you'll have to do the
-branch surgery by hand at a later stage (the command for this is
-"<<branchlift_cmd>>"). Instead, you may be able to use the repocutter
-filter to transform the dump file into a version shaped right for a
-regular branch-sensitive lift.
-
 The reposurgeon analyzer tries to warn you about pathological cases,
 and reposurgeon gives you tools for coping with them.  Unfortunately,
 the warnings are (unavoidably) cryptic unless you understand
@@ -2604,13 +2597,6 @@ most recent existing revision before the missing one.
 
 Certain optional modifiers on the `<<read_cmd>>` command change
 its behavior when reading Subversion repositories:
-
---nobranch::
-Suppress branch analysis. The generated git repository will mirror the
-whole subversion tree, with trunk and branches (if they exist) as
-subdirectories.  No directory deletions are translated to branch
-deletions, since no directories are seen as branches in the first
-place.
 
 --user-ignores::
 By default reposurgeon tosses out in-tree _.gitignore_ files found in the
@@ -2687,14 +2673,6 @@ All commits in a flat repository are assigned to branch `master`, and
 what would have been branch structure becomes directory structure.  In
 this case, we're done; all the other rules apply to non-flat
 repos.
-
-* If you give the option `--nobranch` when reading a Subversion
-repository, branch analysis is skipped, and the repository is treated
-as though flat (left as a linear sequence of commits on
-`refs/heads/master`).  This may be useful if your repository
-configuration is highly unusual and you need to do your own branch
-surgery, with e.g. the `<<branchlift_cmd>>` command. Note that this
-option will disable partitioning of mixed commits.
 
 * If '```trunk```' is eligible, it always becomes the master
 branch.
@@ -2939,15 +2917,15 @@ through unalktered. This means they will end up in the synthetic
 See the embedded help listed by "repocutter help swapsvn" for some
 details and caveats.
 
-==== No-branch reads
+==== Branchlift on flat repositories
 
-Finally, you can do a "--nobranch" read of the Subversion
-repository and then individually turn subdirectories into branches
-using the <<branchlift_cmd>> command.  The pattern for that looks like
-this:
+If the repository has no branch structure ar all, you might want to
+filter the stream with "repocutter push trunk" and then individually
+turning subdirectories into branches using the <<branchlift_cmd>>
+command.  The pattern for that looks like this:
 
 --------
-read --nobranch <multiproject.svn
+read <multiproject.svn
 branchlift master branches/release-1.0
 branchlift master branches/release-2.0
 path rename "trunk/(.*)" "\1"
