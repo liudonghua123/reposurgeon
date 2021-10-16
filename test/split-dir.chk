@@ -1,16 +1,14 @@
 set relax
 set interactive
 set quiet
-# There's a --nobranch embedded in the test load so it can be checked standalone.
-# This invocation would make the load work even without that.
-read --nobranch <split-dir.svn
+read <split-dir.svn
 :2 split by bar
 reposurgeon: selection doesn't point at a commit
 # Expect the split on zed to fail
 :5 split by zed
 reposurgeon: couldn't find 'zed' in a fileop path
 :5 split by f
-reposurgeon: couldn't find 'f' in a fileop path
+reposurgeon: new commits are events 6 and 7.
 inspect
 Event 1 =================================================================
 #reposurgeon sourcetype svn
@@ -51,9 +49,9 @@ data 33
 add a new file in each directory
 deleteall
 M 100644 :1 .gitignore
-M 100644 :2 trunk/bar/src
-M 100644 :2 trunk/baz/src
-M 100644 :2 trunk/foo/src
+M 100644 :2 bar/src
+M 100644 :2 baz/src
+M 100644 :2 foo/src
 
 Event 5 =================================================================
 blob
@@ -70,21 +68,30 @@ committer brooksd <brooksd> 1353813665 +0000
 data 34
 modify the file in each directory
 from :3
-M 100644 :4 trunk/bar/src
-M 100644 :4 trunk/baz/src
-M 100644 :4 trunk/foo/src
+M 100644 :4 bar/src
+M 100644 :4 baz/src
 
 Event 7 =================================================================
+commit refs/heads/master
+#legacy-id 4.split
+mark :7
+committer brooksd <brooksd> 1353813665 +0000
+data 34
+modify the file in each directory
+from :5
+M 100644 :4 foo/src
+
+Event 8 =================================================================
 commit refs/heads/master
 #legacy-id 5
 mark :6
 committer brooksd <brooksd> 1353813667 +0000
 data 27
 copy the three directories
-from :5
-M 100644 :4 trunk/bar2/src
-M 100644 :4 trunk/baz2/src
-M 100644 :4 trunk/foo2/src
+from :7
+M 100644 :4 bar2/src
+M 100644 :4 baz2/src
+M 100644 :4 foo2/src
 
-Event 8 =================================================================
+Event 9 =================================================================
 done
