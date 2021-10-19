@@ -148,12 +148,18 @@ Modify Node-path headers, Node-copyfrom-path headers, and
 svn:mergeinfo properties matching the specified Golang regular
 expression FROM; replace with TO.  TO may contain Golang-style
 backreferences (${1}, ${2} etc - curly brackets not optional) to
-parenthesized portions of FROM. Matches are constrained so that
-each match must be a path segment or a sequence of path segments;
-that is, the left end must be either at the start of path or 
-immediately  following a /, and the right end must precede a / or
-be at end of string. Multiple FROM/TO pairs may be specified and
-are applied in order.  This transform can be restricted by a selection set.
+parenthesized portions of FROM. 
+
+Matches are constrained so that each match must be a path segment or a
+sequence of path segments; that is, the left end must be either at the
+start of path or immediately following a /, and the right end must
+precede a / or be at end of string.  With a leading ^ the match is
+constrained to be a leading sequence of the pathname; with a trailing
+$, a trailing one.
+
+Multiple FROM/TO pairs may be specified and are applied in order.
+This transform can be restricted by a selection set.
+
 `,
 	"propdel": `propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
 
@@ -1589,14 +1595,29 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 	}
 	ops := make([]transform, 0)
 	for i := 0; i < len(patterns)/2; i++ {
-		ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "$"),
-			[]byte(patterns[i*2+1])})
-		ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "/"),
-			append([]byte(patterns[i*2+1]), byte('/'))})
-		ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "/"),
-			append([]byte{'/'}, append([]byte(patterns[i*2+1]), byte('/'))...)})
-		ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "$"),
-			append([]byte{'/'}, []byte(patterns[i*2+1])...)})
+		if patterns[i*2][0] == '^' && patterns[i*2][len(patterns[i*2])-1] == '$' {
+			ops = append(ops, transform{regexp.MustCompile(patterns[i*2]),
+				[]byte(patterns[i*2+1])})
+		} else if patterns[i*2][0] == '^' {
+			ops = append(ops, transform{regexp.MustCompile(patterns[i*2] + "$"),
+				[]byte(patterns[i*2+1])})
+			ops = append(ops, transform{regexp.MustCompile(patterns[i*2] + "/"),
+				append([]byte(patterns[i*2+1]), byte('/'))})
+		} else if patterns[i*2][0] == '$' {
+			ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2]),
+				[]byte(patterns[i*2+1])})
+			ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2]),
+				append([]byte{'/'}, []byte(patterns[i*2+1])...)})
+		} else {
+			ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "$"),
+				[]byte(patterns[i*2+1])})
+			ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "/"),
+				append([]byte(patterns[i*2+1]), byte('/'))})
+			ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "/"),
+				append([]byte{'/'}, append([]byte(patterns[i*2+1]), byte('/'))...)})
+			ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "$"),
+				append([]byte{'/'}, []byte(patterns[i*2+1])...)})
+		}
 	}
 	mutator := func(s []byte) []byte {
 		for _, op := range ops {
