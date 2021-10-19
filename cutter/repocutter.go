@@ -1583,19 +1583,24 @@ func pathlist(source DumpfileSource, selection SubversionRange) {
 
 // Hack paths by applying regexp transformations on segment sequences.
 func pathrename(source DumpfileSource, selection SubversionRange, patterns []string) {
-	re := make([]*regexp.Regexp, 2*len(patterns))
+	type transform struct {
+		re *regexp.Regexp
+		to []byte
+	}
+	ops := make([]transform, 0)
 	for i := 0; i < len(patterns)/2; i++ {
-		re[(4*i)+0] = regexp.MustCompile("^" + patterns[i*2] + "$")
-		re[(4*i)+1] = regexp.MustCompile("^" + patterns[i*2] + "/")
-		re[(4*i)+2] = regexp.MustCompile("/" + patterns[i*2] + "/")
-		re[(4*i)+3] = regexp.MustCompile("/" + patterns[i*2] + "$")
+		ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "$"),
+			[]byte(patterns[i*2+1])})
+		ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "/"),
+			append([]byte(patterns[i*2+1]), byte('/'))})
+		ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "/"),
+			append([]byte{'/'}, append([]byte(patterns[i*2+1]), byte('/'))...)})
+		ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "$"),
+			append([]byte{'/'}, []byte(patterns[i*2+1])...)})
 	}
 	mutator := func(s []byte) []byte {
-		for i := 0; i < len(patterns)/2; i++ {
-			s = re[(4*i)+0].ReplaceAll(s, []byte(patterns[i*2+1]))
-			s = re[(4*i)+1].ReplaceAll(s, append([]byte(patterns[i*2+1]), byte('/')))
-			s = re[(4*i)+2].ReplaceAll(s, append([]byte{'/'}, append([]byte(patterns[i*2+1]), byte('/'))...))
-			s = re[(4*i)+3].ReplaceAll(s, append([]byte{'/'}, []byte(patterns[i*2+1])...))
+		for _, op := range ops {
+			s = op.re.ReplaceAll(s, op.to)
 		}
 		return s
 	}
