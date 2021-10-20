@@ -53,6 +53,28 @@ func assertIntEqual(t *testing.T, a int, b int) {
 	}
 }
 
+func TestRegexp(t *testing.T) {
+	type testEntry struct {
+		pattern string
+		text    string
+		match   bool
+	}
+	tests := []testEntry{
+		{"(^|/)aaa", "aaa", true},
+		{"(^|/)aaa", "/aaa", true},
+		{"(^|/)aaa", "/baaa", false},
+		{"(^|/)aaa", "baaa", false},
+		{"aaa(/|$)", "aaa", true},
+		{"aaa(/|$)", "aaa/", true},
+		{"aaa(/|$)", "aaab/", false},
+		{"aaa(/|$)", "aaab", false},
+	}
+	for _, item := range tests {
+		re := regexp.MustCompile(item.pattern)
+		assertBool(t, re.MatchString(item.text), item.match)
+	}
+}
+
 func TestBackreferences(t *testing.T) {
 	from := []byte("aaabxbcccc")
 	pattern := "b(.)b"

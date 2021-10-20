@@ -1609,14 +1609,8 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 			ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2]),
 				append([]byte{'/'}, []byte(patterns[i*2+1])...)})
 		} else {
-			ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "$"),
-				[]byte(patterns[i*2+1])})
-			ops = append(ops, transform{regexp.MustCompile("^" + patterns[i*2] + "/"),
-				append([]byte(patterns[i*2+1]), byte('/'))})
-			ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "/"),
-				append([]byte{'/'}, append([]byte(patterns[i*2+1]), byte('/'))...)})
-			ops = append(ops, transform{regexp.MustCompile("/" + patterns[i*2] + "$"),
-				append([]byte{'/'}, []byte(patterns[i*2+1])...)})
+			ops = append(ops, transform{regexp.MustCompile("(?P<start>^|/)" + patterns[i*2] + "(?P<end>/|$)"),
+				append([]byte("${start}"), append([]byte(patterns[i*2+1]), []byte("${end}")...)...)})
 		}
 	}
 	mutator := func(s []byte) []byte {
