@@ -2130,11 +2130,12 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 				}
 				// Try to detect file-based copies, like what CVS can generate.
 				//
-				// Remember the maximum value of fromRev in all nodes of this root ewvision,
+				// Remember the maximum value of fromRev in all nodes of this root revision,
 				// or 0 if the file nodes don't all have a fromRev. We also record the
 				// minimum value, to warn if they are different.
 				maxfrom, minfrom := revidx(0), maxRev
 				var frombranch string
+				var fromNode *NodeAction // used only for logging
 				for _, node := range record.nodes {
 					// Don't check for sp.isDeclaredBranch because we only use
 					// file nodes (maybe expanded from a dir copy). If the
@@ -2150,10 +2151,11 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 						newfrom, _ := sp.splitSVNBranchPath(trimSep(node.fromPath))
 						if frombranch == "" {
 							frombranch = newfrom
+							fromNode = node
 						} else if frombranch != newfrom {
 							if logEnable(logWARN) {
 								logit("Link detection for %s <%s> failed: file copies from multiple branches to %s, difference is %s vs %s",
-									commit.mark, commit.legacyID, destbranch, frombranch, newfrom)
+									commit.mark, commit.legacyID, destbranch, fromNode, node)
 							}
 							maxfrom = 0
 							break
