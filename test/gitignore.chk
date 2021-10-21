@@ -1,4 +1,4 @@
-reposurgeon: 2 user-created .gitignores ignored.
+reposurgeon: 2 user-created .gitignores and 0 fossil .cvsignores ignored.
 #reposurgeon sourcetype svn
 blob
 mark :1

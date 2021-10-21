@@ -1382,7 +1382,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	// Alas, ancestry pointers do get modified in this phase - has
 	// to do with how the hashmap is generated.
 	//
-	var gitignores int
+	var gitignores, cvsignores int
 
 	defer trace.StartRegion(ctx, "SVN Phase 5: build commits").End()
 	if logEnable(logEXTRACT) {
@@ -1606,7 +1606,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				}
 			} else if node.kind == sdFILE {
 				if strings.HasSuffix(node.path, ".cvsignore") && logEnable(logWARN) {
-					logit("r%d~%s: fossil .cvsignore.", node.revision, node.path)
+					cvsignores++
 				}
 				// We may need to ignore and complain
 				// about explicit .gitignores created,
@@ -1803,8 +1803,11 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 		baton.percentProgress(uint64(ri))
 	}
 	baton.endProgress()
-	if gitignores > 0 && logEnable(logSHOUT) {
-		shout("%d user-created .gitignores ignored.", gitignores)
+
+	if logEnable(logSHOUT) {
+		if gitignores > 0 || cvsignores > 0 {
+			shout("%d user-created .gitignores and %d fossil .cvsignores ignored.", gitignores, cvsignores)
+		}
 	}
 }
 

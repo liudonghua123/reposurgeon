@@ -409,16 +409,15 @@ func init() {
 
 const (
 	logSHOUT      uint = 1 << iota // Errors and urgent messages
-	logWARN                        // Exceptional condition, probably not bug
+	logWARN                        // Exceptional condition, probably not bug (default log level)
 	logBATON                       // Log progress-meter messages, normally only visible for short intervals
-	logTAGFIX                      // Log tag fixups
+	logTAGFIX                      // Log tag fixups (Subversion)
 	logTOPOLOGY                    // Log repo-extractor logic (coarse-grained)
-	logPROPERTIES                  // Log ignored properties
-	logEXTRACT                     // Log repo-extractor logic (fine-grained)
+	logPROPERTIES                  // Log ignored properties (Subversion)
+	logEXTRACT                     // Log repo-extractor logic (Subversion and exrtractors; fine-grained)
 	logFILEMAP                     // Log building of filemaps (warning: very verbose!)
-	logANCESTRY                    // Log ancestry computation
+	logANCESTRY                    // Log ancestry computation (Subversion)
 	logDELETE                      // Log canonicalization after deletes
-	logIGNORES                     // Log ignore generation
 	logSVNPARSE                    // Lower-level Subversion parsing details
 	logEMAILIN                     // Log round-tripping through msg{out|in}
 	logSHUFFLE                     // Log file and directory handling
@@ -438,7 +437,6 @@ var logtags = map[string]uint{
 	"filemap":    logFILEMAP,
 	"ancestry":   logANCESTRY,
 	"delete":     logDELETE,
-	"ignores":    logIGNORES,
 	"svnparse":   logSVNPARSE,
 	"emailin":    logEMAILIN,
 	"shuffle":    logSHUFFLE,
