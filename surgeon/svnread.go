@@ -1382,6 +1382,8 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	// Alas, ancestry pointers do get modified in this phase - has
 	// to do with how the hashmap is generated.
 	//
+	var gitignores int
+
 	defer trace.StartRegion(ctx, "SVN Phase 5: build commits").End()
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 5: build commits")
@@ -1612,9 +1614,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				isGitIgnore := (node.path == ".gitignore" || strings.HasSuffix(node.path, svnSep+".gitignore"))
 				if isGitIgnore {
 					if !options.Contains("--user-ignores") {
-						if logEnable(logSHOUT) {
-							shout("r%d~%s: user-created .gitignore ignored.", node.revision, node.path)
-						}
+						gitignores++
 						continue
 					}
 				}
@@ -1803,6 +1803,9 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 		baton.percentProgress(uint64(ri))
 	}
 	baton.endProgress()
+	if gitignores > 0 && logEnable(logSHOUT) {
+		shout("%d user-created .gitignores ignored.", gitignores)
+	}
 }
 
 func branchOfEmptyCommit(sp *StreamParser, commit *Commit) string {

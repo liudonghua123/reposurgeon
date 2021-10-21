@@ -138,9 +138,12 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 		var ok bool
 		if sourceParent, ok = sourceParent.dirs[component]; !ok {
 			// The source path does not exist, bail out
-			if srcid != "" && logEnable(logWARN) {
-				logit("%s: nonexistent source %q on pathmap copy to %q", srcid, component, targetPath)
-			}
+			// Logging here looks like it might be useful but isn't -
+			// too many noise messages due to intermediate-level directories
+			// that were never explicitly created.
+			//if srcid != "" && logEnable(logWARN) {
+			//	logit("%s: nonexistent source %q on pathmap copy to %q", srcid, component, targetPath)
+			//}
 			return
 		}
 	}
@@ -153,9 +156,10 @@ func (pm *PathMap) copyFrom(targetPath string, sourcePathMap *PathMap, sourcePat
 			tree, ok = sourceParent.dirs[sourceName]
 			if !ok {
 				// The source path does not exist, bail out
-				if logEnable(logWARN) {
-					logit("%s: nonexistent source %q on pathmap copy to empty target", srcid, sourceName)
-				}
+				// See above about noise messages,
+				//if logEnable(logWARN) {
+				//	logit("%s: nonexistent source %q on pathmap copy to empty target", srcid, sourceName)
+				//}
 				return
 			}
 		}
