@@ -120,8 +120,8 @@ that range to pass to standard output.
 `,
 	"expunge": `expunge: usage: repocutter [-r SELECTION ] expunge PATTERN...
 
-Delete all operations with Node-path headers matching specified
-Golang regular expressions (opposite of 'sift').  Any revision
+Delete all operations with Node-path or Node-copyfrom-path headers matching 
+specified Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
 record is removed as well.
 `,
@@ -240,9 +240,9 @@ Replacements may be restricted to a specified range.
 `,
 	"sift": `sift: usage: repocutter [-r SELECTION] sift PATTERN...
 
-Delete all operations with Node-path headers *not* matching specified
-Golang regular expressions (opposite of 'expunge').  Any revision left
-with no Node records after this filtering has its Revision record
+Delete all operations with Node-path or Node-copyfrom-path headers *not*
+matching specified Golang regular expressions (opposite of 'expunge').
+Any revision left with no Node records after this filtering has its Revision record
 removed as well. This transform can be restricted by a selection set.
 `,
 	"split": `split: usage: repocutter split PATH...
@@ -1278,13 +1278,15 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 func expunge(source DumpfileSource, selection SubversionRange, patterns []string) {
 	expungehook := func(header streamSection, properties []byte, content []byte) []byte {
 		matched := false
-		nodepath := header.payload("Node-path")
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				r := regexp.MustCompile(pattern)
-				if r.Match(nodepath) {
-					matched = true
-					break
+		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
+			nodepath := header.payload(hd)
+			if nodepath != nil {
+				for _, pattern := range patterns {
+					r := regexp.MustCompile(pattern)
+					if r.Match(nodepath) {
+						matched = true
+						break
+					}
 				}
 			}
 		}
@@ -1969,13 +1971,15 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
 	sifthook := func(header streamSection, properties []byte, content []byte) []byte {
 		matched := false
-		nodepath := header.payload("Node-path")
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				r := regexp.MustCompile(pattern)
-				if r.Match(nodepath) {
-					matched = true
-					break
+		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
+			nodepath := header.payload(hd)
+			if nodepath != nil {
+				for _, pattern := range patterns {
+					r := regexp.MustCompile(pattern)
+					if r.Match(nodepath) {
+						matched = true
+						break
+					}
 				}
 			}
 		}
