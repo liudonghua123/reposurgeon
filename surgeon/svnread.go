@@ -815,12 +815,12 @@ func (action NodeAction) hasDeleteTag() bool {
 // has gaps). Processing of such streams is not well-tested and will
 // probably fail.
 type RevisionRecord struct {
-	log      string
-	date     time.Time
-	author   string
-	nodes    []*NodeAction
-	props    OrderedMap
-	revision revidx
+	log      string        // Revision log entry
+	date     time.Time     // Revision timestamp
+	author   string        // Revision author
+	nodes    []*NodeAction // Revision operation list
+	props    OrderedMap    // RevisionProperties
+	revision revidx        // Revision index as extracted from header
 }
 
 func newRevisionRecord(nodes []*NodeAction, props OrderedMap, revision revidx) *RevisionRecord {
