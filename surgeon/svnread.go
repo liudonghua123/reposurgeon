@@ -727,11 +727,15 @@ type NodeAction struct {
 	kind       uint8
 	action     uint8 // initially sdNONE
 	propchange bool
+	generated  bool
 }
 
 func (action NodeAction) String() string {
 	out := "<NodeAction: "
 	out += fmt.Sprintf("r%d-%d", action.revision, action.index)
+	if action.generated {
+		out += "*"
+	}
 	out += " " + string(actionValues[action.action])
 	out += " " + string(pathTypeValues[action.kind])
 	out += " '" + action.path + "'"
@@ -1230,7 +1234,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 								trampoline, _ := node.fileSet.get(child)
 								deleted := trampoline.(*NodeAction)
 								if logEnable(logEXTRACT) {
-									logit("r%d-%d~%s: deleting %s",
+									logit("r%d-%d*~%s: deleting %s",
 										node.revision, node.index, node.path, child)
 								}
 								newnode := new(NodeAction)
@@ -1238,6 +1242,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 								newnode.revision = node.revision
 								newnode.action = sdDELETE
 								newnode.kind = deleted.kind
+								newnode.generated = true
 								appendExpanded(newnode)
 							}
 						}
@@ -1275,8 +1280,9 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 						subnode.props = found.props
 						subnode.action = sdADD
 						subnode.kind = found.kind
+						subnode.generated = true
 						if logEnable(logTOPOLOGY) {
-							logit("r%d-%d: %s %s copy r%d~%s -> %s %s",
+							logit("r%d-%d*: %s %s copy r%d~%s -> %s %s",
 								node.revision, node.index, node.path, copyType,
 								subnode.fromRev, subnode.fromPath, subnode.path, subnode)
 						}
@@ -2142,7 +2148,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 					// branch dir creation node had a fromRev it would have
 					// been caught by the normal logic above.
 					destbranch, _ := sp.splitSVNBranchPath(trimSep(node.path))
-					if node.kind == sdFILE && node.action == sdADD && destbranch == branch &&
+					if !node.generated && node.kind == sdFILE && node.action == sdADD && destbranch == branch &&
 						!strings.HasSuffix(node.path, ".gitignore") {
 						if node.fromRev == 0 {
 							maxfrom = 0

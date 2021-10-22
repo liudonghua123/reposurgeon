@@ -7675,6 +7675,7 @@ func (rs *Reposurgeon) DoSizeof(line string) bool {
 	fmt.Fprintf(control.baton, "[]byte:            %3d\n", unsafe.Sizeof(make([]byte, 0)))
 	fmt.Fprintf(control.baton, "pointer:           %3d\n", unsafe.Sizeof(new(Attribution)))
 	fmt.Fprintf(control.baton, "int:               %3d\n", unsafe.Sizeof(0))
+	fmt.Fprintf(control.baton, "bool:              %3d\n", unsafe.Sizeof(true))
 	fmt.Fprintf(control.baton, "map[string]string: %3d\n", unsafe.Sizeof(make(map[string]string)))
 	fmt.Fprintf(control.baton, "[]string:          %3d\n", unsafe.Sizeof(make([]string, 0)))
 	fmt.Fprintf(control.baton, "map[string]bool:   %3d\n", unsafe.Sizeof(make(map[string]bool)))

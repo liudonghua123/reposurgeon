@@ -2534,14 +2534,14 @@ type Commit struct {
 	committer      Attribution   // Person responsible for committing it.
 	fileops        []*FileOp     // blob and file operation list
 	_manifest      *Manifest     // efficient map of *Fileop values
-	repo           *Repository
-	properties     *OrderedMap  // commit properties (extension)
-	attachments    []Event      // Tags and Resets pointing at this commit
-	_parentNodes   []CommitLike // list of parent nodes - sparse, may contain nils
-	_childNodes    []CommitLike // list of child nodes - sparse, may contain nils
-	hash           gitHashType
-	colors         colorSet // Flag used during deletion operations
-	implicitParent bool     // Whether the first parent was implicit
+	repo           *Repository   // The repository this is part of
+	properties     *OrderedMap   // commit properties (extension)
+	attachments    []Event       // Tags and Resets pointing at this commit
+	_parentNodes   []CommitLike  // list of parent nodes - sparse, may contain nils
+	_childNodes    []CommitLike  // list of child nodes - sparse, may contain nils
+	hash           gitHashType   // Git hash of the commit
+	colors         colorSet      // Flag used during deletion operations
+	implicitParent bool          // Whether the first parent was implicit
 }
 
 func (commit Commit) getMark() string {
