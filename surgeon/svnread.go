@@ -319,7 +319,9 @@ var preserveProperties = map[string]bool{
 
 func sdBody(line []byte) []byte {
 	// Parse the body from a Subversion header line
-	return bytes.TrimSpace(bytes.SplitN(line, []byte(":"), 2)[1])
+	// This used to use TrimSpace, but it turns out clovbbering traling spaces
+	// in Node-path lines can land you in trouble
+	return bytes.TrimSuffix(bytes.SplitN(line, []byte(": "), 2)[1], []byte{'\n'})
 }
 
 func (sp *StreamParser) sdRequireHeader(hdr string) []byte {

@@ -1,0 +1,456 @@
+SVN-fs-dump-format-version: 2
+  ## Check preservation of trailing spaces in Node-path lines
+  # If they get stripped the lasy copy operation will throw
+  # an error doe to the way reposurgeon interpets re-adding
+  # a directory. Yes, this is a real-world (though seriously
+  # trimmed) example.
+
+UUID: c97812fc-d253-487b-8882-a03e205d4398
+
+Revision-number: 0
+Prop-content-length: 242
+Content-length: 242
+
+K 8
+svn:date
+V 27
+2007-03-30T17:06:04.154851Z
+K 17
+svn:sync-from-url
+V 51
+https://pl3.projectlocker.com/LiveData/livedata/svn
+K 18
+svn:sync-from-uuid
+V 36
+940ffce2-e72c-0410-a864-ee9130fecfe5
+K 24
+svn:sync-last-merged-rev
+V 5
+39583
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 145
+Content-length: 145
+
+K 8
+svn:date
+V 27
+2011-11-30T19:46:20.235780Z
+K 7
+svn:log
+V 47
+This repo illustrates the perils of TrimSpace.
+
+K 10
+svn:author
+V 3
+esr
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 319
+Content-length: 319
+
+K 10
+svn:author
+V 8
+Rlambert
+K 8
+svn:date
+V 27
+2007-11-02T14:49:25.438233Z
+K 7
+svn:log
+V 215
+This is the BearEnergy Configuration. 
+
+Bear Energy is in the process (11/2/2007) of purchasing Williams’ energy’s electric generation interest. In the process, they are implementing an Invensys/LiveData EMS. 
+
+
+PROPS-END
+
+Node-path: trunk/UtilityProjects
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 3
+Prop-content-length: 163
+Content-length: 163
+
+K 10
+svn:author
+V 18
+shack@livedata.com
+K 8
+svn:date
+V 27
+2014-04-24T19:56:53.551012Z
+K 7
+svn:log
+V 49
+MGH5.1.1 Externals now refer to Silverlight trunk
+PROPS-END
+
+Revision-number: 4
+Prop-content-length: 133
+Content-length: 133
+
+K 10
+svn:author
+V 21
+rlambert@livedata.com
+K 8
+svn:date
+V 27
+2014-09-03T14:27:42.504954Z
+K 7
+svn:log
+V 16
+Initial check in
+PROPS-END
+
+Node-path: trunk/UtilityProjects/KCPL
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus/Config
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 5
+Prop-content-length: 152
+Content-length: 152
+
+K 10
+svn:author
+V 21
+rlambert@livedata.com
+K 8
+svn:date
+V 27
+2014-09-12T14:35:52.627419Z
+K 7
+svn:log
+V 35
+Initial check in of incomplete work
+PROPS-END
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 6
+Prop-content-length: 260
+Content-length: 260
+
+K 10
+svn:author
+V 18
+ppena@livedata.com
+K 8
+svn:date
+V 27
+2015-01-16T16:16:48.399638Z
+K 7
+svn:log
+V 145
+LU-56 for KCPL: initial commit of LiveDataServerConfigLoader.py and added BATCH_FILES_PATH and -000-Poll_Classes.csv to LiveDataNMSBatchConfig.py
+PROPS-END
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 131
+Content-length: 141
+
+PROPS-END
+Revision is 12732, file path is Projects/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py.
+
+
+Revision-number: 7
+Prop-content-length: 184
+Content-length: 184
+
+K 10
+svn:author
+V 18
+ppena@livedata.com
+K 8
+svn:date
+V 27
+2015-02-05T15:51:23.306871Z
+K 7
+svn:log
+V 70
+LU-56 KCPL: added FORCE_LOAD (-f) option to remote batch pusher script
+PROPS-END
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py
+Node-kind: file
+Node-action: change
+Text-content-length: 131
+Content-length: 131
+
+Revision is 12804, file path is Projects/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py.
+
+
+Revision-number: 8
+Prop-content-length: 250
+Content-length: 250
+
+K 10
+svn:author
+V 18
+ppena@livedata.com
+K 8
+svn:date
+V 27
+2015-06-19T23:54:45.995441Z
+K 7
+svn:log
+V 135
+KCP&L LiveDataServerConfigLoader.py and remoteBatchAccess.py: added --revert(and --standby), --help, --status, --disconnect, and --host
+PROPS-END
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py
+Node-kind: file
+Node-action: change
+Text-content-length: 131
+Content-length: 131
+
+Revision is 13930, file path is Projects/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py.
+
+
+Revision-number: 9
+Prop-content-length: 144
+Content-length: 144
+
+K 10
+svn:author
+V 19
+davids@livedata.com
+K 8
+svn:date
+V 27
+2015-08-28T22:21:38.915464Z
+K 7
+svn:log
+V 29
+Fixes for KCPL load problems.
+PROPS-END
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py
+Node-kind: file
+Node-action: change
+Text-content-length: 131
+Content-length: 131
+
+Revision is 14384, file path is Projects/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py.
+
+
+Revision-number: 10
+Prop-content-length: 190
+Content-length: 190
+
+K 10
+svn:author
+V 19
+davids@livedata.com
+K 8
+svn:date
+V 27
+2015-09-09T12:42:59.347363Z
+K 7
+svn:log
+V 75
+Indicate to the underlying routines whether or not the load is incremental.
+PROPS-END
+
+Node-path: trunk/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py
+Node-kind: file
+Node-action: change
+Text-content-length: 131
+Content-length: 131
+
+Revision is 14506, file path is Projects/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py.
+
+
+Revision-number: 11
+Prop-content-length: 118
+Content-length: 118
+
+K 10
+svn:author
+V 23
+mmcdonough@livedata.com
+K 8
+svn:date
+V 27
+2015-10-28T18:33:51.446706Z
+K 7
+svn:log
+V 0
+
+PROPS-END
+
+Node-path: trunk/UtilityProjects 
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/UtilityProjects /LiveData
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/UtilityProjects /LiveData/Config
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 12
+Prop-content-length: 182
+Content-length: 182
+
+K 10
+svn:author
+V 21
+cditrani@livedata.com
+K 8
+svn:date
+V 27
+2015-11-11T19:17:57.343661Z
+K 7
+svn:log
+V 65
+Deleting bogus direcory "UtilityProjects " (with space at end).
+
+
+PROPS-END
+
+Node-path: trunk/UtilityProjects 
+Node-action: delete
+
+
+Revision-number: 13
+Prop-content-length: 191
+Content-length: 191
+
+K 10
+svn:author
+V 34
+mazhar.iqbal@northbaysolutions.net
+K 8
+svn:date
+V 27
+2015-12-31T10:59:32.393128Z
+K 7
+svn:log
+V 61
+TortoiseSVN auto commit: changed externals to fixed revision.
+PROPS-END
+
+Revision-number: 14
+Prop-content-length: 226
+Content-length: 226
+
+K 10
+svn:author
+V 23
+tvullemier@livedata.com
+K 8
+svn:date
+V 27
+2016-01-20T21:11:41.157870Z
+K 7
+svn:log
+V 106
+initial commit of new OracleNMSCommon project w/ a copy of LiveDataServerConfigLoader.py from KCPL project
+PROPS-END
+
+Node-path: trunk/UtilityProjects/OracleNMSCommon
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/UtilityProjects/OracleNMSCommon/LiveDataServerConfigLoader.py
+Node-kind: file
+Node-action: add
+Node-copyfrom-rev: 12
+Node-copyfrom-path: trunk/UtilityProjects/KCPL/OMS_Sensus/BatchConfigurationHandling/LiveDataServerConfigLoader.py
+
+
