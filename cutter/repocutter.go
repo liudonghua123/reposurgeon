@@ -1276,13 +1276,16 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 
 // Strip out ops defined by a revision selection and a path regexp.
 func expunge(source DumpfileSource, selection SubversionRange, patterns []string) {
+	regexps := make([]*regexp.Regexp, len(patterns))
+	for i, pattern := range patterns {
+		regexps[i] = regexp.MustCompile(pattern)
+	}
 	expungehook := func(header streamSection, properties []byte, content []byte) []byte {
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
 			if nodepath != nil {
-				for _, pattern := range patterns {
-					r := regexp.MustCompile(pattern)
+				for _, r := range regexps {
 					if r.Match(nodepath) {
 						matched = true
 						break
@@ -1969,13 +1972,16 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 // Strip a portion of the dump file defined by a revision selection.
 // Sift for ops defined by a revision selection and a path regexp.
 func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
+	regexps := make([]*regexp.Regexp, len(patterns))
+	for i, pattern := range patterns {
+		regexps[i] = regexp.MustCompile(pattern)
+	}
 	sifthook := func(header streamSection, properties []byte, content []byte) []byte {
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
 			if nodepath != nil {
-				for _, pattern := range patterns {
-					r := regexp.MustCompile(pattern)
+				for _, r := range regexps {
 					if r.Match(nodepath) {
 						matched = true
 						break
