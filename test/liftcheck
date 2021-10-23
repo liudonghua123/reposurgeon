@@ -1,38 +1,4 @@
 #!/bin/sh
-#
-# liftcheck - compare reposurgeon lift of a Subversion repo with a checkout
-#
-# Produces an ok/not-ok line suitable for feeding to a TAP consumer.
-# If the comparison produces a nonempty diff, it is output as a YAML
-# block following the "not ok" linr.  If the environment variable
-# QUIET is set to 1, the diff is suppressed.
-#
-# The -v option reveals executed subcommands.
-# The -q option makes repotool extra quiet and reports only errors.
-# The -p option shows revision numbers when comparing multiple revisions
-# The -u option enables context-diffing in the compare operation
-# The -i option disables the normal suppression of ignore comparisons
-# The -d option disables removal of the generated repositories after the run
-# The -a option enables progress messages from the Subversion loader.
-# The -s option enables display of common files
-# The -r option sets a revision to check rather than trunk, branches and tags of HEAD.
-#               The corresponding git commit is found with the legacy map, which means
-#               only the branch modified in the revision will be compared, unless the
-#               -B option is also used to make a flat repository.
-#               You can use the "all" keyword or a range min-max to check multiple
-#               revisions in a row. Non-existing revisions are silently ignored,
-# The -R option sets a read limit to the dump parsing, for speed
-# The -e option sets exclude patterbs to ignore uninteresting tags and branches
-#
-# The REPOSURGEON environment variable can be used to substitute in a
-# different implementation.
-#
-# The ENGINE variable can be used to run a different converter. This is tricky,
-# read the code befire trying to use it.  Presently the only engine supported
-# is svn2git, and that only wthout an -r option.
-#
-# The TESTOPT variable can be used to pass an early command or option setting
-# to reposurgeon.
 unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
 
 export LANG=C
@@ -45,7 +11,7 @@ slimit=""
 rlimit=""
 progress=no
 readopt=""
-while getopts ade:ir:R:suvpq opt
+while getopts ade:hir:R:suvpq opt
 do
     case $opt in
 	d) debug=yes;;
@@ -58,6 +24,44 @@ do
 	                                                # to something unrelated, because we rely on it
 	                                                # to know which dir to checkout in SVN.
 	v|q) repotoolopt="${repotoolopt} -${opt}";;
+	h) cat <<EOF
+liftcheck - compare reposurgeon lift of a Subversion repo with a checkout
+
+Produces an ok/not-ok line suitable for feeding to a TAP consumer.
+If the comparison produces a nonempty diff, it is output as a YAML
+block following the "not ok" line.  If the environment variable
+QUIET is set to 1, the diff is suppressed.
+
+The -v option reveals executed subcommands.
+The -q option makes repotool extra quiet and reports only errors.
+The -p option shows revision numbers when comparing multiple revisions
+The -u option enables context-diffing in the compare operation
+The -i option disables the normal suppression of ignore comparisons
+The -d option disables removal of the generated repositories after the run
+The -a option enables progress messages from the Subversion loader.
+The -s option enables display of common files
+The -r option sets a revision to check rather than trunk/branches/tags of HEAD.
+          The corresponding git commit is found with the legacy map, which
+          means only the branch modified in the revision will be compared,
+          unless the -B option is also used to make a flat repository.
+          You can use the "all" keyword or a range min-max to check multiple
+          revisions in a row. Non-existing revisions are silently ignored,
+The -R option sets a read limit to the dump parsing, for speed
+The -e option sets exclude patterns to ignore uninteresting tags and branches
+The -h option prints this usage summary.
+
+The REPOSURGEON environment variable can be used to substitute in a
+different implementation.
+
+The ENGINE variable can be used to run a different converter. This is tricky,
+read the code before trying to use it.  Presently the only engine supported
+other than reposurgeon itself is svn2git, and that only wthout an -r option.
+
+The TESTOPT variable can be used to pass an early command or option setting
+to reposurgeon.
+EOF
+	exit 0
+        ;;
 	*) echo "$0: unknown flag $opt" >&2; exit 1;;
     esac
 done
