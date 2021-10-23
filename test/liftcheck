@@ -33,8 +33,6 @@
 #
 # The TESTOPT variable can be used to pass an early command or option setting
 # to reposurgeon.
-set -e
-
 unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
 
 export LANG=C
@@ -104,11 +102,13 @@ do
     mkdir "${TMPDIR}"
 
     # shellcheck disable=SC2039
-    description=$(sed -n <"${what}" -e '/ ## /s///p' || echo 'no description')
+    description=$(sed -n <"${what}" -e '/ ##  */s///p' || echo 'no description')
 
     # Make a Subversion repo from the dump
     # shellcheck disable=SC2086
-    ./svn-to-svn ${svnquiet} ${slimit} -c <${what} ${stem}
+    ./svn-to-svn ${svnquiet} ${slimit} -c <${what} ${stem} \
+    	|| { echo "not ok - ${what}: svn-to-svn within liftcheck failed"; exit 1; }
+
 
     cat /dev/null >/tmp/warnings$$
     case ${ENGINE} in
@@ -126,7 +126,7 @@ do
 		 outdev=null
 	     fi
 	     svnrepo=file://${PWD}/${stem}
-	     # shellcheck disable=SC2086
+	     # shellcheck disable=SC2086,2164
 	     (mkdir ${stem}-git; cd ${stem}-git >/dev/null; svn2git ${svnrepo} >/dev/${outdev};)
 	     ;;
 	 *)
@@ -219,7 +219,8 @@ do
 	    # shellcheck disable=2086
 	    ../${REPOTOOL:-repotool} compare ${repotoolopt} ${compareopt} \
 		-a ${refopt} -r ${intrev}:${sha} \
-		${stem}-checkout ${stem}-git >>/tmp/diff$$ 2>>/tmp/warnings$$
+		${stem}-checkout ${stem}-git >>/tmp/diff$$ 2>>/tmp/warnings$$ \
+		|| { echo "not ok - ${what}: repotool within liftcheck failed"; exit 1; }
 	done < "${stem}.info"
     else
 
@@ -234,7 +235,8 @@ do
 	# Compare the original with the lift
 	# shellcheck disable=SC2086
 	../${REPOTOOL:-repotool} compare-all ${repotoolopt} ${compareopt} \
-					       ${stem}-checkout ${stem}-git  tee /tmp/diff$$ 2>>/tmp/warnings$$
+	   ${stem}-checkout ${stem}-git  tee /tmp/diff$$ 2>>/tmp/warnings$$ \
+	    || { echo "not ok - ${what}: repotool within liftcheck failed"; exit 1; }
     fi
 
     if [ ! -s /tmp/diff$$ ]
