@@ -53,7 +53,7 @@ will silently refrain from doing this if you don't have it installed.
 
 The repotool mirror code needs rsync.
 
-GNU make is required for the regression testsm but not for running the
+GNU make is required for the regression tests, but not for running the
 code.  golint, shellcheck, mercurial, and cvs sre required for
 the full regression tests; only a subset of the tests will be run in
 their absence.  The cvs-fast-export and Subversion svnadmin importer
@@ -84,5 +84,8 @@ require them.
 It probably is not necessary to package repobench, as it is
 a benchmarking tool only of interest to developers working
 with the source distribution.
+
+The scripts in contrib/ are unstable, undocumented, and
+should not be packaged.
 
 // end
