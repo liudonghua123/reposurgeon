@@ -144,7 +144,7 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 				// tcdrain(), but I can't seem to make
 				// that work.
 				if term.IsTerminal(int(me.stream.Fd())) {
-					termios.Tcflush(me.stream.Fd(), termios.TCOFLUSH)
+					termios.Tcdrain(me.stream.Fd())
 				}
 				me.channel <- msg
 			} else if me.stream != nil {
