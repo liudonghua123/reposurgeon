@@ -9118,8 +9118,10 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 		}
 		check := strings.TrimSpace(change.update.getHeader("Check-Text"))
 		if check != "" && !strings.HasPrefix(strings.TrimSpace(change.event.getComment()), check) {
-			croak("msgin: check text mismatch at %s (input %d of %d), expected %q saw %q, bailing out", change.event.idMe(), i+1, len(updateList), check, change.event.getComment())
-			return errorCount + 1, warnCount, 0
+			seen := change.event.getComment()
+			croak("msgin: check text mismatch at %s (input %d of %d), expected %q saw %q", change.event.idMe(), i+1, len(updateList), check, seen[:min(len(check), len(seen))])
+			errorCount++
+			continue
 		}
 		if emptyOnly {
 			if change.event.getComment() != change.update.getPayload() && !emptyComment(change.event.getComment()) {
