@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""
+Semple select of revisions in a dunmp stream.
+Arguments afe the staert and end of the revision
+range, inclusive.  Exists for cases where repocutter
+would trip over an error.
+
+Copyright by Eric S. Raymond
+SPDX-License-Identifier: BSD-2-Clause
+"""
+
+import sys
+
+# pylint: disable=invalid-name
+copylatch = False
+
+start_select = int(sys.argv[1])
+end_select = int(sys.argv[2])
+
+# pylint: disable=invalid-name
+for line in sys.stdin:
+    if line.startswith("Revision-number: %d" % (end_select+1)):
+        break
+    if line.startswith("Revision-number: %d" % start_select):
+        copylatch = True
+    if copylatch:
+        sys.stdout.write(line)
+
+#end

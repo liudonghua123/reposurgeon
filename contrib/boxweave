@@ -1,0 +1,112 @@
+#! /usr/bin/env python3
+"""
+Weave a set of message-box files together,
+leaving the result in soryed order. Error out
+if the same upfadate occurs in two different
+streams.
+
+The -r option sets the field to key on; it
+must be converible to a float. The default is
+Legacy-ID.
+
+The -s option enables lifting of Subversion
+references in body text. Check-Text lines
+are not altered.
+
+Copyright by Eric S. Raymond
+SPDX-License-Identifier: BSD-2-Clause
+"""
+
+import getopt
+import re
+import sys
+
+reTransforms = []
+
+# pylint: disable=invalid-name
+if __name__ == '__main__':
+    hdr = "Legacy-ID"
+
+    # Process options
+    try:
+        (options, arguments) = getopt.getopt(sys.argv[1:], "r:s")
+    except getopt.GetoptError as e:
+        sys.stderr.write(str(e)+"\n")
+        sys.exit(1)
+
+    for (switch, val) in options:
+        if switch == '-r':
+            hdr = val
+        elif switch == '-s':
+            reTransforms = [
+                (r'\br([0-9]+):r([0-9]+)\b', r'[[SVN:\1]] to [[SVN:\2]]'),
+                (r'\br([0-9]+):([0-9]+)\b', r'[[SVN:\1]] to [[SVN:\2]]'),
+                (r'Tag from zero-fileop commit at Subversion r([0-9]+)',
+                 r'Tag from zero-fileop commit at Subversion SVN:\1'),
+                (r'\br([0-9]+)\b', r'[[SVN:\1]]'),
+                ]
+
+    for i, (lre, lsub) in enumerate(reTransforms):
+        reTransforms[i] = (re.compile(lre), lsub)
+
+    # Open all streams
+    try:
+        streams = [open(x) for x in arguments]
+    except OSError as e:
+        sys.stderr.write(str(e)+"\n")
+        sys.exit(1)
+
+    # Toss out initial message delimiter
+    for _, fp in enumerate(streams):
+        firstline = fp.readline()
+        if not firstline.startswith("------------"):
+            sys.stderr.write("%s: not a message-box file" % fp.name)
+            sys.exit(1)
+
+    # Build indices
+    index = []
+    for i, fp in enumerate(streams):
+        partial = []
+        seqno = 0
+        while True:
+            nextline = fp.readline()
+            if nextline.startswith(hdr + ": "):
+                seqno = float(nextline.split(":")[1].strip())
+            elif nextline == "" or nextline.startswith("-------------------------"):
+                partial.append((i, seqno, fp.tell()))
+                if nextline == "":
+                    break
+        index.append(partial)
+        fp.seek(0, 0)
+
+    # The actual merge logic
+    while sum([len(x) for x in index]):
+        # Get all the next available entries in each stream
+        front = [x[0] for x in index if len(x) > 0]
+        # Sort by ID
+        front.sort(key=lambda x: x[1])
+        # Bail out if the least value occurs more than once
+        if len(front) > 1 and front[0][1] == front[1][1]:
+            sys.stderr.write("boxweave: %.2f collision, %s and %s\n" \
+                             % (front[0][1], streams[front[0][0]].name, streams[front[1][0]].name))
+            sys.exit(1)
+        # Otherwise we've found the next message to ship
+        # and pop off the corresponding index list.
+        # print(front[0])
+        selected = front[0][0]
+        source = streams[selected]
+        bodylatch = False
+        while True:
+            nextline = source.readline()
+            if nextline == "\n":
+                bodylatch = True
+            if bodylatch:
+                for (lre, lsub) in reTransforms:
+                    # pylint: disable=no-member
+                    nextline = lre.sub(lsub, nextline)
+            sys.stdout.write(nextline)
+            if source.tell() >= front[0][2]:
+                break
+        index[selected].pop(0)
+
+# end
