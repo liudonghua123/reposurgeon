@@ -19,6 +19,7 @@ import (
 
 	termios "github.com/pkg/term/termios"
 	terminfo "github.com/xo/terminfo"
+	term "golang.org/x/term"
 )
 
 // Baton is the overall state of the output
@@ -142,7 +143,9 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 				// sync.  It would be better to use
 				// tcdrain(), but I can't seem to make
 				// that work.
-				termios.Tcflush(os.Stdout.Fd(), termios.TCOFLUSH)
+				if term.IsTerminal(int(me.stream.Fd())) {
+					termios.Tcflush(me.stream.Fd(), termios.TCOFLUSH)
+				}
 				me.channel <- msg
 			} else if me.stream != nil {
 				if msg.ty == LOG {
@@ -255,6 +258,7 @@ func (baton *Baton) endProcess(endmsg ...string) {
 		baton.process.startmsg = nil
 		baton.process.endmsg = nil
 		baton.channel <- Message{PROGRESS, nil}
+		baton.Sync()
 	}
 }
 
@@ -291,6 +295,7 @@ func (baton *Baton) endcounter() {
 		baton.counter.format = ""
 		baton.counter.count = 0
 		baton.channel <- Message{PROGRESS, nil}
+		baton.Sync()
 	}
 }
 
@@ -335,6 +340,7 @@ func (baton *Baton) endProgress() {
 		baton.progress.count = 0
 		baton.progress.expected = 0
 		baton.channel <- Message{PROGRESS, nil}
+		baton.Sync()
 		baton.progress.Unlock()
 	}
 }
