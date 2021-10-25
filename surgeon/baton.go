@@ -139,10 +139,8 @@ func newBaton(interactive bool, logFunc func(string)) *Baton {
 				// the update will hang in the tty
 				// buffer and get flushed out when
 				// reposurgeon exits.  Forestall this
-				// by flushing that buffer on every
-				// sync.  It would be better to use
-				// tcdrain(), but I can't seem to make
-				// that work.
+				// by draining that buffer on every
+				// sync.
 				if term.IsTerminal(int(me.stream.Fd())) {
 					termios.Tcdrain(me.stream.Fd())
 				}
@@ -379,7 +377,7 @@ func (baton *Twirly) render(b io.Writer) {
 	baton.RLock()
 	defer baton.RUnlock()
 	character := "-\\|/"[baton.count]
-	b.Write([]byte{32, character})
+	b.Write([]byte{' ', character})
 }
 
 func (baton *Counter) render(b io.Writer) {
