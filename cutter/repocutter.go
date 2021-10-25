@@ -23,6 +23,7 @@ import (
 )
 
 const linesep = "\n"
+const pathsep = "/" // Arrgh - we should derive this from os.PathSeparator
 
 var doc = `repocutter - stream surgery on SVN dump files
 general usage: repocutter [-q] [-r SELECTION] SUBCOMMAND
@@ -1369,7 +1370,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 			if _, present := props.properties[mergeproperty]; present {
 				oldval := props.properties["svn:mergeinfo"]
 				rooted := false
-				if oldval[0] == '/' {
+				if oldval[0] == os.PathSeparator {
 					rooted = true
 					oldval = oldval[1:]
 				}
@@ -1403,7 +1404,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 			if _, present := props.properties[mergeproperty]; present {
 				oldval := props.properties["svn:mergeinfo"]
 				rooted := false
-				if oldval[0] == '/' {
+				if oldval[0] == os.PathSeparator {
 					rooted = true
 					oldval = oldval[1:]
 				}
@@ -1544,8 +1545,8 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 						if strings.Contains(line, ":") {
 							lastidx := strings.LastIndex(line, ":")
 							path, revrange := line[:lastidx], line[lastidx+1:]
-							if path[0] == '/' {
-								buffer.WriteByte(byte('/'))
+							if path[0] == os.PathSeparator {
+								buffer.WriteByte(byte(os.PathSeparator))
 								path = path[1:]
 							}
 							buffer.Write(pathMutator([]byte(path)))
@@ -2097,37 +2098,37 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	swapper := func(path []byte) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
-		rooted := len(path) > 0 && (path[0] == byte('/'))
+		rooted := len(path) > 0 && (path[0] == byte(os.PathSeparator))
 		if rooted {
 			path = path[1:]
 		}
-		parts := bytes.Split(path, []byte("/"))
+		parts := bytes.Split(path, []byte{os.PathSeparator})
 		if len(parts) >= 2 {
-			top := parts[0]
+			top := string(parts[0])
 			if structural {
 				under := string(parts[1])
 				if under == "trunk" {
 					parts[0] = parts[1]
-					parts[1] = top
+					parts[1] = []byte(top)
 				} else if under == "branches" || under == "tags" {
+					// Shift "branches" or "tags" to top level
+					parts[0] = []byte(under)
 					if len(parts) >= 3 {
-						parts[0] = parts[1]
 						parts[1] = parts[2]
-						parts[2] = top
+						parts[2] = []byte(top)
 					} else {
-						parts[0] = parts[1]
-						parts[1] = top
+						parts[1] = []byte(top)
 					}
 				}
 			} else { // naive swap
 				parts[0] = parts[1]
-				parts[1] = top
+				parts[1] = []byte(top)
 			}
 		}
 		if rooted {
-			parts[0] = append([]byte{'/'}, parts[0]...)
+			parts[0] = append([]byte{os.PathSeparator}, parts[0]...)
 		}
-		return bytes.Join(parts, []byte("/"))
+		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
 	revhook := func(props *Properties) {
 		swapped := make([]string, 0)
@@ -2200,7 +2201,7 @@ PROPS-END
 			isDir := header.isDir()
 			branchcopy := isDir && (isCopy || isDelete)
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
-				parts := bytes.Split(in, []byte("/"))
+				parts := bytes.Split(in, []byte{os.PathSeparator})
 				if structural && branchcopy && len(parts) == 3 {
 					top := string(parts[0])
 					if top == "trunk" {
@@ -2209,7 +2210,7 @@ PROPS-END
 						parts = parts[:2]
 					}
 				}
-				return bytes.Join(parts, []byte("/"))
+				return bytes.Join(parts, []byte{os.PathSeparator})
 			})
 			if oldval != nil && newval == nil {
 				return nil
@@ -2232,7 +2233,7 @@ PROPS-END
 				lastDelete = ""
 			} else if !isDelete {
 				header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
-					parts := bytes.Split(in, []byte("/"))
+					parts := bytes.Split(in, []byte{os.PathSeparator})
 					if len(parts) == 3 {
 						top := string(parts[0])
 						if top == "trunk" {
@@ -2241,7 +2242,7 @@ PROPS-END
 							parts = parts[:2]
 						}
 					}
-					return bytes.Join(parts, []byte("/"))
+					return bytes.Join(parts, []byte{os.PathSeparator})
 				})
 				thisCopyPair.copyfromPath = string(newval)
 
