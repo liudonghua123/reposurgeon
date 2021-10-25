@@ -630,7 +630,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 						backdown--
 					}
 					if backdown != copyfrom {
-						if logEnable(logWARN) {
+						if logEnable(logSVNPARSE) {
 							logit("node list parsing, line %d: missing copyfrom %d -> %d",
 								sp.importLine, copyfrom, backdown)
 						}
