@@ -2204,9 +2204,7 @@ PROPS-END
 				parts := bytes.Split(in, []byte{os.PathSeparator})
 				if structural && branchcopy && len(parts) == 3 {
 					top := string(parts[0])
-					if top == "trunk" {
-						parts = parts[:1]
-					} else if top == "branches" || top == "tags" {
+					if top == "branches" || top == "tags" {
 						parts = parts[:2]
 					}
 				}

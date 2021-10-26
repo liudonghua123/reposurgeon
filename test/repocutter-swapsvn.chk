@@ -601,7 +601,7 @@ V 26
 Example cross-project copy
 PROPS-END
 
-Node-path: trunk
+Node-path: trunk/project1/evilcopy
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 18
