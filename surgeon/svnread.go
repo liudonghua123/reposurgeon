@@ -1702,7 +1702,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						// This should never happen. If we can't find an ancestor for any node
 						// it means the dumpfile is malformed.  Might be triggered during partial
 						// lifts of multiproject repos - means the conversion pipeline deleted
-						// something before reposurgein saw it that needed to be used later.
+						// something before reposurgeon saw it that needed to be used later.
 						if logEnable(logWARN) {
 							logit("r%d~%s: ancestor node is missing.", node.revision, node.path)
 						}
