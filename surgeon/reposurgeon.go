@@ -607,7 +607,6 @@ func (rs *Reposurgeon) PostCmd(stop bool, lineIn string) bool {
 	if control.logcounter > rs.logHighwater {
 		respond("%d new log message(s)", control.logcounter-rs.logHighwater)
 	}
-	control.baton.Sync()
 	return stop
 }
 
@@ -7698,7 +7697,6 @@ func main() {
 
 	defer func() {
 		maybePanic := recover()
-		control.baton.Sync()
 		saveAllProfiles()
 		files, err := ioutil.ReadDir("./")
 		if err == nil {

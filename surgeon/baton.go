@@ -27,7 +27,6 @@ type Baton struct {
 	progressEnabled bool
 	logFunc         func(string)
 	stream          *os.File
-	channel         chan Message
 	start           time.Time
 	twirly          Twirly
 	counter         Counter
@@ -84,17 +83,7 @@ const (
 	// PROGRESS messages are printed to the status line,
 	// overwriting whatever was already there
 	PROGRESS
-	// SYNC allows for synchronization between the goroutine and
-	// the calling code; the goroutine replies but takes no other
-	// action
-	SYNC
 )
-
-// Message is content for a baton display
-type Message struct {
-	ty  msgType
-	str []byte
-}
 
 var ti *terminfo.Terminfo
 
@@ -121,76 +110,52 @@ const progressInterval = 1 * time.Second     // Rate-limit progress messages
 func newBaton(interactive bool, logFunc func(string)) *Baton {
 	me := new(Baton)
 	me.start = time.Now()
-	me.channel = make(chan Message)
 	me.progressEnabled = interactive
 	me.logFunc = logFunc
-	go func() {
-		lastProgress := &[]byte{}
-		for {
-			msg := <-me.channel
-			if msg.ty == SYNC {
-				// This deals with a peculiar edge
-				// case.  It's possible for the last
-				// progress message shipped to not
-				// have ended with a LF - in
-				// particular on a progress message
-				// truncated to terminal width to
-				// avoid wraparound. If this happens
-				// the update will hang in the tty
-				// buffer and get flushed out when
-				// reposurgeon exits.  Forestall this
-				// by draining that buffer on every
-				// sync.
-				if term.IsTerminal(int(me.stream.Fd())) {
-					termios.Tcdrain(me.stream.Fd())
-				}
-				me.channel <- msg
-			} else if me.stream != nil {
-				if msg.ty == LOG {
-					if me.progressEnabled {
-						ti.Fprintf(me.stream, terminfo.CarriageReturn)
-						ti.Fprintf(me.stream, terminfo.ClrEol)
-						me.stream.Write(msg.str)
-						if !bytes.HasSuffix(msg.str, ti.Strings[terminfo.ScrollForward]) {
-							ti.Fprintf(me.stream, terminfo.ScrollForward)
-						}
-						ti.Fprintf(me.stream, terminfo.CarriageReturn)
-						me.stream.Write(*lastProgress)
-					} else {
-						if len(msg.str) != 0 {
-							me.stream.Write(msg.str)
-						}
-						if !bytes.HasSuffix(msg.str, []byte{'\n'}) {
-							me.stream.Write([]byte{'\n'})
-						}
-					}
-				} else if msg.ty == PROGRESS {
-					ti.Fprintf(me.stream, terminfo.CarriageReturn)
-					ti.Fprintf(me.stream, terminfo.ClrEol)
-					me.stream.Write(msg.str)
-					lastProgress = &msg.str
-				}
-			}
-		}
-	}()
 	me.stream = os.Stdout
 
 	return me
 }
 
-func (baton *Baton) setInteractivity(enabled bool) {
-	if baton != nil {
-		baton.channel <- Message{SYNC, nil}
-		baton.progressEnabled = enabled
-		<-baton.channel
+func (baton *Baton) progressWrite(ty msgType, payload []byte) {
+	if baton.stream != nil {
+		if ty == LOG {
+			if baton.progressEnabled {
+				ti.Fprintf(baton.stream, terminfo.CarriageReturn)
+				ti.Fprintf(baton.stream, terminfo.ClrEol)
+				baton.stream.Write(payload)
+				if !bytes.HasSuffix(payload, ti.Strings[terminfo.ScrollForward]) {
+					ti.Fprintf(baton.stream, terminfo.ScrollForward)
+				}
+				ti.Fprintf(baton.stream, terminfo.CarriageReturn)
+				if term.IsTerminal(int(baton.stream.Fd())) {
+					termios.Tcdrain(baton.stream.Fd())
+				}
+			} else {
+				if len(payload) != 0 {
+					baton.stream.Write(payload)
+				}
+				if !bytes.HasSuffix(payload, []byte{'\n'}) {
+					baton.stream.Write([]byte{'\n'})
+				}
+			}
+		} else if ty == PROGRESS {
+			ti.Fprintf(baton.stream, terminfo.CarriageReturn)
+			ti.Fprintf(baton.stream, terminfo.ClrEol)
+			baton.stream.Write(payload)
+		}
 	}
+}
+
+func (baton *Baton) setInteractivity(enabled bool) {
+	baton.progressEnabled = enabled
 }
 
 // printLog prints out a simple log message
 func (baton *Baton) printLog(str []byte) {
 	if baton != nil {
 		if baton.progressEnabled {
-			baton.channel <- Message{LOG, _copyb(str)}
+			baton.progressWrite(LOG, str)
 		} else {
 			baton.stream.Write(str)
 		}
@@ -201,7 +166,7 @@ func (baton *Baton) printLog(str []byte) {
 func (baton *Baton) printLogString(str string) {
 	if baton != nil {
 		if baton.progressEnabled {
-			baton.channel <- Message{LOG, _copystr(str)}
+			baton.progressWrite(LOG, []byte(str))
 		} else {
 			baton.stream.WriteString(str)
 		}
@@ -213,7 +178,7 @@ func (baton *Baton) printProgress() {
 	if baton != nil && baton.progressEnabled {
 		var buf bytes.Buffer
 		baton.render(&buf)
-		baton.channel <- Message{PROGRESS, _copyb(buf.Bytes())}
+		baton.progressWrite(PROGRESS, buf.Bytes())
 	}
 }
 
@@ -255,8 +220,7 @@ func (baton *Baton) endProcess(endmsg ...string) {
 			baton.process.endmsg)
 		baton.process.startmsg = nil
 		baton.process.endmsg = nil
-		baton.channel <- Message{PROGRESS, nil}
-		baton.Sync()
+		baton.progressWrite(PROGRESS, nil)
 	}
 }
 
@@ -292,8 +256,7 @@ func (baton *Baton) endcounter() {
 		defer baton.counter.Unlock()
 		baton.counter.format = ""
 		baton.counter.count = 0
-		baton.channel <- Message{PROGRESS, nil}
-		baton.Sync()
+		baton.progressWrite(PROGRESS, nil)
 	}
 }
 
@@ -337,8 +300,7 @@ func (baton *Baton) endProgress() {
 		baton.progress.tag = nil
 		baton.progress.count = 0
 		baton.progress.expected = 0
-		baton.channel <- Message{PROGRESS, nil}
-		baton.Sync()
+		baton.progressWrite(PROGRESS, nil)
 		baton.progress.Unlock()
 	}
 }
@@ -354,14 +316,6 @@ func (baton *Baton) Write(b []byte) (n int, err error) {
 // Close is a stub so Batons will satisfy Closer
 func (baton *Baton) Close() error {
 	return nil
-}
-
-// Sync forces out pending progress messages from a baton
-func (baton *Baton) Sync() {
-	if baton.progressEnabled {
-		baton.channel <- Message{SYNC, nil}
-		<-baton.channel
-	}
 }
 
 func (baton *Baton) render(buf io.Writer) {
@@ -443,14 +397,4 @@ func (baton *Process) renderPost(b io.Writer) {
 	b.Write(baton.endmsg)
 }
 
-func _copystr(s string) []byte {
-	temp := make([]byte, len(s))
-	copy(temp, s)
-	return temp
-}
-
-func _copyb(s []byte) []byte {
-	temp := make([]byte, len(s))
-	copy(temp, s)
-	return temp
-}
+// end
