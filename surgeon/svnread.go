@@ -257,18 +257,33 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 	// of the dump reader develop some serious bug.  As the dump
 	// reader has been stable for many months now we'll just
 	// comment it out.
-	//if logEnable(logFILEMAP) {
-	//	logit("Filemap at %d: %v", revision, h.visible[revision])
-	//}
+	if logEnable(logFILEMAP) {
+		//logit("Filemap at %d: %v", revision, h.visible[revision])
+		count := 0
+		// Dump only file nodes.
+		for _, path := range h.visible[revision].pathnames() {
+			val, _ := h.visible[revision].get(path)
+			if val.(*NodeAction).kind == sdFILE {
+				if count == 0 {
+					logit("Filemap at %d:", revision)
+				}
+				count++
+				logit("\tPath %s goes to %s", path, val.(*NodeAction))
+			}
+		}
+	}
 }
 
 func (h *History) getActionNode(revision revidx, source string) *NodeAction {
 	p, _ := h.visible[revision].get(source)
 	if p != nil {
 		if logEnable(logFILEMAP) {
-			logit("getActionNode(%d, %s) -> %s\n", revision, source, p.(*NodeAction))
+			logit("getActionNode(%d, %s) -> %s", revision, source, p.(*NodeAction))
 		}
 		return p.(*NodeAction)
+	}
+	if logEnable(logFILEMAP) {
+		logit("getActionNode(%d, %s) -> nil", revision, source)
 	}
 	return nil
 }
@@ -741,7 +756,7 @@ func (action NodeAction) String() string {
 	out += " " + string(actionValues[action.action])
 	out += " " + string(pathTypeValues[action.kind])
 	out += " '" + action.path + "'"
-	if action.fromRev != 0 || action.fromPath != "" {
+	if action.isCopy() {
 		out += fmt.Sprintf(" from=%d", action.fromRev) + "~" + action.fromPath
 	}
 	//if action.fileSet != nil && !action.fileSet.isEmpty() {
@@ -758,7 +773,7 @@ func (action NodeAction) hasProperties() bool {
 }
 
 func (action NodeAction) isCopy() bool {
-	return action.fromPath != ""
+	return action.fromPath != "" || action.fromRev != 0
 }
 
 func (action NodeAction) isBogon() bool {
@@ -1303,6 +1318,9 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 
 	// Try to figure out who the ancestor of this node is.
 	seekAncestor := func(sp *StreamParser, node *NodeAction, hash map[string]*NodeAction) *NodeAction {
+		if logEnable(logANCESTRY) {
+			logit("seekAncestor(%s, ...) copy = %v", node, node.isCopy())
+		}
 		var lookback *NodeAction
 		if node.isCopy() {
 			// Try first via fromRev/fromPath.  The reason
@@ -2115,7 +2133,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 			if record != nil {
 				// Simple case: find attachment points defined by branch copies
 				for _, node := range record.nodes {
-					if node.kind == sdDIR && node.fromRev != 0 &&
+					if node.kind == sdDIR && node.isCopy() &&
 						trimSep(node.path) == branch {
 						frombranch := node.fromPath
 						if !sp.isDeclaredBranch(frombranch) {
