@@ -56,21 +56,22 @@ import (
 )
 
 type svnReader struct {
-	maplock    sync.Mutex         // Lock modification of shared maps
-	branchify  map[int][][]string // Parsed branchification setting
-	revisions  []RevisionRecord
-	revmap     map[revidx]revidx // Indices in the revisions array to Subversion revision IDs
-	backfrom   map[revidx]revidx // Subversion revision ID to previous revision ID
-	streamview []*NodeAction     // All nodes in stream order
-	hashmap    map[string]*NodeAction
-	history    *History
+	maplock   sync.Mutex         // Lock modification of shared maps
+	branchify map[int][][]string // Parsed branchification setting
+	revisions []RevisionRecord
+	revmap    map[revidx]revidx // Indices in the revisions array to Subversion revision IDs
+	backfrom  map[revidx]revidx // Subversion revision ID to previous revision ID
+	hashmap   map[string]*NodeAction
+	history   *History
 	// a map from SVN branch names to a revision-indexed list of "last commits"
 	// (not to be used directly but through lastRelevantCommit)
 	lastCommitOnBranchAt map[string][]*Commit
 	// a map from SVN branch names to root commits (there can be several in case
 	// of branch deletions since the commit recreating the branch is also root)
 	branchRoots map[string][]*Commit
+	streamcount int
 	flat        bool
+	firstnode   *NodeAction
 }
 
 func (sp *svnReader) maxRev() revidx {
@@ -423,9 +424,27 @@ func (sp *StreamParser) revision(n revidx) *RevisionRecord {
 	if rev, ok := sp.revmap[n]; ok {
 		return &sp.revisions[rev]
 	}
-	// This should never happen. It used to, on stream files with gaps in the revisionm sequence,
+	// This should never happen. It used to, on stream files with gaps in the revision sequence,
 	// but there is now fallback logic in the node-parsing phase to fix those up.
 	panic(throw("parse", fmt.Sprintf("from-reference to nonexistent Subversion revision %d", n)))
+}
+
+func (sp *svnReader) next(action *NodeAction) *NodeAction {
+	revindex, ok := sp.revmap[action.revision]
+	if !ok {
+		// should never happen
+		panic(throw("parse", fmt.Sprintf("nonexistent Subversion revision %d", action.revision)))
+	}
+	revision := sp.revisions[revindex]
+	if int(action.index) < len(revision.nodes) {
+		return revision.nodes[action.index] // action.indwx is 1-origin
+	}
+	for revindex++; int(revindex) < len(sp.revisions); revindex++ {
+		if len(sp.revisions[revindex].nodes) > 0 {
+			return sp.revisions[revindex].nodes[0]
+		}
+	}
+	return nil
 }
 
 // Fast append avoids doing a full copy of the slice on every allocation
@@ -567,7 +586,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 								logit("node parsing, line %d: node %s appended", sp.importLine, node)
 							}
 							nodes = append(nodes, node)
-							sp.streamview = append(sp.streamview, node)
+							sp.streamcount++
 							if logEnable(logEXTRACT) {
 								logit("r%d-%d: %s", node.revision, node.index, node)
 							} else if node.kind == sdDIR &&
@@ -587,6 +606,9 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 					// Normal case
 					if node == nil {
 						node = new(NodeAction)
+						if sp.firstnode == nil {
+							sp.firstnode = node
+						}
 					}
 					node.path = string(sdBody(line))
 					if !strings.HasPrefix(node.path, "trunk/") {
@@ -737,9 +759,9 @@ type NodeAction struct {
 	props      *OrderedMap
 	fileSet    *PathMap
 	blobmark   markidx
-	revision   revidx
+	revision   revidx // Revision ID, not the inswsx in the revisions array
 	fromRev    revidx
-	index      nodeidx
+	index      nodeidx // 1-origin
 	fromIdx    nodeidx
 	kind       uint8
 	action     uint8 // initially sdNONE
@@ -1071,8 +1093,9 @@ func svnFilterProperties(ctx context.Context, sp *StreamParser, options stringSe
 	if logEnable(logEXTRACT) {
 		logit("SVN Phase 2: filter properties")
 	}
-	baton.startProgress("SVN2: filter properties", uint64(len(sp.streamview)))
-	for si, node := range sp.streamview {
+	baton.startProgress("SVN2: filter properties", uint64(sp.streamcount))
+	si := 0
+	for node := sp.firstnode; node != nil; node = sp.next(node) {
 		// Handle per-path properties.
 		if node.hasProperties() {
 			// Some properties should be quietly ignored
@@ -1114,9 +1137,9 @@ func svnFilterProperties(ctx context.Context, sp *StreamParser, options stringSe
 			}
 		}
 		baton.percentProgress(uint64(si))
+		si++
 	}
 	baton.endProgress()
-	sp.streamview = nil // Allow GC
 }
 
 func svnBuildFilemaps(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
