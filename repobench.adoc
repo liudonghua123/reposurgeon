@@ -1,4 +1,4 @@
-= repomapper(1) =
+= repobench(1) =
 :doctype: manpage
 
 == NAME ==
