@@ -778,7 +778,7 @@ matches what you see in the source repository; this is the easiest way
 to spot when one has been attached to the wrong commit, something that
 can be manually fixed by editing its "from" field.
 
-The command `=I` will select all commits mitch attributions and
+The command `=I` will select all commits with attributions and
 comments that don't decode to UTF-8 in both the commit comment and
 attribution parts.  You can eyeball those to figure out what the
 encoding is and apply the `<<transcode_cmd>>` command to fix things.
