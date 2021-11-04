@@ -104,7 +104,7 @@ type svnReader struct {
 	firstnode   *NodeAction
 }
 
-func (sp *svnReader) maxRev() revidx {
+func (sp svnReader) maxRev() revidx {
 	if len(sp.revisions) == 0 {
 		return 0
 	}
@@ -112,7 +112,7 @@ func (sp *svnReader) maxRev() revidx {
 }
 
 // isDeclaredBranch returns true iff the user requested that this path be treated as a branch or tag.
-func (sp *StreamParser) isDeclaredBranch(path string) bool {
+func (sp svnReader) isDeclaredBranch(path string) bool {
 	np := trimSep(path)
 	if np == "" {
 		return false
@@ -131,7 +131,7 @@ func (sp *StreamParser) isDeclaredBranch(path string) bool {
 	return sp.isDeclaredBranchComponents(components)
 }
 
-func (sp *StreamParser) isDeclaredBranchComponents(components []string) bool {
+func (sp svnReader) isDeclaredBranchComponents(components []string) bool {
 	L := len(components)
 	// When branchify contains an entry ending in /*, we say that everything
 	// up to the last /* is a namespace. Namespaces are not accepted as
@@ -164,7 +164,7 @@ func (sp *StreamParser) isDeclaredBranchComponents(components []string) bool {
 }
 
 // splitSVNBranchPath splits a node path into the part that identifies the branch and the rest, as determined by the current branch map
-func (sp *StreamParser) splitSVNBranchPath(path string) (string, string) {
+func (sp svnReader) splitSVNBranchPath(path string) (string, string) {
 	components := strings.Split(path, svnSep)
 	if len(components) > 1 && components[0] == "" {
 		// Ignore any leading svnSep
