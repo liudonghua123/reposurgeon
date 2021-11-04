@@ -55,6 +55,36 @@ import (
 	"unsafe" // Actually safe - only uses Sizeof
 )
 
+// Helpers for manipulating pathna,es in Subversion files.
+
+// Path separator as found in Subversion dump files. Isolated because
+// it might be "\" on OSes not to be mentioned in polite company.
+var svnSep = string([]byte{os.PathSeparator})
+var svnSepWithStar = svnSep + "*"
+
+// Helpers for branch analysis
+
+// containingDir is a cut-down version of filepath.Dir
+func containingDir(s string) string {
+	i := strings.LastIndexByte(s, os.PathSeparator)
+	if i <= 0 {
+		return ""
+	}
+	return s[:i]
+}
+
+// trimSep is an ad-hoc version of strings.Trim(xxx, svnSep)
+func trimSep(s string) string {
+	if len(s) > 0 && s[0] == svnSep[0] {
+		s = s[1:]
+	}
+	l := len(s)
+	if l > 0 && s[l-1] == svnSep[0] {
+		s = s[:l-1]
+	}
+	return s
+}
+
 type svnReader struct {
 	maplock   sync.Mutex         // Lock modification of shared maps
 	branchify map[int][][]string // Parsed branchification setting
@@ -79,29 +109,6 @@ func (sp *svnReader) maxRev() revidx {
 		return 0
 	}
 	return sp.revisions[len(sp.revisions)-1].revision
-}
-
-// Helpers for branch analysis
-
-// containingDir is a cut-down version of filepath.Dir
-func containingDir(s string) string {
-	i := strings.LastIndexByte(s, os.PathSeparator)
-	if i <= 0 {
-		return ""
-	}
-	return s[:i]
-}
-
-// trimSep is an ad-hoc version of strings.Trim(xxx, svnSep)
-func trimSep(s string) string {
-	if len(s) > 0 && s[0] == svnSep[0] {
-		s = s[1:]
-	}
-	l := len(s)
-	if l > 0 && s[l-1] == svnSep[0] {
-		s = s[:l-1]
-	}
-	return s
 }
 
 // isDeclaredBranch returns true iff the user requested that this path be treated as a branch or tag.
@@ -893,11 +900,6 @@ var blankline = regexp.MustCompile(`(?m:^\s*\n)`)
 
 // Separator used for split part in a processed Subversion ID.
 const splitSep = "."
-
-// Path separator as found in Subversion dump files. Isolated because
-// it might be "\" on OSes not to be mentioned in polite company.
-var svnSep = string([]byte{os.PathSeparator})
-var svnSepWithStar = svnSep + "*"
 
 func nodePermissions(node NodeAction) string {
 	// Fileop permissions from node properties
@@ -2690,7 +2692,7 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 		if mapped, ok := canonicalizedNames[svnname]; ok {
 			return mapped
 		}
-		newname := strings.ReplaceAll(svnname, "/.", "/")       // Rule 1
+		newname := strings.ReplaceAll(svnname, "/.", svnSep)    // Rule 1
 		newname = strings.ReplaceAll(newname, ".lock", "-lock") // Rule 1
 		// We don't need to enforce rule 2 while the name is in Subversion form
 		newname = strings.ReplaceAll(newname, "..", "") // Rule 3
