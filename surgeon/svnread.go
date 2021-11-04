@@ -472,6 +472,9 @@ func appendRevisionRecords(slice []RevisionRecord, data ...RevisionRecord) []Rev
 
 func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet, baton *Baton, filesize int64) {
 	defer trace.StartRegion(ctx, "SVN Phase 1: read stream").End()
+	if logEnable(logEXTRACT) {
+		logit("SVN Phase 1: read stream")
+	}
 	sp.revisions = make([]RevisionRecord, 0)
 	sp.revmap = make(map[revidx]revidx)
 	sp.backfrom = make(map[revidx]revidx)
