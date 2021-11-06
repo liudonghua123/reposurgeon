@@ -2089,13 +2089,13 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 }
 
 // Hack paths by swapping the top two components - if "structural" is on, be Subversion-aware
-// and also attemptt  spans of partial branch creations.
+// and also attempt to merge spans of partial branch creations.
 func swap(source DumpfileSource, selection SubversionRange, patterns []string, structural bool) {
 	var match *regexp.Regexp
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
 	}
-	swapper := func(path []byte) []byte {
+	swapper := func(path []byte, role string) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
 		rooted := len(path) > 0 && (path[0] == byte(os.PathSeparator))
@@ -2117,7 +2117,36 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						parts[1] = parts[2]
 						parts[2] = []byte(top)
 					} else {
-						parts[1] = []byte(top)
+						// If you're doing a structural swap and see a path
+						// that looks like foo/branches or foo/tags, simply swapping
+						// those cannot be correct.  By the premise of this operation,
+						// foo should a directory name under some branch which isn't
+						// specified here
+						//
+						// Figuring out the right thing to do here is tricky.
+						switch role {
+						case "add":
+							// FIXME: This is wrong!
+							parts[1] = []byte(top)
+						case "change":
+							// FIXME: This is wrong!
+							parts[1] = []byte(top)
+						case "delete":
+							// FIXME: This is wrong!
+							parts[1] = []byte(top)
+						case "copysource":
+							// FIXME: This is wrong!
+							parts[1] = []byte(top)
+						case "copytarget":
+							// FIXME: This is wrong!
+							parts[1] = []byte(top)
+						case "mergeinfo":
+							croak("r%d-%d: unexpected mergeinfo of path %s",
+								source.Revision, source.Index, path)
+						default:
+							croak("r%d-%d: unexpected action %s on path %s",
+								source.Revision, source.Index, role, path)
+						}
 					}
 				}
 			} else { // naive swap
@@ -2135,7 +2164,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		for _, mergeproperty := range mergeProperties {
 			if m, ok := props.properties[mergeproperty]; ok {
 				for _, part := range bytes.Split([]byte(m), []byte{'\n'}) {
-					swapped = append(swapped, string(swapper(part)))
+					swapped = append(swapped, string(swapper(part, "mergeinfo")))
 				}
 				props.properties[mergeproperty] = strings.Join(swapped, ":")
 			}
@@ -2194,13 +2223,19 @@ PROPS-END
 		}
 
 		if match == nil || match.Match(header.payload("Node-path")) {
-			header, newval, oldval = header.replaceHook("Node-path: ", swapper)
 			action := header.payload("Node-action")
 			isDelete := bytes.Equal(action, []byte("delete"))
 			isCopy := header.index("Node-copyfrom-path") != -1
 			isDir := header.isDir()
-			branchcopy := isDir && (isCopy || isDelete)
+			role := string(action)
+			if isCopy {
+				role = "copytarget"
+			}
+			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
+				return swapper(path, role)
+			})
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
+				branchcopy := isDir && (isCopy || isDelete)
 				parts := bytes.Split(in, []byte{os.PathSeparator})
 				if structural && branchcopy && len(parts) == 3 {
 					top := string(parts[0])
@@ -2221,7 +2256,9 @@ PROPS-END
 					thisCopyPair = copyPair{string(newval), ""}
 				}
 			}
-			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", swapper)
+			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(path []byte) []byte {
+				return swapper(path, "copysource")
+			})
 			if !coalesced {
 				// Actions at end of copy or delete spans could go here,
 				// but that action would also have to fire at the end of swap().
