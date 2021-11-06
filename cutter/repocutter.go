@@ -2095,7 +2095,14 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	if len(patterns) > 0 {
 		match = regexp.MustCompile(patterns[0])
 	}
-	swapper := func(path []byte, role string) []byte {
+	type parsedNode struct {
+		role     string
+		action   []byte
+		isDelete bool
+		isCopy   bool
+		isDir    bool
+	}
+	swapper := func(path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
 		rooted := len(path) > 0 && (path[0] == byte(os.PathSeparator))
@@ -2124,7 +2131,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						// specified here
 						//
 						// Figuring out the right thing to do here is tricky.
-						switch role {
+						switch parsed.role {
 						case "add":
 							// FIXME: This is wrong!
 							parts[1] = []byte(top)
@@ -2145,7 +2152,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								source.Revision, source.Index, path)
 						default:
 							croak("r%d-%d: unexpected action %s on path %s",
-								source.Revision, source.Index, role, path)
+								source.Revision, source.Index, parsed.role, path)
 						}
 					}
 				}
@@ -2164,7 +2171,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		for _, mergeproperty := range mergeProperties {
 			if m, ok := props.properties[mergeproperty]; ok {
 				for _, part := range bytes.Split([]byte(m), []byte{'\n'}) {
-					swapped = append(swapped, string(swapper(part, "mergeinfo")))
+					var dummy parsedNode
+					dummy.role = "mergeinfoi"
+					swapped = append(swapped, string(swapper(part, dummy)))
 				}
 				props.properties[mergeproperty] = strings.Join(swapped, ":")
 			}
@@ -2223,19 +2232,20 @@ PROPS-END
 		}
 
 		if match == nil || match.Match(header.payload("Node-path")) {
-			action := header.payload("Node-action")
-			isDelete := bytes.Equal(action, []byte("delete"))
-			isCopy := header.index("Node-copyfrom-path") != -1
-			isDir := header.isDir()
-			role := string(action)
-			if isCopy {
-				role = "copytarget"
+			var parsed parsedNode
+			parsed.action = header.payload("Node-action")
+			parsed.isDelete = bytes.Equal(parsed.action, []byte("delete"))
+			parsed.isCopy = header.index("Node-copyfrom-path") != -1
+			parsed.isDir = header.isDir()
+			parsed.role = string(parsed.action)
+			if parsed.isCopy {
+				parsed.role = "copytarget"
 			}
 			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
-				return swapper(path, role)
+				return swapper(path, parsed)
 			})
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
-				branchcopy := isDir && (isCopy || isDelete)
+				branchcopy := parsed.isDir && (parsed.isCopy || parsed.isDelete)
 				parts := bytes.Split(in, []byte{os.PathSeparator})
 				if structural && branchcopy && len(parts) == 3 {
 					top := string(parts[0])
@@ -2250,14 +2260,14 @@ PROPS-END
 			}
 			coalesced := !bytes.Equal(oldval, newval)
 			if coalesced {
-				if isDelete {
+				if parsed.isDelete {
 					thisDelete = string(newval)
 				} else {
 					thisCopyPair = copyPair{string(newval), ""}
 				}
 			}
 			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(path []byte) []byte {
-				return swapper(path, "copysource")
+				return swapper(path, parsed)
 			})
 			if !coalesced {
 				// Actions at end of copy or delete spans could go here,
@@ -2266,7 +2276,7 @@ PROPS-END
 				var zeroCopyPair copyPair
 				lastCopyPair = zeroCopyPair
 				lastDelete = ""
-			} else if !isDelete {
+			} else if !parsed.isDelete {
 				header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
 					parts := bytes.Split(in, []byte{os.PathSeparator})
 					if len(parts) == 3 {
