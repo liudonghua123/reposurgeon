@@ -2108,7 +2108,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		isCopy   bool
 		isDir    bool
 	}
-	swapper := func(path []byte, parsed parsedNode) []byte {
+	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
 		rooted := len(path) > 0 && (path[0] == byte(os.PathSeparator))
@@ -2137,10 +2137,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						// specified here
 						//
 						// Figuring out the right thing to do here is tricky.
-						// One thing we can know in advance is that file paths
-						// never bneed to be wildcarded, they must always contain both
-						// the project directory and subbranch.
 						if !parsed.isDir {
+							// Probably never happens but let's be safe.
 							parts[1] = []byte(top)
 						} else {
 							switch parsed.role {
@@ -2153,10 +2151,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 							case "delete":
 								// FIXME: This is wrong!
 								parts[1] = []byte(top)
-							case "copysource":
-								// FIXME: This is wrong!
-								parts[1] = []byte(top)
-							case "copytarget":
+							case "copy":
 								// FIXME: This is wrong!
 								parts[1] = []byte(top)
 							case "mergeinfo":
@@ -2186,7 +2181,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				for _, part := range bytes.Split([]byte(m), []byte{'\n'}) {
 					var dummy parsedNode
 					dummy.role = "mergeinfoi"
-					swapped = append(swapped, string(swapper(part, dummy)))
+					swapped = append(swapped, string(swapper("", part, dummy)))
 				}
 				props.properties[mergeproperty] = strings.Join(swapped, ":")
 			}
@@ -2252,10 +2247,10 @@ PROPS-END
 			parsed.isDir = header.isDir()
 			parsed.role = string(parsed.action)
 			if parsed.isCopy {
-				parsed.role = "copytarget"
+				parsed.role = "copy"
 			}
 			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
-				return swapper(path, parsed)
+				return swapper("Node-path: ", path, parsed)
 			})
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
 				branchcopy := parsed.isDir && (parsed.isCopy || parsed.isDelete)
@@ -2280,7 +2275,7 @@ PROPS-END
 				}
 			}
 			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(path []byte) []byte {
-				return swapper(path, parsed)
+				return swapper("Node-copyfrom-path: ", path, parsed)
 			})
 			if !coalesced {
 				// Actions at end of copy or delete spans could go here,
