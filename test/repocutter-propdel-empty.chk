@@ -1,0 +1,18 @@
+--- Before
++++ After
+@@ -48,13 +48,8 @@
+ Node-path: qa/branches
+ Node-kind: dir
+ Node-action: change
+-Prop-content-length: 92
+-Content-length: 92
+-
+-K 13
+-svn:externals
+-V 57
+-^/CoreServer/trunk/Source/Python/lib/ezmail.py ezmail.py
++Prop-content-length: 10
++Content-length: 10
+ 
+ PROPS-END
+ 

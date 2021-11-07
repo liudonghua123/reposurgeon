@@ -1307,6 +1307,12 @@ func expunge(source DumpfileSource, selection SubversionRange, patterns []string
 }
 
 func dumpall(header streamSection, properties []byte, content []byte) []byte {
+	// Bad idea - it looks like a way to filter out directtory-change
+	// operatiuons that only hack properties, but it a;so catches directory
+	// add and delete operations.
+	//if bytes.Equal(properties, []byte("PROPS-END\n")) && len(content) == 0 {
+	//	return nil
+	//}
 	all := make([]byte, 0)
 	all = append(all, []byte(header)...)
 	all = append(all, properties...)
