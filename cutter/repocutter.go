@@ -2143,12 +2143,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						} else {
 							switch parsed.role {
 							case "add":
-								// FIXME: This is wrong!
-								parts[1] = []byte(top)
-							case "change":
-								// FIXME: This is wrong!
-								parts[1] = []byte(top)
+								// Then drop this path - nothing else needs doing.
+								parts = nil
 							case "delete":
+								// Then drop this path - nothing else needs doing.
+								parts = nil
+							case "change":
 								// FIXME: This is wrong!
 								parts[1] = []byte(top)
 							case "copy":

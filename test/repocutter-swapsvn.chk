@@ -87,60 +87,6 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 3
-Prop-content-length: 126
-Content-length: 126
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:00:30.000000Z
-K 7
-svn:log
-V 27
-project1/branches/ creation
-PROPS-END
-
-Node-path: branches/project1
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Revision-number: 4
-Prop-content-length: 122
-Content-length: 122
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:00:40.000000Z
-K 7
-svn:log
-V 23
-project1/tags/ creation
-PROPS-END
-
-Node-path: tags/project1
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
 Revision-number: 5
 Prop-content-length: 114
 Content-length: 114
@@ -305,60 +251,6 @@ project2/trunk/ creation
 PROPS-END
 
 Node-path: trunk/project2
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Revision-number: 11
-Prop-content-length: 126
-Content-length: 126
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:01:50.000000Z
-K 7
-svn:log
-V 27
-project2/branches/ creation
-PROPS-END
-
-Node-path: branches/project2
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Revision-number: 12
-Prop-content-length: 122
-Content-length: 122
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:02:00.000000Z
-K 7
-svn:log
-V 23
-project2/tags/ creation
-PROPS-END
-
-Node-path: tags/project2
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
@@ -654,60 +546,6 @@ project3/trunk/ creation
 PROPS-END
 
 Node-path: trunk/project3
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Revision-number: 23
-Prop-content-length: 126
-Content-length: 126
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:03:50.000000Z
-K 7
-svn:log
-V 27
-project3/branches/ creation
-PROPS-END
-
-Node-path: branches/project3
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Revision-number: 24
-Prop-content-length: 122
-Content-length: 122
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:04:00.000000Z
-K 7
-svn:log
-V 23
-project3/tags/ creation
-PROPS-END
-
-Node-path: tags/project3
 Node-kind: dir
 Node-action: add
 Prop-content-length: 10
