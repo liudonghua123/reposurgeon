@@ -2131,28 +2131,35 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						// specified here
 						//
 						// Figuring out the right thing to do here is tricky.
-						switch parsed.role {
-						case "add":
-							// FIXME: This is wrong!
+						// One thing we can know in advance is that file paths
+						// never bneed to be wildcarded, they must always contain both
+						// the project directory and subbranch.
+						if !parsed.isDir {
 							parts[1] = []byte(top)
-						case "change":
-							// FIXME: This is wrong!
-							parts[1] = []byte(top)
-						case "delete":
-							// FIXME: This is wrong!
-							parts[1] = []byte(top)
-						case "copysource":
-							// FIXME: This is wrong!
-							parts[1] = []byte(top)
-						case "copytarget":
-							// FIXME: This is wrong!
-							parts[1] = []byte(top)
-						case "mergeinfo":
-							croak("r%d-%d: unexpected mergeinfo of path %s",
-								source.Revision, source.Index, path)
-						default:
-							croak("r%d-%d: unexpected action %s on path %s",
-								source.Revision, source.Index, parsed.role, path)
+						} else {
+							switch parsed.role {
+							case "add":
+								// FIXME: This is wrong!
+								parts[1] = []byte(top)
+							case "change":
+								// FIXME: This is wrong!
+								parts[1] = []byte(top)
+							case "delete":
+								// FIXME: This is wrong!
+								parts[1] = []byte(top)
+							case "copysource":
+								// FIXME: This is wrong!
+								parts[1] = []byte(top)
+							case "copytarget":
+								// FIXME: This is wrong!
+								parts[1] = []byte(top)
+							case "mergeinfo":
+								croak("r%d-%d: unexpected mergeinfo of path %s",
+									source.Revision, source.Index, path)
+							default:
+								croak("r%d-%d: unexpected action %s on path %s",
+									source.Revision, source.Index, parsed.role, path)
+							}
 						}
 					}
 				}
