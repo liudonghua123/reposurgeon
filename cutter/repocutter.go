@@ -2110,6 +2110,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	}
 	wildcards := make(map[string]orderedStringSet)
 	var wildcardKey string
+	const wildcardMark = '*'
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2173,16 +2174,14 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								parts = nil
 							case "change":
 								wildcardKey = string(path)
-								// FIXME: This is wrong!
-								parts[1] = []byte(top)
+								parts[1] = []byte{wildcardMark}
+								parts = append(parts, []byte(top))
 							case "copy":
 								if sourcehdr == "Node-copyfrom-path: " {
-									// Set wildcardKey
 									wildcardKey = string(path)
+									parts[1] = []byte{wildcardMark}
+									parts = append(parts, []byte(top))
 								}
-								// Unconditionally insert wildcard indicator.
-								// FIXME: This is wrong!
-								parts[1] = []byte(top)
 							case "mergeinfo":
 								croak("r%d-%d: unexpected mergeinfo of path %s",
 									source.Revision, source.Index, path)
@@ -2307,6 +2306,11 @@ PROPS-END
 			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(path []byte) []byte {
 				return swapper("Node-copyfrom-path: ", path, parsed)
 			})
+			if bytes.Contains(newval, []byte{wildcardMark}) {
+				header, _, _ = header.replaceHook("Node-path: ", func(in []byte) []byte {
+					return append(in, os.PathSeparator, wildcardMark)
+				})
+			}
 			if !coalesced {
 				// Actions at end of copy or delete spans could go here,
 				// but that action would also have to fire at the end of swap().
@@ -2354,9 +2358,20 @@ PROPS-END
 				source.Revision, source.Index, wildcardKey, wildcards)
 		}
 		all := make([]byte, 0)
-		all = append(all, []byte(header)...)
-		all = append(all, properties...)
-		all = append(all, content...)
+		if wildcardKey == "" {
+			all = append(all, []byte(header)...)
+			all = append(all, properties...)
+			all = append(all, content...)
+		} else {
+			for _, subbranch := range wildcards[wildcardKey].Iterate() {
+				clone := bytes.Replace(header,
+					[]byte{wildcardMark}, []byte(subbranch),
+					-1)
+				all = append(all, clone...)
+				all = append(all, properties...)
+				all = append(all, content...)
+			}
+		}
 
 		return all
 	}
