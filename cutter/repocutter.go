@@ -2109,6 +2109,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		isDir    bool
 	}
 	wildcards := make(map[string]orderedStringSet)
+	var wildcardKey string
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2171,9 +2172,15 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								// Then drop this path - nothing else needs doing.
 								parts = nil
 							case "change":
+								wildcardKey = string(path)
 								// FIXME: This is wrong!
 								parts[1] = []byte(top)
 							case "copy":
+								if sourcehdr == "Node-copyfrom-path: " {
+									// Set wildcardKey
+									wildcardKey = string(path)
+								}
+								// Unconditionally insert wildcard indicator.
 								// FIXME: This is wrong!
 								parts[1] = []byte(top)
 							case "mergeinfo":
@@ -2262,6 +2269,7 @@ PROPS-END
 		}
 
 		if match == nil || match.Match(header.payload("Node-path")) {
+			wildcardKey = ""
 			var parsed parsedNode
 			parsed.action = header.payload("Node-action")
 			parsed.isDelete = bytes.Equal(parsed.action, []byte("delete"))
@@ -2341,6 +2349,10 @@ PROPS-END
 			}
 		}
 
+		if debug >= 1 {
+			fmt.Fprintf(os.Stderr, "XXX r%d-%d wildcardKey=%q wildcards=%v\n",
+				source.Revision, source.Index, wildcardKey, wildcards)
+		}
 		all := make([]byte, 0)
 		all = append(all, []byte(header)...)
 		all = append(all, properties...)
