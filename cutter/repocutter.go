@@ -2108,6 +2108,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		isCopy   bool
 		isDir    bool
 	}
+	wildcards := make(map[string]orderedStringSet)
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2127,6 +2128,23 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					// Shift "branches" or "tags" to top level
 					parts[0] = []byte(under)
 					if len(parts) >= 3 {
+						// This is where we capture information abnout what
+						// branches and tags exist under a specified project
+						// directory.
+						if parsed.isDir && len(parts) == 3 {
+							key := top + pathsep + string(parts[1])
+							subbranch := string(parts[2])
+							switch parsed.role {
+							case "add":
+								trackSet := wildcards[key]
+								trackSet.Add(subbranch)
+								wildcards[key] = trackSet
+							case "delete":
+								trackSet := wildcards[key]
+								trackSet.Remove(subbranch)
+								wildcards[key] = trackSet
+							}
+						}
 						parts[1] = parts[2]
 						parts[2] = []byte(top)
 					} else {
@@ -2143,9 +2161,13 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						} else {
 							switch parsed.role {
 							case "add":
+								// Start tracking subbranches/subtags of foo,
+								wildcards[string(path)] = newOrderedStringSet()
 								// Then drop this path - nothing else needs doing.
 								parts = nil
 							case "delete":
+								// Stop tracking subbranches/subtags of foo
+								delete(wildcards, string(path))
 								// Then drop this path - nothing else needs doing.
 								parts = nil
 							case "change":
