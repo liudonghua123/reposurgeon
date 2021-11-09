@@ -1601,6 +1601,9 @@ func pathlist(source DumpfileSource, selection SubversionRange) {
 
 // Hack paths by applying regexp transformations on segment sequences.
 func pathrename(source DumpfileSource, selection SubversionRange, patterns []string) {
+	if len(patterns)%2 == 1 {
+		croak("pathrename can't have odd number of arguments")
+	}
 	type transform struct {
 		re *regexp.Regexp
 		to []byte
