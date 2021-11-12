@@ -952,7 +952,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	if !ds.Lbs.HasLineBuffered() {
 		return
 	}
-	// A hack tp only apply the proprty hook on selectrd revisions.
+	// A hack tp only apply the proprety hook on selected revisions.
 	selectedProphook := func(properties *Properties) {
 		if prophook != nil && selection.Contains(ds.Revision) {
 			prophook(properties)
