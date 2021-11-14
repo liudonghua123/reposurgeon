@@ -653,6 +653,7 @@ type DumpfileSource struct {
 	Revision         int
 	Index            int
 	EmittedRevisions map[string]bool
+	DirTracking      map[string]bool
 }
 
 // NewDumpfileSource - declare a new dumpfile source object with implied parsing
@@ -662,6 +663,7 @@ func NewDumpfileSource(rd io.Reader, baton *Baton) DumpfileSource {
 		Baton:            baton,
 		Revision:         0,
 		EmittedRevisions: make(map[string]bool),
+		DirTracking:      make(map[string]bool),
 	}
 	//runtime.SetFinalizer(&ds, func (s DumpfileSource) {s.Baton.End("")})
 }
@@ -787,7 +789,12 @@ func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) (StreamSectio
 		header = SetLength("Prop-content", header, len(properties))
 		header = SetLength("Content", header, len(properties)+len(content))
 	}
-	return header, []byte(properties), content
+	section := StreamSection(header)
+	if p := section.payload("Node-kind"); p != nil {
+		ds.DirTracking[string(section.payload("Node-path"))] = bytes.Equal(p, []byte("dir"))
+	}
+
+	return section, []byte(properties), content
 }
 
 // ReadUntilNextRevision - Must only be called from renumber, as it
@@ -1140,7 +1147,7 @@ func NewLogfile(readable io.Reader, restrict *SubversionRange) *Logfile {
 // StreamSection is a section of a dump stream interpreted as an RFC-2822-like header
 type StreamSection []byte
 
-// Extract content of a specified header field
+// Extract content of a specified header field, nil if it doesn't exist
 func (ss StreamSection) payload(hd string) []byte {
 	offs := bytes.Index(ss, []byte(hd+": "))
 	if offs == -1 {
@@ -1177,11 +1184,12 @@ func (ss StreamSection) index(field string) int {
 }
 
 // Is this a directory node?
-func (ss StreamSection) isDir() bool {
-	typeIndex := ss.index("Node-kind: ")
-	// Subversion sometimes omits the type field on directory operations
-	if typeIndex == -1 && bytes.Equal(ss.payload("Node-action"), []byte("delete")) {
-		return true
+func (ss StreamSection) isDir(context DumpfileSource) bool {
+	// Subversion sometimes omits the type field on directory operations.
+	// This mwans we need to look back at the type of the directory's last
+	// add or change operation.
+	if ss.index("Node-kind") == -1 {
+		return context.DirTracking[string(ss.payload("Node-path"))]
 	}
 	return bytes.Equal(ss.payload("Node-kind"), []byte("dir"))
 }
@@ -1926,14 +1934,14 @@ func see(source DumpfileSource, selection SubversionRange) {
 			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 		}
 		path := header.payload("Node-path")
-		if header.isDir() {
+		if header.isDir(source) {
 			path = append(path, os.PathSeparator)
 		}
 		frompath := header.payload("Node-copyfrom-path")
 		fromrev := header.payload("Node-copyfrom-rev")
 		action := header.payload("Node-action")
 		if frompath != nil && fromrev != nil {
-			if header.isDir() {
+			if header.isDir(source) {
 				frompath = append(frompath, os.PathSeparator)
 			}
 			path = append(path, []byte(fmt.Sprintf(" from %s:%s", fromrev, frompath))...)
@@ -2275,7 +2283,7 @@ PROPS-END
 			parsed.action = header.payload("Node-action")
 			parsed.isDelete = bytes.Equal(parsed.action, []byte("delete"))
 			parsed.isCopy = header.index("Node-copyfrom-path") != -1
-			parsed.isDir = header.isDir()
+			parsed.isDir = header.isDir(source)
 			parsed.role = string(parsed.action)
 			if parsed.isCopy {
 				parsed.role = "copy"
