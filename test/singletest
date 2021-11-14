@@ -51,6 +51,11 @@ Otherwise, run the test and emit a report in TAP format.
 If the test generated a nonempty diff it is displayed as
 a detail message. QUIET=1 suppresses diff output, shipping
 only the TAP not-ok line.
+
+If the test file's descrioption line contains the token TODO,
+the output TAP line will have a TODO directive.  If it contains
+the token SKIP, the test will be skipped and an ok like with
+a SKIP directive emitted.
 EOF
 	   exit 0;;
     esac
@@ -82,7 +87,18 @@ do
 	echo "No script matching ${what} found"
 	exit 1
     fi
+
     legend=$(grep '^##' "${tst}" 2>/dev/null || echo "## (no description)")
+    directive=""
+    if grep ' ##.*TODO' "${tst}" >/dev/null
+    then
+	directive='# TODO '
+    elif grep ' ##.*SKIP' "${tst}" >/dev/null
+    then
+	echo "ok - $ SKIP ${tst}: ${legend}"
+	exit 0
+    fi
+
     case $mode in
     build) echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set serial" "$experimental" "$interactive" "script ${tst}" >"${chk}" 2>&1 ;;
     view)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "$interactive" "script ${tst}" 2>&1 ;;
@@ -91,10 +107,10 @@ do
 	   cat </dev/null >/tmp/tapdiff$$
 	   if ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst} ${arg}" 2>&1 | diff -u "${chk}" -  >/tmp/tapdiff$$ 2>&1 && [ ! -s /tmp/tapdiff$$ ]
 	   then
-	       echo "ok - ${legend}"
+	       echo "ok - ${directive}${legend}"
 	       exit 0
 	   else
-	       echo "not ok - ${x}: ${legend}"
+	       echo "not ok - ${directive}${x}: ${legend}"
 	       if [ ! "${QUIET}" = 1 ]
 	       then
 		   echo "  --- |"
