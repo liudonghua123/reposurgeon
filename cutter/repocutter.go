@@ -740,7 +740,7 @@ func (ds *DumpfileSource) Optional(prefix string) []byte {
 }
 
 // ReadNode - read a node header and body.
-func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) ([]byte, []byte, []byte) {
+func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) (StreamSection, []byte, []byte) {
 	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<READ NODE BEGINS>\n")
 	}
@@ -926,7 +926,7 @@ func (s *SubversionRange) Upperbound() int {
 
 // Report a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
-	nodehook func(header streamSection, properties []byte, content []byte) []byte,
+	nodehook func(header StreamSection, properties []byte, content []byte) []byte,
 	prophook func(properties *Properties),
 	passthrough bool) {
 
@@ -1006,7 +1006,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				// The nodehook is only applied on selected revisions;
 				// others are passed through unaltered.
 				if nodehook != nil && selection.Contains(ds.Revision) {
-					nodetxt = nodehook(streamSection(header), properties, content)
+					nodetxt = nodehook(StreamSection(header), properties, content)
 				} else {
 					nodetxt = append(nodetxt, header...)
 					nodetxt = append(nodetxt, properties...)
@@ -1137,12 +1137,11 @@ func NewLogfile(readable io.Reader, restrict *SubversionRange) *Logfile {
 	return &lf
 }
 
-// streamSection is a section of a dump stream interpreted as an RFC-2822-like header
-
-type streamSection []byte
+// StreamSection is a section of a dump stream interpreted as an RFC-2822-like header
+type StreamSection []byte
 
 // Extract content of a specified header field
-func (ss streamSection) payload(hd string) []byte {
+func (ss StreamSection) payload(hd string) []byte {
 	offs := bytes.Index(ss, []byte(hd+": "))
 	if offs == -1 {
 		return nil
@@ -1153,7 +1152,7 @@ func (ss streamSection) payload(hd string) []byte {
 }
 
 // Mutate a specified header through a hook
-func (ss *streamSection) replaceHook(htype string, hook func([]byte) []byte) (streamSection, []byte, []byte) {
+func (ss *StreamSection) replaceHook(htype string, hook func([]byte) []byte) (StreamSection, []byte, []byte) {
 	header := []byte(*ss)
 	offs := bytes.Index(header, []byte(htype))
 	if offs > -1 {
@@ -1167,18 +1166,18 @@ func (ss *streamSection) replaceHook(htype string, hook func([]byte) []byte) (st
 		header = before
 		header = append(header, newpathline...)
 		header = append(header, after...)
-		return streamSection(header), newpathline, pathline
+		return StreamSection(header), newpathline, pathline
 	}
-	return streamSection(header), nil, nil
+	return StreamSection(header), nil, nil
 }
 
 // Find the index of the content of a specified field
-func (ss streamSection) index(field string) int {
+func (ss StreamSection) index(field string) int {
 	return bytes.Index([]byte(ss), []byte(field))
 }
 
 // Is this a directory node?
-func (ss streamSection) isDir() bool {
+func (ss StreamSection) isDir() bool {
 	typeIndex := ss.index("Node-kind: ")
 	// Subversion sometimes omits the type field on directory operations
 	if typeIndex == -1 && bytes.Equal(ss.payload("Node-action"), []byte("delete")) {
@@ -1188,13 +1187,13 @@ func (ss streamSection) isDir() bool {
 }
 
 // SetLength - alter the length field of a specified header
-func (ss streamSection) setLength(header string, val int) []byte {
+func (ss StreamSection) setLength(header string, val int) []byte {
 	re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
-	return streamSection(re.ReplaceAll([]byte(ss), []byte("$1 "+strconv.Itoa(val))))
+	return StreamSection(re.ReplaceAll([]byte(ss), []byte("$1 "+strconv.Itoa(val))))
 }
 
 // stripChecksums - remove checksums from a blob header
-func (ss streamSection) stripChecksums() streamSection {
+func (ss StreamSection) stripChecksums() StreamSection {
 	header := []byte(ss)
 	r1 := regexp.MustCompile("Text-content-md5:.*\n")
 	header = r1.ReplaceAll(header, []byte{})
@@ -1204,7 +1203,7 @@ func (ss streamSection) stripChecksums() streamSection {
 	header = r3.ReplaceAll(header, []byte{})
 	r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
 	header = r4.ReplaceAll(header, []byte{})
-	return streamSection(header)
+	return StreamSection(header)
 }
 
 // Subcommand implementations begin here
@@ -1244,7 +1243,7 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	copiesFrom := make(map[string][]string)
-	gather := func(header streamSection, properties []byte, _ []byte) []byte {
+	gather := func(header StreamSection, properties []byte, _ []byte) []byte {
 		nodepath := string(header.payload("Node-path"))
 		copysource := header.payload("Node-copyfrom-path")
 		if copysource != nil {
@@ -1281,7 +1280,7 @@ func expunge(source DumpfileSource, selection SubversionRange, patterns []string
 	for i, pattern := range patterns {
 		regexps[i] = regexp.MustCompile(pattern)
 	}
-	expungehook := func(header streamSection, properties []byte, content []byte) []byte {
+	expungehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
@@ -1306,7 +1305,7 @@ func expunge(source DumpfileSource, selection SubversionRange, patterns []string
 	source.Report(selection, expungehook, nil, true)
 }
 
-func dumpall(header streamSection, properties []byte, content []byte) []byte {
+func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 	// Bad idea - it looks like a way to filter out directtory-change
 	// operatiuons that only hack properties, but it a;so catches directory
 	// add and delete operations.
@@ -1388,7 +1387,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 			}
 		}
 	}
-	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
 			header, _, _ = header.replaceHook(htype, func(in []byte) []byte {
 				return []byte(popSegment(string(in)))
@@ -1422,7 +1421,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 			}
 		}
 	}
-	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
 			header, _, _ = header.replaceHook(htype, func(in []byte) []byte {
 				return []byte(prefix + "/" + string(in))
@@ -1571,7 +1570,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 			props.properties["svn:author"] = nameMutator(userid)
 		}
 	}
-	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
 			header, _, _ = header.replaceHook(htype, pathMutator)
 		}
@@ -1589,7 +1588,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 
 func pathlist(source DumpfileSource, selection SubversionRange) {
 	pathList := newOrderedStringSet()
-	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		pathList.Add(string(header.payload("Node-path")))
 		return nil
 	}
@@ -1639,8 +1638,8 @@ func reduce(source DumpfileSource) {
 	maxRev := 0
 	interesting := make(map[int]bool)
 	interesting[0] = true
-	reducehook := func(header streamSection, properties []byte, _ []byte) []byte {
-		if !(string(streamSection(header).payload("Node-kind")) == "file" && string(streamSection(header).payload("Node-action")) == "change") || len(properties) > 0 { //len([]nil == 0)
+	reducehook := func(header StreamSection, properties []byte, _ []byte) []byte {
+		if !(string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change") || len(properties) > 0 { //len([]nil == 0)
 			interesting[source.Revision-1] = true
 			interesting[source.Revision] = true
 			interesting[source.Revision+1] = true
@@ -1783,7 +1782,7 @@ func renumber(source DumpfileSource) {
 			continue
 		}
 
-		ss := streamSection(line)
+		ss := StreamSection(line)
 		if p = ss.payload("Revision-number"); p != nil {
 			if headerState != AwaitingHeader {
 				croak("headerState should be in InHeader, was: " + fmt.Sprint(headerState))
@@ -1902,7 +1901,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 		croak("illegal regular expression: %v", err)
 	}
 
-	innerreplace := func(header streamSection, properties []byte, content []byte) []byte {
+	innerreplace := func(header StreamSection, properties []byte, content []byte) []byte {
 		newcontent := tre.ReplaceAll(content, []byte(patternParts[1]))
 		if string(content) != string(newcontent) {
 			header = header.setLength("Text-content", len(newcontent))
@@ -1922,7 +1921,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 // Strip out ops defined by a revision selection and a path regexp.
 func see(source DumpfileSource, selection SubversionRange) {
 	props := ""
-	seenode := func(header streamSection, _, _ []byte) []byte {
+	seenode := func(header StreamSection, _, _ []byte) []byte {
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 		}
@@ -1986,7 +1985,7 @@ func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
 	for i, pattern := range patterns {
 		regexps[i] = regexp.MustCompile(pattern)
 	}
-	sifthook := func(header streamSection, properties []byte, content []byte) []byte {
+	sifthook := func(header StreamSection, properties []byte, content []byte) []byte {
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
@@ -2012,7 +2011,7 @@ func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
 }
 
 func split(source DumpfileSource, selection SubversionRange, paths []string) {
-	splithook := func(header streamSection, properties []byte, content []byte) []byte {
+	splithook := func(header StreamSection, properties []byte, content []byte) []byte {
 		matches := false
 		target := header.payload("Node-path")
 		for _, path := range paths {
@@ -2054,7 +2053,7 @@ func split(source DumpfileSource, selection SubversionRange, paths []string) {
 }
 
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
-	innerstrip := func(header streamSection, properties []byte, content []byte) []byte {
+	innerstrip := func(header StreamSection, properties []byte, content []byte) []byte {
 		// first check against the patterns, if any are given
 		ok := true
 		nodepath := header.payload("Node-path")
@@ -2233,7 +2232,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	}
 	var thisCopyPair, lastCopyPair copyPair
 	var thisDelete, lastDelete string
-	nodehook := func(header streamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		// This is dodgy.  The assumption here is that the first node
 		// of r1 is the directory creation for the first project.
 		// Replace it with synthetic nodes that create normal directory
@@ -2393,13 +2392,13 @@ func testify(source DumpfileSource) {
 	// since Go doesn't have a ternary operator, we need to create these helper funcs
 	getPropLen := func(saveToHeaderBuf bool, line []byte) []byte {
 		if counter > 1 && inRevHeader && !saveToHeaderBuf { // first rev doesn't have an author
-			return streamSection(line).payload("Prop-content-length")
+			return StreamSection(line).payload("Prop-content-length")
 		}
 		return nil
 	}
 	getContentLen := func(saveToHeaderBuf bool, line []byte) []byte {
 		if saveToHeaderBuf {
-			return streamSection(line).payload("Content-length")
+			return StreamSection(line).payload("Content-length")
 		}
 		return nil
 	}
@@ -2409,9 +2408,9 @@ func testify(source DumpfileSource) {
 		if len(line) == 0 {
 			break
 		}
-		if p = streamSection(line).payload("UUID"); p != nil && source.Lbs.linenumber <= 10 {
+		if p = StreamSection(line).payload("UUID"); p != nil && source.Lbs.linenumber <= 10 {
 			line = make([]byte, 0)
-		} else if p = streamSection(line).payload("Revision-number"); p != nil {
+		} else if p = StreamSection(line).payload("Revision-number"); p != nil {
 			counter++
 			inRevHeader = true
 		} else if p = getPropLen(saveToHeaderBuf, line); p != nil {
