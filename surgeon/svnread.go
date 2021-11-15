@@ -1279,8 +1279,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 								trampoline, _ := node.fileSet.get(child)
 								deleted := trampoline.(*NodeAction)
 								if logEnable(logEXTRACT) {
-									logit("r%d-%d*~%s: deleting %s",
-										node.revision, node.index, node.path, child)
+									logit("%s: deleting %s", node, child)
 								}
 								newnode := new(NodeAction)
 								newnode.path = child
@@ -1581,7 +1580,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 
 		commit.legacyID = fmt.Sprintf("%d", record.revision)
 
-		// An helper function to register ignore values changes for some path
+		// A helper function to register ignore values changes for some path
 		// and generate the needed actions on the commit.
 		// `setter` is a function modifying the registered values.
 		applyIgnore := func(path string, setter func(values *([]string))) {
@@ -1636,27 +1635,34 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						delete(gitIgnores, path)
 					}
 				}
-			} else if node.kind == sdDIR && !options.Contains("--no-automatic-ignores") {
-				// Handle svn:ignore and svn:global-ignores changes
-				path := filepath.Join(trimSep(node.path), ".gitignore")
-				if node.action == sdDELETE {
-					// Handle the case of a directory deletion
-					applyIgnore(path, func(values *[]string) {
-						for i := range ignoreProps {
-							(*values)[i] = ""
-						}
-					})
-				} else {
-					// Handle the case of ignore modifications
-					applyIgnore(path, func(values *[]string) {
-						for i, prop := range ignoreProps {
-							if node.hasProperties() && node.props.has(prop.propname) {
-								(*values)[i] = node.props.get(prop.propname)
-							} else {
+			} else if node.kind == sdDIR {
+				if !options.Contains("--no-automatic-ignores") {
+					// Handle svn:ignore and svn:global-ignores changes
+					path := filepath.Join(trimSep(node.path), ".gitignore")
+					if node.action == sdDELETE {
+						// Handle the case of a directory deletion
+						applyIgnore(path, func(values *[]string) {
+							for i := range ignoreProps {
 								(*values)[i] = ""
 							}
-						}
-					})
+						})
+					} else {
+						// Handle the case of ignore modifications
+						applyIgnore(path, func(values *[]string) {
+							for i, prop := range ignoreProps {
+								if node.hasProperties() && node.props.has(prop.propname) {
+									(*values)[i] = node.props.get(prop.propname)
+								} else {
+									(*values)[i] = ""
+								}
+							}
+						})
+					}
+				}
+				if node.action == sdREPLACE {
+					if logEnable(logEXTRACT) {
+						logit("%s: directory replace", node)
+					}
 				}
 			} else if node.kind == sdFILE {
 				if strings.HasSuffix(node.path, ".cvsignore") && logEnable(logWARN) {
@@ -1689,7 +1695,8 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						fileop := newFileOp(sp.repo)
 						fileop.construct(opD, node.path)
 						if logEnable(logEXTRACT) {
-							logit("%s turns off TRIVIAL", fileop)
+							logit("r%d-%d: %q turns off TRIVIAL",
+								node.revision, node.index, fileop)
 						}
 						commit.appendOperation(fileop)
 					}
