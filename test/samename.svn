@@ -1,0 +1,115 @@
+SVN-fs-dump-format-version: 2
+ ## Test replacement of a file by a directory of the same name
+ # It's the deletion of lib as a file followed by its recreation
+ # as a directory that causes te problem.
+
+UUID: 2351801b-07b5-4af9-9b9b-db90067bee4e
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+2021-11-12T03:16:20.920056Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 111
+Content-length: 111
+
+K 10
+svn:author
+V 4
+jack
+K 8
+svn:date
+V 27
+2021-11-12T03:16:21.337160Z
+K 7
+svn:log
+V 12
+First Commit
+PROPS-END
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/lib
+Node-kind: file
+Node-action: add
+Text-content-md5: a93544545e4def06446953dd382c1c42
+Text-content-sha1: 4e76d63abe239ea2f4cf68fbfac61d76ffcddaa1
+Prop-content-length: 10
+Text-content-length: 21
+Content-length: 31
+
+PROPS-END
+This is the lib file
+
+
+Revision-number: 2
+Prop-content-length: 112
+Content-length: 112
+
+K 10
+svn:author
+V 4
+jack
+K 8
+svn:date
+V 27
+2021-11-12T03:16:24.576897Z
+K 7
+svn:log
+V 13
+Second commit
+PROPS-END
+
+Node-path: trunk/lib
+Node-kind: dir
+Node-action: replace
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: trunk/lib/inner_file
+Node-kind: file
+Node-action: add
+Text-content-md5: a217c0de833fea28c02048eaaaa2e394
+Text-content-sha1: 2eac75c93052f5c9f9ac727f7707daa38d0a0f4c
+Prop-content-length: 10
+Text-content-length: 20
+Content-length: 30
+
+PROPS-END
+Inner file contents
+
+

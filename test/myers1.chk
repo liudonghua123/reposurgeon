@@ -20,97 +20,175 @@ data 210
 .DS_store
 # Simulated Subversion default ignores end here
 
-blob
+commit refs/heads/b5
+#legacy-id 4
 mark :2
+committer test <test> 1475539200 +0000
+data 18
+Commit message 4.
+deleteall
+M 100644 :1 .gitignore
+
+reset refs/heads/b5
+commit refs/heads/b5
+#legacy-id 5
+mark :3
+committer test <test> 1475625600 +0000
+data 18
+Commit message 5.
+deleteall
+M 100644 :1 .gitignore
+
+blob
+mark :4
 data 62
 Revision is 6, file path is branches/b4/d1/d2/d3/d4/d5/d6/f0.
 
 blob
-mark :3
+mark :5
 data 62
 Revision is 6, file path is branches/b4/d1/d2/d3/d4/d5/d6/f9.
 
 commit refs/heads/b4
 #legacy-id 6
-mark :4
+mark :6
 committer test <test> 1475712000 +0000
 data 18
 Commit message 6.
+from :3
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+
+reset refs/heads/b5
+commit refs/heads/b5
+#legacy-id 7
+mark :7
+committer test <test> 1475798400 +0000
+data 18
+Commit message 7.
 deleteall
 M 100644 :1 .gitignore
-M 100644 :2 d1/d2/d3/d4/d5/d6/f0
-M 100644 :3 d1/d2/d3/d4/d5/d6/f9
 
 commit refs/heads/b5
 #legacy-id 8
-mark :5
+mark :8
 committer test <test> 1475884800 +0000
 data 18
 Commit message 8.
+from :7
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+
+commit refs/heads/master
+#legacy-id 9
+mark :9
+committer test <test> 1475971200 +0000
+data 18
+Commit message 9.
+from :8
 deleteall
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+D d1/d2/d3/d4/d5/d6/f0
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+D d1/d2/d3/d4/d5/d6/f9
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
 M 100644 :1 .gitignore
-M 100644 :2 d1/d2/d3/d4/d5/d6/f0
-M 100644 :3 d1/d2/d3/d4/d5/d6/f9
 
 commit refs/heads/b2
 #legacy-id 10
-mark :6
+mark :10
 committer test <test> 1476057600 +0000
 data 19
 Commit message 10.
 deleteall
 M 100644 :1 .gitignore
-M 100644 :2 d1/d2/d3/d4/d5/d6/f0
-M 100644 :3 d1/d2/d3/d4/d5/d6/f9
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
 
 commit refs/heads/b3
 #legacy-id 11
-mark :7
+mark :11
 committer test <test> 1476144000 +0000
 data 19
 Commit message 11.
+from :2
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
+
+commit refs/heads/b6
+#legacy-id 12
+mark :12
+committer test <test> 1476230400 +0000
+data 19
+Commit message 12.
+from :9
 deleteall
+M 100644 :4 d1/d2/d3/d4/d5/d6/f0
+M 100644 :5 d1/d2/d3/d4/d5/d6/f9
 M 100644 :1 .gitignore
-M 100644 :2 d1/d2/d3/d4/d5/d6/f0
-M 100644 :3 d1/d2/d3/d4/d5/d6/f9
 
 blob
-mark :8
+mark :13
 data 63
 Revision is 13, file path is branches/b6/d1/d2/d3/d4/d5/d6/f0.
 
 commit refs/heads/b6
 #legacy-id 13
-mark :9
+mark :14
 committer test <test> 1476316800 +0000
 data 19
 Commit message 13.
-from :5
-M 100755 :8 d1/d2/d3/d4/d5/d6/f0
+from :12
+D d1/d2/d3/d4/d5/d6/f0
 D d1/d2/d3/d4/d5/d6/f9
+M 100755 :13 d1/d2/d3/d4/d5/d6/f0
 
 commit refs/heads/master
 #legacy-id 14
-mark :10
+mark :15
 committer test <test> 1476403200 +0000
 data 19
 Commit message 14.
-from :5
-M 100755 :8 d1/d2/d3/d4/d5/d6/f0
+from :9
+D d1/d2/d3/d4/d5/d6/f0
 D d1/d2/d3/d4/d5/d6/f9
-
-tag master-root
-#legacy-id 9
-from :5
-tagger test <test> 1475971200 +0000
-data 18
-Commit message 9.
-
-tag b6-root
-#legacy-id 12
-from :5
-tagger test <test> 1476230400 +0000
-data 19
-Commit message 12.
+M 100755 :13 d1/d2/d3/d4/d5/d6/f0
 
 done

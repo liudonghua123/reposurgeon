@@ -101,6 +101,7 @@ type svnReader struct {
 	branchRoots map[string][]*Commit
 	streamcount int
 	flat        bool
+	noSimplify  bool
 	firstnode   *NodeAction
 }
 
@@ -1660,6 +1661,9 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 					}
 				}
 				if node.action == sdREPLACE {
+					// Ugh.  We have to disaable later canonicalization because
+					// of the weird edge case exhbited by samename.svn
+					sp.noSimplify = true
 					if logEnable(logEXTRACT) {
 						logit("%s: directory replace", node)
 					}
@@ -2740,7 +2744,9 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 
 	for i, event := range sp.repo.events {
 		if commit, ok := event.(*Commit); ok {
-			commit.simplify()
+			if !sp.noSimplify {
+				commit.simplify()
+			}
 			commit.setBranch(cleanName(sp, commit.Branch))
 			if commit.Branch == "" {
 				// File or directory is not under any recognizable branch.
@@ -2932,7 +2938,9 @@ func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, b
 			commit.appendOperation(op)
 		}
 		// Canonicalize the commit
-		commit.canonicalize()
+		if !sp.noSimplify {
+			commit.canonicalize()
+		}
 		baton.percentProgress(uint64(index) + 1)
 	})
 

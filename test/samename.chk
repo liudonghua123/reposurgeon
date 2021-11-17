@@ -22,31 +22,31 @@ data 210
 
 blob
 mark :2
-data 11
-file d1/f1
+data 21
+This is the lib file
 
 commit refs/heads/master
-#legacy-id 2
+#legacy-id 1
 mark :3
-committer jsm28 <jsm28> 1497308028 +0000
-data 10
-Add file.
-M 100644 :2 d1/f1
+committer jack <jack> 1636686981 +0000
+data 13
+First Commit
+M 100644 :2 lib
 M 100644 :1 .gitignore
 
 blob
 mark :4
-data 11
-file d1/f2
+data 20
+Inner file contents
 
 commit refs/heads/master
-#legacy-id 3
+#legacy-id 2
 mark :5
-committer jsm28 <jsm28> 1497308046 +0000
-data 19
-Replace directory.
+committer jack <jack> 1636686984 +0000
+data 14
+Second commit
 from :3
-D d1/f1
-M 100644 :4 d1/f2
+D lib
+M 100644 :4 lib/inner_file
 
 done
