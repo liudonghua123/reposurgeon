@@ -770,7 +770,7 @@ type NodeAction struct {
 	props      *OrderedMap
 	fileSet    *PathMap
 	blobmark   markidx
-	revision   revidx // Revision ID, not the inswsx in the revisions array
+	revision   revidx // Revision ID, not the index in the revisions array
 	fromRev    revidx
 	index      nodeidx // 1-origin
 	fromIdx    nodeidx
@@ -1033,6 +1033,7 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	timeit("commits")
 
 	// Some intermediate storage can now be dropped
+	sp.history = nil
 	sp.backfrom = nil
 	sp.hashmap = nil
 
@@ -1406,9 +1407,6 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 	}
 
 	baton.endProgress()
-
-	// We don't need the revision maps after ancestry links are in place
-	sp.history = nil
 }
 
 func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {
@@ -1661,11 +1659,21 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 					}
 				}
 				if node.action == sdREPLACE {
-					// Ugh.  We have to disaable later canonicalization because
-					// of the weird edge case exhbited by samename.svn
-					sp.noSimplify = true
-					if logEnable(logEXTRACT) {
-						logit("%s: directory replace", node)
+					// If a file is being replaced
+					// by a directory with the
+					// same name, we have to
+					// disaable later
+					// canonicalization because of
+					// the weird edge case
+					// exhibited by samename.svn.
+					// The test asks if the path
+					// had file content in the
+					// previous revision.
+					if _, ok := sp.history.visible[sp.backfrom[node.revision]].get(node.path); !ok {
+						sp.noSimplify = true
+						if logEnable(logEXTRACT) {
+							logit("%s: directory replace disables canicalization", node)
+						}
 					}
 				}
 			} else if node.kind == sdFILE {
