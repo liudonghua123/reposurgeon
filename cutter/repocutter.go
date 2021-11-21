@@ -2277,17 +2277,18 @@ PROPS-END
 			return []byte(swapHeader)
 		}
 
+		coalesced := false
+		var parsed parsedNode
+		parsed.action = header.payload("Node-action")
+		parsed.isDelete = bytes.Equal(parsed.action, []byte("delete"))
+		parsed.isCopy = header.index("Node-copyfrom-path") != -1
+		parsed.isDir = header.isDir(source)
+		parsed.role = string(parsed.action)
+		if parsed.isCopy {
+			parsed.role = "copy"
+		}
 		if match == nil || match.Match(header.payload("Node-path")) {
 			wildcardKey = ""
-			var parsed parsedNode
-			parsed.action = header.payload("Node-action")
-			parsed.isDelete = bytes.Equal(parsed.action, []byte("delete"))
-			parsed.isCopy = header.index("Node-copyfrom-path") != -1
-			parsed.isDir = header.isDir(source)
-			parsed.role = string(parsed.action)
-			if parsed.isCopy {
-				parsed.role = "copy"
-			}
 			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
 				return swapper("Node-path: ", path, parsed)
 			})
@@ -2305,7 +2306,7 @@ PROPS-END
 			if oldval != nil && newval == nil {
 				return nil
 			}
-			coalesced := !bytes.Equal(oldval, newval)
+			coalesced = !bytes.Equal(oldval, newval)
 			if coalesced {
 				if parsed.isDelete {
 					thisDelete = string(newval)
@@ -2313,6 +2314,8 @@ PROPS-END
 					thisCopyPair = copyPair{string(newval), ""}
 				}
 			}
+		}
+		if match == nil || match.Match(header.payload("Node-copyfrom-path")) {
 			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(path []byte) []byte {
 				return swapper("Node-copyfrom-path: ", path, parsed)
 			})
@@ -2363,10 +2366,6 @@ PROPS-END
 			}
 		}
 
-		if debug >= 1 {
-			fmt.Fprintf(os.Stderr, "XXX r%d-%d wildcardKey=%q wildcards=%v\n",
-				source.Revision, source.Index, wildcardKey, wildcards)
-		}
 		all := make([]byte, 0)
 		if wildcardKey == "" {
 			all = append(all, []byte(header)...)
