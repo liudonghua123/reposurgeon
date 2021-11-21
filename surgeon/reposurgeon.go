@@ -7384,7 +7384,7 @@ func (rs *Reposurgeon) DoLogfile(line string) bool {
 // HelpPrint says "Shut up, golint!"
 func (rs *Reposurgeon) HelpPrint() {
 	rs.helpOutput(`
-print [TEXT...] [>OUTFILE]
+print [TEXT...] [<INFILE] [>OUTFILE]
 
 Ship a literal string to the terminal. All text on the command line,
 including whitespace, is sent.  Intended for scripting regression
@@ -7394,9 +7394,13 @@ tests.
 
 // DoPrint is the handler for the "print" command.
 func (rs *Reposurgeon) DoPrint(line string) bool {
-	parse := rs.newLineParse(line, parseNOSELECT, []string{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT, []string{"stdout", "stdin"})
 	defer parse.Closem()
-	fmt.Fprintf(parse.stdout, "%s\n", parse.line)
+	if parse.redirected {
+		io.Copy(parse.stdout, parse.stdin)
+	} else {
+		fmt.Fprintf(parse.stdout, "%s\n", parse.line)
+	}
 	return false
 }
 
