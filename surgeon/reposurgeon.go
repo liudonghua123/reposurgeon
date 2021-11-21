@@ -7471,6 +7471,12 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 		if err == io.EOF && scriptline == "" {
 			break
 		}
+
+		// comments
+		if strings.HasPrefix(scriptline, "#") {
+			continue
+		}
+
 		// Handle multiline commands
 		for strings.HasSuffix(scriptline, "\\\n") {
 			nexterline, err := script.ReadString('\n')
