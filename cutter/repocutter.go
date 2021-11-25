@@ -2288,6 +2288,9 @@ PROPS-END
 			parsed.role = "copy"
 		}
 		if match == nil || match.Match(header.payload("Node-path")) {
+			if payload := header.payload("Node-path"); bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches")) {
+				croak("r%d-%d~%s: canonical path found while swapping", payload, source.Revision, source.Index)
+			}
 			wildcardKey = ""
 			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
 				return swapper("Node-path: ", path, parsed)
