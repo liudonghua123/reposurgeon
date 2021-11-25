@@ -1678,7 +1678,13 @@ func reduce(source DumpfileSource) {
 	sselect(source, NewSubversionRange(selection[0:len(selection)-1]))
 }
 
-func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
+var renumbering map[int]int
+
+func renumberBack(n int) int {
+	return renumbering[n]
+}
+
+func renumberMergeInfo(lines []byte, renumbering map[int]int) []byte {
 	modifiedLines := make([]byte, 0)
 	for _, line := range bytes.Split(lines, []byte("\n")) {
 		line = append(line, '\n')
@@ -1696,7 +1702,8 @@ func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
 				digits = append(digits, c)
 			} else {
 				if len(digits) > 0 {
-					d := fmt.Sprintf("%d", renumbering[string(digits)])
+					v, _ := strconv.Atoi(string(digits))
+					d := fmt.Sprintf("%d", renumberBack(v))
 					out = append(out, []byte(d)...)
 					digits = make([]byte, 0)
 				}
@@ -1712,7 +1719,7 @@ func renumberMergeInfo(lines []byte, renumbering map[string]int) []byte {
 
 // Renumber all revisions.
 func renumber(source DumpfileSource) {
-	renumbering := make(map[string]int)
+	renumbering = make(map[int]int)
 	counter := base
 	var p []byte
 	type HeaderState int
@@ -1801,7 +1808,8 @@ func renumber(source DumpfileSource) {
 			propParserState = awaitingNext
 
 			fmt.Printf("Revision-number: %d\n", counter)
-			renumbering[string(p)] = counter
+			v, _ := strconv.Atoi(string(p))
+			renumbering[v] = counter
 			counter++
 		} else if p = ss.payload("Node-path"); p != nil {
 			if headerState != AwaitingHeader {
@@ -1825,7 +1833,8 @@ func renumber(source DumpfileSource) {
 			os.Stdout.Write(line)
 			continue
 		} else if p = ss.payload("Node-copyfrom-rev"); p != nil {
-			fmt.Printf("Node-copyfrom-rev: %d\n", renumbering[string(p)])
+			v, _ := strconv.Atoi(string(p))
+			fmt.Printf("Node-copyfrom-rev: %d\n", renumberBack(v))
 		} else {
 			if headerState == AwaitingHeader {
 				os.Stdout.Write(line)
