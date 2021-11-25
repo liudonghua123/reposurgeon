@@ -58,6 +58,13 @@ Content-length: 10
 
 PROPS-END
 
+Node-path: project1
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
 
 
 Revision-number: 2

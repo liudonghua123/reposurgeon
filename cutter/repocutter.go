@@ -2140,6 +2140,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	wildcards := make(map[string]orderedStringSet)
 	var wildcardKey string
 	const wildcardMark = '*'
+	stdlayout := func(payload []byte) bool {
+		return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
+	}
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2260,10 +2263,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	var thisCopyPair, lastCopyPair copyPair
 	var thisDelete, lastDelete string
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
-		// This is dodgy.  The assumption here is that the first node
-		// of r1 is the directory creation for the first project.
-		// Replace it with synthetic nodes that create normal directory
-		// structure.
+		all := make([]byte, 0)
+		// FIXME: Unconditionally prepending this won't work on partial swaps.
 		const swapHeader = `Node-path: branches
 Node-kind: dir
 Node-action: add
@@ -2291,9 +2292,12 @@ Content-length: 10
 PROPS-END
 
 `
+		nodePath := header.payload("Node-path")
 		if source.Revision == 1 && !swaplatch {
 			swaplatch = true
-			return []byte(swapHeader)
+			if !stdlayout(nodePath) {
+				all = []byte(swapHeader)
+			}
 		}
 
 		coalesced := false
@@ -2307,9 +2311,6 @@ PROPS-END
 			parsed.role = "copy"
 		}
 		if match == nil || match.Match(header.payload("Node-path")) {
-			if payload := header.payload("Node-path"); bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches")) {
-				croak("r%d-%d~%s: canonical path found while swapping", payload, source.Revision, source.Index)
-			}
 			wildcardKey = ""
 			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
 				return swapper("Node-path: ", path, parsed)
@@ -2388,7 +2389,6 @@ PROPS-END
 			}
 		}
 
-		all := make([]byte, 0)
 		if wildcardKey == "" {
 			all = append(all, []byte(header)...)
 			all = append(all, properties...)
