@@ -1,7 +1,6 @@
 = reposurgeon project news =
 
 Repository head::
-     print command now allows input redirection (input from file or heredoc)
      Minor improvements in baton handling.
      repocutter pathrename REs are constrained to match full oath segments
      --nobranch is retired; use repocutter to prepare flat repositories

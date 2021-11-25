@@ -7384,7 +7384,7 @@ func (rs *Reposurgeon) DoLogfile(line string) bool {
 // HelpPrint says "Shut up, golint!"
 func (rs *Reposurgeon) HelpPrint() {
 	rs.helpOutput(`
-print [TEXT...] [<INFILE] [>OUTFILE]
+print [TEXT...] [>OUTFILE]
 
 Ship a literal string to the terminal. All text on the command line,
 including whitespace, is sent.  Intended for scripting regression
@@ -7394,13 +7394,9 @@ tests.
 
 // DoPrint is the handler for the "print" command.
 func (rs *Reposurgeon) DoPrint(line string) bool {
-	parse := rs.newLineParse(line, parseNOSELECT, []string{"stdout", "stdin"})
+	parse := rs.newLineParse(line, parseNOSELECT, []string{"stdout"})
 	defer parse.Closem()
-	if parse.redirected {
-		io.Copy(parse.stdout, parse.stdin)
-	} else {
-		fmt.Fprintf(parse.stdout, "%s\n", parse.line)
-	}
+	fmt.Fprintf(parse.stdout, "%s\n", parse.line)
 	return false
 }
 
@@ -7475,18 +7471,6 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 		if err == io.EOF && scriptline == "" {
 			break
 		}
-
-		// comments
-		if strings.HasPrefix(scriptline, "#") {
-			// if echoing is enabled, print out
-			// comments. non–comments will be printed out
-			// by PreCmd below.
-			if control.flagOptions["echo"] {
-				control.baton.printLogString(scriptline)
-			}
-			continue
-		}
-
 		// Handle multiline commands
 		for strings.HasSuffix(scriptline, "\\\n") {
 			nexterline, err := script.ReadString('\n')
