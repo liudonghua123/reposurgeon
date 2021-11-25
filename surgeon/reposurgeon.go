@@ -7478,6 +7478,12 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 
 		// comments
 		if strings.HasPrefix(scriptline, "#") {
+			// if echoing is enabled, print out
+			// comments. non–comments will be printed out
+			// by PreCmd below.
+			if control.flagOptions["echo"] {
+				control.baton.printLogString(scriptline)
+			}
 			continue
 		}
 
