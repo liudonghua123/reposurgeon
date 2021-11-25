@@ -1681,7 +1681,17 @@ func reduce(source DumpfileSource) {
 var renumbering map[int]int
 
 func renumberBack(n int) int {
-	return renumbering[n]
+	v, ok := renumbering[n]
+	if ok {
+		return v
+	}
+	m := 0
+	for r := range renumbering {
+		if r <= n && r > m {
+			m = r
+		}
+	}
+	return renumbering[m]
 }
 
 func renumberMergeInfo(lines []byte, renumbering map[int]int) []byte {
