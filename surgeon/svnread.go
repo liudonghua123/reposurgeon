@@ -390,7 +390,7 @@ func (sp *StreamParser) sdReadProps(target string, checklength int) *OrderedMap 
 			// one is global-ignores.svn. These can be prevented by changing
 			// the compatison to <.
 			//
-			// 2. off-by-ones when the tests are run undef Go 1.14 7 under
+			// 2. off-by-ones when the tests are run under Go 1.14 7 under
 			// Fedora; Daniel Brooks reported this as reproducible.
 			//
 			// We could chase these down, but this test isn't actually necessary
@@ -2006,10 +2006,10 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	// Fixing the parent links to restore the namespace continuity.
 	// In this comment, a namespace is a branch, a tag or anything recognized
 	// by the branchify setting. The previous subphase stripped the namespace
-	// from the file paths and transferred it to the commit branch.  By doing
-	// so, it entangled the histories of files in different namespaces.  This
-	// phase is about getting the content's correctness back by separating the
-	// linear history into disconnected chains of commits, one per namespace.
+	// from the file paths and transferred it to the commit branch field. By
+	// doing so, it entangled the histories of files in different namespaces.
+	// This phase is about getting the content's correctness back by separating
+	// the linear history into disconnected chains of commits, one per namespace.
 	// The deleteall operations comes from total deletion of namespaces which
 	// should cut the chain in two and disconnect the latter history from the
 	// history preceding the deleteall. Phase 6a and 6b ensure that deleteall
