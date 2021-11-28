@@ -909,7 +909,7 @@ func (he *HgExtractor) _branchColorItems() *OrderedMap {
 	return nil
 }
 
-// colorBanches assigns branches to commits in an extracted repository
+// colorBranches assigns branches to commits in an extracted repository
 func (he *HgExtractor) colorBranches(rs *RepoStreamer) error {
 	colorItems := he._branchColorItems()
 	if colorItems != nil {

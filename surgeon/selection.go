@@ -1,8 +1,8 @@
 package main
 
 // The event selector. Exports one class, selectionSet.  Adds to the
-// Reposurgeon cclass two methods: parseSelectionSet() that is used to
-// compile selection-expression syntax to a maching machine, and
+// Reposurgeon class two methods: parseSelectionSet() that is used to
+// compile selection-expression syntax to a matching machine, and
 // evalSelectionSet() that is uses to produce a selection set using
 // the machine.
 //

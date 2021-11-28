@@ -54,7 +54,7 @@ will silently refrain from doing this if you don't have it installed.
 The repotool mirror code needs rsync.
 
 GNU make is required for the regression tests, but not for running the
-code.  golint, shellcheck, mercurial, and cvs sre required for
+code.  golint, shellcheck, mercurial, and cvs are required for
 the full regression tests; only a subset of the tests will be run in
 their absence.  The cvs-fast-export and Subversion svnadmin importer
 are also required for testing. Very old versions of Subversion

@@ -517,7 +517,7 @@ For more detailed discussion of CVS conversion and troubleshooting see
 
 ==== Subversion
 
-reposurgeon can read Subversion dumpfiles or repositories. If you want
+Reposurgeon can read Subversion dumpfiles or repositories. If you want
 it to read a repository, you must run it within the top-level
 directory of the repository itself, *not* in a checkout directory made
 from the repository.
@@ -2508,7 +2508,7 @@ just another branch of the tree.  Accordingly a Subversion tag is a
 copy of the state of an entire branch at a particular revision. This
 can be losslessly translated to an annotation only if no additional
 commits are added to the tag branch after the copy. But nothing
-prevents this!  reposurgeon tries to do the right thing, creating a
+prevents this!  Reposurgeon tries to do the right thing, creating a
 DVCS-style annotated tag when it can and otherwise preserving the
 changes as commits, using a lightweight tag to point at the tip.
 
@@ -2566,7 +2566,7 @@ Sometimes Subversion developers use collections of per-file mergeinfo
 properties to express partial branch merges.  This does not map to
 the DVCS model at all well, and trying to promote these to full-branch
 merges by hand is actually dangerous.  An excellent essay,
-http://web.archive.org/web/20170104093332/https://plus.google.com/100357083629018071519/posts/jG7CN9R1SsZ[Partial git merges -- just say no.]
+http://web.archive.org/web/20170104093332/https://plus.google.com/100357083629018071519/posts/jG7CN9R1SsZ[Partial git merges -- just say no],
 explores the problem in depth.
 
 The bottom line is that reposurgeon warns about per-file svn:mergeinfo
@@ -2591,7 +2591,7 @@ Note that the Subversion dump reader only supports versions 1 and
 This shouldn't be a problem with normal use of reposurgeon, which
 calls svnadmin dump in its default mode generating version 2.
 
-If a stream file hasd gaps in the revision sequence, branch copy
+If a stream file has gaps in the revision sequence, branch copy
 references to nonexistent revisions will be patches to refer to the
 most recent existing revision before the missing one.
 
@@ -2794,7 +2794,7 @@ Reading a Subversion stream enables writing of the legacy map as
 'legacy-id' passthroughs when the repo is written to a stream
 file.
 
-reposurgeon tries hard to silently do the right thing, but there are
+Reposurgeon tries hard to silently do the right thing, but there are
 Subversion edge cases in which it emits warnings because a human may
 need to intervene and perform fixups by hand. Here are the less
 obvious messages it may emit:
@@ -2898,7 +2898,7 @@ procedure handles those correctly.
 Another useful tool is the repocutter "swapsvn" primitive.  If the
 multiproject structure is perfectly regular - top-level directories
 are always projects, and always have trunk/tags/branches structure
-immediately underneath - swapsvn will trransform the repository to
+immediately underneath - swapsvn will transform the repository to
 a regular Subversion structure with trunk/tags/branches at the top
 level.
 
@@ -2907,11 +2907,11 @@ will be promoted to become tags and branches across the entire
 repository
 
 Sometimes you may be able to transform a nearly-regular multiproject
-structure into a perfectlty regular one with repocutter pathrename
+structure into a perfectly regular one with repocutter pathrename
 commands, then apply repocutter swapsvn.
 
 Paths that swapsvn does not recognize as transformable will be passed
-through unalktered. This means they will end up in the synthetic
+through unaltered. This means they will end up in the synthetic
 ``ubranched`` branch.
 
 See the embedded help listed by "repocutter help swapsvn" for some
@@ -2919,7 +2919,7 @@ details and caveats.
 
 ==== Branchlift on flat repositories
 
-If the repository has no branch structure ar all, you might want to
+If the repository has no branch structure at all, you might want to
 filter the stream with "repocutter push trunk" and then individually
 turning subdirectories into branches using the <<branchlift_cmd>>
 command.  The pattern for that looks like this:
@@ -3136,14 +3136,14 @@ comments and reference-lifting.
 === Avoid git-svn lossage with repocutter filtering
 
 Subversion histories that have been touched by git-svn often have
-suble damage in the metadata.  One common class of problems comes from
+subtle damage in the metadata.  One common class of problems comes from
 git-svn creating .gitignore and .git histories in the Subversion
 repository. Commits on these paths are best treated as junk and removed.
 
 While they could be removed with a reposurgeon expunge command after
 the repository has been translated to Git, sometimes one sees a worse
 problem resulting from git-svn somehow creating invalid copy nodes
-involving .git/.gitignore.  This can poroduce alarming log messages,
+involving .git/.gitignore.  This can produce alarming log messages,
 or even cause a Subversion stream read to fail spuriously despite the
 actual Subversion part of the history being undamaged.
 
@@ -3156,7 +3156,7 @@ repocutter expunge "/.git$"  "/.gitignore$"
 
 If you use this to pre-filter your repository dump it will remove the
 garbled copy nodes along with every other modification to matching
-path, wiithout affecting anything in the actual native Subversion
+path, without affecting anything in the actual native Subversion
 part of the history.
 
 [[troubleshooting]]
@@ -3313,7 +3313,7 @@ on Subversion dumps, <<repocutter.adoc#,repocutter>>.
 
 There is a cvsstrip tool in the cvs-fast-export distribution
 that performs an analogous stripping operation on CVS repositories.
-Please see the troubleshooting indytuctions included with that
+Please see the troubleshooting instructions included with that
 distribution to lean how to use it.
 
 ==== Replace the content blobs in the dump with stubs
@@ -4165,7 +4165,7 @@ VCS instance.
 === reposurgeon.go
 
 All code that knows about the DSL syntax should live in reposurgeon.go
-alonmg with the program main and the functions for reporting errors,
+along with the program main and the functions for reporting errors,
 logging, handling signals and aborts, etc.
 
 === svnread.go
@@ -4243,7 +4243,7 @@ happen.
 It's also basically a crash landing if your FooVCS can only be
 accessed through a GUI, or its clients only run on Windows, or
 it has a CLI that is not capable enough to support an extractor
-class. We know of cases where proprietatary VCS vendors have
+class. We know of cases where proprietary VCS vendors have
 deliberately crippled their export and CLI features in order to
 lock customers in; that is no fun to deal with, so you'll
 have to pay somebody money.

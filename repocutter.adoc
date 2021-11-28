@@ -21,7 +21,7 @@ format, which reposurgeon does not.
 In all commands, the -r (or --range) option limits the selection of
 revisions over which an operation will be performed. Usually other
 revisions will be passed through unaltered, except in the select and
-deselect commands for which the option controls whicjh revisions will be
+deselect commands for which the option controls which revisions will be
 passed through. A selection consists of one or more comma-separated
 ranges. A range may consist of an integer revision number or the
 special name HEAD for the head revision. Or it may be a
@@ -31,7 +31,7 @@ followed by HEAD.
 (Older versions of this tool, before 4.30, treated -r as an implied
 selection filter rather than passing through unselected revisions
 unaltered. If you have old scripts using repocutter they may need
-nodification.)
+modification.)
 
 Normally, each subcommand produces a progress spinner on standard
 error; each turn means another revision has been filtered. The -q (or
@@ -143,7 +143,7 @@ invalid.  The problem is copyfrom operations (Subversion branch and
 tag creations).  If an included revision includes a copyfrom reference
 to an excluded one, the reference target won't be in the emitted dump;
 it won't load correctly in Subversion, and while reposurgeon has
-fallback logic that backs down to the latest existing revisioon before
+fallback logic that backs down to the latest existing revision before
 the kissing one this expedient is fragile. The revision number in a
 copyfrom header pointing to a missing revision will be zero. Attempts
 to be clever about this won't work; the problem is inherent in the

@@ -110,7 +110,7 @@ var oneliners = map[string]string{
 var helpdict = map[string]string{
 	"closure": `closure: usage: repocutter [-q] closure PATH...
 
-The 'closure' subcommand computes the transitive closure of a path set under thw
+The 'closure' subcommand computes the transitive closure of a path set under the
 relation 'copies from' - that is, with the smallest set of additional paths such
 that every copy-from source is in the set.
 `,
@@ -273,7 +273,7 @@ by a selection set.
 	"swapsvn": `swapsvn: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
 
 Like swap, but is aware of Subversion structure.  Used for transforming
-multiproject repositories intoo a standard layout with trunk, tags, and
+multiproject repositories into a standard layout with trunk, tags, and
 branches at the top level.
 
 Fires when the second component of a matching path is "trunk", "branches",
@@ -286,7 +286,7 @@ putting the project directory beneath the branch.
 After the swap, more attempts to recognize spans of deletes, copies
 into branch directories, and copies into tag subdirectories that are
 parallel in all top-level (project) directories. These are coalesced
-into single deketes or copies in the inverted structure.
+into single deletes or copies in the inverted structure.
 
 Accordingly, deletes and copies with three-segment sources and
 three-segment targets are  transformed; for tags/ and branches/ paths
@@ -943,7 +943,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * through and its revision header has not already beem passed
 	 * through, pass that. Properties are shipped (filtered by
 	 * revhook) if their node header or revision header is
-	 * shipped. It is exeptional for passthrough to be off; other
+	 * shipped. It is exceptional for passthrough to be off; other
 	 * than in closure(), parthlist(), log(), reduce(), and see()
 	 * it is always on.
 	 */
@@ -959,7 +959,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	if !ds.Lbs.HasLineBuffered() {
 		return
 	}
-	// A hack tp only apply the proprety hook on selected revisions.
+	// A hack to only apply the property hook on selected revisions.
 	selectedProphook := func(properties *Properties) {
 		if prophook != nil && selection.Contains(ds.Revision) {
 			prophook(properties)
@@ -1314,7 +1314,7 @@ func expunge(source DumpfileSource, selection SubversionRange, patterns []string
 }
 
 func dumpall(header StreamSection, properties []byte, content []byte) []byte {
-	// Bad idea - it looks like a way to filter out directtory-change
+	// Bad idea - it looks like a way to filter out directory-change
 	// operatiuons that only hack properties, but it a;so catches directory
 	// add and delete operations.
 	//if bytes.Equal(properties, []byte("PROPS-END\n")) && len(content) == 0 {

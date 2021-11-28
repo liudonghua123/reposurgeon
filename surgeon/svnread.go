@@ -343,7 +343,7 @@ var preserveProperties = map[string]bool{
 
 func sdBody(line []byte) []byte {
 	// Parse the body from a Subversion header line
-	// This used to use TrimSpace, but it turns out clovbbering traling spaces
+	// This used to use TrimSpace, but it turns out clobbering trailing spaces
 	// in Node-path lines can land you in trouble
 	return bytes.TrimSuffix(bytes.SplitN(line, []byte(": "), 2)[1], []byte{'\n'})
 }

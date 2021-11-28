@@ -111,7 +111,7 @@ Requires `cvs-fast-export` (yes, that's not a typo; `cvs-fast-export`
 handles RCS collections as well). The caveat for CVS applies.
 
 bk::
-Versions 7.3 and after have a fast-export command that reposufreon can use.
+Versions 7.3 and after have a fast-export command that reposurgeon can use.
 
 [[returns]]
 == ERROR RETURNS ==

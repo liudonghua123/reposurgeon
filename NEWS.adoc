@@ -2,12 +2,12 @@
 
 Repository head::
      Minor improvements in baton handling.
-     repocutter pathrename REs are constrained to match full oath segments
+     repocutter pathrename REs are constrained to match full path segments
      --nobranch is retired; use repocutter to prepare flat repositories
 
 4.30: 2021-10-13::
      Speed up DoTagify by parallelizing it.
-     =J selection gets all commmits and tags with non-ASCII metadata
+     =J selection gets all commits and tags with non-ASCII metadata
      Added msgin --relax option.
      On most subcommands repocutter -r restricts which commits are transformed.
      Added pathlist command to repocutter.
@@ -42,7 +42,7 @@ Repository head::
      Unite now produces union repositories with a valid master branch.
      repocutter errors out if presented with unexpected extra arguments.
      "tip" has been removed; what it was computing is not well defined.
-     Revert removal of --cvsignores. Nay be revisyted in a future release
+     Revert removal of --cvsignores. May be revisited in a future release
      All test messages conform to TAP and results are shipped through tappy.
 
 4.24: 2021-02-13::
