@@ -194,20 +194,12 @@ to every path ion a flat repository. This transform can be restricted by a selec
 Renumber all revisions, patching Node-copyfrom headers as required.
 Any selection option is ignored. Takes no arguments.  The -b option 
 can be used to set the base to renumber from, defaulting to 0.
-`, "reduce": `reduce: usage: repocutter reduce INPUT-FILE
+`,
+	"reduce": `reduce: usage: repocutter [-r selection] reduce
 
 Strip revisions out of a dump so the only parts left those likely to
-be relevant to a conversion problem. A revision is interesting if it
-either (a) contains any operation that is not a plain file
-modification - any directory operation, or any add, or any delete, or
-any copy, or any operation on properties - or (b) it is referenced by
-a later copy operation. Any commit that is neither interesting nor
-has interesting neighbors is dropped.
-
-Because the 'interesting' status of a commit is not known for sure
-until all future commits have been checked for copy operations, this
-command requires an input file.  It cannot operate on standard input.
-The reduced dump is emitted to standard output.
+be relevant to a conversion problem. This is done by dropping every
+node that consists of a change on a file and has no property settings.
 `,
 	"replace": `replace: usage: repocutter replace /REGEXP/REPLACE/
 
@@ -1419,7 +1411,9 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 				rooted := false
 				if oldval[0] == os.PathSeparator {
 					rooted = true
-					oldval = oldval[1:]
+					if len(oldval) > 0 {
+						oldval = oldval[1:]
+					}
 				}
 				newval := prefix + "/" + oldval
 				if rooted {
@@ -1641,41 +1635,19 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 	mutatePaths(source, selection, mutator, nil, nil)
 }
 
-// Topologically reduce a dump, removing spans of plain file modifications.
-func reduce(source DumpfileSource) {
-	maxRev := 0
-	interesting := make(map[int]bool)
-	interesting[0] = true
-	reducehook := func(header StreamSection, properties []byte, _ []byte) []byte {
-		if !(string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change") || len(properties) > 0 { //len([]nil == 0)
-			interesting[source.Revision-1] = true
-			interesting[source.Revision] = true
-			interesting[source.Revision+1] = true
-			//fmt.Fprintf(os.Stderr, "Principal interest: %d %d %d\n", source.Revision-1, source.Revision, source.Revision+1)
+// Topologically reduce a dump, removing plain file modifications.
+func reduce(source DumpfileSource, selection SubversionRange) {
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change" && len(properties) == 0 {
+			return nil
 		}
-		copysource := header.payload("Node-copyfrom-rev")
-		if copysource != nil {
-			n, err := strconv.Atoi(string(copysource))
-			if err == nil {
-				interesting[n-1] = true
-				interesting[n] = true
-				interesting[n+1] = true
-				//fmt.Fprintf(os.Stderr, "Copy-derived interest: %d %d %d\n", n-1, n, n+1)
-			}
-		}
-		maxRev = source.Revision
-		return nil
+		all := make([]byte, 0)
+		all = append(all, []byte(header)...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
 	}
-	source.Report(NewSubversionRange("0:HEAD"), reducehook, nil, false)
-	var selection string
-	for i := 0; i <= maxRev; i++ {
-		if interesting[i] {
-			selection += fmt.Sprintf("%d,", i)
-		}
-	}
-	source.Lbs.Rewind()
-	// -1 is to trim off trailing comma
-	sselect(source, NewSubversionRange(selection[0:len(selection)-1]))
+	source.Report(selection, nodehook, nil, true)
 }
 
 var renumbering map[int]int
@@ -2597,16 +2569,7 @@ func main() {
 	case "proprename":
 		proprename(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
 	case "reduce":
-		if len(flag.Args()) < 2 {
-			fmt.Fprintf(os.Stderr, "repocutter: reduce requires a file argument.\n")
-			os.Exit(1)
-		}
-		f, err := os.Open(flag.Args()[1])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "repocutter: can't open stream to reduce.\n")
-			os.Exit(1)
-		}
-		reduce(NewDumpfileSource(f, baton))
+		reduce(NewDumpfileSource(input, baton), selection)
 	case "push":
 		push(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "renumber":

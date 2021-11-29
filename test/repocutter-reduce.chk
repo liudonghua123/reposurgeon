@@ -119,38 +119,6 @@ Content-length: 10
 PROPS-END
 
 
-Revision-number: 4
-Prop-content-length: 137
-Content-length: 137
-
-K 8
-svn:date
-V 27
-2013-02-23T20:44:14.743474Z
-K 7
-svn:log
-V 39
-First modification on the main branch.
-
-K 10
-svn:author
-V 3
-esr
-PROPS-END
-
-Node-path: trunk/README
-Node-kind: file
-Node-action: change
-Text-content-length: 77
-Text-content-md5: 27754c3f27b289095af7c53ec730bece
-Text-content-sha1: ad5da0f1fa43d2ab5b0b115543244ec58f405159
-Content-length: 77
-
-This is a test Subversion repository
-
-First modification on the main branch.
-
-
 Revision-number: 5
 Prop-content-length: 138
 Content-length: 138
@@ -181,38 +149,6 @@ Content-length: 85
 
 PROPS-END
 This is a random resource file being added to the branch we'll later fold.
-
-
-Revision-number: 6
-Prop-content-length: 138
-Content-length: 138
-
-K 8
-svn:date
-V 27
-2013-02-23T20:49:41.012964Z
-K 7
-svn:log
-V 40
-Second modification on the main branch.
-
-K 10
-svn:author
-V 3
-esr
-PROPS-END
-
-Node-path: trunk/README
-Node-kind: file
-Node-action: change
-Text-content-length: 78
-Text-content-md5: 0a2ae79f65da648d2d2e27afe44b63f2
-Text-content-sha1: fa5bbc64645557f80c5d70ae46306cffc3892c23
-Content-length: 78
-
-This is a test Subversion repository
-
-Second modification on the main branch.
 
 
 Revision-number: 7
@@ -248,37 +184,5 @@ Node-copyfrom-rev: 6
 Node-copyfrom-path: trunk/README
 Text-copy-source-md5: 0a2ae79f65da648d2d2e27afe44b63f2
 Text-copy-source-sha1: fa5bbc64645557f80c5d70ae46306cffc3892c23
-
-
-Revision-number: 8
-Prop-content-length: 137
-Content-length: 137
-
-K 8
-svn:date
-V 27
-2013-02-23T21:50:36.585694Z
-K 7
-svn:log
-V 39
-Third modification on the main branch.
-
-K 10
-svn:author
-V 3
-esr
-PROPS-END
-
-Node-path: trunk/README
-Node-kind: file
-Node-action: change
-Text-content-length: 77
-Text-content-md5: 24d0d8ceb247fc3bb6fbce36bf50e59d
-Text-content-sha1: 7df4ed6c1cb981464cf7b3a4a13a68f5a0d6e915
-Content-length: 77
-
-This is a test Subversion repository
-
-Third modification on the main branch.
 
 
