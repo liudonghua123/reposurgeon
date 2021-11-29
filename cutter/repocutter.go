@@ -2265,7 +2265,7 @@ PROPS-END
 
 `
 		nodePath := header.payload("Node-path")
-		if source.Revision == 1 && !swaplatch {
+		if !swaplatch {
 			swaplatch = true
 			if !stdlayout(nodePath) {
 				all = []byte(swapHeader)
