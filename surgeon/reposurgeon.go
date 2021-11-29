@@ -7484,7 +7484,7 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 		scriptline = strings.TrimSpace(scriptline)
 
 		// Simulate shell here-document processing
-		if strings.Contains(scriptline, "<<") {
+		if len(scriptline) > 0 && scriptline[0] != '#' && strings.Contains(scriptline, "<<") {
 			heredoc, err := ioutil.TempFile("", "reposurgeon-")
 			if err != nil {
 				croak("script failure on '%s': %s", fname, err)
