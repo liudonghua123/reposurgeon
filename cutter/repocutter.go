@@ -934,10 +934,9 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * has not filtered to nil. When any node in a revision passes
 	 * through and its revision header has not already beem passed
 	 * through, pass that. Properties are shipped (filtered by
-	 * revhook) if their node header or revision header is
-	 * shipped. It is exceptional for passthrough to be off; other
-	 * than in closure(), parthlist(), log(), reduce(), and see()
-	 * it is always on.
+	 * revhook) if their node header or revision header is shipped.
+	 * It is exeptional for passthrough to be off; other than in
+	 * closure(), pathlist(), log(), and see() it is always on.
 	 */
 
 	emit := passthrough && selection.intervals[0][0] == 0
@@ -2282,7 +2281,23 @@ PROPS-END
 		if parsed.isCopy {
 			parsed.role = "copy"
 		}
-		if match == nil || match.Match(header.payload("Node-path")) {
+		if match == nil || match.Match(nodePath) {
+			/* FIXME: This should only drop nodes, but it looses entire commits
+			// Special handling of operations on bare project directories
+			if bytes.Count(nodePath, []byte(pathsep)) == 0 && !stdlayout(nodePath) {
+				// Don't retain creation of project
+				// directories, these are replaced by
+				// the creation of the top-level
+				// trunk/tags/branches directories in
+				// the swapped hierarchy.  Alas,
+				// there's no safe place to put the
+				// metadata.
+				if bytes.Equal(parsed.action, []byte("add")) {
+					fmt.Fprintf(os.Stderr, "XXX Removing %s (%d-%d)\n", nodePath, source.Revision, source.Index)
+					return nil
+				}
+			}
+			*/
 			wildcardKey = ""
 			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
 				return swapper("Node-path: ", path, parsed)
