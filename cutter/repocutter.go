@@ -275,6 +275,9 @@ and  branches, the following *two* components are swapped to the top.
 thus, "foo/branches/release23" becomes "branches/release23/foo",
 putting the project directory beneath the branch.
 
+Also fires when an entire project diretory is copied; this is transformed
+into a copy of trunk and copies of each subbranch and tag that exists.
+
 After the swap, more attempts to recognize spans of deletes, copies
 into branch directories, and copies into tag subdirectories that are
 parallel in all top-level (project) directories. These are coalesced
@@ -296,6 +299,10 @@ way.
 Parallel rename sequences are also coalesced.
 
 If a PATTERN argument is given, only paths matching the pattern are swapped.
+
+Note that the result of swapping does not have initial trunk/branches/tags
+directory creations and can thus not be fed directly to svnload. reposurgeon
+copes with this.
 
 This transform can be restricted by a selection set.
 `,
@@ -1153,20 +1160,20 @@ func (ss StreamSection) payload(hd string) []byte {
 func (ss *StreamSection) replaceHook(htype string, hook func([]byte) []byte) (StreamSection, []byte, []byte) {
 	header := []byte(*ss)
 	offs := bytes.Index(header, []byte(htype))
-	if offs > -1 {
-		offs += len(htype)
-		endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
-		before := header[:offs]
-		pathline := header[offs:endoffs]
-		after := make([]byte, len(header)-endoffs)
-		copy(after, header[endoffs:])
-		newpathline := hook(pathline)
-		header = before
-		header = append(header, newpathline...)
-		header = append(header, after...)
-		return StreamSection(header), newpathline, pathline
+	if offs == -1 {
+		return StreamSection(header), nil, nil
 	}
-	return StreamSection(header), nil, nil
+	offs += len(htype)
+	endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
+	before := header[:offs]
+	pathline := header[offs:endoffs]
+	after := make([]byte, len(header)-endoffs)
+	copy(after, header[endoffs:])
+	newpathline := hook(pathline)
+	header = before
+	header = append(header, newpathline...)
+	header = append(header, after...)
+	return StreamSection(header), newpathline, pathline
 }
 
 // Find the index of the content of a specified field
@@ -1203,6 +1210,12 @@ func (ss StreamSection) stripChecksums() StreamSection {
 	r4 := regexp.MustCompile("Text-copy-source-sha1:.*\n")
 	header = r4.ReplaceAll(header, []byte{})
 	return StreamSection(header)
+}
+
+func (ss StreamSection) clone() StreamSection {
+	tmp := make([]byte, len(ss))
+	copy(tmp, ss)
+	return tmp
 }
 
 // Subcommand implementations begin here
@@ -2111,9 +2124,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	wildcards := make(map[string]orderedStringSet)
 	var wildcardKey string
 	const wildcardMark = '*'
-	stdlayout := func(payload []byte) bool {
-		return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
-	}
+	//stdlayout := func(payload []byte) bool {
+	//	return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
+	//}
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2226,7 +2239,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		// the branch structure.
 	}
 	var oldval, newval []byte
-	var swaplatch bool // Ugh, but less than global
 	type copyPair struct {
 		nodePath     string
 		copyfromPath string
@@ -2234,43 +2246,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	var thisCopyPair, lastCopyPair copyPair
 	var thisDelete, lastDelete string
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
-		all := make([]byte, 0)
-		// FIXME: Unconditionally prepending this won't work on partial swaps.
-		const swapHeader = `Node-path: branches
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: tags
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: trunk
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-`
 		nodePath := header.payload("Node-path")
-		if !swaplatch {
-			swaplatch = true
-			if !stdlayout(nodePath) {
-				all = []byte(swapHeader)
-			}
-		}
-
 		coalesced := false
 		var parsed parsedNode
 		parsed.action = header.payload("Node-action")
@@ -2298,6 +2274,34 @@ PROPS-END
 				}
 			}
 			*/
+			// Special case - copy of an entire project directory
+			if bytes.Count(nodePath, []byte(pathsep)) == 0 && parsed.role == "copy" {
+				if p := string(properties); p != "" && p != "PROPS-END\n" {
+					croak("can't split a node with nonempty properties (%v).", string(properties))
+				}
+				if debug >= debugPARSE {
+					fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
+				}
+				propdelim := ""
+				if strings.Contains(string(header), "Prop-content") {
+					propdelim = "PROPS-END\n\n"
+				}
+				suffixer := func(header StreamSection, suffix string) []byte {
+					out := header.clone()
+					for _, tag := range [2]string{"Node-path: ", "Node-copyfrom-path: "} {
+						out, _, _ = out.replaceHook(tag, func(in []byte) []byte {
+							return append(in, []byte(suffix)...)
+						})
+					}
+					return []byte(string(out) + propdelim + string(properties) + string(content))
+				}
+				// Push these back so the branches and tags will get wildcarding
+				source.Lbs.Push(suffixer(header, "/tags"))
+				source.Lbs.Push(suffixer(header, "/branches"))
+				source.Lbs.Push(suffixer(header, "/trunk"))
+				return nil
+			}
+
 			wildcardKey = ""
 			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
 				return swapper("Node-path: ", path, parsed)
@@ -2376,6 +2380,7 @@ PROPS-END
 			}
 		}
 
+		all := make([]byte, 0)
 		if wildcardKey == "" {
 			all = append(all, []byte(header)...)
 			all = append(all, properties...)

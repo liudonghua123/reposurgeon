@@ -32,32 +32,6 @@ Synthetic branch-structure creation.
 
 PROPS-END
 
-Node-path: branches
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: tags
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: trunk
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
 Node-path: project1
 Node-kind: dir
 Node-action: add

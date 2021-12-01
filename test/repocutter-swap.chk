@@ -32,32 +32,6 @@ Synthetic branch-structure creation.
 
 PROPS-END
 
-Node-path: branches
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: tags
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: trunk
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
 Node-path: activeedi
 Node-kind: dir
 Node-action: add
@@ -1161,11 +1135,11 @@ V 96
 fixes #9863 - Renomeado o nome do projeto para git_nfse e alteradas as tags para o namespace tc:
 PROPS-END
 
-Node-path: git_nfse
+Node-path: trunk/git_nfse
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 17
-Node-copyfrom-path: brazilian-nfse
+Node-copyfrom-path: trunk/brazilian-nfse
 
 
 Node-path: trunk/git_nfse
@@ -3313,11 +3287,11 @@ V 141
 refs #9865 - A partir desta revision, rubyrails passa a ser o diretorio para codigo open source desenvolvido pela GIT Sistemas em Ruby/Rails.
 PROPS-END
 
-Node-path: rubyrails
+Node-path: trunk/rubyrails
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 35
-Node-copyfrom-path: git_nfse
+Node-copyfrom-path: trunk/git_nfse
 
 
 Node-path: git_nfse

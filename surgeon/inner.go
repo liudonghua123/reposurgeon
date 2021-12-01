@@ -7356,7 +7356,7 @@ func (repo *Repository) renumber(origin int, baton *Baton) {
 	for _, commit := range repo.commits(undefinedSelectionSet) {
 		for i, fileop := range commit.operations() {
 			if fileop.op == opM && strings.HasPrefix(fileop.ref, ":") {
-				newmark = remark(fileop.ref, "fileop")
+				newmark = remark(fileop.ref, fmt.Sprintf("fileop %d of %s", i, fileop.ref))
 				if logEnable(logUNITE) {
 					logit(fmt.Sprintf("renumbering %s -> %s in fileop", fileop.ref, newmark))
 				}
