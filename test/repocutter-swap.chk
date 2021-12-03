@@ -14,8 +14,8 @@ V 27
 PROPS-END
 
 Revision-number: 1
-Prop-content-length: 145
-Content-length: 145
+Prop-content-length: 197
+Content-length: 197
 
 K 10
 svn:author
@@ -27,8 +27,9 @@ V 27
 2009-08-12T18:47:40.282482Z
 K 7
 svn:log
-V 37
-Synthetic branch-structure creation.
+V 89
+Criando dir para repositorio do ActiveEDI, para integracao de dados via padrao Sintegra
+
 
 PROPS-END
 

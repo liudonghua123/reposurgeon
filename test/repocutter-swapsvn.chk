@@ -13,9 +13,35 @@ V 27
 1970-01-01T00:00:00.000000Z
 PROPS-END
 
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: branches
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Node-path: tags
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
 Revision-number: 1
-Prop-content-length: 136
-Content-length: 136
+Prop-content-length: 117
+Content-length: 117
 
 K 10
 svn:author
@@ -27,9 +53,8 @@ V 27
 1970-01-01T00:00:10.000000Z
 K 7
 svn:log
-V 37
-Synthetic branch-structure creation.
-
+V 18
+project1/ creation
 PROPS-END
 
 Node-path: project1
