@@ -300,6 +300,10 @@ Parallel rename sequences are also coalesced.
 
 If a PATTERN argument is given, only paths matching the pattern are swapped.
 
+Note that the result of swapping does not have initial trunk/branches/tags
+directory creations and can thus not be fed directly to svnload. reposurgeon
+copes with this.
+
 This transform can be restricted by a selection set.
 `,
 	"testify": `testify: usage: repocutter [-r SELECTION] testify
@@ -649,7 +653,6 @@ type DumpfileSource struct {
 	Index            int
 	EmittedRevisions map[string]bool
 	DirTracking      map[string]bool
-	Trailer          []byte
 }
 
 // NewDumpfileSource - declare a new dumpfile source object with implied parsing
@@ -957,9 +960,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	// A hack to only apply the property hook on selected revisions.
 	selectedProphook := func(properties *Properties) {
 		if prophook != nil && selection.Contains(ds.Revision) {
-			if debug >= debugPARSE {
-				fmt.Fprintf(os.Stderr, "<calling hook on revision properties of r%d>\n", ds.Revision)
-			}
 			prophook(properties)
 		}
 	}
@@ -994,10 +994,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
 						}
 						ds.say(stash)
-						if ds.Trailer != nil {
-							ds.say(ds.Trailer)
-							ds.Trailer = nil
-						}
 					}
 				}
 				break
@@ -2237,40 +2233,13 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				props.properties[mergeproperty] = strings.Join(swapped, ":")
 			}
 		}
-		// The synthetic comment owill get dropped in the
-		// git version; it's only being generated to make the
-		// streams more readable.  The generated directory
-		// creations for r0 will also be dropped; they are done to
-		// make the swapped stream legal for svnload.
-		if source.Revision == 0 && structural {
-			source.Trailer = []byte(`Node-path: trunk
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: branches
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-
-Node-path: tags
-Node-kind: dir
-Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
-
-`)
+		if structural && source.Revision == 1 && props.Contains("svn:log") {
+			props.properties["svn:log"] = "Synthetic branch-structure creation.\n"
 		}
+		// We leave author and date alone.  This will get
+		// dropped in the git version; it's only being
+		// generated so reposurgeon doesn't get confused about
+		// the branch structure.
 	}
 	var oldval, newval []byte
 	type copyPair struct {
