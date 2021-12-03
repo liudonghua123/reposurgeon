@@ -1917,7 +1917,7 @@ func (t *Tag) emailIn(msg *MessageBlock, fill bool) bool {
 		t.Comment = newcomment
 	}
 
-	if fill && t.tagger.fullname == "" {
+	if fill && t.tagger.isEmpty() {
 		t.tagger.fullname, t.tagger.email = whoami()
 		modified = true
 	}
@@ -3029,7 +3029,7 @@ func (commit *Commit) emailIn(msg *MessageBlock, fill bool) bool {
 			d, _ := newDate("")
 			commit.committer.date = d
 		}
-		if commit.committer.fullname == "" {
+		if commit.committer.isEmpty() {
 			commit.committer.fullname, commit.committer.email = whoami()
 		}
 	}
@@ -3985,7 +3985,7 @@ func (commit *Commit) Save(w io.Writer) {
 			fmt.Fprintf(w, "author %s\n", author)
 		}
 	}
-	if commit.committer.fullname != "" {
+	if !commit.committer.isEmpty() {
 		fmt.Fprintf(w, "committer %s\n", commit.committer)
 	}
 	// As of git 2.13.6 (possibly earlier) the comment field of
@@ -4595,7 +4595,9 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 				}
 				baton.twirl()
 			}
-			if !(commit.mark != "" && commit.committer.fullname != "") {
+			hasCommitter := !commit.committer.isEmpty()
+			hasMark := commit.mark != ""
+			if !(hasMark && hasCommitter) {
 				sp.importLine = commitbegin
 				sp.error("missing required fields in commit")
 			}
@@ -8511,7 +8513,7 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 		newattr.date.setTZ("UTC")
 		// This assumes email addresses of contributors are unique.
 		// We could get wacky results if two people with different
-		// human names but identicall email addresses were run through
+		// human names but identical email addresses were run through
 		// this code, but that outcome seems wildly unlikely.
 		if newattr.fullname == "" {
 			for _, mapentry := range repo.authormap {
