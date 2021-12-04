@@ -6838,7 +6838,7 @@ func (rs *Reposurgeon) HelpIncorporate() {
 	rs.helpOutput(`
 {SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 
-Insert the contents of specified tarballs as commit.  The tarball
+Insert the contents of specified tarballs as commits.  The tarball
 names are given as arguments; if no arguments, a list is read from
 stdin.  Tarballs may be gzipped or bzipped.  The initial segment of
 each path is assumed to be a version directory and stripped off.  The
@@ -6863,6 +6863,9 @@ not optimal, and may in particular contain duplicate blobs.
 With the --firewall option, generate an additional commit after the
 sequence consisting only of deletes crafted to prevent the incorporated
 content from leaking forward.
+
+Information about symlinks in the tarball is preserved; if written out 
+as a Git repository, the result will have those symlinks.
 `)
 }
 
