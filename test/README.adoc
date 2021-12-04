@@ -464,6 +464,8 @@ FIXME: Needs some tests of hg import with hg-git-fast-import.
 
 FIXME: Need some tests of multiline mergeinfo properties
 
+FIXME: Need a test of incorporate with symlink in the tarball
+
 == Some references
 
 https://testanything.org/

@@ -5,6 +5,7 @@ Repository head::
      repocutter pathrename REs are constrained to match full path segments
      --nobranch is retired; use repocutter to prepare flat repositories
      repocutter reduce now has simpler behavior and can take input from stdin.
+     reposurgeon incorporarte can handle symlinks
 
 4.30: 2021-10-13::
      Speed up DoTagify by parallelizing it.

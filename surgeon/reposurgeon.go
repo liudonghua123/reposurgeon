@@ -6816,6 +6816,19 @@ func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 			if _, err := io.Copy(f, tr); err != nil {
 				return nil, err
 			}
+		} else if header.Typeflag == tar.TypeSymlink {
+			files = append(files, *header)
+			//os.Symlink(header.Linkname, filepath.Clean(target))
+			f, err := os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				return nil, err
+			}
+			defer closeOrDie(f)
+			if _, err := f.WriteString(header.Linkname); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, fmt.Errorf("unexpected header type %x of %s", header.Typeflag, header.Name)
 		}
 	}
 }

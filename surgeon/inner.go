@@ -13,6 +13,7 @@
 package main
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
 	"compress/gzip"
@@ -9366,7 +9367,9 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 			op := newFileOp(repo)
 			fn := path.Join(strings.Split(header.Name, string(os.PathSeparator))[strip:]...)
 			mode := 0100644
-			if header.Mode&0111 != 0 {
+			if header.Typeflag == tar.TypeSymlink {
+				mode = 0120000
+			} else if header.Mode&0111 != 0 {
 				mode = 0100755
 			}
 			op.construct(opM, strconv.FormatInt(int64(mode), 8), b.mark, fn)
