@@ -1,0 +1,263 @@
+#! /usr/bin/env python3
+"""
+Analyze dependencies in a multiproject repository 
+and generate useful reports on them.
+
+The multiproject repository is expected not to have
+trunk/brances/tags sttructure, but rather to have project
+subdirectories which the,mselves may have trunk/brances/tags 
+structure.
+
+If a file named ".multiex" exists in the working directory,
+commands in it are executed at startup.
+
+Sssumes "=" never occurs in any pathname.
+
+Copyright by Eric S. Raymond
+SPDX-License-Identifier: BSD-2-Clause
+"""
+
+import cmd, os.path, sys
+
+def unglue(s):
+    return s.replace("=", "/")
+
+def display(lst):
+    for item in sorted(lst):
+        sys.stdout.write(" " + unglue(item))
+    sys.stdout.write("\n")
+
+class Multiex(cmd.Cmd):
+    "Multiproject repository explorer."
+    def __init__(self, name=None):
+        cmd.Cmd.__init__(self)
+        self.prompt = "> "
+        self.projects = set()
+        self.depends_on = set()
+        self.sources = set()
+        self.pushdowns = []
+        self.transforms = []
+        self.variables = {}
+        self.revcount = ""
+
+    def glue(self, s):
+        for topseg in self.pushdowns:
+            if s.startswith(topseg + "/"):
+                s = s.replace(topseg + "/", topseg + "=", 1)
+        return s
+
+    def closure(self, endpoints):
+        "Compute transitive closure of a set of project directories under depends-on"
+        closure = endpoints.copy()
+        while True:
+            addset = set()
+            for item in closure:
+                for (t, s) in self.depends_on:
+                    if t == item and s not in closure:
+                        addset.add(s)
+            if len(addset) > 0:
+                closure = closure.union(addset)
+            else:
+                break
+        return closure
+
+    def precmd(self, line):
+        while "$" in line:
+            for k, v in self.variables.items():
+                line = line.replace("$"+k, " ".join(v), 1)
+        return line
+    
+    def help_read(self):
+        sys.stdout.write("""
+Read a "repocutter see" report and compute the dependency graph
+amomg top-level branches.  If a second argument is given, it sets the 
+uppermost revision to be analyzed.
+""")
+    def do_read(self, line):
+        cfields = line.split()
+        for dline in open(cfields[0]):
+            if "propset" in dline:
+                continue
+            if "add" in dline:
+                fields = dline.split()
+                number = fields.pop(0)
+                fields.pop(0)
+                path = " ".join(fields)
+                for (s, t) in self.transforms:
+                    path = path.replace(s, t)
+                path = self.glue(path)
+                project = path.split("/")[0]
+                self.projects.add(project)
+            if " copy " in dline:
+                for (s, t) in self.transforms:
+                    dline = dline.replace(s, t)
+                fields = dline.split()
+                fields.pop(0)
+                fields.pop(0)
+                try:
+                    ind = fields.index("from")
+                except IndexError:
+                    sys.stderr.write("no from field in '%s'" % dline.strip())
+                target = " ".join(fields[:ind])
+                target = self.glue(target)
+                target = target.split("/")[0]
+                source = " ".join(fields[ind+1:])
+                source = self.glue(source)
+                source = source.split("/")[0]
+                source = source.split(":")[1]
+                if source != target:
+                    self.sources.add(source)
+                    self.depends_on.add((target, source))
+            self.revcount = number.split("-")[0]
+            if len(cfields) > 1 and self.revcount == cfields[1]:
+                print("Stopped")
+                break
+        return False
+    
+    def help_pushdown(self):
+        sys.stdout.write("""
+Declare the named directories to be pushdowns - each *subdirectory* of them
+is treated as a project for dependency-tracking purposes. Only affects 
+following read operations.
+""")
+    def do_pushdown(self, line):
+        self.pushdowns += line.split()
+        return False
+        
+    def help_transform(self):
+        sys.stdout.write("""
+Declare a transform pair - source and trarget of a substitution to be applied
+as a see file is read. Only affects following read operations.
+""")
+    def do_transform(self, line):
+        fields = line.split()
+        self.transforms.append((fields[0], fields[1]))
+        return False
+        
+    def do_dump(self, _unused):
+        "Dump the interproject dependency graph."
+        print(self.depends_on)
+        return False
+
+    def help_set(self):
+        sys.stdout.write("""
+Set the value of a variable.  First token is the name, followed by the 
+space-separated token list which is the value.
+""")
+    def do_set(self, line):
+        fields = line.split()
+        name = fields.pop(0)
+        self.variables[name] = fields
+        return False
+        
+    def do_list(self, line):
+        "List the contents of a variable."
+        if line == "sources":
+            display(self.sources) 
+        elif line == "projects":
+            display(self.sources)
+        elif line == "pushdowns":
+            display(self.pushdowns)
+        else:
+            display(self.variables[line])
+        return False
+        
+    def do_EOF(self, _unused):
+        "Terminate the interpreter."
+        sys.stdout.write("\n")
+        return True
+
+    def help_expunge(self):
+        sys.stdout.write("""
+Requires an argument list of projects deemed interesting.
+
+Generates a repocutter expunge command to strip out all project directories
+the interesting set does not depend on.  The result is the complement
+relative to the list of projects of the transitive completion of the
+depends-on relationship.
+
+Arument tokens beginning with $ are considered variable names abd
+expanded.
+""")
+    def do_expunge(self, line):
+        if not self.depends_on:
+            print("No dependency list")
+            return False
+        dependencies = self.closure(set(line.split()))
+        sys.stdout.write('repocutter expunge \\\n')
+        display(self.projects - dependencies)
+        return False
+
+    def help_sift(self):
+        sys.stdout.write("""
+Requires an argument list of projects deemed interesting.
+
+Generates a repocutter sift command to strip out all project directories
+the interesting set does not depend on.  The result is the the transitive
+completion of the depends-on relationship.
+
+Arument tokens beginning with $ are considered variable names abd
+expanded.
+""")
+    def do_sift(self, line):
+        if not self.depends_on:
+            print("No dependency list")
+            return False
+        dependencies = self.closure(set(line.split()))
+        sys.stdout.write('repocutter sift \\\n')
+        display(dependencies)
+        return False
+
+    def do_downstream(self, line):
+        "Generate a list of all projects that depend on a specified set"
+        start_from = set(line.split())
+        end_with = start_from.copy()
+        while True:
+            captured = set()
+            for d in end_with:
+                for (t,s) in self.depends_on:
+                    if s == d:
+                        captured.add(t)
+            if not (captured - end_with):
+                break
+            else:
+                end_with = end_with.union(captured)
+        print(end_with-start_from)
+        return False
+  
+    def do_stats(self, _unused):
+        "Print statistics on the repository segment."
+        print("%s revisions" % self.revcount)
+        print("%d dependencies" % len(self.depends_on))
+        print("%d projects" % len(self.projects))
+        return False
+        
+    def cleanup(self):
+        pass
+
+def main():
+    try:
+        interpreter = Multiex()
+        setup = []
+        if os.path.exists(".multiex"):
+            for line in open(".multiex"):
+                if line.startswith("#"):
+                    continue
+                else:
+                    setup.append(line.strip())
+        if not sys.argv[1:]:
+            sys.argv.append("-")
+        try:
+            for arg in setup + sys.argv[1:]:
+                for acmd in arg.split(";"):
+                    if acmd == '-':
+                        interpreter.cmdloop()
+                    else:
+                        interpreter.onecmd(interpreter.precmd(acmd))
+        finally:
+            interpreter.cleanup()
+    except KeyboardInterrupt:
+        sys.stdout.write("\n")
+
+if __name__ == '__main__':
+    main()

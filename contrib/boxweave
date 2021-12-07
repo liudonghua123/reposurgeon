@@ -2,7 +2,7 @@
 """
 Weave a set of message-box files together,
 leaving the result in soryed order. Error out
-if the same upfadate occurs in two different
+if the same update occurs in two different
 streams.
 
 The -r option sets the field to key on; it
