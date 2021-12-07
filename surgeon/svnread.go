@@ -1023,6 +1023,14 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 
 	sp.repo.addEvent(newPassthrough(sp.repo, "#reposurgeon sourcetype svn\n"))
 
+	// We may need to create a .gitignore file with built-in SVN ignore patterns
+	if !options.Contains("--no-automatic-ignores") {
+		defaultIgnoreBlob := newBlob(sp.repo)
+		defaultIgnoreBlob.setContent([]byte(subversionDefaultIgnores), noOffset)
+		defaultIgnoreBlob.setMark(sp.repo.newmark())
+		sp.repo.addEvent(defaultIgnoreBlob)
+	}
+
 	svnFilterProperties(ctx, sp, options, baton)
 	timeit("filterprops")
 	svnBuildFilemaps(ctx, sp, options, baton)
@@ -2903,47 +2911,38 @@ func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, b
 	// Canonicalize all commits except all-deletes, and add built-in SVN ignore patterns
 	defer trace.StartRegion(ctx, "SVN Phase 11: canonicalize commits.").End()
 	baton.startProgress("SVN11: canonicalization", uint64(len(sp.repo.events)))
-	var defaultIgnoreBlob *Blob
 	doIgnores := !options.Contains("--no-automatic-ignores")
-	defaultIgnores := []byte(subversionDefaultIgnores)
 	sp.repo.walkManifests(func(index int, commit *Commit, _ int, _ *Commit) {
 		if commit.manifest().isEmpty() && !commit.hasChildren() {
-			// This is a tipdelete; skip it.
+			// This is a tipdelete; skip it.
 			return
 		}
-		// Check if the commit misses the built-in SVN ignore patterns
-		elt, _ := commit.manifest().get(".gitignore")
-		var presentIgnores []byte
-		if op, ok := elt.(*FileOp); ok {
-			if op.ref == "inline" {
-				presentIgnores = op.inline
+		if doIgnores {
+			// Check if the commit is missing the built-in SVN ignore patterns
+			elt, _ := commit.manifest().get(".gitignore")
+			var presentIgnores []byte
+			if op, ok := elt.(*FileOp); ok {
+				if op.ref == "inline" {
+					presentIgnores = op.inline
+				}
+				if blob, ok := sp.repo.markToEvent(op.ref).(*Blob); ok {
+					presentIgnores = blob.getContent()
+				}
 			}
-			if blob, ok := sp.repo.markToEvent(op.ref).(*Blob); ok {
-				presentIgnores = blob.getContent()
+			if presentIgnores == nil {
+				op := newFileOp(sp.repo)
+				op.construct(opM, "100644", ":1", ".gitignore")
+				commit.appendOperation(op)
+			} else if !bytes.HasPrefix(presentIgnores, []byte(subversionDefaultIgnores)) {
+				// Prepend built-in SVN ignore patterns
+				var buf bytes.Buffer
+				buf.Write([]byte(subversionDefaultIgnores))
+				buf.Write(presentIgnores)
+				op := newFileOp(sp.repo)
+				op.construct(opM, "100644", "inline", ".gitignore")
+				op.inline = buf.Bytes()
+				commit.appendOperation(op)
 			}
-		}
-		if doIgnores && presentIgnores == nil {
-			// Create a .gitignore file with built-in SVN ignore patterns
-			if defaultIgnoreBlob == nil {
-				defaultIgnoreBlob = newBlob(sp.repo)
-				defaultIgnoreBlob.setContent(defaultIgnores, noOffset)
-				defaultIgnoreBlob.setMark(sp.repo.newmark())
-				// Append the blob instead of prepending it as that
-				// would confuse the iteration over events.
-				sp.repo.addEvent(defaultIgnoreBlob)
-			}
-			op := newFileOp(sp.repo)
-			op.construct(opM, "100644", defaultIgnoreBlob.getMark(), ".gitignore")
-			commit.appendOperation(op)
-		} else if doIgnores && !bytes.HasPrefix(presentIgnores, defaultIgnores) {
-			// Prepend built-in SVN ignore patterns
-			var buf bytes.Buffer
-			buf.Write(defaultIgnores)
-			buf.Write(presentIgnores)
-			op := newFileOp(sp.repo)
-			op.construct(opM, "100644", "inline", ".gitignore")
-			op.inline = buf.Bytes()
-			commit.appendOperation(op)
 		}
 		// Canonicalize the commit
 		if !sp.noSimplify {
@@ -2951,15 +2950,6 @@ func svnCanonicalize(ctx context.Context, sp *StreamParser, options stringSet, b
 		}
 		baton.percentProgress(uint64(index) + 1)
 	})
-
-	if defaultIgnoreBlob != nil {
-		// Insert the ignore blob at the front
-		sp.repo.insertEvent(defaultIgnoreBlob, len(sp.repo.frontEvents()),
-			"inserting default ignore")
-		// And remove it at the end
-		sp.repo.events = sp.repo.events[:len(sp.repo.events)-1]
-		sp.repo.invalidateMarkToIndex()
-	}
 
 	baton.endProgress()
 }
