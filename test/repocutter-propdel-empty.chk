@@ -1,9 +1,31 @@
 --- Before
 +++ After
-@@ -48,13 +48,8 @@
- Node-path: qa/branches
- Node-kind: dir
- Node-action: change
+@@ -26,38 +26,6 @@
+ PROPS-END
+ 
+ 
+-Revision-number: 7953
+-Prop-content-length: 181
+-Content-length: 181
+-
+-K 10
+-svn:author
+-V 21
+-cditrani@livedata.com
+-K 8
+-svn:date
+-V 27
+-2012-08-21T12:24:57.196822Z
+-K 7
+-svn:log
+-V 64
+-Delete dup version of ezmail.py and replace with external link.
+-
+-PROPS-END
+-
+-Node-path: qa/branches
+-Node-kind: dir
+-Node-action: change
 -Prop-content-length: 92
 -Content-length: 92
 -
@@ -11,8 +33,9 @@
 -svn:externals
 -V 57
 -^/CoreServer/trunk/Source/Python/lib/ezmail.py ezmail.py
-+Prop-content-length: 10
-+Content-length: 10
- 
- PROPS-END
- 
+-
+-PROPS-END
+-
+ Revision-number: 7954
+ Prop-content-length: 190
+ Content-length: 190

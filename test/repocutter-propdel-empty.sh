@@ -1,8 +1,5 @@
 #! /bin/sh
-## Test repocutter propdel on durectiry
-# The middle commit wity the directory property chasnge should *not* drop out.
-# The problem is that any test you write for this is fragile and ;ikely to
-# also drop directory add/deletes.
+## Test repocutter propdel on durectory
 trap 'rm -f /tmp/propdel-before$$ /tmp/propdel-after$$' EXIT HUP INT QUIT TERM
 cat >/tmp/propdel-before$$ <<EOF
 Revision-number: 7952

@@ -1,7 +1,8 @@
 --- Before
 +++ After
-@@ -5,4 +5,3 @@
+@@ -4,5 +4,3 @@
+ 2-1   add      trunk/README
  3-1   change   trunk/README
  4-1   change   trunk/README
- 5-1   change   trunk/README
+-5-1   change   trunk/README
 -5-1   propset  foo = "bar";
