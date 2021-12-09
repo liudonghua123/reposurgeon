@@ -28,11 +28,13 @@ const pathsep = "/" // Arrgh - we should derive this from os.PathSeparator
 var doc = `repocutter - stream surgery on SVN dump files
 general usage: repocutter [-q] [-r SELECTION] SUBCOMMAND
 
-In all commands, the -r (or --range) option limits the selection of revisions
-over which an operation will be performed. A selection consists of one or more
-comma-separated ranges. A range may consist of an integer revision number or
-the special name HEAD for the head revision. Or it may be a colon-separated
-pair of integers, or an integer followed by a colon followed by HEAD.
+In all commands, the -r (or --range) option limits the selection of revisions 
+and nodes over which an operation will be performed. A selection consists of one
+or more comma-separated ranges.  A range may consist of an endpoint or a colon-
+separated pair of endpoints.  An endpoint may consist of an integer identifying
+a revision, the special name HEAD for the head (last) revision, or a node
+specification of the form rev.node where rev is an integer revision number and
+node in a 1-origin node index.
 
 Normally, each subcommand produces a progress spinner on standard error; each
 turn means another revision has been filtered. The -q (or --quiet) option
@@ -116,8 +118,8 @@ that every copy-from source is in the set.
 `,
 	"deselect": `deselect: usage: repocutter [-q] [-r SELECTION] deselect
 
-The 'deselect' subcommand selects a range and permits only revisions NOT in
-that range to pass to standard output.
+The 'deselect' subcommand selects a range and permits only revisions and ndes
+NOT in that range to pass to standard output.
 `,
 	"expunge": `expunge: usage: repocutter [-r SELECTION ] expunge PATTERN...
 
@@ -221,8 +223,8 @@ can be restricted by a selection set.
 `,
 	"select": `select: usage: repocutter [-q] [-r SELECTION] select
 
-The 'select' subcommand selects a range and permits only revisions in
-that range to pass to standard output.  A range beginning with 0
+The 'select' subcommand selects a range and permits only revisions and
+nodes in that range to pass to standard output.  A range beginning with 0
 includes the dumpfile header.
 `,
 	"setlog": `setlog: usage: repocutter [-r SELECTION] -logentries=LOGFILE setlog
@@ -650,7 +652,7 @@ type DumpfileSource struct {
 	Lbs              LineBufferedSource
 	Baton            *Baton
 	Revision         int
-	Index            int
+	Index            int // 1-origin within nodes
 	EmittedRevisions map[string]bool
 	DirTracking      map[string]bool
 }
@@ -873,18 +875,24 @@ func (ds *DumpfileSource) say(text []byte) {
 	os.Stdout.Write(text)
 }
 
+// SubversionEndpoint - represent as Subversion revision or revision.node spec
+type SubversionEndpoint struct {
+	rev  int
+	node int
+}
+
 // SubversionRange - represent a polyrange of Subversion commit numbers
 type SubversionRange struct {
-	intervals [][2]int
+	intervals [][2]SubversionEndpoint
 }
 
 // NewSubversionRange - create a new polyrange object
 func NewSubversionRange(txt string) SubversionRange {
 	var s SubversionRange
-	s.intervals = make([][2]int, 0)
+	s.intervals = make([][2]SubversionEndpoint, 0)
 	var upperbound int
 	for _, item := range strings.Split(txt, ",") {
-		var parts [2]int
+		var parts [2]SubversionEndpoint
 		if strings.Contains(item, "-") {
 			croak("use ':' for version ranges instead of '-'")
 		}
@@ -894,19 +902,32 @@ func NewSubversionRange(txt string) SubversionRange {
 			if fields[0] == "HEAD" {
 				croak("can't accept HEAD as lower bound of a range.")
 			}
-			parts[0], _ = strconv.Atoi(fields[0])
+			subfields := strings.Split(fields[0], ".")
+			parts[0].rev, _ = strconv.Atoi(subfields[0])
+			if len(subfields) > 1 {
+				parts[0].node, _ = strconv.Atoi(subfields[1])
+			}
 			if fields[1] == "HEAD" {
 				// Be on safe side - could be a 32-bit machine
-				parts[1] = math.MaxInt32
+				parts[1].rev = math.MaxInt32
 			} else {
-				parts[1], _ = strconv.Atoi(fields[1])
+				subfields = strings.Split(fields[1], ".")
+				parts[1].rev, _ = strconv.Atoi(subfields[0])
+				if len(subfields) > 1 {
+					parts[1].node, _ = strconv.Atoi(subfields[1])
+				}
 			}
 		} else {
-			parts[0], _ = strconv.Atoi(item)
-			parts[1], _ = strconv.Atoi(item)
+			fields := strings.Split(item, ".")
+			parts[0].rev, _ = strconv.Atoi(fields[0])
+			parts[1].rev, _ = strconv.Atoi(fields[0])
+			if len(fields) > 1 {
+				parts[0].node, _ = strconv.Atoi(fields[1])
+				parts[1].node, _ = strconv.Atoi(fields[1])
+			}
 		}
-		if parts[0] >= upperbound {
-			upperbound = parts[0]
+		if parts[0].rev >= upperbound {
+			upperbound = parts[0].rev
 		} else {
 			croak("ill-formed range specification")
 		}
@@ -915,19 +936,32 @@ func NewSubversionRange(txt string) SubversionRange {
 	return s
 }
 
-// Contains - does this range contain a specified revision?
-func (s *SubversionRange) Contains(rev int) bool {
+// ContainsRevision - does this range contain a specified revision?
+func (s *SubversionRange) ContainsRevision(rev int) bool {
 	for _, interval := range s.intervals {
-		if rev >= interval[0] && rev <= interval[1] {
+		if rev >= interval[0].rev && rev <= interval[1].rev {
 			return true
 		}
 	}
 	return false
 }
 
+// ContainsNode - does this range contain a specified revision and node?
+func (s *SubversionRange) ContainsNode(rev int, node int) bool {
+	var interval [2]SubversionEndpoint
+	for _, interval = range s.intervals {
+		if rev >= interval[0].rev && rev <= interval[1].rev {
+			goto checkNode
+		}
+	}
+	return false
+checkNode:
+	return node >= interval[0].node && (interval[1].node == 0 || node <= interval[1].node)
+}
+
 // Upperbound - what is the uppermost revision in the spec?
 func (s *SubversionRange) Upperbound() int {
-	return s.intervals[len(s.intervals)-1][1]
+	return s.intervals[len(s.intervals)-1][1].rev
 }
 
 // Report a filtered portion of content.
@@ -946,7 +980,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * closure(), pathlist(), log(), and see() it is always on.
 	 */
 
-	emit := passthrough && selection.intervals[0][0] == 0
+	emit := passthrough && selection.intervals[0][0].rev == 0
 	stash := ds.ReadUntilNextRevision(0)
 	if emit {
 		if debug >= debugPARSE {
@@ -959,7 +993,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	}
 	// A hack to only apply the property hook on selected revisions.
 	selectedProphook := func(properties *Properties) {
-		if prophook != nil && selection.Contains(ds.Revision) {
+		if prophook != nil && selection.ContainsRevision(ds.Revision) {
 			prophook(properties)
 		}
 	}
@@ -1013,7 +1047,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				var nodetxt []byte
 				// The nodehook is only applied on selected revisions;
 				// others are passed through unaltered.
-				if nodehook != nil && selection.Contains(ds.Revision) {
+				if nodehook != nil && selection.ContainsRevision(ds.Revision) {
 					nodetxt = nodehook(StreamSection(header), properties, content)
 				} else {
 					nodetxt = append(nodetxt, header...)
@@ -1107,7 +1141,7 @@ func NewLogfile(readable io.Reader, restrict *SubversionRange) *Logfile {
 			if len(line) == 0 || bytes.HasPrefix(line, []byte(delim)) {
 				if rev > -1 {
 					logentry = bytes.TrimSpace(logentry)
-					if restrict == nil || restrict.Contains(rev) {
+					if restrict == nil || restrict.ContainsRevision(rev) {
 						lf.comments[rev] = Logentry{author, date, logentry}
 					}
 					rev = -1
@@ -1227,33 +1261,17 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<entering select>")
 	}
-	emit := (selection.Contains(0) != invert)
-	for {
-		stash := source.ReadUntilNext("Revision-number:", nil)
-		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<stash: %q>\n", stash)
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if selection.ContainsNode(source.Revision, source.Index) != invert {
+			all := make([]byte, 0)
+			all = append(all, []byte(header)...)
+			all = append(all, properties...)
+			all = append(all, content...)
+			return all
 		}
-		if emit {
-			os.Stdout.Write(stash)
-		}
-		if !source.Lbs.HasLineBuffered() {
-			return
-		}
-		fields := bytes.Fields(source.Lbs.Linebuffer)
-		// Error already checked during source parsing
-		revision, _ := strconv.Atoi(string(fields[1]))
-		emit = (selection.Contains(revision) != invert)
-		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<%d:%t>\n", revision, emit)
-		}
-		if emit {
-			os.Stdout.Write(source.Lbs.Flush())
-		}
-		if !invert && revision > selection.Upperbound() {
-			return
-		}
-		source.Lbs.Flush()
+		return nil
 	}
+	source.Report(NewSubversionRange("0:HEAD"), nodehook, nil, true)
 }
 
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
