@@ -1340,7 +1340,7 @@ func expunge(source DumpfileSource, selection SubversionRange, patterns []string
 
 func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 	// Bad idea - it looks like a way to filter out directory-change
-	// operatiuons that only hack properties, but it a;so catches directory
+	// operatiuns that only hack properties, but it also catches directory
 	// add and delete operations.
 	//if bytes.Equal(properties, []byte("PROPS-END\n")) && len(content) == 0 {
 	//	return nil
