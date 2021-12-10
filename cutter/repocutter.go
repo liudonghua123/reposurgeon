@@ -676,7 +676,7 @@ func SetLength(header string, data []byte, val int) []byte {
 }
 
 // ReadRevisionHeader - read a revision header, parsing its properties.
-func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties)) ([]byte, map[string]string) {
+func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties) bool) ([]byte, map[string]string) {
 	stash := ds.Require("Revision-number:")
 	rev := string(bytes.Fields(stash)[1])
 	rval, err := strconv.Atoi(rev)
@@ -743,7 +743,7 @@ func (ds *DumpfileSource) Optional(prefix string) []byte {
 }
 
 // ReadNode - read a node header and body.
-func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties)) (StreamSection, []byte, []byte) {
+func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties) bool) (StreamSection, []byte, []byte) {
 	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<READ NODE BEGINS>\n")
 	}
@@ -992,10 +992,11 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		return
 	}
 	// A hack to only apply the property hook on selected revisions.
-	selectedProphook := func(properties *Properties) {
+	selectedProphook := func(properties *Properties) bool {
 		if prophook != nil && selection.ContainsRevision(ds.Revision) {
 			prophook(properties)
 		}
+		return true
 	}
 	var nodecount int
 	var line []byte
