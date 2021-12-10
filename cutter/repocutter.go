@@ -277,7 +277,7 @@ and  branches, the following *two* components are swapped to the top.
 thus, "foo/branches/release23" becomes "branches/release23/foo",
 putting the project directory beneath the branch.
 
-Also fires when an entire project diretory is copied; this is transformed
+Also fires when an entire project directory is copied; this is transformed
 into a copy of trunk and copies of each subbranch and tag that exists.
 
 After the swap, more attempts to recognize spans of deletes, copies
@@ -292,7 +292,7 @@ while for trunk/ paths the last two segments are dropped leaving only
 trunk/.  Following duplicate deletes and copies are skipped. 
 
 This has two minor negative consequences. One is that metadata
-belonging to all deletes or copies afrter the first one in a coalesced
+belonging to all deletes or copies after the first one in a coalesced
 span is lost.  The other is that branches and tags local to
 individual project directories are promoted to global branches and
 tags across the entire transformed repository; no content is lost this
@@ -2328,7 +2328,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			parsed.role = "copy"
 		}
 		if match == nil || match.Match(nodePath) {
-			/* FIXME: This should only drop nodes, but it looses entire commits
+			/* FIXME: This should only drop nodes, but it loses entire commits
 			// Special handling of operations on bare project directories
 			if bytes.Count(nodePath, []byte(pathsep)) == 0 && !stdlayout(nodePath) {
 				// Don't retain creation of project
@@ -2339,7 +2339,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				// there's no safe place to put the
 				// metadata.
 				if bytes.Equal(parsed.action, []byte("add")) {
-					fmt.Fprintf(os.Stderr, "XXX Removing %s (%d-%d)\n", nodePath, source.Revision, source.Index)
 					return nil
 				}
 			}
