@@ -967,7 +967,7 @@ func (s *SubversionRange) Upperbound() int {
 // Report a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header StreamSection, properties []byte, content []byte) []byte,
-	prophook func(properties *Properties),
+	prophook func(properties *Properties) bool,
 	passthrough bool) {
 
 	/*
@@ -1409,7 +1409,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		}
 		return ""
 	}
-	revhook := func(props *Properties) {
+	revhook := func(props *Properties) bool {
 		for _, mergeproperty := range mergeProperties {
 			if _, present := props.properties[mergeproperty]; present {
 				oldval := props.properties["svn:mergeinfo"]
@@ -1425,6 +1425,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 				props.properties[mergeproperty] = newval
 			}
 		}
+		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
@@ -1443,7 +1444,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 
 // Push a prefix segment onto each pathname in an input dump
 func push(source DumpfileSource, selection SubversionRange, prefix string) {
-	revhook := func(props *Properties) {
+	revhook := func(props *Properties) bool {
 		for _, mergeproperty := range mergeProperties {
 			if _, present := props.properties[mergeproperty]; present {
 				oldval := props.properties["svn:mergeinfo"]
@@ -1461,6 +1462,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 				props.properties[mergeproperty] = newval
 			}
 		}
+		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
@@ -1479,7 +1481,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 
 // propdel - Delete properties
 func propdel(source DumpfileSource, propnames []string, selection SubversionRange) {
-	revhook := func(props *Properties) {
+	revhook := func(props *Properties) bool {
 		for _, propname := range propnames {
 			delete(props.properties, propname)
 			for delindex, item := range props.propkeys {
@@ -1495,13 +1497,14 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 				}
 			}
 		}
+		return true
 	}
 	source.Report(selection, dumpall, revhook, true)
 }
 
 // Set properties.
 func propset(source DumpfileSource, propnames []string, selection SubversionRange) {
-	revhook := func(props *Properties) {
+	revhook := func(props *Properties) bool {
 		for _, propname := range propnames {
 			fields := strings.Split(propname, "=")
 			if _, present := props.properties[fields[0]]; !present {
@@ -1509,13 +1512,14 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 			}
 			props.properties[fields[0]] = fields[1]
 		}
+		return true
 	}
 	source.Report(selection, dumpall, revhook, true)
 }
 
 // Rename properties.
 func proprename(source DumpfileSource, propnames []string, selection SubversionRange) {
-	revhook := func(props *Properties) {
+	revhook := func(props *Properties) bool {
 		for _, propname := range propnames {
 			fields := strings.Split(propname, "->")
 			if _, present := props.properties[fields[0]]; present {
@@ -1533,6 +1537,7 @@ func proprename(source DumpfileSource, propnames []string, selection SubversionR
 				}
 			}
 		}
+		return true
 	}
 	source.Report(selection, dumpall, revhook, true)
 }
@@ -1557,13 +1562,13 @@ func SVNTimeParse(rdate string) time.Time {
 
 // Extract log entries
 func log(source DumpfileSource, selection SubversionRange) {
-	prophook := func(prop *Properties) {
+	prophook := func(prop *Properties) bool {
 		props := prop.properties
 		logentry := props["svn:log"]
 		// This test implicitly excludes r0 metadata from being dumped.
 		// It is not certain this is the right thing.
 		if logentry == "" {
-			return
+			return true
 		}
 		os.Stdout.Write([]byte(delim + "\n"))
 		author := getAuthor(props)
@@ -1575,13 +1580,14 @@ func log(source DumpfileSource, selection SubversionRange) {
 			drep,
 			strings.Count(logentry, "\n"))
 		os.Stdout.WriteString("\n" + logentry + "\n")
+		return true
 	}
 	source.Report(selection, nil, prophook, false)
 }
 
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func([]byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
-	revhook := func(props *Properties) {
+	revhook := func(props *Properties) bool {
 		for _, mergeproperty := range mergeProperties {
 			if _, present := props.properties[mergeproperty]; present {
 				mergeinfo := string(props.properties[mergeproperty])
@@ -1610,6 +1616,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		if userid, present := props.properties["svn:author"]; present && nameMutator != nil {
 			props.properties["svn:author"] = nameMutator(userid)
 		}
+		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
@@ -1985,13 +1992,14 @@ func see(source DumpfileSource, selection SubversionRange) {
 		props = ""
 		return nil
 	}
-	seeprops := func(properties *Properties) {
+	seeprops := func(properties *Properties) bool {
 		for _, skippable := range []string{"svn:log", "svn:date", "svn:author"} {
 			if _, ok := properties.properties[skippable]; ok {
-				return
+				return true
 			}
 		}
 		props = properties.String()
+		return true
 	}
 	source.Report(selection, seenode, seeprops, false)
 }
@@ -2003,7 +2011,7 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 		croak("couldn't open " + logpath)
 	}
 	logpatch := NewLogfile(fd, &selection)
-	loghook := func(prop *Properties) {
+	loghook := func(prop *Properties) bool {
 		_, haslog := prop.properties["svn:log"]
 		if haslog && logpatch.Contains(source.Revision) {
 			logentry := logpatch.comments[source.Revision]
@@ -2012,6 +2020,7 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 			}
 			prop.properties["svn:log"] = string(logentry.text)
 		}
+		return true
 	}
 	source.Report(selection, dumpall, loghook, true)
 }
@@ -2245,7 +2254,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
-	revhook := func(props *Properties) {
+	revhook := func(props *Properties) bool {
 		swapped := make([]string, 0)
 		for _, mergeproperty := range mergeProperties {
 			if m, ok := props.properties[mergeproperty]; ok {
@@ -2264,6 +2273,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		// dropped in the git version; it's only being
 		// generated so reposurgeon doesn't get confused about
 		// the branch structure.
+		return true
 	}
 	var oldval, newval []byte
 	type copyPair struct {
