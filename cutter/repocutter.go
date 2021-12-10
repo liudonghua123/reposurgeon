@@ -1048,8 +1048,16 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				// The nodehook is only applied on selected nodes; others, and any revision
 				// with no nodes, are passed through unaltered.
 				if nodehook != nil && selection.ContainsNode(ds.Revision, nodecount) {
+					if debug >= debugPARSE {
+						fmt.Fprintf(os.Stderr, "<nodehook called with: %d %d>\n",
+							ds.Revision, nodecount)
+					}
 					nodetxt = nodehook(StreamSection(header), properties, content)
 				} else {
+					if debug >= debugPARSE {
+						fmt.Fprintf(os.Stderr, "<nodehook skipped with: %d %d>\n",
+							ds.Revision, nodecount)
+					}
 					nodetxt = append(nodetxt, header...)
 					nodetxt = append(nodetxt, properties...)
 					nodetxt = append(nodetxt, content...)
