@@ -121,12 +121,15 @@ that every copy-from source is in the set.
 The 'deselect' subcommand selects a range and permits only revisions and ndes
 NOT in that range to pass to standard output.
 `,
-	"expunge": `expunge: usage: repocutter [-r SELECTION ] expunge PATTERN...
+	"expunge": `expunge: usage: repocutter [-r SELECTION ] [-f|-fixed] expunge PATTERN...
 
 Delete all operations with Node-path or Node-copyfrom-path headers matching 
 specified Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
 record is removed as well.
+
+The -f/-fixed option disables regexp compilation of the patterns, treating
+them as fixed strings.
 `,
 	"log": `log: usage: repocutter [-r SELECTION] log
 
@@ -233,12 +236,15 @@ Replace the log entries in the input dumpfile with the corresponding entries
 in the LOGFILE, which should be in the format of an svn log output.
 Replacements may be restricted to a specified range.
 `,
-	"sift": `sift: usage: repocutter [-r SELECTION] sift PATTERN...
+	"sift": `sift: usage: repocutter [-r SELECTION] [-f|-fixed] sift PATTERN...
 
 Delete all operations with Node-path or Node-copyfrom-path headers *not*
 matching specified Golang regular expressions (opposite of 'expunge').
 Any revision left with no Node records after this filtering has its Revision record
 removed as well. This transform can be restricted by a selection set.
+
+The -f/-fixed option disables regexp compilation of the patterns, treating
+them as fixed strings.
 `,
 	"split": `split: usage: repocutter split PATH...
 
@@ -1322,10 +1328,14 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 }
 
 // Strip out ops defined by a revision selection and a path regexp.
-func expunge(source DumpfileSource, selection SubversionRange, patterns []string) {
+func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
 	regexps := make([]*regexp.Regexp, len(patterns))
 	for i, pattern := range patterns {
-		regexps[i] = regexp.MustCompile(pattern)
+		if fixed {
+			regexps[i] = regexp.MustCompile(regexp.QuoteMeta(pattern))
+		} else {
+			regexps[i] = regexp.MustCompile(pattern)
+		}
 	}
 	expungehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		matched := false
@@ -2057,10 +2067,14 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 
 // Strip a portion of the dump file defined by a revision selection.
 // Sift for ops defined by a revision selection and a path regexp.
-func sift(source DumpfileSource, selection SubversionRange, patterns []string) {
+func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
 	regexps := make([]*regexp.Regexp, len(patterns))
 	for i, pattern := range patterns {
-		regexps[i] = regexp.MustCompile(pattern)
+		if fixed {
+			regexps[i] = regexp.MustCompile(regexp.QuoteMeta(pattern))
+		} else {
+			regexps[i] = regexp.MustCompile(pattern)
+		}
 	}
 	sifthook := func(header StreamSection, properties []byte, content []byte) []byte {
 		matched := false
@@ -2552,12 +2566,15 @@ func testify(source DumpfileSource) {
 
 func main() {
 	selection := NewSubversionRange("0:HEAD")
+	var fixed bool
 	var logentries string
 	var rangestr string
 	var infile string
 	input := os.Stdin
 	flag.IntVar(&debug, "d", 0, "enable debug messages")
 	flag.IntVar(&debug, "debug", 0, "enable debug messages")
+	flag.BoolVar(&fixed, "f", false, "disable regexp interpretation")
+	flag.BoolVar(&fixed, "fixed", false, "disable regexp interpretation")
 	flag.StringVar(&infile, "i", "", "set input file")
 	flag.StringVar(&infile, "infile", "", "set input file")
 	flag.StringVar(&logentries, "l", "", "pass in log patch")
@@ -2627,7 +2644,7 @@ func main() {
 		assertNoArgs()
 		deselect(NewDumpfileSource(input, baton), selection)
 	case "expunge":
-		expunge(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+		expunge(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "help":
 		if len(flag.Args()) == 1 {
 			os.Stdout.WriteString(doc)
@@ -2679,7 +2696,7 @@ func main() {
 		}
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
 	case "sift":
-		sift(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+		sift(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "split":
 		split(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "strip":
