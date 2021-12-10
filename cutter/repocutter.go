@@ -971,6 +971,10 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	passthrough bool) {
 
 	/*
+	 * nodehook is only called on nodes in the selection set.  prophook
+	 * is called on evrry property section, both per-node and per-revision.
+	 * When called per-revision the value of ds.Index is zero
+	 *
 	 * passthrough - pass through all node text that the nodehook
 	 * has not filtered to nil. When any node in a revision passes
 	 * through and its revision header has not already beem passed
@@ -991,19 +995,12 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	if !ds.Lbs.HasLineBuffered() {
 		return
 	}
-	// A hack to only apply the property hook on selected revisions.
-	selectedProphook := func(properties *Properties) bool {
-		if prophook != nil && selection.ContainsRevision(ds.Revision) {
-			prophook(properties)
-		}
-		return true
-	}
 	var nodecount int
 	var line []byte
 	for {
 		ds.Index = 0
 		nodecount = 0
-		stash, _ := ds.ReadRevisionHeader(selectedProphook)
+		stash, _ := ds.ReadRevisionHeader(prophook)
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<at start of revision %d>\n", ds.Revision)
 		}
@@ -1039,7 +1036,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					ds.Index++
 				}
 				ds.Lbs.Push(line)
-				header, properties, content := ds.ReadNode(selectedProphook)
+				header, properties, content := ds.ReadNode(prophook)
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
@@ -1411,6 +1408,9 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		return ""
 	}
 	revhook := func(props *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		for _, mergeproperty := range mergeProperties {
 			if _, present := props.properties[mergeproperty]; present {
 				oldval := props.properties["svn:mergeinfo"]
@@ -1446,6 +1446,9 @@ func pop(source DumpfileSource, selection SubversionRange) {
 // Push a prefix segment onto each pathname in an input dump
 func push(source DumpfileSource, selection SubversionRange, prefix string) {
 	revhook := func(props *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		for _, mergeproperty := range mergeProperties {
 			if _, present := props.properties[mergeproperty]; present {
 				oldval := props.properties["svn:mergeinfo"]
@@ -1483,6 +1486,9 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 // propdel - Delete properties
 func propdel(source DumpfileSource, propnames []string, selection SubversionRange) {
 	revhook := func(props *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		for _, propname := range propnames {
 			delete(props.properties, propname)
 			for delindex, item := range props.propkeys {
@@ -1506,6 +1512,9 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 // Set properties.
 func propset(source DumpfileSource, propnames []string, selection SubversionRange) {
 	revhook := func(props *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		for _, propname := range propnames {
 			fields := strings.Split(propname, "=")
 			if _, present := props.properties[fields[0]]; !present {
@@ -1563,7 +1572,10 @@ func SVNTimeParse(rdate string) time.Time {
 
 // Extract log entries
 func log(source DumpfileSource, selection SubversionRange) {
-	prophook := func(prop *Properties) bool {
+	revhook := func(prop *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		props := prop.properties
 		logentry := props["svn:log"]
 		// This test implicitly excludes r0 metadata from being dumped.
@@ -1583,12 +1595,15 @@ func log(source DumpfileSource, selection SubversionRange) {
 		os.Stdout.WriteString("\n" + logentry + "\n")
 		return true
 	}
-	source.Report(selection, nil, prophook, false)
+	source.Report(selection, nil, revhook, false)
 }
 
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func([]byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
 	revhook := func(props *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		for _, mergeproperty := range mergeProperties {
 			if _, present := props.properties[mergeproperty]; present {
 				mergeinfo := string(props.properties[mergeproperty])
@@ -1994,6 +2009,9 @@ func see(source DumpfileSource, selection SubversionRange) {
 		return nil
 	}
 	seeprops := func(properties *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		for _, skippable := range []string{"svn:log", "svn:date", "svn:author"} {
 			if _, ok := properties.properties[skippable]; ok {
 				return true
@@ -2013,6 +2031,9 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 	}
 	logpatch := NewLogfile(fd, &selection)
 	loghook := func(prop *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		_, haslog := prop.properties["svn:log"]
 		if haslog && logpatch.Contains(source.Revision) {
 			logentry := logpatch.comments[source.Revision]
@@ -2256,6 +2277,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
 	revhook := func(props *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
 		swapped := make([]string, 0)
 		for _, mergeproperty := range mergeProperties {
 			if m, ok := props.properties[mergeproperty]; ok {
