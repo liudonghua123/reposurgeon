@@ -176,7 +176,7 @@ the interesting set does not depend on.  The result is the complement
 relative to the list of projects of the transitive completion of the
 depends-on relationship.
 
-Arument tokens beginning with $ are considered variable names abd
+Arument tokens beginning with $ are considered variable names and
 expanded.
 """)
     def do_expunge(self, line):
