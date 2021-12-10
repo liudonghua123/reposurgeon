@@ -676,7 +676,7 @@ func SetLength(header string, data []byte, val int) []byte {
 }
 
 // ReadRevisionHeader - read a revision header, parsing its properties.
-func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties) bool) ([]byte, map[string]string) {
+func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties) bool) ([]byte, map[string]string, bool) {
 	stash := ds.Require("Revision-number:")
 	rev := string(bytes.Fields(stash)[1])
 	rval, err := strconv.Atoi(rev)
@@ -697,8 +697,9 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties) bool
 	stash = append(stash, ds.Require("Content-length:")...)
 	stash = append(stash, ds.Require(linesep)...)
 	props := NewProperties(ds)
+	retain := true
 	if PropertyHook != nil {
-		PropertyHook(&props)
+		retain = PropertyHook(&props)
 		proplen := len(props.Stringer())
 		stash = SetLength("Prop-content", stash, proplen)
 		stash = SetLength("Content", stash, proplen)
@@ -717,7 +718,7 @@ func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties) bool
 		fmt.Fprintf(os.Stderr, "<ReadRevisionHeader %d: returns stash=%q>\n",
 			ds.Lbs.linenumber, stash)
 	}
-	return stash, props.properties
+	return stash, props.properties, retain
 }
 
 // Require - read a line, requiring it to have a specified prefix.
@@ -998,9 +999,10 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	var nodecount int
 	var line []byte
 	for {
+		// Invariant: We're always looking at the beginning of a revision here
 		ds.Index = 0
 		nodecount = 0
-		stash, _ := ds.ReadRevisionHeader(prophook)
+		stash, _, retain := ds.ReadRevisionHeader(prophook)
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<at start of revision %d>\n", ds.Revision)
 		}
@@ -1020,7 +1022,10 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
 				ds.Lbs.Push(line)
-				if len(stash) != 0 && nodecount == 0 {
+				// If there has been content since the last Revision-number line,
+				// whether we ship the previous revision record depends on the
+				// flag value the revhook passed back.
+				if len(stash) != 0 && nodecount == 0 && retain {
 					if passthrough {
 						if debug >= debugPARSE {
 							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
@@ -1277,7 +1282,10 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		}
 		return nil
 	}
-	source.Report(NewSubversionRange("0:HEAD"), nodehook, nil, true)
+	revhook := func(props *Properties) bool {
+		return selection.ContainsRevision(source.Revision) != invert
+	}
+	source.Report(NewSubversionRange("0:HEAD"), nodehook, revhook, true)
 }
 
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
