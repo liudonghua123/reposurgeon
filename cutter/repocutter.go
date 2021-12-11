@@ -1697,7 +1697,7 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 		} else if patterns[i*2][0] == '^' {
 			ops = append(ops, transform{regexp.MustCompile(patterns[i*2] + "(?P<end>/|$)"),
 				append([]byte(patterns[i*2+1]), []byte("${end}")...)})
-		} else if patterns[i*2][0] == '$' {
+		} else if patterns[i*2][len(patterns[i*2])-1] == '$' {
 			ops = append(ops, transform{regexp.MustCompile("(?P<start>^|/)" + patterns[i*2]),
 				append([]byte("${start}"), []byte(patterns[i*2+1])...)})
 		} else {
