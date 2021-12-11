@@ -126,6 +126,13 @@ NOT in that range to pass to standard output.
 Delete all operations with Node-path or Node-copyfrom-path headers matching 
 specified Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision
+
+Matches are constrained so that each match must be a path segment or a
+sequence of path segments; that is, the left end must be either at the
+start of path or immediately following a /, and the right end must
+precede a / or be at end of string.  With a leading ^ the match is
+constrained to be a leading sequence of the pathname; with a trailing
+$, a trailing one.
 record is removed as well.
 
 The -f/-fixed option disables regexp compilation of the patterns, treating
@@ -242,6 +249,13 @@ Delete all operations with Node-path or Node-copyfrom-path headers *not*
 matching specified Golang regular expressions (opposite of 'expunge').
 Any revision left with no Node records after this filtering has its Revision record
 removed as well. This transform can be restricted by a selection set.
+
+Matches are constrained so that each match must be a path segment or a
+sequence of path segments; that is, the left end must be either at the
+start of path or immediately following a /, and the right end must
+precede a / or be at end of string.  With a leading ^ the match is
+constrained to be a leading sequence of the pathname; with a trailing
+$, a trailing one.
 
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
@@ -1327,14 +1341,25 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, true)
 }
 
+func segmentize(pattern string) string {
+	if pattern[0] == '^' && pattern[len(pattern)-1] == '$' {
+		return pattern
+	} else if pattern[0] == '^' {
+		return pattern + "(?P<end>/|$)"
+	} else if pattern[len(pattern)-1] == '$' {
+		return "(?P<start>^|/)" + pattern
+	}
+	return "(?P<start>^|/)" + pattern + "(?P<end>/|$)"
+}
+
 // Strip out ops defined by a revision selection and a path regexp.
 func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
 	regexps := make([]*regexp.Regexp, len(patterns))
 	for i, pattern := range patterns {
 		if fixed {
-			regexps[i] = regexp.MustCompile(regexp.QuoteMeta(pattern))
+			regexps[i] = regexp.MustCompile(segmentize(regexp.QuoteMeta(pattern)))
 		} else {
-			regexps[i] = regexp.MustCompile(pattern)
+			regexps[i] = regexp.MustCompile(segmentize(pattern))
 		}
 	}
 	expungehook := func(header StreamSection, properties []byte, content []byte) []byte {
@@ -2071,9 +2096,9 @@ func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 	regexps := make([]*regexp.Regexp, len(patterns))
 	for i, pattern := range patterns {
 		if fixed {
-			regexps[i] = regexp.MustCompile(regexp.QuoteMeta(pattern))
+			regexps[i] = regexp.MustCompile(segmentize(regexp.QuoteMeta(pattern)))
 		} else {
-			regexps[i] = regexp.MustCompile(pattern)
+			regexps[i] = regexp.MustCompile(segmentize(pattern))
 		}
 	}
 	sifthook := func(header StreamSection, properties []byte, content []byte) []byte {

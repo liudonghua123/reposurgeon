@@ -2,7 +2,7 @@
 
 Repository head::
      Minor improvements in baton handling.
-     repocutter pathrename REs are constrained to match full path segments
+     repocutter pathrename/sift/expunge REs are constrained to match full path segments
      --nobranch is retired; use repocutter to prepare flat repositories
      repocutter reduce now has simpler behavior and can take input from stdin.
      reposurgeon incorporarte can handle symlinks
