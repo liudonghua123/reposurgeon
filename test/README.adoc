@@ -3,13 +3,13 @@
 "make" here in the test directory runs a complete set of regression
 tests. It's what "make check" in the main directory redirects to.
 
-Output from the tests is in TAP (Test Anything Protcol).  Test output
+Output from the tests is in TAP (Test Anything Protocol).  Test output
 is normally filtered through test/tapview, which makes the test output
 far less noisy, passing though only error indications. You can get the
 raw TAP report at any time with "make tap".
 
-On the 64-core 3GHz AMD64 machine I use for development, a full
-make check runs in 15-20 seconds. Scale expectations appropriately
+On the 64-core 2.2GHz AMD Ryzen machine I use for development, a full
+make check runs in about 10 seconds. Scale expectations appropriately
 for your hardware.
 
 If you get a failure on the repotool-initialize-cvs-git test, but
@@ -147,22 +147,22 @@ in Subversion's parser - header lines that begin with whitespace are ignored.
 When you create a new one, insert a second line that begins with a space and
 two pound signs.
 
-=== Making new Subversion test loads
+=== Notes about making new Subversion test loads
 
-1. To create a new Subversion test repo, 'make svn-flat' or 'make svn-branchy'.
+It's good practice to write generators using the shell functions in
+common-setup.sh.  Theye are easier to read and modify than the
+stream files they generate.
 
-2. To clone an existing test load foo.svn into the test repo,
+1. To clone an existing test load foo.svn into the test repo,
 'svn-to-svn -n <foo.svn'
 
-3. To copy trunk, creating a tag named 'foo'
+2. To copy trunk, creating a tag named 'foo'
 
    svn copy file://${PWD}/test-repo/trunk file://${PWD}/test-repo/tags/foo
 
-4. To delete a branch foo
+3. To delete a branch foo
 
    svn delete file://${PWD}/test-repo/branches/foo
-
-5. 'make svn-dump' will dump the new test load to stdout.
 
 == The agito test case
 
@@ -291,7 +291,7 @@ test.
 == The branchcreateempty test
 
 This demonstrates what happens when a Subversion branch is created
-as an empty dirctory and filled in with file copies in later revisions.
+as an empty directory and filled in with file copies in later revisions.
 
 This sequence odf options ought to be turned into a branch copy, but
 every attempt to do so has created more problems than it solved.
