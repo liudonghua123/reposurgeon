@@ -466,6 +466,10 @@ FIXME: Need some tests of multiline mergeinfo properties
 
 FIXME: Need a test of incorporate with symlink in the tarball
 
+FIXME: reposurgeon expunge with --not and --notagify needs tests
+
+FIXME: R and C handling in expunge needs tests
+
 == Some references
 
 https://testanything.org/

@@ -4070,7 +4070,6 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 		croak("required argument is missing.")
 		return false
 	}
-	// FIXME: expunge with --not and --notagify needs tests
 	expunge := getPattern(fields[0])
 	err := rs.chosen().expunge(rs.selection, expunge,
 		!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)

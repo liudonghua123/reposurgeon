@@ -6854,7 +6854,6 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 						deletia.Add(i)
 					}
 				} else if fileop.op == opR || fileop.op == opC {
-					// FIXME: R and C handling in expunge needs tests
 					sourcedelete := expunge.MatchString(fileop.Source) == delete
 					targetdelete := expunge.MatchString(fileop.Path) == delete
 					if sourcedelete {
