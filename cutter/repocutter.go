@@ -2675,6 +2675,7 @@ func main() {
 	case "proprename":
 		proprename(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
 	case "reduce":
+		assertNoArgs()
 		reduce(NewDumpfileSource(input, baton), selection)
 	case "push":
 		push(NewDumpfileSource(input, baton), selection, flag.Args()[1])
