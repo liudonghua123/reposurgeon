@@ -2251,7 +2251,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					// Shift "branches" or "tags" to top level
 					parts[0] = []byte(under)
 					if len(parts) >= 3 {
-						// This is where we capture information abnout what
+						// This is where we capture information about what
 						// branches and tags exist under a specified project
 						// directory.
 						if parsed.isDir && len(parts) == 3 {

@@ -118,12 +118,6 @@ Compares standard input with a check file and turns the diff into a
 TAP report.  If the diff is nonempty it is shipped ater the TAP
 "not OK" as a details message.
 
-=== tapcount
-
-This is a silly little script that emits a count of its arguments.
-It exists to reduce the density of mind-bending shell syntax in
-test/Makefile.
-
 === delver
 
 Run delve, the Golang symbolic debugger, on reposurgeon. The wrapper
