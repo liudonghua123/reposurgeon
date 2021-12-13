@@ -50,6 +50,7 @@ tapcd () {
     cd "$1" >/dev/null || ( echo "not ok: $0: cd failed"; exit 1 )
 }
 
+# Initialize a Subversion test repository with standard kayout
 svninit() {
         echo "Starting at ${PWD}"
  	# Note: this leaves you with the checkout directory current
@@ -65,7 +66,13 @@ svninit() {
 	    echo "Initial README content." | svn commit -F -
 }
 
-svnaction () {
+# Initialize a Subversion test repository with flat kayout
+svnflat() {
+	svnadmin create test-repo
+	svn co "file://$(pwd)/test-repo" test-checkout
+}
+
+svnaction() {
     # This version of svnaction does filenames or directories 
     case $1 in
 	*/)

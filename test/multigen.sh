@@ -40,7 +40,7 @@ trap 'rm -fr test-repo test-checkout' EXIT HUP INT QUIT TERM
 
 {
 set -e
-make svn-flat
+svnflat
 cd test-checkout
 # Content operations start here
 svnaction project1/
