@@ -3,7 +3,7 @@
 5-1   add      trunk/project1/foo.txt
 6-1   add      trunk/project1/bar.txt
 7-1   add      trunk/project1/baz.txt
-8-1   copy     branches/stable/ from 7:trunk/project1/
+8-1   copy     branches/stable/project1/ from 7:trunk/project1/
 9-1   add      project2/
 10-1  add      trunk/project2/
 13-1  add      trunk/project2/foo.txt
@@ -13,7 +13,7 @@
 17-1  change   trunk/project2/foo.txt
 18-1  add      trunk/project2/foodir/
 18-2  add      trunk/project2/foodir/qux.txt
-19-1  copy     tags/1.0/ from 18:trunk/project2/
+19-1  copy     tags/1.0/project2/ from 18:trunk/project2/
 20-1  copy     trunk/project1/evilcopy/ from 18:trunk/project2/
 21-1  add      project3/
 22-1  add      trunk/project3/

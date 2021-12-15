@@ -660,11 +660,15 @@ func (props *Properties) Contains(key string) bool {
 var revisionLine *regexp.Regexp
 var textContentLength *regexp.Regexp
 var nodeCopyfrom *regexp.Regexp
+var trunkCopy *regexp.Regexp
 
 func init() {
 	revisionLine = regexp.MustCompile("Revision-number: ([0-9])")
 	textContentLength = regexp.MustCompile("Text-content-length: ([1-9][0-9]*)")
 	nodeCopyfrom = regexp.MustCompile("Node-copyfrom-rev: ([1-9][0-9]*)")
+	// This one is a liitle weird. Whatvwe're trying to detect here is
+	// a partial copy from trunk under under a project directory.
+	trunkCopy = regexp.MustCompile("Node-copyfrom-path: [^/]+/trunk\n")
 }
 
 // DumpfileSource - this class knows about Subversion dumpfile format.
@@ -2220,11 +2224,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		match = regexp.MustCompile(patterns[0])
 	}
 	type parsedNode struct {
-		role     string
-		action   []byte
-		isDelete bool
-		isCopy   bool
-		isDir    bool
+		role      string
+		action    []byte
+		isDelete  bool
+		isCopy    bool
+		isDir     bool
+		trunkCopy bool
 	}
 	wildcards := make(map[string]orderedStringSet)
 	var wildcardKey string
@@ -2363,6 +2368,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		parsed.isCopy = header.index("Node-copyfrom-path") != -1
 		parsed.isDir = header.isDir(source)
 		parsed.role = string(parsed.action)
+		parsed.trunkCopy = trunkCopy.Match(header)
 		if parsed.isCopy {
 			parsed.role = "copy"
 		}
@@ -2415,7 +2421,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				return swapper("Node-path: ", path, parsed)
 			})
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
-				branchcopy := parsed.isDir && (parsed.isCopy || parsed.isDelete)
+				branchcopy := parsed.isDir && ((parsed.isCopy && !parsed.trunkCopy) || parsed.isDelete)
 				parts := bytes.Split(in, []byte{os.PathSeparator})
 				if structural && branchcopy && len(parts) == 3 {
 					top := string(parts[0])
