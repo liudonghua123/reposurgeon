@@ -290,16 +290,16 @@ putting the project directory beneath the branch.
 Also fires when an entire project directory is copied; this is transformed
 into a copy of trunk and copies of each subbranch and tag that exists.
 
-After the swap, more attempts to recognize spans of deletes, copies
+After the swap, there are attempts to recognize spans of copies
 into branch directories, and copies into tag subdirectories that are
 parallel in all top-level (project) directories. These are coalesced
-into single deletes or copies in the inverted structure.
+into single copies in the inverted structure.  No attempts is made
+to coalesce deletes; the user mulst manually trim unneeded branches.
 
 Accordingly, deletes and copies with three-segment sources and
 three-segment targets are  transformed; for tags/ and branches/ paths
 the last segment (the subdirectory below the branch name)  is dropped,
-while for trunk/ paths the last two segments are dropped leaving only
-trunk/.  Following duplicate deletes and copies are skipped. 
+Following duplicate deletes and copies are skipped. 
 
 This has two minor negative consequences. One is that metadata
 belonging to all deletes or copies after the first one in a coalesced
@@ -354,7 +354,6 @@ var narrativeOrder []string = []string{
 	"pop",
 	"push",
 
-	"split",
 	"swap",
 	"swapsvn",
 
