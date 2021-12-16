@@ -62,7 +62,6 @@ Available subcommands and help topics:
    select
    setlog
    sift
-   split
    strip
    swap
    swapsvn
@@ -101,7 +100,6 @@ var oneliners = map[string]string{
 	"select":     "Selecting revisions",
 	"setlog":     "Mutating log entries",
 	"sift":       "Sift for operations by Node-path header",
-	"split":      "Split a copy operation into a trunk/branches/tags clique",
 	"strip":      "Replace content with unique cookies, preserving structure",
 	"swap":       "Swap first two components of pathnames",
 	"swapsvn":    "Subversion structure-aware swap",
@@ -259,14 +257,6 @@ $, a trailing one.
 
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
-`,
-	"split": `split: usage: repocutter split PATH...
-
-Transform every stream operation with Node-path PATH in the path list 
-into three operations on PATH/trunk. PATH/branches, and PATH/tags. This
-operation assumes if the operation is a copy  that structure exists under
-the source directory and also mutates Node-copyfrom headers accordingly. 
-This transform can be restricted by a selection set.
 `,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
 
@@ -2130,48 +2120,6 @@ func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 	source.Report(selection, sifthook, nil, true)
 }
 
-func split(source DumpfileSource, selection SubversionRange, paths []string) {
-	splithook := func(header StreamSection, properties []byte, content []byte) []byte {
-		matches := false
-		target := header.payload("Node-path")
-		for _, path := range paths {
-			if bytes.Equal(target, []byte(path)) {
-				matches = true
-			}
-		}
-		if matches {
-			if p := string(properties); p != "" && p != "PROPS-END\n" {
-				croak("can't split a node with nonempty properties (%v).", string(properties))
-			}
-			if debug >= debugPARSE {
-				fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
-			}
-			originalHeader := string(header)
-			propdelim := ""
-			if strings.Contains(originalHeader, "Prop-content") {
-				propdelim = "PROPS-END\n\n"
-			}
-			copytarget := "Node-path: " + string(header.payload("Node-path"))
-			copysource := "Node-copyfrom-path: " + string(header.payload("Node-copyfrom-path"))
-			trunkCopy := strings.Replace(originalHeader, copytarget, copytarget+"/trunk", 1)
-			branchesCopy := strings.Replace(originalHeader, copytarget, copytarget+"/branches", 1)
-			tagsCopy := strings.Replace(originalHeader, copytarget, copytarget+"/tags", 1)
-			if copysource != "" {
-				trunkCopy = strings.Replace(trunkCopy, copysource, copysource+"/trunk", 1)
-				branchesCopy = strings.Replace(branchesCopy, copysource, copysource+"/branches", 1)
-				tagsCopy = strings.Replace(tagsCopy, copysource, copysource+"/tags", 1)
-			}
-			header = []byte(trunkCopy + propdelim + branchesCopy + propdelim + tagsCopy)
-		}
-		all := make([]byte, 0)
-		all = append(all, []byte(header)...)
-		all = append(all, properties...)
-		all = append(all, content...)
-		return all
-	}
-	source.Report(selection, splithook, nil, true)
-}
-
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
 	innerstrip := func(header StreamSection, properties []byte, content []byte) []byte {
 		// first check against the patterns, if any are given
@@ -2729,8 +2677,6 @@ func main() {
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
 	case "sift":
 		sift(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
-	case "split":
-		split(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "strip":
 		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "swap":
