@@ -2421,7 +2421,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				return swapper("Node-path: ", path, parsed)
 			})
 			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
-				branchcopy := parsed.isDir && ((parsed.isCopy && !parsed.trunkCopy) || parsed.isDelete)
+				branchcopy := parsed.isDir && (parsed.isCopy && !parsed.trunkCopy)
 				parts := bytes.Split(in, []byte{os.PathSeparator})
 				if structural && branchcopy && len(parts) == 3 {
 					top := string(parts[0])
