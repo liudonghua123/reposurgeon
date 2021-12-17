@@ -4,7 +4,7 @@ Analyze dependencies in a multiproject repository
 and generate useful reports on them.
 
 The multiproject repository is expected not to have
-trunk/brances/tags sttructure, but rather to have project
+trunk/branches/tags sttructure, but rather to have project
 subdirectories which the,mselves may have trunk/brances/tags 
 structure.
 
@@ -12,6 +12,10 @@ If a file named ".multiex" exists in the working directory,
 commands in it are executed at startup.
 
 Sssumes "=" never occurs in any pathname.
+
+Typical invocation:
+
+multiex "read myrepo.see" "expunge"
 
 Copyright by Eric S. Raymond
 SPDX-License-Identifier: BSD-2-Clause
@@ -22,9 +26,12 @@ import cmd, os.path, sys
 def unglue(s):
     return s.replace("=", "/")
 
-def display(lst):
+def display(lst, wrapped):
     for item in sorted(lst):
-        sys.stdout.write(" " + unglue(item))
+        decorated = unglue(item)
+        if wrapped:
+                decorated = "'^" + decorated + "'"
+        sys.stdout.write(" " + decorated)
     sys.stdout.write("\n")
 
 class Multiex(cmd.Cmd):
@@ -35,7 +42,7 @@ class Multiex(cmd.Cmd):
         self.projects = set()
         self.depends_on = set()
         self.sources = set()
-        self.pushdowns = []
+        self.pushdowns = set()
         self.transforms = []
         self.variables = {}
         self.revcount = ""
@@ -87,7 +94,8 @@ uppermost revision to be analyzed.
                     path = path.replace(s, t)
                 path = self.glue(path)
                 project = path.split("/")[0]
-                self.projects.add(project)
+                if project not in self.pushdowns:
+                    self.projects.add(project)
             if " copy " in dline:
                 for (s, t) in self.transforms:
                     dline = dline.replace(s, t)
@@ -121,7 +129,7 @@ is treated as a project for dependency-tracking purposes. Only affects
 following read operations.
 """)
     def do_pushdown(self, line):
-        self.pushdowns += line.split()
+        self.pushdowns = self.pushdowns.union(set(line.split()))
         return False
         
     def help_transform(self):
@@ -152,14 +160,16 @@ space-separated token list which is the value.
         
     def do_list(self, line):
         "List the contents of a variable."
-        if line == "sources":
-            display(self.sources) 
+        if line == "":
+            display(self.variables.keys(), False)
+        elif line == "sources":
+            display(self.sources, False) 
         elif line == "projects":
-            display(self.sources)
+            display(self.sources, False)
         elif line == "pushdowns":
-            display(self.pushdowns)
+            display(self.pushdowns, False)
         else:
-            display(self.variables[line])
+            display(self.variables, False)
         return False
         
     def do_EOF(self, _unused):
@@ -185,7 +195,7 @@ expanded.
             return False
         dependencies = self.closure(set(line.split()))
         sys.stdout.write('repocutter expunge \\\n')
-        display(self.projects - dependencies)
+        display(self.projects - dependencies, True)
         return False
 
     def help_sift(self):
@@ -205,7 +215,7 @@ expanded.
             return False
         dependencies = self.closure(set(line.split()))
         sys.stdout.write('repocutter sift \\\n')
-        display(dependencies)
+        display(dependencies, False)
         return False
 
     def do_downstream(self, line):
