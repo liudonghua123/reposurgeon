@@ -70,7 +70,7 @@ current-golang:
 
 # As of Ubuntu 20.04 there is no longer a package names "awk".
 helpers:
-	sudo apt-get install asciidoctor
+	command -v asciidoctor >/dev/null 2>&1 || sudo apt-get install asciidoctor
 	command -v awk >/dev/null 2>&1 || sudo apt-get install gawk
 
 
