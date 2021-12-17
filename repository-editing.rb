@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
 # This script creates repository-editing.html from
 # repository-editing.adoc. This can be done using the command-line,
