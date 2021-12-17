@@ -58,7 +58,7 @@ reposurgeon: build
 fullinstall: stable-golang helpers test-helpers
 
 stable-golang:
-	sudo apt install golang
+	sudo apt-get -y install golang
 
 # This may improve performance, if the backports repostotory
 # has been updated to a version more recemnt than your distro's.
@@ -70,12 +70,12 @@ current-golang:
 
 # As of Ubuntu 20.04 there is no longer a package names "awk".
 helpers:
-	command -v asciidoctor >/dev/null 2>&1 || sudo apt-get install asciidoctor
-	command -v awk >/dev/null 2>&1 || sudo apt-get install gawk
+	command -v asciidoctor >/dev/null 2>&1 || sudo apt-get -y install asciidoctor
+	command -v awk >/dev/null 2>&1 || sudo apt-get -y install gawk
 
 
-test-helpers: 
-	sudo apt install cvs-fast-export subversion cvs mercurial rsync golint shellcheck
+test-helpers:
+	sudo apt-get -y install cvs-fast-export subversion cvs mercurial rsync golint shellcheck
 
 #
 # Documentation
