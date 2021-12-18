@@ -998,6 +998,21 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * closure(), pathlist(), log(), and see() it is always on.
 	 */
 
+	if passthrough {
+		// Pass through SVN-fs-dump-format-version and UUID
+		for {
+			line := ds.Lbs.Readline()
+			if len(line) == 0 {
+				return
+			} else if strings.HasPrefix(string(line), "Revision-number:") {
+				ds.Lbs.Push(line)
+				break
+			} else {
+				os.Stdout.Write(line)
+			}
+		}
+	}
+
 	emit := passthrough && selection.intervals[0][0].rev == 0
 	stash := ds.ReadUntilNextRevision(0)
 	if emit {
