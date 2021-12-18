@@ -234,14 +234,29 @@ expanded.
                 end_with = end_with.union(captured)
         print(end_with-start_from)
         return False
-  
+
+    def help_graph(self):
+        sys.stdout.write("""
+Dump the dependency graph in DOT notation.  Display it
+like this:
+
+graph | dot -Tpng | display &
+
+The relationship is "is copied to".
+""")
+    def do_graph(self, _line):
+        sys.stdout.write("digraph {\n")
+        for (source, target) in self.depends_on:
+            sys.stdout.write('\t%s -> %s;\n' % (source,target))
+        sys.stdout.write("}\n")
+    
     def do_stats(self, _unused):
         "Print statistics on the repository segment."
         print("%s revisions" % self.revcount)
         print("%d dependencies" % len(self.depends_on))
         print("%d projects" % len(self.projects))
         return False
-        
+
     def cleanup(self):
         pass
 
