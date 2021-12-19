@@ -1136,11 +1136,11 @@ V 96
 fixes #9863 - Renomeado o nome do projeto para git_nfse e alteradas as tags para o namespace tc:
 PROPS-END
 
-Node-path: trunk/git_nfse
+Node-path: git_nfse
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 17
-Node-copyfrom-path: trunk/brazilian-nfse
+Node-copyfrom-path: brazilian-nfse
 
 
 Node-path: trunk/git_nfse
@@ -3288,11 +3288,11 @@ V 141
 refs #9865 - A partir desta revision, rubyrails passa a ser o diretorio para codigo open source desenvolvido pela GIT Sistemas em Ruby/Rails.
 PROPS-END
 
-Node-path: trunk/rubyrails
+Node-path: rubyrails
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 35
-Node-copyfrom-path: trunk/git_nfse
+Node-copyfrom-path: git_nfse
 
 
 Node-path: git_nfse

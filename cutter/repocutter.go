@@ -2348,7 +2348,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		if match == nil || match.Match(nodePath) {
 			// Special handling of operations on bare project directories
-			if bytes.Count(nodePath, []byte(pathsep)) == 0 {
+			if structural && bytes.Count(nodePath, []byte(pathsep)) == 0 {
 				// Top-level copies must be split
 				if parsed.role == "copy" {
 					if p := string(properties); p != "" && p != "PROPS-END\n" {
@@ -2377,7 +2377,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					return nil
 				}
 				// Non-copy operations - pass through anything that looks like standard layout
-				if structural && !stdlayout(nodePath) {
+				if !stdlayout(nodePath) {
 					// Don't retain non-copy
 					// operations on project
 					// directories, these are
@@ -2389,7 +2389,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					// there is metadata to be
 					// preserved.
 					if header.hasProperties() {
-						croak("properties pn top-level directory, most be removed by hand")
+						croak("properties on top-level directory, most be removed by hand")
 					}
 					return nil
 				}
