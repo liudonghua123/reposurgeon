@@ -281,11 +281,18 @@ multiproject repositories into a standard layout with trunk, tags, and
 branches at the top level.
 
 Fires when the second component of a matching path is "trunk", "branches",
-or "tags"; passes through all paths for this is not so unaltered. Swaps
-"trunk" and the top-level (project) directory straight up.  For tags
-and  branches, the following *two* components are swapped to the top.
-thus, "foo/branches/release23" becomes "branches/release23/foo",
-putting the project directory beneath the branch.
+or "tags", or the path consists of a single segment that is a top-level
+project directory; passes through all paths for this is not so unaltered. 
+
+Top-level porject directories with properties or comments make this command 
+die (return status 1) with an error message on stderr; otherwise these
+directories are silently discarded.
+
+Otherwise, swaps "trunk" and the top-level (project) directory
+straight up.  For tags and branches, the following *two* components
+are swapped to the top.  thus, "foo/branches/release23" becomes
+"branches/release23/foo", putting the project directory beneath the
+branch.
 
 Also fires when an entire project directory is copied; this is transformed
 into a copy of trunk and copies of each subbranch and tag that exists.
@@ -294,7 +301,7 @@ After the swap, there are attempts to recognize spans of copies
 into branch directories, and copies into tag subdirectories that are
 parallel in all top-level (project) directories. These are coalesced
 into single copies in the inverted structure.  No attempts is made
-to coalesce deletes; the user mulst manually trim unneeded branches.
+to coalesce deletes; the user must manually trim unneeded branches.
 
 Accordingly, deletes and copies with three-segment sources and
 three-segment targets are  transformed; for tags/ and branches/ paths
@@ -314,7 +321,7 @@ If a PATTERN argument is given, only paths matching the pattern are swapped.
 
 Note that the result of swapping does not have initial trunk/branches/tags
 directory creations and can thus not be fed directly to svnload. reposurgeon
-copes with this.
+copes with this, but Subversion will not.
 
 This transform can be restricted by a selection set.
 `,
@@ -1294,6 +1301,11 @@ func (ss StreamSection) clone() StreamSection {
 	return tmp
 }
 
+func (ss StreamSection) hasProperties() bool {
+	proplen := ss.payload("Prop-content-length")
+	return proplen != nil && string(proplen) != "10"
+}
+
 // Subcommand implementations begin here
 
 func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
@@ -2196,9 +2208,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	wildcards := make(map[string]orderedStringSet)
 	var wildcardKey string
 	const wildcardMark = '*'
-	//stdlayout := func(payload []byte) bool {
-	//	return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
-	//}
+	stdlayout := func(payload []byte) bool {
+		return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
+	}
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2335,47 +2347,52 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			parsed.role = "copy"
 		}
 		if match == nil || match.Match(nodePath) {
-			/* FIXME: This should only drop nodes, but it loses entire commits
 			// Special handling of operations on bare project directories
-			if bytes.Count(nodePath, []byte(pathsep)) == 0 && !stdlayout(nodePath) {
-				// Don't retain creation of project
-				// directories, these are replaced by
-				// the creation of the top-level
-				// trunk/tags/branches directories in
-				// the swapped hierarchy.  Alas,
-				// there's no safe place to put the
-				// metadata.
-				if bytes.Equal(parsed.action, []byte("add")) {
+			if bytes.Count(nodePath, []byte(pathsep)) == 0 {
+				// Top-level copies must be split
+				if parsed.role == "copy" {
+					if p := string(properties); p != "" && p != "PROPS-END\n" {
+						croak("can't split a node with nonempty properties (%v).", string(properties))
+					}
+					if debug >= debugPARSE {
+						fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
+					}
+					propdelim := ""
+					if strings.Contains(string(header), "Prop-content") {
+						propdelim = "PROPS-END\n\n"
+					}
+					suffixer := func(header StreamSection, suffix string) []byte {
+						out := header.clone()
+						for _, tag := range [2]string{"Node-path: ", "Node-copyfrom-path: "} {
+							out, _, _ = out.replaceHook(tag, func(in []byte) []byte {
+								return append(in, []byte(suffix)...)
+							})
+						}
+						return []byte(string(out) + propdelim + string(properties) + string(content))
+					}
+					// Push these back so the branches and tags will get wildcarding
+					source.Lbs.Push(suffixer(header, "/tags"))
+					source.Lbs.Push(suffixer(header, "/branches"))
+					source.Lbs.Push(suffixer(header, "/trunk"))
 					return nil
 				}
-			}
-			*/
-			// Special case - copy of an entire project directory
-			if bytes.Count(nodePath, []byte(pathsep)) == 0 && parsed.role == "copy" {
-				if p := string(properties); p != "" && p != "PROPS-END\n" {
-					croak("can't split a node with nonempty properties (%v).", string(properties))
-				}
-				if debug >= debugPARSE {
-					fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
-				}
-				propdelim := ""
-				if strings.Contains(string(header), "Prop-content") {
-					propdelim = "PROPS-END\n\n"
-				}
-				suffixer := func(header StreamSection, suffix string) []byte {
-					out := header.clone()
-					for _, tag := range [2]string{"Node-path: ", "Node-copyfrom-path: "} {
-						out, _, _ = out.replaceHook(tag, func(in []byte) []byte {
-							return append(in, []byte(suffix)...)
-						})
+				// Non-copy operations - pass through anything that looks like standard layout
+				if structural && !stdlayout(nodePath) {
+					// Don't retain non-copy
+					// operations on project
+					// directories, these are
+					// replaced by the creation of
+					// the top-level
+					// trunk/tags/branches
+					// directories in the swapped
+					// hierarchy.  Error out if
+					// there is metadata to be
+					// preserved.
+					if header.hasProperties() {
+						croak("properties pn top-level directory, most be removed by hand")
 					}
-					return []byte(string(out) + propdelim + string(properties) + string(content))
+					return nil
 				}
-				// Push these back so the branches and tags will get wildcarding
-				source.Lbs.Push(suffixer(header, "/tags"))
-				source.Lbs.Push(suffixer(header, "/branches"))
-				source.Lbs.Push(suffixer(header, "/trunk"))
-				return nil
 			}
 
 			wildcardKey = ""
