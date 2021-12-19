@@ -2254,13 +2254,15 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 					if parent != nil {
 						if minfrom == maxfrom {
 							if logEnable(logTOPOLOGY) {
-								logit("Link from %s <%s> to %s <%s> found by file copies",
-									parent.mark, parent.legacyID, commit.mark, commit.legacyID)
+								logit("Link from %s:%q to %s:%q found by file copies",
+									parent.legacyID, parent.Branch,
+									commit.legacyID, commit.Branch)
 							}
 						} else {
-							if logEnable(logWARN) {
-								logit("Detected link from %s <%s> to %s <%s> might be dubious (from-rev range %d:%d)",
-									parent.mark, parent.legacyID, commit.mark, commit.legacyID,
+							if logEnable(logTOPOLOGY) {
+								logit("Detected link from %s:%s to %s:%s might be dubious (from-rev range %d:%d)",
+									parent.legacyID, parent.Branch,
+									commit.legacyID, commit.Branch,
 									minfrom, maxfrom)
 							}
 						}

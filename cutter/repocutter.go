@@ -2389,7 +2389,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					// there is metadata to be
 					// preserved.
 					if header.hasProperties() {
-						croak("properties on top-level directory, most be removed by hand")
+						croak("properties on top-level directory %d:%s, must be removed by hand", source.Revision, nodePath)
 					}
 					return nil
 				}
