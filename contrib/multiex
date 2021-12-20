@@ -1,17 +1,22 @@
 #! /usr/bin/env python3
-"""
-Analyze dependencies in a multiproject repository 
+"""Analyze dependencies in a multiproject repository 
 and generate useful reports on them.
 
 The multiproject repository is expected not to have
-trunk/branches/tags sttructure, but rather to have project
-subdirectories which the,mselves may have trunk/brances/tags 
+trunk/branches/tags structure, but rather to have project
+subdirectories which themselves may have trunk/branches/tags 
 structure.
 
 If a file named ".multiex" exists in the working directory,
 commands in it are executed at startup.
 
-Sssumes "=" never occurs in any pathname.
+An "endpoint" is projct tha6 has neenm marked as being
+interesting and should be preserved in the repository 
+conversion.
+
+Sssumes "=" never occurs in any pathname and has been used ti
+subtitute for a slash that should be ignored.  To use a different
+out-of-band character you wiill need to tweak the code
 
 Typical invocation:
 
@@ -19,40 +24,43 @@ multiex "read myrepo.see" "expunge"
 
 Copyright by Eric S. Raymond
 SPDX-License-Identifier: BSD-2-Clause
+
 """
 
 import cmd, os.path, sys
-
-def unglue(s):
-    return s.replace("=", "/")
-
-def display(lst, wrapped):
-    for item in sorted(lst):
-        decorated = unglue(item)
-        if wrapped:
-                decorated = "'^" + decorated + "'"
-        sys.stdout.write(" " + decorated)
-    sys.stdout.write("\n")
 
 class Multiex(cmd.Cmd):
     "Multiproject repository explorer."
     def __init__(self, name=None):
         cmd.Cmd.__init__(self)
+        self.do_clear("")
         self.prompt = "> "
-        self.projects = set()
-        self.depends_on = set()
-        self.sources = set()
-        self.pushdowns = set()
-        self.transforms = []
-        self.variables = {}
         self.revcount = ""
+        self.delimiter = "="
 
-    def glue(self, s):
+    def present(self, s):
+        return s.replace(self.delimiter, "/")
+
+    def transform(self, path):
         for topseg in self.pushdowns:
-            if s.startswith(topseg + "/"):
-                s = s.replace(topseg + "/", topseg + "=", 1)
-        return s
+            if path.startswith(topseg + "/")  and (len(path) > len(topseg)+1):
+                path = path.replace(topseg + "/", topseg + self.delimiter, 1)
+        return path
+    
+    def display(self, lst, wrapped):
+        for item in sorted(lst):
+            decorated = self.present(item)
+            if wrapped:
+                decorated = "'^" + decorated + "'"
+            sys.stdout.write(" " + decorated)
+        sys.stdout.write("\n")
 
+    def get_project(self, path):
+        for prefix in self.pushdowns:
+            if path.startswith(prefix + "/"):
+                return "/".join(path.split("/")[:2])
+        return path.split("/")[0]
+        
     def closure(self, endpoints):
         "Compute transitive closure of a set of project directories under depends-on"
         closure = endpoints.copy()
@@ -68,12 +76,9 @@ class Multiex(cmd.Cmd):
                 break
         return closure
 
-    def precmd(self, line):
-        while "$" in line:
-            for k, v in self.variables.items():
-                line = line.replace("$"+k, " ".join(v), 1)
-        return line
-    
+    def help_intro(self):
+        print(__doc__)
+
     def help_read(self):
         sys.stdout.write("""
 Read a "repocutter see" report and compute the dependency graph
@@ -85,43 +90,53 @@ uppermost revision to be analyzed.
         for dline in open(cfields[0]):
             if "propset" in dline:
                 continue
-            if "add" in dline:
-                fields = dline.split()
-                number = fields.pop(0)
-                fields.pop(0)
-                path = " ".join(fields)
-                for (s, t) in self.transforms:
-                    path = path.replace(s, t)
-                path = self.glue(path)
-                project = path.split("/")[0]
-                if project not in self.pushdowns:
-                    self.projects.add(project)
-            if " copy " in dline:
-                for (s, t) in self.transforms:
-                    dline = dline.replace(s, t)
-                fields = dline.split()
-                fields.pop(0)
-                fields.pop(0)
+            fields = dline.split()
+            number = fields.pop(0)
+            op = fields.pop(0)
+            self.revcount = number.split("-")[0]
+            if op == "add":
+                path = self.transform(" ".join(fields))
+                project = self.get_project(path)
+                if project.endswith("/") and project[:-1] in self.pushdowns:
+                    continue
+                self.projects.add(project)
+            elif op == "copy":
                 try:
                     ind = fields.index("from")
-                except IndexError:
-                    sys.stderr.write("no from field in '%s'" % dline.strip())
+                except ValueError:
+                    sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
+                    raise SystemExit(1)
                 target = " ".join(fields[:ind])
-                target = self.glue(target)
-                target = target.split("/")[0]
+                target = self.get_project(self.transform(target))
+                if target.endswith("/") and target[:-1] in self.pushdowns:
+                    sys.stderr.write("%s: unexpected copy to pushdown %s at r%s\n" % (sys.argv[0], target, number)) 
+                self.projects.add(target)
                 source = " ".join(fields[ind+1:])
-                source = self.glue(source)
-                source = source.split("/")[0]
-                source = source.split(":")[1]
-                if source != target:
+                source = self.get_project(self.transform(source.split(":")[1]))
+                if source != target and source not in self.pushdowns and target not in self.pushdowns:
                     self.sources.add(source)
                     self.depends_on.add((target, source))
-            self.revcount = number.split("-")[0]
+                    if not target in self.inbound.keys():
+                        self.inbound[target] = set()
+                    self.inbound[target].add(source)
+                    if not source in self.outbound.keys():
+                        self.outbound[source] = set()
+                    self.outbound[source].add(target)
             if len(cfields) > 1 and self.revcount == cfields[1]:
                 print("Stopped")
                 break
         return False
-    
+
+    def do_clear(self, _line):
+        "Clear the dependency graph, projects list, and sources list."
+        self.projects = set()
+        self.depends_on = set()
+        self.sources = set()
+        self.endpoints = set()
+        self.pushdowns = set()
+        self.inbound = {}
+        self.outbound = {}
+
     def help_pushdown(self):
         sys.stdout.write("""
 Declare the named directories to be pushdowns - each *subdirectory* of them
@@ -132,44 +147,25 @@ following read operations.
         self.pushdowns = self.pushdowns.union(set(line.split()))
         return False
         
-    def help_transform(self):
-        sys.stdout.write("""
-Declare a transform pair - source and trarget of a substitution to be applied
-as a see file is read. Only affects following read operations.
-""")
-    def do_transform(self, line):
-        fields = line.split()
-        self.transforms.append((fields[0], fields[1]))
-        return False
-        
-    def do_dump(self, _unused):
-        "Dump the interproject dependency graph."
-        print(self.depends_on)
-        return False
-
-    def help_set(self):
-        sys.stdout.write("""
-Set the value of a variable.  First token is the name, followed by the 
-space-separated token list which is the value.
-""")
-    def do_set(self, line):
-        fields = line.split()
-        name = fields.pop(0)
-        self.variables[name] = fields
+    def do_endpoints(self, line):
+        "Designate a set of projects as endpoints"
+        self.endpoints = self.endpoints.union(set([self.transform(el) for el in line.split()]))
         return False
         
     def do_list(self, line):
-        "List the contents of a variable."
+        "List the contents of a property. With no argument, list defined properties."
         if line == "":
-            display(self.variables.keys(), False)
+            self.display(["sources", "projects", "pushdowns", "endpoints"], False)
         elif line == "sources":
-            display(self.sources, False) 
+            self.display(self.sources, False) 
         elif line == "projects":
-            display(self.sources, False)
+            self.display(self.projects, False)
         elif line == "pushdowns":
-            display(self.pushdowns, False)
+            self.display(self.pushdowns, False)
+        elif line == "endpoints":
+            self.display(self.endpoints, False)
         else:
-            display(self.variables, False)
+            print("No such property.")
         return False
         
     def do_EOF(self, _unused):
@@ -185,9 +181,6 @@ Generates a repocutter expunge command to strip out all project directories
 the interesting set does not depend on.  The result is the complement
 relative to the list of projects of the transitive completion of the
 depends-on relationship.
-
-Arument tokens beginning with $ are considered variable names and
-expanded.
 """)
     def do_expunge(self, line):
         if not self.depends_on:
@@ -195,7 +188,7 @@ expanded.
             return False
         dependencies = self.closure(set(line.split()))
         sys.stdout.write('repocutter expunge \\\n')
-        display(self.projects - dependencies, True)
+        self.display(self.projects - dependencies, True)
         return False
 
     def help_sift(self):
@@ -205,9 +198,6 @@ Requires an argument list of projects deemed interesting.
 Generates a repocutter sift command to strip out all project directories
 the interesting set does not depend on.  The result is the the transitive
 completion of the depends-on relationship.
-
-Arument tokens beginning with $ are considered variable names abd
-expanded.
 """)
     def do_sift(self, line):
         if not self.depends_on:
@@ -215,11 +205,11 @@ expanded.
             return False
         dependencies = self.closure(set(line.split()))
         sys.stdout.write('repocutter sift \\\n')
-        display(dependencies, False)
+        self.display(dependencies, False)
         return False
 
     def do_downstream(self, line):
-        "Generate a list of all projects that depend on a specified set"
+        "Generate a list of all projects that depend on a specified set."
         start_from = set(line.split())
         end_with = start_from.copy()
         while True:
@@ -235,6 +225,18 @@ expanded.
         print(end_with-start_from)
         return False
 
+    def do_terminals(self, _line):
+        "List (non-endpoint) projects with no dependents."
+        terminals = set()
+        for project in self.projects:
+            if project not in self.endpoints:
+                for (target, source) in self.depends_on:
+                    if source == project:
+                        break
+                else:
+                    terminals.add(self.present(project))
+        self.display(terminals, False)
+    
     def help_graph(self):
         sys.stdout.write("""
 Dump the dependency graph in DOT notation.  Display it
@@ -242,12 +244,19 @@ like this:
 
 graph | dot -Tpng | display &
 
-The relationship is "is copied to".
+The arrow relationship is "is copied to".
+
+Endpoints are shown as boxes rather than ovals.
 """)
     def do_graph(self, _line):
         sys.stdout.write("digraph {\n")
-        for (source, target) in self.depends_on:
-            sys.stdout.write('\t%s -> %s;\n' % (source,target))
+        for project in self.endpoints:
+            sys.stdout.write('\t"%s" [shape=box];\n' % (self.present(project)))
+        for project in self.projects - self.endpoints:
+            if not project in self.outbound.keys():
+                sys.stdout.write('\t"%s" [color=green,style=filled];\n' % (self.present(project)))
+        for (target, source) in self.depends_on:
+            sys.stdout.write('\t"%s" -> "%s";\n' % (self.present(source), self.present(target)))
         sys.stdout.write("}\n")
     
     def do_stats(self, _unused):
@@ -255,8 +264,13 @@ The relationship is "is copied to".
         print("%s revisions" % self.revcount)
         print("%d dependencies" % len(self.depends_on))
         print("%d projects" % len(self.projects))
+        print("%d endpoints" % len(self.endpoints))
         return False
 
+    def do_delimiter(self, line):
+        "Set the delimiter used for pushdowns."
+        self.delimiter = line
+    
     def cleanup(self):
         pass
 
