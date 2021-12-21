@@ -1407,7 +1407,26 @@ func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patte
 		}
 		return []byte{}
 	}
-	source.Report(selection, expungehook, nil, true)
+	revhook := func(props *Properties) bool {
+		if !selection.ContainsRevision(source.Revision) {
+			return true
+		}
+		for _, mergeproperty := range mergeProperties {
+			if oldval, present := props.properties[mergeproperty]; present {
+				out := make([]string, 0)
+				parts := strings.Split(oldval, "\n")
+				for _, part := range parts {
+					if !pathmatch(strings.Split(part, ":")[0]) {
+						out = append(out, part)
+					}
+				}
+				props.properties[mergeproperty] = strings.Join(out, "\n")
+			}
+		}
+
+		return true
+	}
+	source.Report(selection, expungehook, revhook, true)
 }
 
 func dumpall(header StreamSection, properties []byte, content []byte) []byte {
