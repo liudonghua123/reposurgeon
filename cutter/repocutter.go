@@ -1382,17 +1382,20 @@ func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patte
 			regexps[i] = regexp.MustCompile(segmentize(pattern))
 		}
 	}
+	pathmatch := func(path string) bool {
+		for _, r := range regexps {
+			if r.MatchString(path) {
+				return true
+			}
+		}
+		return false
+	}
 	expungehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
 			if nodepath != nil {
-				for _, r := range regexps {
-					if r.Match(nodepath) {
-						matched = true
-						break
-					}
-				}
+				matched = matched || pathmatch(string(nodepath))
 			}
 		}
 		if !matched {
@@ -1475,8 +1478,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 			return true
 		}
 		for _, mergeproperty := range mergeProperties {
-			if _, present := props.properties[mergeproperty]; present {
-				oldval := props.properties["svn:mergeinfo"]
+			if oldval, present := props.properties[mergeproperty]; present {
 				rooted := false
 				if oldval[0] == os.PathSeparator {
 					rooted = true
@@ -1513,8 +1515,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 			return true
 		}
 		for _, mergeproperty := range mergeProperties {
-			if _, present := props.properties[mergeproperty]; present {
-				oldval := props.properties["svn:mergeinfo"]
+			if oldval, present := props.properties[mergeproperty]; present {
 				rooted := false
 				if oldval[0] == os.PathSeparator {
 					rooted = true
@@ -1668,8 +1669,8 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 			return true
 		}
 		for _, mergeproperty := range mergeProperties {
-			if _, present := props.properties[mergeproperty]; present {
-				mergeinfo := string(props.properties[mergeproperty])
+			if oldval, present := props.properties[mergeproperty]; present {
+				mergeinfo := string(oldval)
 				var buffer bytes.Buffer
 				if len(mergeinfo) != 0 {
 					for _, line := range strings.Split(strings.TrimSuffix(mergeinfo, "\n"), "\n") {
