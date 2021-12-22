@@ -1,16 +1,17 @@
 #! /usr/bin/env python3
-"""Analyze the DAG defined by dependencies in a multiproject 
+"""Analyze the graph defined by dependencies in a multiproject 
 repository, and generate useful reports on them.
 
 The multiproject repository is expected not to have
 trunk/branches/tags structure, but rather to have project
 subdirectories which themselves may have trunk/branches/tags 
-structure.
+structure.  Each project is a node of the graph, the relation 
+is copies-to.
 
 If a file named ".dagger" exists in the working directory,
 commands in it are executed at startup.
 
-A "goal" is a project tha6 has been marked as being
+A "goal" is a project that has been marked as being
 interesting and should be preserved in the repository 
 conversion.
 
@@ -22,6 +23,9 @@ Typical invocations:
 
 dagger "read myrepo.see" "expunge"
 dagger "read myrepo.see" "graph" | dot -Tpng | display
+
+This tool is somewhat misnamed, as the dependency graph can
+have cycles.
 
 Copyright by Eric S. Raymond
 SPDX-License-Identifier: BSD-2-Clause
@@ -87,7 +91,7 @@ class Dagger(cmd.Cmd):
         return (t, s) in self.depends_on
 
     def closure(self, startpoints, relation):
-        "Compute transitive closure of a set of project directories under a specied relation"
+        "Compute transitive closure of a set of project directories under a specified relation"
         closure = startpoints.copy()
         while True:
             addset = set()
@@ -255,7 +259,7 @@ graph | dot -Tpng | display &
 
 The arrow relationship is "is copied to".
 
-goals are shown as boxes rather than ovals.
+Goals are shown as boxes rather than ovals.
 """)
     def do_graph(self, _line):
         sys.stdout.write("digraph {\n")
@@ -269,7 +273,7 @@ goals are shown as boxes rather than ovals.
         sys.stdout.write("}\n")
     
     def do_stats(self, _unused):
-        "Print statistics on the repository segment."
+        "Print statistics on the DAG."
         print("%s revisions" % self.revcount)
         print("%d dependencies" % len(self.depends_on))
         print("%d projects" % len(self.projects))
