@@ -43,7 +43,7 @@ class Copy:
     def interior(self):
         return self.interpreter.get_project(self.target) == self.interpreter.get_project(self.from_path)
     def __str__(self):
-        return "%-5s %s:%s -> %s" % (self.revision, self.from_rev, self.from_path, self.target)
+        return "%-5s %s <- %s:%s" % (self.revision, self.target, self.from_rev, self.from_path)
 
 class Dagger(cmd.Cmd):
     "Multiproject repository explorer."
@@ -139,24 +139,25 @@ uppermost revision to be analyzed.
                 except ValueError:
                     sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
                     raise SystemExit(1)
-                target = " ".join(fields[:ind])
-                target = self.get_project(self.transform(target))
-                if target.endswith("/") and target[:-1] in self.supers:
-                    sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], target, number)) 
-                self.projects.add(target)
+                target = self.transform(" ".join(fields[:ind]))
+                targetdir = self.get_project(target)
+                if target.endswith("/") and targetdir[:-1] in self.supers:
+                    sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], targetdir, number)) 
+                self.projects.add(targetdir)
                 source = " ".join(fields[ind+1:])
                 sourcerev = source.split(":")[0]
-                source = self.get_project(self.transform(source.split(":")[1]))
+                source = self.transform(source.split(":")[1])
+                sourcedir = self.get_project(source)
                 self.copies.append(Copy(self, number, target, sourcerev, source))
-                if source != target and source not in self.supers and target not in self.supers:
-                    self.sources.add(source)
-                    self.depends_on.add((target, source))
-                    if not target in self.inbound.keys():
-                        self.inbound[target] = set()
-                    self.inbound[target].add(source)
-                    if not source in self.outbound.keys():
-                        self.outbound[source] = set()
-                    self.outbound[source].add(target)
+                if sourcedir != targetdir and sourcedir not in self.supers and targetdir not in self.supers:
+                    self.sources.add(sourcedir)
+                    self.depends_on.add((targetdir, sourcedir))
+                    if not targetdir in self.inbound.keys():
+                        self.inbound[targetdir] = set()
+                    self.inbound[targetdir].add(sourcedir)
+                    if not sourcedir in self.outbound.keys():
+                        self.outbound[sourcedir] = set()
+                    self.outbound[sourcedir].add(targetdir)
             if len(cfields) > 1 and self.revcount == cfields[1]:
                 print("Stopped")
                 break
@@ -284,7 +285,7 @@ Goals are shown as boxes rather than ovals.
         "Set the delimiter used for supers."
         self.delimiter = line
 
-    def do_clique(self, line):
+    def do_copies(self, line):
         "Display all cross-project copies involving the specified prefix." 
         for copy in self.copies:
             if (copy.target.startswith(line) or copy.from_path.startswith(line)) and not copy.interior():
