@@ -913,6 +913,7 @@ type SubversionEndpoint struct {
 	node int
 }
 
+// Equals - aare the components of two endoints equal?
 func (s SubversionEndpoint) Equals(t SubversionEndpoint) bool {
 	if s.node == 0 || t.node == 0 {
 		croak("a full node specification with node index is required")
@@ -998,7 +999,7 @@ checkNode:
 	return node >= interval[0].node && (interval[1].node == 0 || node <= interval[1].node)
 }
 
-// Upperbound - what is the lowest revision in the spec?
+// Lowerbound - what is the lowest revision in the spec?
 func (s *SubversionRange) Lowerbound() SubversionEndpoint {
 	return s.intervals[0][0]
 }
@@ -2191,7 +2192,7 @@ func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 
 // Skip unwanted copies between specified revisions
 func skipcopy(source DumpfileSource, selection SubversionRange) {
-	within := false
+	//within := false
 	var stashPath []byte
 	var stashRev []byte
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
@@ -2201,10 +2202,10 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 			if stashRev == nil || stashPath == nil {
 				croak("r%d.%d: early node of skipcopy is not a copy", source.Revision, source.Index)
 			}
-			within = true
+			//within = true
 		}
 		if selection.Upperbound().Equals(SubversionEndpoint{source.Revision, source.Index}) {
-			within = false
+			//within = false
 			if header.payload("Node-copyfrom-rev") == nil || header.payload("Node-copyfrom-path") == nil {
 				croak("r%d.%d: late node of skipcopy is not a copy", source.Revision, source.Index)
 			}
