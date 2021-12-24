@@ -8,6 +8,7 @@ Repository head::
      reposurgeon incorporarte can handle symlinks
      repocutter can now select and deselect node spans within revisions.
      In repocutter sift/expunge, a new -f option disables regexp interpretation.
+     In repocutter, a new skipcopy command.
 
 4.30: 2021-10-13::
      Speed up DoTagify by parallelizing it.
