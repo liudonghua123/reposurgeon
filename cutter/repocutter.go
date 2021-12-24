@@ -62,6 +62,7 @@ Available subcommands and help topics:
    select
    setlog
    sift
+   skipcopy
    strip
    swap
    swapsvn
@@ -100,6 +101,7 @@ var oneliners = map[string]string{
 	"select":     "Selecting revisions",
 	"setlog":     "Mutating log entries",
 	"sift":       "Sift for operations by Node-path header",
+	"skipcopy":   "Skip an intermediate copy chain between specified revisions",
 	"strip":      "Replace content with unique cookies, preserving structure",
 	"swap":       "Swap first two components of pathnames",
 	"swapsvn":    "Subversion structure-aware swap",
@@ -258,6 +260,14 @@ $, a trailing one.
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
 `,
+	"skipcopy": `skipcopy: usage: repocutter {-r selection} skipcopy
+
+Replace the source ewvisiion and path of a copy at the upper end of the selection
+with the source revisions and path of a copy at the lower end. Fails unless both
+revisions are copies.  Used to remove an unwanted intermediate copy or
+copies - fails noisily if there is a change operatin on the target 
+path between these revisions.
+`,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
 
 Replace content with unique generated cookies on all node paths
@@ -360,6 +370,7 @@ var narrativeOrder []string = []string{
 	"pathrename",
 	"pop",
 	"push",
+	"skipcopy",
 
 	"swap",
 	"swapsvn",
@@ -902,6 +913,13 @@ type SubversionEndpoint struct {
 	node int
 }
 
+func (s SubversionEndpoint) Equals(t SubversionEndpoint) bool {
+	if s.node == 0 || t.node == 0 {
+		croak("a full node specification with node index is required")
+	}
+	return s.rev == t.rev && s.node == t.node
+}
+
 // SubversionRange - represent a polyrange of Subversion commit numbers
 type SubversionRange struct {
 	intervals [][2]SubversionEndpoint
@@ -980,9 +998,14 @@ checkNode:
 	return node >= interval[0].node && (interval[1].node == 0 || node <= interval[1].node)
 }
 
+// Upperbound - what is the lowest revision in the spec?
+func (s *SubversionRange) Lowerbound() SubversionEndpoint {
+	return s.intervals[0][0]
+}
+
 // Upperbound - what is the uppermost revision in the spec?
-func (s *SubversionRange) Upperbound() int {
-	return s.intervals[len(s.intervals)-1][1].rev
+func (s *SubversionRange) Upperbound() SubversionEndpoint {
+	return s.intervals[len(s.intervals)-1][1]
 }
 
 // Report a filtered portion of content.
@@ -2166,6 +2189,41 @@ func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 	source.Report(selection, sifthook, nil, true)
 }
 
+// Skip unwanted copies between specified revisions
+func skipcopy(source DumpfileSource, selection SubversionRange) {
+	within := false
+	var stashPath []byte
+	var stashRev []byte
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if selection.Lowerbound().Equals(SubversionEndpoint{source.Revision, source.Index}) {
+			stashRev = header.payload("Node-copyfrom-rev")
+			stashPath = header.payload("Node-copyfrom-path")
+			if stashRev == nil || stashPath == nil {
+				croak("r%d.%d: early node of skipcopy is not a copy", source.Revision, source.Index)
+			}
+			within = true
+		}
+		if selection.Upperbound().Equals(SubversionEndpoint{source.Revision, source.Index}) {
+			within = false
+			if header.payload("Node-copyfrom-rev") == nil || header.payload("Node-copyfrom-path") == nil {
+				croak("r%d.%d: late node of skipcopy is not a copy", source.Revision, source.Index)
+			}
+			header, _, _ = header.replaceHook("Node-copyfrom-rev: ", func(in []byte) []byte {
+				return stashRev
+			})
+			header, _, _ = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
+				return stashPath
+			})
+		}
+		all := make([]byte, 0)
+		all = append(all, []byte(header)...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+	source.Report(selection, nodehook, nil, true)
+}
+
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
 	innerstrip := func(header StreamSection, properties []byte, content []byte) []byte {
 		// first check against the patterns, if any are given
@@ -2728,6 +2786,8 @@ func main() {
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
 	case "sift":
 		sift(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
+	case "skipcopy":
+		skipcopy(NewDumpfileSource(input, baton), selection)
 	case "strip":
 		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "swap":
