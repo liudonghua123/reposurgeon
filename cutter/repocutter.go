@@ -2107,7 +2107,7 @@ func see(source DumpfileSource, selection SubversionRange) {
 			path = append(path, []byte(fmt.Sprintf(" from %s:%s", fromrev, frompath))...)
 			action = []byte("copy")
 		}
-		leader := fmt.Sprintf("%d-%d", source.Revision, source.Index)
+		leader := fmt.Sprintf("%d.%d", source.Revision, source.Index)
 		fmt.Printf("%-5s %-8s %s\n", leader, action, path)
 		if props != "" {
 			fmt.Printf("%-5s %-8s %s\n", leader, "propset", props)
@@ -2362,10 +2362,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 									parts = append(parts, []byte(top))
 								}
 							case "mergeinfo":
-								croak("r%d-%d: unexpected mergeinfo of path %s",
+								croak("r%d.%d: unexpected mergeinfo of path %s",
 									source.Revision, source.Index, path)
 							default:
-								croak("r%d-%d: unexpected action %s on path %s",
+								croak("r%d.%d: unexpected action %s on path %s",
 									source.Revision, source.Index, parsed.role, path)
 							}
 						}

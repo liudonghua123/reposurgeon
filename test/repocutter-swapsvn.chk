@@ -1,41 +1,41 @@
-2-1   add      trunk/project1/
-5-1   add      trunk/project1/foo.txt
-6-1   add      trunk/project1/bar.txt
-7-1   add      trunk/project1/baz.txt
-8-1   copy     branches/stable/project1/ from 7:trunk/project1/
-10-1  add      trunk/project2/
-13-1  add      trunk/project2/foo.txt
-14-1  add      trunk/project2/bar.txt
-15-1  add      trunk/project2/baz.txt
-16-1  change   trunk/project2/foo.txt
-17-1  change   trunk/project2/foo.txt
-18-1  add      trunk/project2/foodir/
-18-2  add      trunk/project2/foodir/qux.txt
-19-1  copy     tags/1.0/project2/ from 18:trunk/project2/
-20-1  copy     trunk/project1/evilcopy/ from 18:trunk/project2/
-22-1  add      trunk/project3/
-25-1  add      trunk/project3/foo.txt
-26-1  add      trunk/project3/bar.txt
-27-1  add      trunk/project3/baz.txt
-28-1  change   trunk/project3/foo.txt
-29-1  change   trunk/project3/foo.txt
-30-1  add      trunk/project1/subdir1/
-31-1  add      trunk/project1/subdir1/placeholder1
-32-1  add      trunk/project2/subdir2/
-33-1  add      trunk/project2/subdir2/placeholder2
-34-1  add      trunk/project3/subdir3/
-35-1  add      trunk/project3/subdir3/placeholder3
-36-1  copy     branches/exiguous/ from 35:trunk/
-39-1  add      branches/exiguous/project3/foo.txt
-40-1  copy     branches/exiguous/project3/foodir/ from 39:trunk/project2/foodir/
-41-1  copy     branches/exiguous2/ from 40:branches/exiguous/
-44-1  delete   branches/exiguous/project1
-45-1  delete   branches/exiguous/project2
-46-1  delete   branches/exiguous/project3
-47-1  copy     branches/exiguous3/ from 46:trunk/
-50-1  copy     branches/renamed/ from 49:branches/exiguous3/
-50-2  delete   branches/exiguous3/project1
-51-1  copy     branches/renamed/ from 50:branches/exiguous3/
-51-2  delete   branches/exiguous3/project2
-52-1  copy     branches/renamed/ from 51:branches/exiguous3/
-52-2  delete   branches/exiguous3/project3
+2.1   add      trunk/project1/
+5.1   add      trunk/project1/foo.txt
+6.1   add      trunk/project1/bar.txt
+7.1   add      trunk/project1/baz.txt
+8.1   copy     branches/stable/project1/ from 7:trunk/project1/
+10.1  add      trunk/project2/
+13.1  add      trunk/project2/foo.txt
+14.1  add      trunk/project2/bar.txt
+15.1  add      trunk/project2/baz.txt
+16.1  change   trunk/project2/foo.txt
+17.1  change   trunk/project2/foo.txt
+18.1  add      trunk/project2/foodir/
+18.2  add      trunk/project2/foodir/qux.txt
+19.1  copy     tags/1.0/project2/ from 18:trunk/project2/
+20.1  copy     trunk/project1/evilcopy/ from 18:trunk/project2/
+22.1  add      trunk/project3/
+25.1  add      trunk/project3/foo.txt
+26.1  add      trunk/project3/bar.txt
+27.1  add      trunk/project3/baz.txt
+28.1  change   trunk/project3/foo.txt
+29.1  change   trunk/project3/foo.txt
+30.1  add      trunk/project1/subdir1/
+31.1  add      trunk/project1/subdir1/placeholder1
+32.1  add      trunk/project2/subdir2/
+33.1  add      trunk/project2/subdir2/placeholder2
+34.1  add      trunk/project3/subdir3/
+35.1  add      trunk/project3/subdir3/placeholder3
+36.1  copy     branches/exiguous/ from 35:trunk/
+39.1  add      branches/exiguous/project3/foo.txt
+40.1  copy     branches/exiguous/project3/foodir/ from 39:trunk/project2/foodir/
+41.1  copy     branches/exiguous2/ from 40:branches/exiguous/
+44.1  delete   branches/exiguous/project1
+45.1  delete   branches/exiguous/project2
+46.1  delete   branches/exiguous/project3
+47.1  copy     branches/exiguous3/ from 46:trunk/
+50.1  copy     branches/renamed/ from 49:branches/exiguous3/
+50.2  delete   branches/exiguous3/project1
+51.1  copy     branches/renamed/ from 50:branches/exiguous3/
+51.2  delete   branches/exiguous3/project2
+52.1  copy     branches/renamed/ from 51:branches/exiguous3/
+52.2  delete   branches/exiguous3/project3
