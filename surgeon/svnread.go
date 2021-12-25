@@ -206,14 +206,14 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 			h.visibleHere.copyFrom(node.path, h.visible[node.fromRev],
 				node.fromPath, node.String()+" (mutate)")
 			if logEnable(logFILEMAP) {
-				logit("r%d-%d: r%d~%s copied to %s", node.revision, node.index, node.fromRev, node.fromPath, node.path)
+				logit("r%d.%d: r%d~%s copied to %s", node.revision, node.index, node.fromRev, node.fromPath, node.path)
 			}
 		}
 		// Mutate the filemap according to adds/deletes/changes
 		if node.action == sdADD && node.kind == sdFILE {
 			h.visibleHere.set(node.path, node)
 			if logEnable(logFILEMAP) {
-				logit("r%d-%d: %s added", node.revision, node.index, node.path)
+				logit("r%d.%d: %s added", node.revision, node.index, node.path)
 			}
 		} else if node.action == sdDELETE || (node.action == sdREPLACE && node.kind == sdDIR) {
 			// This test can't be moved back further, because both
@@ -226,24 +226,24 @@ func (h *History) apply(revision revidx, nodes []*NodeAction) {
 					node.kind = sdDIR
 				}
 			}
-			//if logEnable(logFILEMAP) {logit("r%d-%d: deduced type for %s", node.revision, node.index, node)}
+			//if logEnable(logFILEMAP) {logit("r%d.%d: deduced type for %s", node.revision, node.index, node)}
 			// Snapshot the deleted paths before
 			// removing them.
 			node.fileSet = newPathMap()
-			node.fileSet.copyFrom(node.path, h.visibleHere, node.path, fmt.Sprintf("<deletion site at r%d-%d>", node.revision, node.index))
+			node.fileSet.copyFrom(node.path, h.visibleHere, node.path, fmt.Sprintf("<deletion site at r%d.%d>", node.revision, node.index))
 			h.visibleHere.remove(node.path)
 			if logEnable(logFILEMAP) {
-				logit("r%d-%d: %s deleted", node.revision, node.index, node.path)
+				logit("r%d.%d: %s deleted", node.revision, node.index, node.path)
 			}
 		} else if (node.action == sdCHANGE || node.action == sdREPLACE) && node.kind == sdFILE {
 			h.visibleHere.set(node.path, node)
 			if logEnable(logFILEMAP) {
-				logit("r%d-%d: %s changed", node.revision, node.index, node.path)
+				logit("r%d.%d: %s changed", node.revision, node.index, node.path)
 			}
 		} else if node.kind == sdDIR && !node.isCopy() {
 			h.visibleHere.set(node.path, node)
 			if logEnable(logFILEMAP) {
-				logit("r%d-%d: saving properties for directory %s", node.revision, node.index, node.path)
+				logit("r%d.%d: saving properties for directory %s", node.revision, node.index, node.path)
 			}
 		}
 		control.baton.twirl()
@@ -599,7 +599,7 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 							nodes = append(nodes, node)
 							sp.streamcount++
 							if logEnable(logEXTRACT) {
-								logit("r%d-%d: %s", node.revision, node.index, node)
+								logit("r%d.%d: %s", node.revision, node.index, node)
 							} else if node.kind == sdDIR &&
 								node.action != sdCHANGE && logEnable(logTOPOLOGY) {
 								if logEnable(logSHOUT) {
@@ -782,7 +782,7 @@ type NodeAction struct {
 
 func (action NodeAction) String() string {
 	out := "<NodeAction: "
-	out += fmt.Sprintf("r%d-%d", action.revision, action.index)
+	out += fmt.Sprintf("r%d.%d", action.revision, action.index)
 	if action.generated {
 		out += "*"
 	}
@@ -856,7 +856,7 @@ func (action NodeAction) isBogon() bool {
 }
 
 func (action NodeAction) deleteTag() string {
-	return action.path[:len(action.path)] + fmt.Sprintf("-deleted-r%d-%d", action.revision, action.index)
+	return action.path[:len(action.path)] + fmt.Sprintf("-deleted-r%d.%d", action.revision, action.index)
 }
 
 func (action NodeAction) hasDeleteTag() bool {
@@ -1275,7 +1275,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 					// https://gitlab.com/esr/reposurgeon/-/issues/341
 					if sp.isDeclaredBranch(node.path) {
 						if logEnable(logEXTRACT) {
-							logit("r%d-%d~%s: declaring as sdNUKE", node.revision, node.index, node.path)
+							logit("r%d.%d~%s: declaring as sdNUKE", node.revision, node.index, node.path)
 						}
 						node.action = sdNUKE
 					} else {
@@ -1309,7 +1309,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 						copyType = "branch"
 					}
 					if logEnable(logEXTRACT) {
-						logit("r%d-%d: %s copy to %s from r%d~%s",
+						logit("r%d.%d: %s copy to %s from r%d~%s",
 							node.revision, node.index, copyType, node.path, node.fromRev, node.fromPath)
 					}
 					// Now generate nodes for all files that were actually copied
@@ -1336,7 +1336,7 @@ func svnExpandCopies(ctx context.Context, sp *StreamParser, options stringSet, b
 						subnode.kind = found.kind
 						subnode.generated = true
 						if logEnable(logTOPOLOGY) {
-							logit("r%d-%d*: %s %s copy r%d~%s -> %s %s",
+							logit("r%d.%d*: %s %s copy r%d~%s -> %s %s",
 								node.revision, node.index, node.path, copyType,
 								subnode.fromRev, subnode.fromPath, subnode.path, subnode)
 						}
@@ -1715,7 +1715,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 						fileop := newFileOp(sp.repo)
 						fileop.construct(opD, node.path)
 						if logEnable(logEXTRACT) {
-							logit("r%d-%d: %q turns off TRIVIAL",
+							logit("r%d.%d: %q turns off TRIVIAL",
 								node.revision, node.index, fileop)
 						}
 						commit.appendOperation(fileop)
