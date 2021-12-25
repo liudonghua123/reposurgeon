@@ -3,6 +3,8 @@ unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware
 
 export LANG=C
 
+SPLIT_SEPARATOR=-
+
 repotoolopt=""
 debug=no
 compareopt=""
@@ -47,7 +49,7 @@ The -r option sets a revision to check rather than trunk/branches/tags of HEAD.
           The corresponding git commit is found with the legacy map, which
           means only the branch modified in the revision will be compared,
           unless the -B option is also used to make a flat repository.
-          You can use the "all" keyword or a range min-max to check multiple
+          You can use the "all" keyword or a range min:max to check multiple
           revisions in a row. Non-existing revisions are silently ignored,
 The -R option sets a read limit to the dump parsing, for speed
 The -e option sets exclude patterns to ignore uninteresting tags and branches
@@ -181,17 +183,17 @@ do
 	if [ "${revision}" = "all" ]
 	then
 	    min=1
-	    max=$(tail -n 1 ${stem}.info | cut -f 1 | cut -d. -f 1)
+	    max=$(tail -n 1 ${stem}.info | cut -f 1 | cut -d$SPLIT_SEPARATOR -f 1)
 	else
-	    min=$(echo "${revision}" | sed 's/-.*$//')
-	    max=$(echo "${revision}" | sed 's/^.*-//')
+	    min=$(echo "${revision}" | sed 's/:.*$//')
+	    max=$(echo "${revision}" | sed 's/^.*://')
 	fi
 
 	while read -r line # input file at the end of the loop
 	do
 	    # shellcheck disable=SC2086
 	    revision=$(echo "${line}" | cut -f 1)
-	    intrev=$(echo "${revision}" | cut -d. -f 1)
+	    intrev=$(echo "${revision}" | cut -d$SPLIT_SEPARATOR -f 1)
 	    if [ "${intrev}" -lt "${min}" ] || [ "${intrev}" -gt "${max}" ]
 	    then
 		continue

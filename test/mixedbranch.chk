@@ -49,7 +49,7 @@ This is a test Subversion repository
 About to do evil mixed-branch commit: trunk side.
 
 commit refs/heads/foobar
-#legacy-id 3.1
+#legacy-id 3-1
 mark :6
 committer esr <esr> 1355183671 +0000
 data 75
@@ -60,7 +60,7 @@ from :3
 M 100644 :4 README
 
 commit refs/heads/master
-#legacy-id 3.2
+#legacy-id 3-2
 mark :7
 committer esr <esr> 1355183671 +0000
 data 75

@@ -166,7 +166,7 @@ data 33
 Copy exiguous branch of project1
 
 tag renamed-root
-#legacy-id 50.1
+#legacy-id 50-1
 from :48
 tagger Fred J. Foonly <foonly@foo.com> 18000 +0000
 data 74

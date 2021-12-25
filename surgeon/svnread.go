@@ -62,6 +62,8 @@ import (
 var svnSep = string([]byte{os.PathSeparator})
 var svnSepWithStar = svnSep + "*"
 
+const splitSeparator = "-"
+
 // Helpers for branch analysis
 
 // containingDir is a cut-down version of filepath.Dir
@@ -1995,12 +1997,12 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 		}
 		baseID := base.legacyID
 		base.Comment += splitwarn
-		base.legacyID += ".1"
+		base.legacyID += splitSeparator + "1"
 		sp.repo.legacyMap["SVN:"+base.legacyID] = base
 		delete(sp.repo.legacyMap, "SVN:"+baseID)
 		for j := 1; j <= len(split.cliques); j++ {
 			fragment := sp.repo.events[split.loc+j].(*Commit)
-			fragment.legacyID = baseID + "." + strconv.Itoa(j+1)
+			fragment.legacyID = baseID + splitSeparator + strconv.Itoa(j+1)
 			sp.repo.legacyMap["SVN:"+fragment.legacyID] = fragment
 			fragment.Comment += splitwarn
 			fragment.setBranch(split.cliques[len(split.cliques)-j].branch)
@@ -2046,7 +2048,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	for index, event := range sp.repo.events {
 		if commit, ok := event.(*Commit); ok {
 			// Remember the last commit on every branch at each revision
-			rev, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
+			rev, _ := strconv.Atoi(strings.Split(commit.legacyID, splitSeparator)[0])
 			list, found := sp.lastCommitOnBranchAt[commit.Branch]
 			lastrev := -1
 			var prev *Commit
@@ -2183,7 +2185,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 			logit("Branch %s has root commit %s", branch, legend)
 		}
 		for _, commit := range roots {
-			rev, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
+			rev, _ := strconv.Atoi(strings.Split(commit.legacyID, splitSeparator)[0])
 			record := sp.revision(intToRevidx(rev))
 			if record != nil {
 				// Simple case: find attachment points defined by branch copies
@@ -2199,7 +2201,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 							if logEnable(logTOPOLOGY) {
 								logit("Link from %s <%s> to %s <%s> found by copy-from",
 									parent.mark, parent.legacyID, commit.mark, commit.legacyID)
-								if strings.Split(parent.legacyID, ".")[0] != fmt.Sprintf("%d", node.fromRev) {
+								if strings.Split(parent.legacyID, splitSeparator)[0] != fmt.Sprintf("%d", node.fromRev) {
 									logit("(fromRev was r%d)", node.fromRev)
 								}
 							}
@@ -2458,7 +2460,7 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 				}
 				continue
 			}
-			realrev, _ := strconv.Atoi(strings.Split(commit.legacyID, ".")[0])
+			realrev, _ := strconv.Atoi(strings.Split(commit.legacyID, splitSeparator)[0])
 			if realrev != revision {
 				if logEnable(logWARN) {
 					logit("Resolving mergeinfo targeting r%d on %s <%s> instead",
@@ -2593,7 +2595,7 @@ func svnProcessMergeinfos(ctx context.Context, sp *StreamParser, options stringS
 					if last == nil {
 						continue
 					}
-					lastrev, _ := strconv.Atoi(strings.Split(last.legacyID, ".")[0])
+					lastrev, _ := strconv.Atoi(strings.Split(last.legacyID, splitSeparator)[0])
 					if lastrev < rng.min {
 						// Snapping the revisions to existing commits
 						// went past the minimum revision in the range

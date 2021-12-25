@@ -236,7 +236,7 @@ data 373
 
 
 tag master-root
-#legacy-id 13.2
+#legacy-id 13-2
 from :21
 tagger clepple-guest <clepple-guest> 1140096703 +0000
 data 78

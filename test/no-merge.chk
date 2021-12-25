@@ -40,7 +40,7 @@ data 9
 file bar
 
 commit refs/heads/somebranch
-#legacy-id 4.1
+#legacy-id 4-1
 mark :5
 committer jmyers <jmyers> 1576615092 +0000
 data 62
@@ -51,7 +51,7 @@ from :3
 M 100644 :4 bar
 
 commit refs/heads/master
-#legacy-id 4.2
+#legacy-id 4-2
 mark :6
 committer jmyers <jmyers> 1576615092 +0000
 data 62
@@ -67,7 +67,7 @@ data 9
 file baz
 
 commit refs/heads/somebranch
-#legacy-id 5.1
+#legacy-id 5-1
 mark :8
 committer jmyers <jmyers> 1576615147 +0000
 data 62
@@ -78,7 +78,7 @@ from :5
 M 100644 :7 baz
 
 commit refs/heads/master
-#legacy-id 5.2
+#legacy-id 5-2
 mark :9
 committer jmyers <jmyers> 1576615147 +0000
 data 62

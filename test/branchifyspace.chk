@@ -77,7 +77,7 @@ bar
 end
 
 commit refs/heads/nonbranch2
-#legacy-id 5.1
+#legacy-id 5-1
 mark :10
 committer fred <fred> 50 +0000
 data 91
@@ -88,7 +88,7 @@ from :5
 M 100644 :8 DRINKME
 
 commit refs/heads/nonbranch1
-#legacy-id 5.2
+#legacy-id 5-2
 mark :11
 committer fred <fred> 50 +0000
 data 91

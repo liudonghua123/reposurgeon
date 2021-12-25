@@ -66,7 +66,7 @@ from :5
 M 100644 :6 file
 
 tag my-tag
-#legacy-id 5.2
+#legacy-id 5-2
 from :5
 tagger fred <fred> 50 +0000
 data 57

@@ -31,7 +31,7 @@ data 9
 Hello B!
 
 commit refs/heads/ProjA_trunk
-#legacy-id 1.1
+#legacy-id 1-1
 mark :4
 committer lars <lars> 1393691687 +0000
 data 53
@@ -42,7 +42,7 @@ M 100644 :1 .gitignore
 M 100644 :2 a.txt
 
 commit refs/heads/ProjB_trunk
-#legacy-id 1.2
+#legacy-id 1-2
 mark :5
 committer lars <lars> 1393691687 +0000
 data 53

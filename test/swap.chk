@@ -50,7 +50,7 @@ data 53
 Revision is 42, file path is git_nfse/trunk/nfse.rb.
 
 commit refs/heads/rubyrails
-#legacy-id 19.1
+#legacy-id 19-1
 mark :7
 committer pablo.targa <pablo.targa> 1366053589 +0000
 data 135
@@ -1242,7 +1242,7 @@ M 100644 :173 trunk/lib/proxies/proxy_hash.rb
 M 100644 :175 trunk/lib/signers.rb
 
 tag rubyrails-root
-#legacy-id 36.1
+#legacy-id 36-1
 from :133
 tagger ronie <ronie> 1383229155 +0000
 data 180

@@ -54,7 +54,7 @@ data 4
 1.0
 
 commit refs/heads/v1.0
-#legacy-id 3.1
+#legacy-id 3-1
 mark :7
 committer db48x <db48x> 1352198315 +0000
 data 52
@@ -65,7 +65,7 @@ from :3
 M 100644 :6 VERSION
 
 commit refs/heads/master
-#legacy-id 3.2
+#legacy-id 3-2
 mark :8
 committer db48x <db48x> 1352198315 +0000
 data 52

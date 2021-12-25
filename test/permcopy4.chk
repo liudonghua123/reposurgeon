@@ -37,7 +37,7 @@ data 4
 foo
 
 commit refs/heads/unbranched
-#legacy-id 2.3
+#legacy-id 2-3
 mark :5
 committer jmyers <jmyers> 1576635590 +0000
 data 65
@@ -57,7 +57,7 @@ from :5
 M 100644 :4 foo
 
 commit refs/heads/d1
-#legacy-id 5.1
+#legacy-id 5-1
 mark :7
 committer jmyers <jmyers> 1576635746 +0000
 data 60
@@ -68,7 +68,7 @@ M 100644 :1 .gitignore
 M 100644 :2 f1
 
 commit refs/heads/d2
-#legacy-id 5.2
+#legacy-id 5-2
 mark :8
 committer jmyers <jmyers> 1576635746 +0000
 data 60
@@ -79,7 +79,7 @@ M 100644 :1 .gitignore
 M 100755 :3 f2
 
 commit refs/heads/d1
-#legacy-id 6.1
+#legacy-id 6-1
 mark :9
 committer jmyers <jmyers> 1576635800 +0000
 data 50
@@ -90,7 +90,7 @@ from :7
 M 100644 :2 f1a
 
 commit refs/heads/d2
-#legacy-id 6.2
+#legacy-id 6-2
 mark :10
 committer jmyers <jmyers> 1576635800 +0000
 data 50
@@ -101,7 +101,7 @@ from :8
 M 100755 :3 f2a
 
 commit refs/heads/unbranched
-#legacy-id 6.3
+#legacy-id 6-3
 mark :11
 committer jmyers <jmyers> 1576635800 +0000
 data 50
