@@ -118,7 +118,7 @@ that every copy-from source is in the set.
 `,
 	"deselect": `deselect: usage: repocutter [-q] [-r SELECTION] deselect
 
-The 'deselect' subcommand selects a range and permits only revisions and ndes
+The 'deselect' subcommand selects a range and permits only revisions and nodes
 NOT in that range to pass to standard output.
 `,
 	"expunge": `expunge: usage: repocutter [-r SELECTION ] [-f|-fixed] expunge PATTERN...
@@ -294,7 +294,7 @@ Fires when the second component of a matching path is "trunk", "branches",
 or "tags", or the path consists of a single segment that is a top-level
 project directory; passes through all paths for this is not so unaltered. 
 
-Top-level porject directories with properties or comments make this command 
+Top-level project directories with properties or comments make this command 
 die (return status 1) with an error message on stderr; otherwise these
 directories are silently discarded.
 
@@ -913,7 +913,7 @@ type SubversionEndpoint struct {
 	node int
 }
 
-// Equals - aare the components of two endoints equal?
+// Equals - are the components of two endoints equal?
 func (s SubversionEndpoint) Equals(t SubversionEndpoint) bool {
 	if s.node == 0 || t.node == 0 {
 		croak("a full node specification with node index is required")
@@ -1017,7 +1017,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 
 	/*
 	 * nodehook is only called on nodes in the selection set.  prophook
-	 * is called on evrry property section, both per-node and per-revision.
+	 * is called on every property section, both per-node and per-revision.
 	 * When called per-revision the value of ds.Index is zero
 	 *
 	 * passthrough - pass through all node text that the nodehook
@@ -1025,7 +1025,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * through and its revision header has not already beem passed
 	 * through, pass that. Properties are shipped (filtered by
 	 * revhook) if their node header or revision header is shipped.
-	 * It is exeptional for passthrough to be off; other than in
+	 * It is exceptional for passthrough to be off; other than in
 	 * closure(), pathlist(), log(), and see() it is always on.
 	 */
 

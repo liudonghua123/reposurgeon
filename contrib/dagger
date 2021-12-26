@@ -16,7 +16,7 @@ interesting and should be preserved in the repository
 conversion.
 
 Assumes "=" never occurs in any pathname and has been used to
-subtitute for a slash that should be ignored.  The "delimiter"
+substitute for a slash that should be ignored.  The "delimiter"
 command can be used to set a different one.
 
 Typical invocations:

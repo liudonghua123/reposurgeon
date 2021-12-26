@@ -3939,7 +3939,7 @@ named 'foo-early' and 'foo-late'.  But if the commit graph would
 remain connected through another path after the cut, the behavior
 changes.  In this case, if the parent and child were on the same
 branch 'qux', the branch segments are renamed 'qux-early' and
-'qux-late', but the repo is not divided..
+'qux-late', but the repo is not divided.
 `)
 }
 

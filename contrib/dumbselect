@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Semple select of revisions in a dunmp stream.
+Sample select of revisions in a dump stream.
 Arguments after the start and end of the revision
 range, inclusive.  Exists for cases where repocutter
 would trip over an error.

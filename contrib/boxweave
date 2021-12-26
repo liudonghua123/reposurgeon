@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 """
 Weave a set of message-box files together,
-leaving the result in soryed order. Error out
+leaving the result in sorted order. Error out
 if the same update occurs in two different
 streams.
 
