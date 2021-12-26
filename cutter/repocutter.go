@@ -1155,7 +1155,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				}
 				continue
 			}
-			croak("at %d, parse of %q doesn't look right, aborting!", ds.Revision, string(line))
+			croak("at <%d>, line %d: parse of %q doesn't look right, aborting!", ds.Revision, ds.Lbs.linenumber, string(line))
 		}
 	}
 }
@@ -1505,7 +1505,7 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 			trampoline = append(trampoline, trackCopy{source.Revision, content})
 			values[nodePath] = trampoline
 		}
-		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
+		if copypath := header.payload("Node-copyfrom-path"); len(content) == 0 && copypath != nil {
 			copyrev, _ := strconv.Atoi(string(header.payload("Node-copyfrom-rev")))
 			if sources, ok := values[string(copypath)]; ok {
 				for i := len(sources) - 1; i >= 0; i-- {
@@ -1515,8 +1515,9 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 						header = header.stripChecksums()
 						content = sources[i].content
 						header = append(header[:len(header)-1],
-							[]byte(fmt.Sprintf("Prop-content-length: 10\nText-content-length: %d\nContent-length: %d\n\nPROPS-END\n",
-								len(content), len(content)+10))...)
+							[]byte(fmt.Sprintf("Text-content-length: %d\nContent-length: %d\n\n",
+								len(content), len(content)))...)
+						break
 					}
 				}
 			}
