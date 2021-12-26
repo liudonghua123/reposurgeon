@@ -46,6 +46,7 @@ Available subcommands and help topics:
    closure
    deselect
    expunge
+   filecopy
    log
    obscure
    pathlist
@@ -85,6 +86,7 @@ var oneliners = map[string]string{
 	"closure":    "Compute the transitive closure of a path set",
 	"deselect":   "Deselecting revisions",
 	"expunge":    "Expunge operations by Node-path header",
+	"filecopy":   "Resolve filecopy operations on a stream.",
 	"log":        "Extracting log entries",
 	"obscure":    "Obscure pathnames",
 	"pathlist":   "List all distinct paths in a stream",
@@ -137,6 +139,16 @@ record is removed as well.
 
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
+`,
+	"filecopy": `filecopy: usage: repocutter [-r SELECTION] filecopy
+
+For each node in the revision range, stash the current version of the 
+node-path's content.  For each later file copy operation with that source,
+replace the file copy with an explicit add/change using the stashed content.
+
+Restrictinmg the range holds down the memory requirement of this tool,
+which in the worst (and default) 1:$ case will keep a copy of evert blob
+in the repository until it's done processing the stream. 
 `,
 	"log": `log: usage: repocutter [-r SELECTION] log
 
@@ -1319,6 +1331,17 @@ func (ss StreamSection) stripChecksums() StreamSection {
 	return StreamSection(header)
 }
 
+// delete - method telete a specified header
+func (ss StreamSection) delete(htype string) StreamSection {
+	offs := ss.index(htype)
+	if offs == -1 {
+		return ss
+	}
+	header := []byte(ss)
+	header = append(header[:offs], header[offs+bytes.Index(header[offs:], []byte("\n"))+1:]...)
+	return StreamSection(header)
+}
+
 func (ss StreamSection) clone() StreamSection {
 	tmp := make([]byte, len(ss))
 	copy(tmp, ss)
@@ -1463,6 +1486,49 @@ func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 	all = append(all, properties...)
 	all = append(all, content...)
 	return all
+}
+
+// Replace dile copy operations with explicit add/change opweration
+func filecopy(source DumpfileSource, selection SubversionRange) {
+	type trackCopy struct {
+		revision int
+		content  []byte
+	}
+	values := make(map[string][]trackCopy)
+	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		nodePath := string(header.payload("Node-path"))
+		if _, ok := values[nodePath]; !ok {
+			values[nodePath] = make([]trackCopy, 0)
+		}
+		if content != nil && len(content) > 0 {
+			trampoline := values[nodePath]
+			trampoline = append(trampoline, trackCopy{source.Revision, content})
+			values[nodePath] = trampoline
+		}
+		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
+			copyrev, _ := strconv.Atoi(string(header.payload("Node-copyfrom-rev")))
+			if sources, ok := values[string(copypath)]; ok {
+				for i := len(sources) - 1; i >= 0; i-- {
+					if sources[i].revision <= copyrev {
+						header = header.delete("Node-copyfrom-path")
+						header = header.delete("Node-copyfrom-rev")
+						header = header.stripChecksums()
+						content = sources[i].content
+						header = append(header[:len(header)-1],
+							[]byte(fmt.Sprintf("Prop-content-length: 10\nText-content-length: %d\nContent-length: %d\n\nPROPS-END\n",
+								len(content), len(content)+10))...)
+					}
+				}
+			}
+		}
+
+		all := make([]byte, 0)
+		all = append(all, []byte(header)...)
+		all = append(all, properties...)
+		all = append(all, content...)
+		return all
+	}
+	source.Report(selection, nodehook, nil, true)
 }
 
 // Hack pathnames to obscure them.
@@ -2734,6 +2800,8 @@ func main() {
 		deselect(NewDumpfileSource(input, baton), selection)
 	case "expunge":
 		expunge(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
+	case "filecopy":
+		filecopy(NewDumpfileSource(input, baton), selection)
 	case "help":
 		if len(flag.Args()) == 1 {
 			os.Stdout.WriteString(doc)

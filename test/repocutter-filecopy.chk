@@ -1,0 +1,19 @@
+--- Before
++++ After
+@@ -208,11 +208,12 @@
+ Node-path: branches/testbranch/copysource
+ Node-kind: file
+ Node-action: add
+-Node-copyfrom-rev: 5
+-Node-copyfrom-path: trunk/copysource
+-Text-copy-source-md5: b486ddc85b4626902ecfc25211ee34dd
+-Text-copy-source-sha1: 82eafe9cc0ce6c6f83346bee8ab287153a9fbf49
++Prop-content-length: 10
++Text-content-length: 55
++Content-length: 65
+ 
++PROPS-END
++After creating this, we'll copy it to the test branch.
+ 
+ Revision-number: 7
+ Prop-content-length: 135
