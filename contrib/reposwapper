@@ -49,10 +49,24 @@ class Copy:
         self.from_rev = from_rev
         self.from_path = from_path
     def interior(self):
+        "Is this a copy withion a project tree?"
         return self.interpreter.get_project(self.target) == self.interpreter.get_project(self.from_path)
+    def filecopy(self):
+        "Is this a file copy?"
+        return not self.from_path.endswith("/")
+    def sourceloc(self):
+        return "%s:%s" % (self.from_rev, self.from_path)
     def __str__(self):
         return "%-5s %s <- %s:%s" % (self.revision, self.target, self.from_rev, self.from_path)
 
+class Modification:
+    def __init__(self, path, rev, op):
+        self.path = path
+        self.revision = rev
+        self.op = op
+    def __str__(self):
+        return "%s modified at %s by %s" % (self.path, self.revision, self.op)
+    
 class Reposwapper(cmd.Cmd):
     "Multiproject repository explorer."
     def __init__(self, name=None):
@@ -67,6 +81,7 @@ class Reposwapper(cmd.Cmd):
         self.outbound = {}
         self.copies = []
         self.irregular = []
+        self.modifications = []
         self.revcount = ""
         self.delimiter = "="
 
@@ -163,6 +178,7 @@ uppermost revision to be analyzed.
             if op == "add":
                 path = self.pathin(" ".join(fields))
                 self.oddcheck(path, dline)
+                self.modifications.append(Modification(path, number, op))
                 project = self.get_project(path)
                 if project.endswith("/") and project[:-1] in self.supers:
                     continue
@@ -175,6 +191,7 @@ uppermost revision to be analyzed.
                     raise SystemExit(1)
                 target = self.pathin(" ".join(fields[:ind]))
                 self.oddcheck(target, dline)
+                self.modifications.append(Modification(path, number, op))
                 targetdir = self.get_project(target)
                 if target.endswith("/") and targetdir[:-1] in self.supers:
                     sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], targetdir, number)) 
@@ -194,8 +211,10 @@ uppermost revision to be analyzed.
                     if not sourcedir in self.outbound.keys():
                         self.outbound[sourcedir] = set()
                     self.outbound[sourcedir].add(targetdir)
-                elif op == "change" or op == "delete":
-                    self.oddcheck(self.pathin(" ".join(fields)), dline)
+            elif op in {"change", "delete"}:
+                path = self.pathin(" ".join(fields))
+                self.oddcheck(path, dline)
+                self.modifications.append(Modification(path, number, op))
             if len(cfields) > 1 and self.revcount == cfields[1]:
                 print("Stopped")
                 break
@@ -293,7 +312,41 @@ depends-on relationship.
         "Display all operation with paths that won't swap to a canonical form."
         for line in self.irregular:
             sys.stdout.write(line)
-    
+
+    def help_sever(self):
+        sys.stdout.write("""
+Compute a selection set that includes the locations of all file copies from a specified branch,
+and for each one the most recent revision where the copy source can be found.  Emit a repocutter 
+filecopy command to resolve the outbound file copies. 
+""")
+    def do_sever(self, line):
+        sever_set = set()
+        for copy in self.copies:
+            # Not trying to resolve directory copies, that is seriously hard.
+            # We're only resolving exterior file coies here
+            if not (copy.filecopy() and not copy.interior()):
+                continue
+            # All filecopies, or filecopies with a specified from-path prefix
+            if (not line or copy.from_path.startswith(line + "/")):
+                sever_set.add(copy.revision)
+                sourceind = -1
+                for i in range(len(self.modifications)):
+                    here = self.modifications[len(self.modifications) - i - 1]
+                    if sourceind == -1 and float(here.revision) <= float(copy.from_rev):
+                        sourceind = i
+                    if sourceind != -1 and here.path == copy.from_path:
+                        # Aha, found the latest possible source
+                        if here.op in {"add", "change"}:
+                            sever_set.add(str(here.revision))
+                            break
+                        else:
+                            sys.stderr.write("Unexpected copy or delete while looking for source of %s\n" % copy)
+                            return
+                else:
+                    sys.stderr.write("Unexpected failure while looking for source of %s\n" % copy.sourceloc())
+                    return
+        print("repocutter -r", ",".join(sorted(list(sever_set))), "filecopy")
+
     def help_graph(self):
         sys.stdout.write("""
 Display the project dependency graph. The arrow relationship is "is copied to".
@@ -316,16 +369,33 @@ Requires graphviz and imagemagick to be installed.
         print("%d dependencies" % len(self.depends_on))
         print("%d projects" % len(self.projects))
         print("%d goals" % len(self.goals))
+        print("%d modification" % len(self.modifications))
+        print("%d copies" % len(self.goals))
         return False
 
     def do_delimiter(self, line):
         "Set the delimiter used for supers."
         self.delimiter = line
 
+    def help_copies(self):
+        sys.stdout.write("""
+Display cross-project copies involving the specified prefix."
+
+Usage is 'copies PREFIX', 'copies to PREFIX' or 'coopies from PREFIX'.
+
+With no prefix, display all exterior copies
+""")
     def do_copies(self, line):
-        "Display all cross-project copies involving the specified prefix." 
+        show_from = True
+        show_to = True
+        if line.startswith("from"):
+            show_to = False
+            line = line[4:].strip()
+        elif line.startswith("to"):
+            show_from = False
+            line = line[2:].strip()
         for copy in self.copies:
-            if (copy.target.startswith(line) or copy.from_path.startswith(line)) and not copy.interior():
+            if ((copy.target.startswith(line) and show_to) or (copy.from_path.startswith(line)) and show_from) and not copy.interior():
                 print(copy)
 
     def cleanup(self):
