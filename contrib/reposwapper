@@ -26,13 +26,13 @@ command can be used to set a different one.
 Typical invocations:
 
 reposwapper "read myrepo.see" "expunge"
-reposwapper "read myrepo.see" "graph" | dot -Tpng | display
+reposwapper "read myrepo.see" "graph"
 
 Copyright by Eric S. Raymond
 SPDX-License-Identifier: BSD-2-Clause
 """
 
-import cmd, os.path, sys, copy, shlex
+import cmd, os.path, sys, copy, shlex, subprocess
 
 class Copy:
     def __init__(self, interpreter, revision, target, from_rev, from_path):
@@ -118,6 +118,19 @@ class Reposwapper(cmd.Cmd):
         "Parse a list of projects from a line, using shell-like quoting if required"
         return set([self.transform(f) for f in shlex.split(line)])
     
+    def dotgraph(self):
+        "Emit DOT notation for the project-directory graph."
+        out = "digraph {\n"
+        for project in self.goals:
+            out += '\t"%s" [shape=box];\n' % (self.present(project),)
+        for project in self.projects - self.goals:
+            if not project in self.outbound.keys():
+                out += '\t"%s" [color=green,style=filled];\n' % (self.present(project,))
+        for (target, source) in self.depends_on:
+            out += '\t"%s" -> "%s";\n' % (self.present(source), self.present(target))
+        out += "}\n"
+        return out
+
     def help_intro(self):
         print(__doc__)
 
@@ -272,26 +285,17 @@ depends-on relationship.
     
     def help_graph(self):
         sys.stdout.write("""
-Dump the dependency graph in DOT notation.  Display it
-like this:
+Display the project dependency graph. The arrow relationship is "is copied to".
 
-graph | dot -Tpng | display &
+Goal projects are shown as boxes rather than ovals.
 
-The arrow relationship is "is copied to".
-
-Goals are shown as boxes rather than ovals.
+Requires graphviz and imagemagick to be installed.
 """)
     def do_graph(self, _line):
-        sys.stdout.write("digraph {\n")
-        for project in self.goals:
-            sys.stdout.write('\t"%s" [shape=box];\n' % (self.present(project)))
-        for project in self.projects - self.goals:
-            if not project in self.outbound.keys():
-                sys.stdout.write('\t"%s" [color=green,style=filled];\n' % (self.present(project)))
-        for (target, source) in self.depends_on:
-            sys.stdout.write('\t"%s" -> "%s";\n' % (self.present(source), self.present(target)))
-        sys.stdout.write("}\n")
-    
+        #print(self.dotgraph())
+        with subprocess.Popen("dot -Tpng | display", shell=True, stdin=subprocess.PIPE) as proc:
+            proc.stdin.write(self.dotgraph().encode("ascii"))
+        
     def do_stats(self, _unused):
         "Print statistics on the DAG."
         print("%s revisions" % self.revcount)
