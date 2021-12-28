@@ -1490,6 +1490,9 @@ func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 
 // Replace dile copy operations with explicit add/change opweration
 func filecopy(source DumpfileSource, selection SubversionRange) {
+	if debug >= debugLOGIC {
+		fmt.Fprintf(os.Stderr, "<filecopy selection is %s>\n", selection)
+	}
 	type trackCopy struct {
 		revision int
 		content  []byte
@@ -1497,6 +1500,10 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 	values := make(map[string][]trackCopy)
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		nodePath := string(header.payload("Node-path"))
+		if debug >= debugLOGIC {
+			fmt.Fprintf(os.Stderr, "<%d.%d: filecopy investigates this revision>\n",
+				source.Revision, source.Index)
+		}
 		if _, ok := values[nodePath]; !ok {
 			values[nodePath] = make([]trackCopy, 0)
 		}
@@ -1506,10 +1513,23 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 			values[nodePath] = trampoline
 		}
 		if copypath := header.payload("Node-copyfrom-path"); len(content) == 0 && copypath != nil {
+			if debug >= debugLOGIC {
+				fmt.Fprintf(os.Stderr, "<%d.%d: filecopy investigates %s>\n",
+					source.Revision, source.Index, copypath)
+			}
 			copyrev, _ := strconv.Atoi(string(header.payload("Node-copyfrom-rev")))
 			if sources, ok := values[string(copypath)]; ok {
+				//if debug >= debugLOGIC {
+				//	fmt.Fprintf(os.Stderr, "  <found a path match>\n")
+				//}
 				for i := len(sources) - 1; i >= 0; i-- {
+					//if debug >= debugLOGIC {
+					//	fmt.Fprintf(os.Stderr, "    <checking against revision %d>\n", sources[i].revision)
+					//}
 					if sources[i].revision <= copyrev {
+						//if debug >= debugLOGIC {
+						//	fmt.Fprintf(os.Stderr, "    <revision %d works for %s: header before is '%q'>\n", sources[i].revision, copypath, header)
+						//}
 						header = header.delete("Node-copyfrom-path")
 						header = header.delete("Node-copyfrom-rev")
 						header = header.stripChecksums()
@@ -1517,9 +1537,14 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 						header = append(header[:len(header)-1],
 							[]byte(fmt.Sprintf("Text-content-length: %d\nContent-length: %d\n\n",
 								len(content), len(content)))...)
+						//if debug >= debugLOGIC {
+						//	fmt.Fprintf(os.Stderr, "    <modified header '%q'>\n", header)
+						//}
 						break
 					}
 				}
+			} else if debug >= debugLOGIC {
+				fmt.Fprintf(os.Stderr, "  <no path match found>\n")
 			}
 		}
 
