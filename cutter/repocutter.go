@@ -1490,9 +1490,9 @@ func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 
 // Replace dile copy operations with explicit add/change opweration
 func filecopy(source DumpfileSource, selection SubversionRange) {
-	if debug >= debugLOGIC {
-		fmt.Fprintf(os.Stderr, "<filecopy selection is %s>\n", selection)
-	}
+	//if debug >= debugLOGIC {
+	//	fmt.Fprintf(os.Stderr, "<filecopy selection is %s>\n", selection)
+	//}
 	type trackCopy struct {
 		revision int
 		content  []byte
@@ -2896,8 +2896,7 @@ func main() {
 		assertNoArgs()
 		fmt.Println(version)
 	default:
-		fmt.Fprintf(os.Stderr, "repocutter: \"%s\": unknown subcommand\n", flag.Arg(0))
-		os.Exit(1)
+		croak("%q: unknown subcommand", flag.Arg(0))
 	}
 	if baton != nil {
 		baton.End("")

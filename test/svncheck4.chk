@@ -1,6 +1,6 @@
- r3#1~trunk/testdir/foo properties set:
+ r3.1~trunk/testdir/foo properties set:
  	someprop = "Test property."
- r4#1~trunk/testdir/foo properties set:
+ r4.1~trunk/testdir/foo properties set:
  	someprop = "Test property modified.\n"
- r5#2~trunk/testdir2/foo properties set:
+ r5.2~trunk/testdir2/foo properties set:
  	someprop = "Test property modified again with directory copy.\n"
