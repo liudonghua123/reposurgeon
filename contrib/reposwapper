@@ -3,17 +3,20 @@
 repository, and generate useful reports on them.
 
 This tool is named for its relationship with repocutter swapsvn
-and should be useful for preparing a multi[roject repository
+and should be useful for preparing a multiproject repository
 for that opewration.
+
+The big difference between repocutter and this tool is that
+repcutter is optimized for dpeed and to hold down itsa working 
+set to one or a gandful of adjacent Subvewrsion nodes at a time.
+This tool, omn the other hand, pulls the entire set of copies
+in a stream into memory in order to do random access.
 
 The multiproject repository is expected not to have
 trunk/branches/tags structure, but rather to have project
 subdirectories which themselves may have trunk/branches/tags 
 structure.  Each project is a node of the graph, the relation 
 is copies-to.
-
-If a file named ".repowapper" exists in the working directory,
-commands in it are executed at startup.
 
 A "goal" is a project that has been marked as being
 interesting and should be preserved in the repository 
@@ -22,6 +25,10 @@ conversion.
 Assumes "=" never occurs in any pathname and has been used to
 substitute for a slash that should be ignored.  The "delimiter"
 command can be used to set a different one.
+
+If a file named ".repowapper" exists in the working directory,
+commands in it are executed at startup.  This can be useful
+for setting goals and supers.
 
 Typical invocations:
 
@@ -63,11 +70,12 @@ class Reposwapper(cmd.Cmd):
         self.revcount = ""
         self.delimiter = "="
 
-    def present(self, s):
+    def pathout(self, s):
+        "Transform a path from internal to external form."
         return s.replace(self.delimiter, "/")
 
-    def transform(self, path):
-        inpath = path
+    def pathin(self, path):
+        "Path to internal form, replacing the slash after a super prefix with delimiter." 
         for topseg in self.supers:
             if path.startswith(topseg + "/")  and (len(path) > len(topseg)+1):
                 path = path.replace(topseg + "/", topseg + self.delimiter, 1)
@@ -75,29 +83,33 @@ class Reposwapper(cmd.Cmd):
     
     def display(self, lst, wrapped):
         for item in sorted(lst):
-            decorated = self.present(item)
+            decorated = self.pathout(item)
             if wrapped:
                 decorated = "'^" + decorated + "'"
             sys.stdout.write(" " + decorated)
         sys.stdout.write("\n")
 
     def get_project(self, path):
+        "FRom a path, get its project directory."
         for prefix in self.supers:
             if path.startswith(prefix + "/"):
                 return "/".join(path.split("/")[:2])
         return path.split("/")[0]
     
     def oddcheck(self, path, line):
+        "If a path doesn't fulfil standard structure, put ot on the irregular list"
         parts = path.split("/")
         stdlayout = {"trunk", "branches", "tags"}
         if len(parts) == 1 or (parts[0] in stdlayout) or (parts[1] not in stdlayout) or (len(parts) >= 3 and parts[2] in stdlayout):
             self.irregular.append(line)
 
     def copies_from(self, t, s):
+        "Predicate: does project t copy from project s?"
         return (t, s) in self.depends_on
 
-    def copies_to(self, s, t):
-        return (t, s) in self.depends_on
+    def copies_to(self, t, s):
+        "Predicate: does project t copy to project s?"
+        return (s, t) in self.depends_on
 
     def closure(self, startpoints, relation):
         "Compute transitive closure of a set of project directories under a specified relation"
@@ -116,18 +128,18 @@ class Reposwapper(cmd.Cmd):
 
     def get_project_set(self, line):
         "Parse a list of projects from a line, using shell-like quoting if required"
-        return set([self.transform(f) for f in shlex.split(line)])
+        return set([self.pathin(f) for f in shlex.split(line)])
     
     def dotgraph(self):
-        "Emit DOT notation for the project-directory graph."
+        "Compute DOT notation for the project-directory graph."
         out = "digraph {\n"
         for project in self.goals:
-            out += '\t"%s" [shape=box];\n' % (self.present(project),)
+            out += '\t"%s" [shape=box];\n' % (self.pathout(project),)
         for project in self.projects - self.goals:
             if not project in self.outbound.keys():
-                out += '\t"%s" [color=green,style=filled];\n' % (self.present(project,))
+                out += '\t"%s" [color=green,style=filled];\n' % (self.pathout(project,))
         for (target, source) in self.depends_on:
-            out += '\t"%s" -> "%s";\n' % (self.present(source), self.present(target))
+            out += '\t"%s" -> "%s";\n' % (self.pathout(source), self.pathout(target))
         out += "}\n"
         return out
 
@@ -136,8 +148,7 @@ class Reposwapper(cmd.Cmd):
 
     def help_read(self):
         sys.stdout.write("""
-Read a "repocutter see" report and compute the dependency graph
-amomg top-level branches.  If a second argument is given, it sets the 
+Read a "repocutter see" report.  If a second argument is given, it sets the 
 uppermost revision to be analyzed.
 """)
     def do_read(self, line):
@@ -150,7 +161,7 @@ uppermost revision to be analyzed.
             op = fields.pop(0)
             self.revcount = number.split("-")[0]
             if op == "add":
-                path = self.transform(" ".join(fields))
+                path = self.pathin(" ".join(fields))
                 self.oddcheck(path, dline)
                 project = self.get_project(path)
                 if project.endswith("/") and project[:-1] in self.supers:
@@ -162,7 +173,7 @@ uppermost revision to be analyzed.
                 except ValueError:
                     sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
                     raise SystemExit(1)
-                target = self.transform(" ".join(fields[:ind]))
+                target = self.pathin(" ".join(fields[:ind]))
                 self.oddcheck(target, dline)
                 targetdir = self.get_project(target)
                 if target.endswith("/") and targetdir[:-1] in self.supers:
@@ -170,7 +181,7 @@ uppermost revision to be analyzed.
                 self.projects.add(targetdir)
                 source = " ".join(fields[ind+1:])
                 sourcerev = source.split(":")[0]
-                source = self.transform(source.split(":")[1])
+                source = self.pathin(source.split(":")[1])
                 self.oddcheck(source, dline)
                 sourcedir = self.get_project(source)
                 self.copies.append(Copy(self, number, target, sourcerev, source))
@@ -184,7 +195,7 @@ uppermost revision to be analyzed.
                         self.outbound[sourcedir] = set()
                     self.outbound[sourcedir].add(targetdir)
                 elif op == "change" or op == "delete":
-                    self.oddcheck(self.transform(" ".join(fields)), dline)
+                    self.oddcheck(self.pathin(" ".join(fields)), dline)
             if len(cfields) > 1 and self.revcount == cfields[1]:
                 print("Stopped")
                 break
@@ -223,12 +234,12 @@ read to be effective.
 
     def do_upstream(self, line):
         "Display the copies-from closure of a set of project directories."
-        print({self.present(p) for p in self.closure(self.get_project_set(line), self.copies_from)})
+        print({self.pathout(p) for p in self.closure(self.get_project_set(line), self.copies_from)})
         return False
 
     def do_downstream(self, line):
         "Display the copies-to closure of a set of project directories."
-        print({self.present(p) for p in self.closure(self.get_project_set(line), self.copies_to)})
+        print({self.pathout(p) for p in self.closure(self.get_project_set(line), self.copies_to)})
         return False
     
     def do_EOF(self, _unused):
@@ -275,7 +286,7 @@ depends-on relationship.
                     if source == project:
                         break
                 else:
-                    terminals.add(self.present(project))
+                    terminals.add(self.pathout(project))
         self.display(terminals, False)
 
     def do_swapcheck(self, line):
@@ -292,10 +303,13 @@ Goal projects are shown as boxes rather than ovals.
 Requires graphviz and imagemagick to be installed.
 """)
     def do_graph(self, _line):
-        #print(self.dotgraph())
         with subprocess.Popen("dot -Tpng | display", shell=True, stdin=subprocess.PIPE) as proc:
             proc.stdin.write(self.dotgraph().encode("ascii"))
-        
+
+    def do_dump(self, _line):
+        "Dump the DOT notation for the dependency graph."
+        print(self.dotgraph())
+
     def do_stats(self, _unused):
         "Print statistics on the DAG."
         print("%s revisions" % self.revcount)
