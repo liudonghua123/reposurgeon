@@ -58,6 +58,7 @@ class Dagger(cmd.Cmd):
         self.inbound = {}
         self.outbound = {}
         self.copies = []
+        self.irregular = []
         self.revcount = ""
         self.delimiter = "="
 
@@ -83,7 +84,13 @@ class Dagger(cmd.Cmd):
             if path.startswith(prefix + "/"):
                 return "/".join(path.split("/")[:2])
         return path.split("/")[0]
-        
+    
+    def oddcheck(self, path, line):
+        parts = path.split("/")
+        stdlayout = {"trunk", "branches", "tags"} 
+        if len(parts) == 1 or (parts[0] in stdlayout) or (parts[1] not in stdlayout) or (len(parts) >= 3 and parts[2] in stdlayout):
+            self.irregular.append(line)
+
     def copies_from(self, t, s):
         return (t, s) in self.depends_on
 
@@ -129,6 +136,7 @@ uppermost revision to be analyzed.
             self.revcount = number.split("-")[0]
             if op == "add":
                 path = self.transform(" ".join(fields))
+                self.oddcheck(path, dline)
                 project = self.get_project(path)
                 if project.endswith("/") and project[:-1] in self.supers:
                     continue
@@ -140,11 +148,13 @@ uppermost revision to be analyzed.
                     sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
                     raise SystemExit(1)
                 target = self.transform(" ".join(fields[:ind]))
+                self.oddcheck(target, dline)
                 targetdir = self.get_project(target)
                 if target.endswith("/") and targetdir[:-1] in self.supers:
                     sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], targetdir, number)) 
                 self.projects.add(targetdir)
                 source = " ".join(fields[ind+1:])
+                self.oddcheck(source, dline)
                 sourcerev = source.split(":")[0]
                 source = self.transform(source.split(":")[1])
                 sourcedir = self.get_project(source)
@@ -158,6 +168,8 @@ uppermost revision to be analyzed.
                     if not sourcedir in self.outbound.keys():
                         self.outbound[sourcedir] = set()
                     self.outbound[sourcedir].add(targetdir)
+                elif op == "change" or op == "delete":
+                    self.oddcheck(self.transform(" ".join(fields)), dline)
             if len(cfields) > 1 and self.revcount == cfields[1]:
                 print("Stopped")
                 break
@@ -250,6 +262,11 @@ depends-on relationship.
                 else:
                     terminals.add(self.present(project))
         self.display(terminals, False)
+
+    def do_swapcheck(self, line):
+        "Display all operation with paths that won't swap to a canonical form."
+        for line in self.irregular:
+            sys.stdout.write(line)
     
     def help_graph(self):
         sys.stdout.write("""
