@@ -2,13 +2,17 @@
 """Analyze the graph defined by dependencies in a multiproject 
 repository, and generate useful reports on them.
 
+This tool is named for its relationship with repocutter swapsvn
+and should be useful for preparing a multi[roject repository
+for that opewration.
+
 The multiproject repository is expected not to have
 trunk/branches/tags structure, but rather to have project
 subdirectories which themselves may have trunk/branches/tags 
 structure.  Each project is a node of the graph, the relation 
 is copies-to.
 
-If a file named ".dagger" exists in the working directory,
+If a file named ".repowapper" exists in the working directory,
 commands in it are executed at startup.
 
 A "goal" is a project that has been marked as being
@@ -21,11 +25,8 @@ command can be used to set a different one.
 
 Typical invocations:
 
-dagger "read myrepo.see" "expunge"
-dagger "read myrepo.see" "graph" | dot -Tpng | display
-
-This tool is somewhat misnamed, as the dependency graph can
-have cycles.
+reposwapper "read myrepo.see" "expunge"
+reposwapper "read myrepo.see" "graph" | dot -Tpng | display
 
 Copyright by Eric S. Raymond
 SPDX-License-Identifier: BSD-2-Clause
@@ -45,7 +46,7 @@ class Copy:
     def __str__(self):
         return "%-5s %s <- %s:%s" % (self.revision, self.target, self.from_rev, self.from_path)
 
-class Dagger(cmd.Cmd):
+class Reposwapper(cmd.Cmd):
     "Multiproject repository explorer."
     def __init__(self, name=None):
         cmd.Cmd.__init__(self)
@@ -314,10 +315,10 @@ Goals are shown as boxes rather than ovals.
 
 def main():
     try:
-        interpreter = Dagger()
+        interpreter = Reposwapper()
         setup = []
-        if os.path.exists(".dagger"):
-            for line in open(".dagger"):
+        if os.path.exists(".reposwapper"):
+            for line in open(".reposwapper"):
                 if line.startswith("#"):
                     continue
                 else:
