@@ -1511,40 +1511,55 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 			trampoline := values[nodePath]
 			trampoline = append(trampoline, trackCopy{source.Revision, content})
 			values[nodePath] = trampoline
+			if debug >= debugLOGIC {
+				fmt.Fprintf(os.Stderr, "<%d.%d: stashed content %q>\n",
+					source.Revision, source.Index, content)
+			}
 		}
-		if copypath := header.payload("Node-copyfrom-path"); len(content) == 0 && copypath != nil {
+		// The logic here is a bit more complex than might seem necessary
+		// because for so,me inexplicable reason Subversion occasiionally generates nodes
+		// which have copyfrom informatiopn *and* the copy already performed - that is,
+		// the node conent is non-nil and should be used.  In that case we want to strip
+		// out the copyfrom information without modifyinmg the content.
+		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
 			if debug >= debugLOGIC {
 				fmt.Fprintf(os.Stderr, "<%d.%d: filecopy investigates %s>\n",
 					source.Revision, source.Index, copypath)
 			}
-			copyrev, _ := strconv.Atoi(string(header.payload("Node-copyfrom-rev")))
-			if sources, ok := values[string(copypath)]; ok {
-				//if debug >= debugLOGIC {
-				//	fmt.Fprintf(os.Stderr, "  <found a path match>\n")
-				//}
-				for i := len(sources) - 1; i >= 0; i-- {
+			if len(content) > 0 {
+				header = header.delete("Node-copyfrom-path")
+				header = header.delete("Node-copyfrom-rev")
+				header = header.stripChecksums()
+			} else {
+				copyrev, _ := strconv.Atoi(string(header.payload("Node-copyfrom-rev")))
+				if sources, ok := values[string(copypath)]; ok {
 					//if debug >= debugLOGIC {
-					//	fmt.Fprintf(os.Stderr, "    <checking against revision %d>\n", sources[i].revision)
+					//	fmt.Fprintf(os.Stderr, "  <found a path match>\n")
 					//}
-					if sources[i].revision <= copyrev {
+					for i := len(sources) - 1; i >= 0; i-- {
 						//if debug >= debugLOGIC {
-						//	fmt.Fprintf(os.Stderr, "    <revision %d works for %s: header before is '%q'>\n", sources[i].revision, copypath, header)
+						//	fmt.Fprintf(os.Stderr, "    <checking against revision %d>\n", sources[i].revision)
 						//}
-						header = header.delete("Node-copyfrom-path")
-						header = header.delete("Node-copyfrom-rev")
-						header = header.stripChecksums()
-						content = sources[i].content
-						header = append(header[:len(header)-1],
-							[]byte(fmt.Sprintf("Text-content-length: %d\nContent-length: %d\n\n",
-								len(content), len(content)))...)
-						//if debug >= debugLOGIC {
-						//	fmt.Fprintf(os.Stderr, "    <modified header '%q'>\n", header)
-						//}
-						break
+						if sources[i].revision <= copyrev {
+							//if debug >= debugLOGIC {
+							//	fmt.Fprintf(os.Stderr, "    <revision %d works for %s: header before is '%q'>\n", sources[i].revision, copypath, header)
+							//}
+							header = header.delete("Node-copyfrom-path")
+							header = header.delete("Node-copyfrom-rev")
+							header = header.stripChecksums()
+							content = sources[i].content
+							header = append(header[:len(header)-1],
+								[]byte(fmt.Sprintf("Text-content-length: %d\nContent-length: %d\n\n",
+									len(content), len(content)))...)
+							//if debug >= debugLOGIC {
+							//	fmt.Fprintf(os.Stderr, "    <modified header '%q'>\n", header)
+							//}
+							break
+						}
 					}
+				} else if debug >= debugLOGIC {
+					fmt.Fprintf(os.Stderr, "  <no path match found>\n")
 				}
-			} else if debug >= debugLOGIC {
-				fmt.Fprintf(os.Stderr, "  <no path match found>\n")
 			}
 		}
 
