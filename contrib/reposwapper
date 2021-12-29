@@ -167,57 +167,61 @@ Read a "repocutter see" report.  If a second argument is given, it sets the
 uppermost revision to be analyzed.
 """)
     def do_read(self, line):
-        cfields = line.split()
-        for dline in open(cfields[0]):
-            if "propset" in dline:
-                continue
-            fields = dline.split()
-            number = fields.pop(0)
-            op = fields.pop(0)
-            self.revcount = number.split("-")[0]
-            if op == "add":
-                path = self.pathin(" ".join(fields))
-                self.oddcheck(path, dline)
-                self.modifications.append(Modification(path, number, op))
-                project = self.get_project(path)
-                if project.endswith("/") and project[:-1] in self.supers:
+        try:
+            cfields = line.split()
+            for dline in open(cfields[0]):
+                if "propset" in dline:
                     continue
-                self.projects.add(project)
-            elif op == "copy":
-                try:
-                    ind = fields.index("from")
-                except ValueError:
-                    sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
-                    raise SystemExit(1)
-                target = self.pathin(" ".join(fields[:ind]))
-                self.oddcheck(target, dline)
-                self.modifications.append(Modification(path, number, op))
-                targetdir = self.get_project(target)
-                if target.endswith("/") and targetdir[:-1] in self.supers:
-                    sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], targetdir, number)) 
-                self.projects.add(targetdir)
-                source = " ".join(fields[ind+1:])
-                sourcerev = source.split(":")[0]
-                source = self.pathin(source.split(":")[1])
-                self.oddcheck(source, dline)
-                sourcedir = self.get_project(source)
-                self.copies.append(Copy(self, number, target, sourcerev, source))
-                if sourcedir != targetdir and sourcedir not in self.supers and targetdir not in self.supers:
-                    self.sources.add(sourcedir)
-                    self.depends_on.add((targetdir, sourcedir))
-                    if not targetdir in self.inbound.keys():
-                        self.inbound[targetdir] = set()
-                    self.inbound[targetdir].add(sourcedir)
-                    if not sourcedir in self.outbound.keys():
-                        self.outbound[sourcedir] = set()
-                    self.outbound[sourcedir].add(targetdir)
-            elif op in {"change", "delete"}:
-                path = self.pathin(" ".join(fields))
-                self.oddcheck(path, dline)
-                self.modifications.append(Modification(path, number, op))
-            if len(cfields) > 1 and self.revcount == cfields[1]:
-                print("Stopped")
-                break
+                fields = dline.split()
+                number = fields.pop(0)
+                op = fields.pop(0)
+                self.revcount = number.split("-")[0]
+                if op == "add":
+                    path = self.pathin(" ".join(fields))
+                    self.oddcheck(path, dline)
+                    self.modifications.append(Modification(path, number, op))
+                    project = self.get_project(path)
+                    if project.endswith("/") and project[:-1] in self.supers:
+                        continue
+                    self.projects.add(project)
+                elif op == "copy":
+                    try:
+                        ind = fields.index("from")
+                    except ValueError:
+                        sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
+                        raise SystemExit(1)
+                    target = self.pathin(" ".join(fields[:ind]))
+                    self.oddcheck(target, dline)
+                    self.modifications.append(Modification(path, number, op))
+                    targetdir = self.get_project(target)
+                    if target.endswith("/") and targetdir[:-1] in self.supers:
+                        sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], targetdir, number)) 
+                    self.projects.add(targetdir)
+                    source = " ".join(fields[ind+1:])
+                    sourcerev = source.split(":")[0]
+                    source = self.pathin(source.split(":")[1])
+                    self.oddcheck(source, dline)
+                    sourcedir = self.get_project(source)
+                    self.copies.append(Copy(self, number, target, sourcerev, source))
+                    if sourcedir != targetdir and sourcedir not in self.supers and targetdir not in self.supers:
+                        self.sources.add(sourcedir)
+                        self.depends_on.add((targetdir, sourcedir))
+                        if not targetdir in self.inbound.keys():
+                            self.inbound[targetdir] = set()
+                        self.inbound[targetdir].add(sourcedir)
+                        if not sourcedir in self.outbound.keys():
+                            self.outbound[sourcedir] = set()
+                        self.outbound[sourcedir].add(targetdir)
+                elif op in {"change", "delete"}:
+                    path = self.pathin(" ".join(fields))
+                    self.oddcheck(path, dline)
+                    self.modifications.append(Modification(path, number, op))
+                if len(cfields) > 1 and self.revcount == cfields[1]:
+                    print("Stopped")
+                    break
+        except FileNotFoundError:
+            print("No such file, bailing out!")
+            raise SystemExit(1)
         return False
 
     def help_supers(self):
