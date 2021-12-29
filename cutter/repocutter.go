@@ -140,13 +140,16 @@ record is removed as well.
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
 `,
-	"filecopy": `filecopy: usage: repocutter [-r SELECTION] filecopy
+	"filecopy": `filecopy: usage: repocutter [-f] [-r SELECTION] filecopy
 
 For each node in the revision range, stash the current version of the 
 node-path's content.  For each later file copy operation with that source,
 replace the file copy with an explicit add/change using the stashed content.
 
-Restrictinmg the range holds down the memory requirement of this tool,
+With the -b flag, require a match on basename only rarher than the full path.
+This may be requred in order to extract filecopies from branches.
+
+Restricting the range holds down the memory requirement of this tool,
 which in the worst (and default) 1:$ case will keep a copy of evert blob
 in the repository until it's done processing the stream. 
 `,
@@ -1489,7 +1492,7 @@ func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 }
 
 // Replace dile copy operations with explicit add/change opweration
-func filecopy(source DumpfileSource, selection SubversionRange) {
+func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool) {
 	//if debug >= debugLOGIC {
 	//	fmt.Fprintf(os.Stderr, "<filecopy selection is %s>\n", selection)
 	//}
@@ -1507,6 +1510,9 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 		if _, ok := values[nodePath]; !ok {
 			values[nodePath] = make([]trackCopy, 0)
 		}
+		if byBasename {
+			nodePath = filepath.Base(nodePath)
+		}
 		if content != nil && len(content) > 0 {
 			trampoline := values[nodePath]
 			trampoline = append(trampoline, trackCopy{source.Revision, content})
@@ -1522,6 +1528,9 @@ func filecopy(source DumpfileSource, selection SubversionRange) {
 		// the node conent is non-nil and should be used.  In that case we want to strip
 		// out the copyfrom information without modifyinmg the content.
 		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
+			if byBasename {
+				copypath = []byte(filepath.Base(string(copypath)))
+			}
 			if debug >= debugLOGIC {
 				fmt.Fprintf(os.Stderr, "<%d.%d: filecopy investigates %s>\n",
 					source.Revision, source.Index, copypath)
@@ -2842,7 +2851,7 @@ func main() {
 	case "expunge":
 		expunge(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "filecopy":
-		filecopy(NewDumpfileSource(input, baton), selection)
+		filecopy(NewDumpfileSource(input, baton), selection, fixed)
 	case "help":
 		if len(flag.Args()) == 1 {
 			os.Stdout.WriteString(doc)
