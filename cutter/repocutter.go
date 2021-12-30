@@ -92,6 +92,7 @@ var oneliners = map[string]string{
 	"pathlist":   "List all distinct paths in a stream",
 	"pathrename": "Transform path headers with a regexp replace",
 	"pop":        "Pop the first segment off each path",
+	"propclean":  "Turn off executable bit on all files with specified suffixes",
 	"propdel":    "Deleting revision properties",
 	"proprename": "Renaming revision properties",
 	"propset":    "Setting revision properties",
@@ -202,6 +203,12 @@ Pop initial segment off each path. May be useful after a sift command to turn
 a dump from a subproject stripped from a dump for a multiple-project repository
 into the normal form with trunk/tags/branches at the top level.
 This transform can be restricted by a selection set.
+`,
+	"propclean": `ppropclean: usage: repocutter [-r SELECTION ] propclean [SUFFIXES]
+
+Every path with a suffix matching one of SUFFIXES gets its svn:exexcutable property turned
+off.  Some Subversion front ends spam these.
+
 `,
 	"proprename": `proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
 
@@ -378,6 +385,7 @@ var narrativeOrder []string = []string{
 	"propdel",
 	"proprename",
 	"propset",
+	"propclean",
 
 	"expunge",
 	"sift",
@@ -679,6 +687,23 @@ func (props *Properties) Contains(key string) bool {
 	return ok
 }
 
+// Delete - delete the specified property
+func (props *Properties) Delete(key string) {
+	delete(props.properties, key)
+	for delindex, item := range props.propkeys {
+		if item == key {
+			props.propkeys = append(props.propkeys[:delindex], props.propkeys[delindex+1:]...)
+			break
+		}
+	}
+	for delindex, item := range props.propdelkeys {
+		if item == key {
+			props.propdelkeys = append(props.propdelkeys[:delindex], props.propdelkeys[delindex+1:]...)
+			break
+		}
+	}
+}
+
 // Dumpfile parsing machinery goes here
 
 var revisionLine *regexp.Regexp
@@ -701,6 +726,7 @@ type DumpfileSource struct {
 	Baton            *Baton
 	Revision         int
 	Index            int // 1-origin within nodes
+	NodePath         string
 	EmittedRevisions map[string]bool
 	DirTracking      map[string]bool
 }
@@ -1033,9 +1059,16 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	passthrough bool) {
 
 	/*
+	 * The revhook is called before the nodehook.  It is alled on every node
+	 * and must do its own selection filtering.
+	 *
 	 * nodehook is only called on nodes in the selection set.  prophook
 	 * is called on every property section, both per-node and per-revision.
 	 * When called per-revision the value of ds.Index is zero
+	 *
+	 * Both hooks can count on the DumpfileSource members to be up to
+	 * date, including NodePath and Revision and Index, because those.
+	 * are acquired before the prpeerties or node content are parsed.
 	 *
 	 * passthrough - pass through all node text that the nodehook
 	 * has not filtered to nil. When any node in a revision passes
@@ -1115,6 +1148,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				nodecount++
 				if strings.HasPrefix(string(line), "Node-path: ") {
 					ds.Index++
+					ds.NodePath = string(line[11 : len(line)-1])
 				}
 				ds.Lbs.Push(line)
 				header, properties, content := ds.ReadNode(prophook)
@@ -1719,19 +1753,7 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 			return true
 		}
 		for _, propname := range propnames {
-			delete(props.properties, propname)
-			for delindex, item := range props.propkeys {
-				if item == propname {
-					props.propkeys = append(props.propkeys[:delindex], props.propkeys[delindex+1:]...)
-					break
-				}
-			}
-			for delindex, item := range props.propdelkeys {
-				if item == propname {
-					props.propdelkeys = append(props.propdelkeys[:delindex], props.propdelkeys[delindex+1:]...)
-					break
-				}
-			}
+			props.Delete(propname)
 		}
 		return true
 	}
@@ -1750,6 +1772,20 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 				props.propkeys = append(props.propkeys, fields[0])
 			}
 			props.properties[fields[0]] = fields[1]
+		}
+		return true
+	}
+	source.Report(selection, dumpall, revhook, true)
+}
+
+// RTurn of svnLexecutable property by suffix
+func propclean(source DumpfileSource, suffixes []string, selection SubversionRange) {
+	revhook := func(props *Properties) bool {
+		for _, suffix := range suffixes {
+			if strings.HasSuffix(source.NodePath, suffix) {
+				props.Delete("svn:executable")
+				break
+			}
 		}
 		return true
 	}
@@ -2887,6 +2923,8 @@ func main() {
 		propset(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
 	case "proprename":
 		proprename(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
+	case "propclean":
+		propclean(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
 	case "reduce":
 		assertNoArgs()
 		reduce(NewDumpfileSource(input, baton), selection)
