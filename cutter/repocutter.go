@@ -204,10 +204,11 @@ a dump from a subproject stripped from a dump for a multiple-project repository
 into the normal form with trunk/tags/branches at the top level.
 This transform can be restricted by a selection set.
 `,
-	"propclean": `ppropclean: usage: repocutter [-r SELECTION ] propclean [SUFFIXES]
+	"propclean": `ppropclean: usage: repocutter [-r SELECTION ] [-p PROPERTY] propclean [SUFFIXES]
 
-Every path with a suffix matching one of SUFFIXES gets its svn:exexcutable property turned
-off.  Some Subversion front ends spam these.
+Every path with a suffix matching one of SUFFIXES gets a property turned
+off.  The default prperty is svn:executable; some Subversion front ends spam it.
+Another prperty may be set with the -p option.
 
 `,
 	"proprename": `proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
@@ -1342,7 +1343,7 @@ func (ss StreamSection) index(field string) int {
 // Is this a directory node?
 func (ss StreamSection) isDir(context DumpfileSource) bool {
 	// Subversion sometimes omits the type field on directory operations.
-	// This mwans we need to look back at the type of the directory's last
+	// This means we need to look back at the type of the directory's last
 	// add or change operation.
 	if ss.index("Node-kind") == -1 {
 		return context.DirTracking[string(ss.payload("Node-path"))]
@@ -1778,12 +1779,12 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 	source.Report(selection, dumpall, revhook, true)
 }
 
-// RTurn of svnLexecutable property by suffix
-func propclean(source DumpfileSource, suffixes []string, selection SubversionRange) {
+// Turn off property by suffix, defaulting to svn:executable
+func propclean(source DumpfileSource, property string, suffixes []string, selection SubversionRange) {
 	revhook := func(props *Properties) bool {
 		for _, suffix := range suffixes {
 			if strings.HasSuffix(source.NodePath, suffix) {
-				props.Delete("svn:executable")
+				props.Delete(property)
 				break
 			}
 		}
@@ -2815,6 +2816,7 @@ func main() {
 	selection := NewSubversionRange("0:HEAD")
 	var fixed bool
 	var logentries string
+	var property string
 	var rangestr string
 	var infile string
 	input := os.Stdin
@@ -2826,6 +2828,8 @@ func main() {
 	flag.StringVar(&infile, "infile", "", "set input file")
 	flag.StringVar(&logentries, "l", "", "pass in log patch")
 	flag.StringVar(&logentries, "logentries", "", "pass in log patch")
+	flag.StringVar(&property, "p", "svn:executable", "set prperty to be cleaned")
+	flag.StringVar(&property, "property", "svn:executable", "set prperty to be cleaned")
 	flag.BoolVar(&quiet, "q", false, "disable progress messages")
 	flag.BoolVar(&quiet, "quiet", false, "disable progress messages")
 	flag.StringVar(&rangestr, "r", "", "set selection range")
@@ -2924,7 +2928,7 @@ func main() {
 	case "proprename":
 		proprename(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
 	case "propclean":
-		propclean(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
+		propclean(NewDumpfileSource(input, baton), property, flag.Args()[1:], selection)
 	case "reduce":
 		assertNoArgs()
 		reduce(NewDumpfileSource(input, baton), selection)
