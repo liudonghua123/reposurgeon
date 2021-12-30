@@ -140,13 +140,15 @@ record is removed as well.
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
 `,
-	"filecopy": `filecopy: usage: repocutter [-f] [-r SELECTION] filecopy
+	"filecopy": `filecopy: usage: repocutter [-f] [-r SELECTION] filecopy [BASENAME]
 
 For each node in the revision range, stash the current version of the 
 node-path's content.  For each later file copy operation with that source,
 replace the file copy with an explicit add/change using the stashed content.
 
-With the -b flag, require a match on basename only rarher than the full path.
+With the -f flag and a BASENAME argument, require the source basename
+to be as specified.  Otherrwise, with -f and no BASENAME, require a
+match of source to targwt on basename only rather than the full path.
 This may be requred in order to extract filecopies from branches.
 
 Restricting the range holds down the memory requirement of this tool,
@@ -1492,7 +1494,7 @@ func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 }
 
 // Replace dile copy operations with explicit add/change opweration
-func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool) {
+func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool, matchpaths []string) {
 	//if debug >= debugLOGIC {
 	//	fmt.Fprintf(os.Stderr, "<filecopy selection is %s>\n", selection)
 	//}
@@ -1511,7 +1513,11 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool)
 			values[nodePath] = make([]trackCopy, 0)
 		}
 		if byBasename {
-			nodePath = filepath.Base(nodePath)
+			if len(matchpaths) > 0 {
+				nodePath = matchpaths[0]
+			} else {
+				nodePath = filepath.Base(nodePath)
+			}
 		}
 		if content != nil && len(content) > 0 {
 			trampoline := values[nodePath]
@@ -2851,7 +2857,7 @@ func main() {
 	case "expunge":
 		expunge(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "filecopy":
-		filecopy(NewDumpfileSource(input, baton), selection, fixed)
+		filecopy(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "help":
 		if len(flag.Args()) == 1 {
 			os.Stdout.WriteString(doc)

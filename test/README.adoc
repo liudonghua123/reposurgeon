@@ -464,6 +464,8 @@ FIXME: reposurgeon expunge with --not and --notagify needs tests
 
 FIXME: R and C handling in expunge needs tests
 
+FIXME: Need test for repocutter fikecopy with -f, and skipcopy.
+
 == Some references
 
 https://testanything.org/
