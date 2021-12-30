@@ -111,12 +111,26 @@ class Reposwapper(cmd.Cmd):
                 return "/".join(path.split("/")[:2])
         return path.split("/")[0]
     
-    def oddcheck(self, path, line):
-        "If a path doesn't fulfil standard structure, put ot on the irregular list"
+    def oddcheck(self, path, op, line):
+        "Predicate: does a path not fulfill standard structure?"
         parts = path.split("/")
+        isdir = parts[-1] == ""
+        if isdir:
+            parts.pop()
         stdlayout = {"trunk", "branches", "tags"}
-        if len(parts) == 1 or (parts[0] in stdlayout) or (parts[1] not in stdlayout) or (len(parts) >= 3 and parts[2] in stdlayout):
-            self.irregular.append(line)
+        if parts[0] in stdlayout:
+            return True
+        if len(parts) == 1:
+            return (not isdir) or (op not in {"add", "delete"}) # copy and change are interesrting
+        # If there is no standard structure underneath, that's weird
+        if parts[1] not in stdlayout:
+            return True
+        # Should be nothing that looks like standard Subversion structure
+        # further down.
+        for segment in parts[2:]:
+            if segment in stdlayout:
+                return True
+        return False
 
     def copies_from(self, t, s):
         "Predicate: does project t copy from project s?"
@@ -178,7 +192,8 @@ uppermost revision to be analyzed.
                 self.revcount = number.split("-")[0]
                 if op == "add":
                     path = self.pathin(" ".join(fields))
-                    self.oddcheck(path, dline)
+                    if self.oddcheck(path, op, dline):
+                        self.irregular.append(dline)
                     self.modifications.append(Modification(path, number, op))
                     project = self.get_project(path)
                     if project.endswith("/") and project[:-1] in self.supers:
@@ -191,7 +206,8 @@ uppermost revision to be analyzed.
                         sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
                         raise SystemExit(1)
                     target = self.pathin(" ".join(fields[:ind]))
-                    self.oddcheck(target, dline)
+                    if self.oddcheck(target, op, dline):
+                        self.irregular.append(dline)
                     self.modifications.append(Modification(path, number, op))
                     targetdir = self.get_project(target)
                     if target.endswith("/") and targetdir[:-1] in self.supers:
@@ -200,7 +216,8 @@ uppermost revision to be analyzed.
                     source = " ".join(fields[ind+1:])
                     sourcerev = source.split(":")[0]
                     source = self.pathin(source.split(":")[1])
-                    self.oddcheck(source, dline)
+                    if self.oddcheck(source, op, dline) and self.irregular[-1] != line:
+                        self.irregular.append(dline)
                     sourcedir = self.get_project(source)
                     self.copies.append(Copy(self, number, target, sourcerev, source))
                     if sourcedir != targetdir and sourcedir not in self.supers and targetdir not in self.supers:
@@ -214,7 +231,8 @@ uppermost revision to be analyzed.
                         self.outbound[sourcedir].add(targetdir)
                 elif op in {"change", "delete"}:
                     path = self.pathin(" ".join(fields))
-                    self.oddcheck(path, dline)
+                    if self.oddcheck(path, op, dline):
+                        self.irregular.append(dline)
                     self.modifications.append(Modification(path, number, op))
                 if len(cfields) > 1 and self.revcount == cfields[1]:
                     print("Stopped")
@@ -385,13 +403,18 @@ Requires graphviz and imagemagick to be installed.
         sys.stdout.write("""
 Display cross-project copies involving the specified prefix."
 
-Usage is 'copies PREFIX', 'copies to PREFIX' or 'coopies from PREFIX'.
+Usage is 'copies [all] [to|from] [PREFIX]'.
 
-With no prefix, display all exterior copies
+The keyword "all" enables display of copies within projects.
+
+With no prefix, display all matching copies
 """)
     def do_copies(self, line):
         show_from = True
         show_to = True
+        show_interior = False
+        if line.startswith("all"):
+            show_interior = True
         if line.startswith("from"):
             show_to = False
             line = line[4:].strip()
@@ -399,7 +422,7 @@ With no prefix, display all exterior copies
             show_from = False
             line = line[2:].strip()
         for copy in self.copies:
-            if ((copy.target.startswith(line) and show_to) or (copy.from_path.startswith(line)) and show_from) and not copy.interior():
+            if ((copy.target.startswith(line) and show_to) or (copy.from_path.startswith(line)) and show_from) and not (copy.interior() or show_interior):
                 print(copy)
 
     def cleanup(self):
