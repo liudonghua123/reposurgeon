@@ -2449,6 +2449,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	stdlayout := func(payload []byte) bool {
 		return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
 	}
+	// This function is called on paths to swap their project and second-level components.
+	// It's tricky bnecause in the structural case the "second component" isn't a
+	// single path segment, but can be two of the form PROJECT/branches/SUBDIR or
+	// PROJECT/tags/SUBDIR, The other complication is what we need to do to a
+	// two-component path of the form PROJECT/trunk, PROJECT/branches, or PROJECT/tags.
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2462,12 +2467,18 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if structural {
 				under := string(parts[1])
 				if under == "trunk" {
+					// PROJECT/trunk.  Just map this to trunk/PROJECT.
+					// Lossless transformation, still refers to the same
+					// set of paths.
 					parts[0] = parts[1]
 					parts[1] = []byte(top)
 				} else if under == "branches" || under == "tags" {
 					// Shift "branches" or "tags" to top level
 					parts[0] = []byte(under)
 					if len(parts) >= 3 {
+						// Exactly three components, PROJECT/branches/SUBDIR
+						// or PROJECT/tags/SUBDIR.
+						//
 						// This is where we capture information about what
 						// branches and tags exist under a specified project
 						// directory.
@@ -2485,28 +2496,33 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								wildcards[key] = trackSet
 							}
 						}
+						// Mutate to tags/SUBDIR/PROJECT or branches/SUBDIR/PROJECT
 						parts[1] = parts[2]
 						parts[2] = []byte(top)
 					} else {
-						// If you're doing a structural swap and see a path
-						// that looks like foo/branches or foo/tags, simply swapping
-						// those cannot be correct.  By the premise of this operation,
-						// foo should a directory name under some branch which isn't
-						// specified here
+						// Deal with paths of the form PROJECT/branches or PROJECT/tags
+						// and no subdirectory following. Dangerous curve!
 						//
-						// Figuring out the right thing to do here is tricky.
+						// If you're doing a structural swap and see a path
+						// that looks like this, simply swapping the two parts
+						// cannot be correct.  By the premise of this operation,
+						// PROJECT should become a directory name under some branch
+						// spe which isn'tcified here.
+						//
+						// We may need to insert a wildcard for later expansion
+						// ay a later point in this code.
 						if !parsed.isDir {
 							// Probably never happens but let's be safe.
 							parts[1] = []byte(top)
 						} else {
 							switch parsed.role {
 							case "add":
-								// Start tracking subbranches/subtags of foo,
+								// Start tracking subbranches/subtags of PROJECT.
 								wildcards[string(path)] = newOrderedStringSet()
 								// Then drop this path - nothing else needs doing.
 								parts = nil
 							case "delete":
-								// Stop tracking subbranches/subtags of foo
+								// Stop tracking subbranches/subtags of PROJECT.
 								delete(wildcards, string(path))
 								// Then drop this path - nothing else needs doing.
 								parts = nil
@@ -2540,6 +2556,22 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
+	// This function is called on certain paths *after* swapping, to trim them.
+	// The objective here is to promote branch and tag copies from being project-
+	// local to a repository-wide branch and tag namespace.
+	//
+	// Things we know:
+	//
+	// 1. We never want to trim paths unless we're doing a structural swap.
+	//
+	// 2. We never want to trim paths in file operations at all.
+	//
+	// 3. The only paths eligible for trimming are two- or three-component paths
+	// that refer to a project-local trunk, one of its branches, or one of its tags -
+	// those are what we may need to promote. We don't want to modify any copies
+	// or other operations deeper in the tree than that because they take place
+	// *within* projects.
+	//
 	swaptrim := func(hd string, in []byte, parsed parsedNode) []byte {
 		parts := bytes.Split(in, []byte{os.PathSeparator})
 		if hd == "Node-path" {
@@ -2659,8 +2691,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			header, newval, oldval = header.replaceHook("Node-path", func(hd string, path []byte) []byte {
 				return swapper(hd, path, parsed)
 			})
-			header, newval, oldval = header.replaceHook("Node-path", func(hd string, in []byte) []byte {
-				return swaptrim(hd, in, parsed)
+			header, newval, oldval = header.replaceHook("Node-path", func(hd string, path []byte) []byte {
+				return swaptrim(hd, path, parsed)
 			})
 			if oldval != nil && newval == nil {
 				return nil
