@@ -2448,6 +2448,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		isCopy    bool
 		isDir     bool
 		trunkCopy bool
+		coalesced bool
 	}
 	wildcards := make(map[string]orderedStringSet)
 	var wildcardKey string
@@ -2455,11 +2456,32 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	stdlayout := func(payload []byte) bool {
 		return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
 	}
-	// This function is called on paths to swap their project and second-level components.
-	// It's tricky bnecause in the structural case the "second component" isn't a
+	// This function is called on paths to swap their project and second-level components,
+	// then if necessary truncate them to promote operations on projet=local trunks/tags/branches
+	// to global ones
+	//
+	// The swap part is tricky because in the structural case the "second component" isn't a
 	// single path segment, but can be two of the form PROJECT/branches/SUBDIR or
 	// PROJECT/tags/SUBDIR, The other complication is what we need to do to a
 	// two-component path of the form PROJECT/trunk, PROJECT/branches, or PROJECT/tags.
+	//
+	// Things we know:
+	//
+	// 1. We need swapping on every path.
+	//
+	// 2. We never want to trim paths unless we're doing a structural swap.
+	//
+	// 3. We never want to trim paths in file operations at all.
+	//
+	// 4. The only paths eligible for trimming are two- or three-component paths
+	// that refer to a project-local trunk, one of its branches, or one of its tags -
+	// those are what we may need to promote. We don't want to modify any copies
+	// or other operations deeper in the tree than that because they take place
+	// *within* projects.
+	//
+	// All the swap and promotion logic lives here. Paths for all operations - adds,
+	// deletes, changes, and copies - go through here.
+	//
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
 		// be ignored, then restored.
@@ -2469,6 +2491,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		parts := bytes.Split(path, []byte{os.PathSeparator})
 		if len(parts) >= 2 {
+			// Swapping logic
 			top := string(parts[0])
 			if structural {
 				under := string(parts[1])
@@ -2556,58 +2579,31 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				parts[0] = parts[1]
 				parts[1] = []byte(top)
 			}
+			// Trimming/promotion logic
+			if structural && parsed.isDir {
+				if sourcehdr == "Node-path" {
+					if (parsed.isCopy && !parsed.trunkCopy) && len(parts) == 3 {
+						top := string(parts[0])
+						if top == "branches" || top == "tags" {
+							parts = parts[:2]
+						}
+					}
+				} else if sourcehdr == "Node-copyfrom-path" && parsed.coalesced {
+					if len(parts) == 3 {
+						top := string(parts[0])
+						if top == "trunk" {
+							parts = parts[:1]
+						} else if top == "branches" || top == "tags" {
+							parts = parts[:2]
+						}
+					}
+				}
+			}
 		}
 		if rooted {
 			parts[0] = append([]byte{os.PathSeparator}, parts[0]...)
 		}
 		return bytes.Join(parts, []byte{os.PathSeparator})
-	}
-	// This function is called on certain paths *after* swapping, to trim them.
-	// The objective here is to promote branch/tag/trunk operation from being project-
-	// local to a repository-wide branch and tag namespace in which there is
-	// only one trunk.
-	//
-	// Things we know:
-	//
-	// 1. We never want to trim paths unless we're doing a structural swap.
-	//
-	// 2. We never want to trim paths in file operations at all.
-	//
-	// 3. The only paths eligible for trimming are two- or three-component paths
-	// that refer to a project-local trunk, one of its branches, or one of its tags -
-	// those are what we may need to promote. We don't want to modify any copies
-	// or other operations deeper in the tree than that because they take place
-	// *within* projects.
-	//
-	// 4. This function is only called on a copyfrom path after its call on
-	// the Node-path in the same node, and then only if that path was modied.
-	//
-	// All the promotion logic lives here. Paths for all operations - adds,
-	// deletes, changes, and copies - go through here.
-	//
-	swaptrim := func(hd string, in []byte, parsed parsedNode) []byte {
-		if structural && parsed.isDir {
-			parts := bytes.Split(in, []byte{os.PathSeparator})
-			if hd == "Node-path" {
-				if (parsed.isCopy && !parsed.trunkCopy) && len(parts) == 3 {
-					top := string(parts[0])
-					if top == "branches" || top == "tags" {
-						parts = parts[:2]
-					}
-				}
-			} else if hd == "Node-copyfrom-path" {
-				if len(parts) == 3 {
-					top := string(parts[0])
-					if top == "trunk" {
-						parts = parts[:1]
-					} else if top == "branches" || top == "tags" {
-						parts = parts[:2]
-					}
-				}
-			}
-			in = bytes.Join(parts, []byte{os.PathSeparator})
-		}
-		return in
 	}
 	revhook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
@@ -2642,7 +2638,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	var thisDelete, lastDelete string
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		nodePath := header.payload("Node-path")
-		coalesced := false
 		var parsed parsedNode
 		parsed.action = header.payload("Node-action")
 		parsed.isDelete = bytes.Equal(parsed.action, []byte("delete"))
@@ -2650,6 +2645,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		parsed.isDir = header.isDir(source)
 		parsed.role = string(parsed.action)
 		parsed.trunkCopy = trunkCopy.Match(header)
+		parsed.coalesced = false
+
 		if parsed.isCopy {
 			parsed.role = "copy"
 		}
@@ -2707,14 +2704,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			header, newval, oldval = header.replaceHook("Node-path", func(hd string, path []byte) []byte {
 				return swapper(hd, path, parsed)
 			})
-			header, newval, oldval = header.replaceHook("Node-path", func(hd string, path []byte) []byte {
-				return swaptrim(hd, path, parsed)
-			})
 			if oldval != nil && newval == nil {
 				return nil
 			}
-			coalesced = !bytes.Equal(oldval, newval)
-			if !coalesced {
+			parsed.coalesced = !bytes.Equal(oldval, newval)
+			if !parsed.coalesced {
 				// Actions at end of delete spans could go here,
 				// but that action would also have to fire at the end of swap().
 				// Reset the delete-clique state.
@@ -2745,16 +2739,13 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					return append(in, os.PathSeparator, wildcardMark)
 				})
 			}
-			if !coalesced {
+			if !parsed.coalesced {
 				// Actions at end of copy spans could go here,
 				// but that action would also have to fire at the end of swap().
 				// Reset the copy-clique state.
 				var zeroCopyPair copyPair
 				lastCopyPair = zeroCopyPair
 			} else {
-				header, newval, oldval = header.replaceHook("Node-copyfrom-path", func(hd string, in []byte) []byte {
-					return swaptrim(hd, in, parsed)
-				})
 				thisCopyPair.copyfromPath = string(newval)
 
 				if lastCopyPair == thisCopyPair {
