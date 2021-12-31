@@ -2496,7 +2496,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if structural {
 				under := string(parts[1])
 				if under == "trunk" {
-					// PROJECT/trunk.  Just map this to trunk/PROJECT.
+					// PROJECT/trunk/...;  Just map this to trunk/PROJECT/...,
 					// Lossless transformation, still refers to the same
 					// set of paths.
 					parts[0] = parts[1]
@@ -2505,13 +2505,13 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					// Shift "branches" or "tags" to top level
 					parts[0] = []byte(under)
 					if len(parts) >= 3 {
-						// Exactly three components, PROJECT/branches/SUBDIR
-						// or PROJECT/tags/SUBDIR.
-						//
-						// This is where we capture information about what
-						// branches and tags exist under a specified project
-						// directory.
 						if parsed.isDir && len(parts) == 3 {
+							// Exactly three components, PROJECT/branches/SUBDIR
+							// or PROJECT/tags/SUBDIR.
+							//
+							// This is where we capture information about what
+							// branches and tags exist under a specified project
+							// directory.
 							key := top + pathsep + string(parts[1])
 							subbranch := string(parts[2])
 							switch parsed.role {
@@ -2525,10 +2525,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								wildcards[key] = trackSet
 							}
 						}
-						// Mutate to tags/SUBDIR/PROJECT or branches/SUBDIR/PROJECT
+						// Mutate to tags/SUBDIR/PROJECT/... or branches/SUBDIR/PROJECT/...
 						parts[1] = parts[2]
 						parts[2] = []byte(top)
-					} else {
+					} else { // len(parts) == 2
 						// Deal with paths of the form PROJECT/branches or PROJECT/tags
 						// and no subdirectory following. Dangerous curve!
 						//
@@ -2579,8 +2579,21 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				parts[0] = parts[1]
 				parts[1] = []byte(top)
 			}
-			// Trimming/promotion logic
-			if structural && parsed.isDir {
+			// Trimming/promotion logic.  This is the trickiest part of the
+			// code, deciding which operations to promote.
+			//
+			// Cases we have to deal with here are limited because
+			// paths like PROJECT/branches and PROJECT/tags got a
+			// wildcard mark appended when they were swapped.
+			//
+			// trunk/PROJECT
+			// trunk/PROJECT/SUBDIR
+			// tags/TAGNAME/PROJECT
+			// branches/BRANCHNAME/PROJECT
+			// tags/*/PROJECT
+			// branches/*/PROJECT
+			//
+			if structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
 				if sourcehdr == "Node-path" {
 					if (parsed.isCopy && !parsed.trunkCopy) && len(parts) == 3 {
 						top := string(parts[0])
