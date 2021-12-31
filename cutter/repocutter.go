@@ -951,6 +951,11 @@ func (ds *DumpfileSource) say(text []byte) {
 	os.Stdout.Write(text)
 }
 
+// where - format reference to current node for error logging and see().
+func (ds *DumpfileSource) where() string {
+	return fmt.Sprintf("%d.%d", ds.Revision, ds.Index)
+}
+
 // SubversionEndpoint - represent as Subversion revision or revision.node spec
 type SubversionEndpoint struct {
 	rev  int
@@ -1541,8 +1546,9 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		nodePath := string(header.payload("Node-path"))
 		if debug >= debugLOGIC {
-			fmt.Fprintf(os.Stderr, "<%d.%d: filecopy investigates this revision>\n",
-				source.Revision, source.Index)
+			fmt.Fprintf(os.Stderr,
+				"<r%s: filecopy investigates this revision>\n",
+				source.where())
 		}
 		if _, ok := values[nodePath]; !ok {
 			values[nodePath] = make([]trackCopy, 0)
@@ -1559,8 +1565,8 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 			trampoline = append(trampoline, trackCopy{source.Revision, content})
 			values[nodePath] = trampoline
 			if debug >= debugLOGIC {
-				fmt.Fprintf(os.Stderr, "<%d.%d: stashed content %q>\n",
-					source.Revision, source.Index, content)
+				fmt.Fprintf(os.Stderr, "<r%s: stashed content %q>\n",
+					source.where(), content)
 			}
 		}
 		// The logic here is a bit more complex than might seem necessary
@@ -1573,8 +1579,8 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 				copypath = []byte(filepath.Base(string(copypath)))
 			}
 			if debug >= debugLOGIC {
-				fmt.Fprintf(os.Stderr, "<%d.%d: filecopy investigates %s>\n",
-					source.Revision, source.Index, copypath)
+				fmt.Fprintf(os.Stderr, "<r%s: filecopy investigates %s>\n",
+					source.where(), copypath)
 			}
 			if len(content) > 0 {
 				header = header.delete("Node-copyfrom-path")
@@ -2266,7 +2272,7 @@ func see(source DumpfileSource, selection SubversionRange) {
 			path = append(path, []byte(fmt.Sprintf(" from %s:%s", fromrev, frompath))...)
 			action = []byte("copy")
 		}
-		leader := fmt.Sprintf("%d.%d", source.Revision, source.Index)
+		leader := source.where()
 		fmt.Printf("%-5s %-8s %s\n", leader, action, path)
 		if props != "" {
 			fmt.Printf("%-5s %-8s %s\n", leader, "propset", props)
@@ -2359,14 +2365,14 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 			stashRev = header.payload("Node-copyfrom-rev")
 			stashPath = header.payload("Node-copyfrom-path")
 			if stashRev == nil || stashPath == nil {
-				croak("r%d.%d: early node of skipcopy is not a copy", source.Revision, source.Index)
+				croak("r%s: early node of skipcopy is not a copy", source.where())
 			}
 			//within = true
 		}
 		if selection.Upperbound().Equals(SubversionEndpoint{source.Revision, source.Index}) {
 			//within = false
 			if header.payload("Node-copyfrom-rev") == nil || header.payload("Node-copyfrom-path") == nil {
-				croak("r%d.%d: late node of skipcopy is not a copy", source.Revision, source.Index)
+				croak("r%s: late node of skipcopy is not a copy", source.where())
 			}
 			header, _, _ = header.replaceHook("Node-copyfrom-rev", func(hd string, in []byte) []byte {
 				return stashRev
@@ -2537,11 +2543,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 									parts = append(parts, []byte(top))
 								}
 							case "mergeinfo":
-								croak("r%d.%d: unexpected mergeinfo of path %s",
-									source.Revision, source.Index, path)
+								croak("r$s: unexpected mergeinfo of path %s",
+									source.where(), path)
 							default:
-								croak("r%d.%d: unexpected action %s on path %s",
-									source.Revision, source.Index, parsed.role, path)
+								croak("r%s: unexpected action %s on path %s",
+									source.where(), parsed.role, path)
 							}
 						}
 					}
