@@ -2649,6 +2649,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		if parsed.isCopy {
 			parsed.role = "copy"
 		}
+		// All operations, includung copies.
 		if match == nil || match.Match(nodePath) {
 			// Special handling of operations on bare project directories
 			if structural && bytes.Count(nodePath, []byte(pathsep)) == 0 {
@@ -2709,14 +2710,25 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				return nil
 			}
 			coalesced = !bytes.Equal(oldval, newval)
-			if coalesced {
+			if !coalesced {
+				lastDelete = ""
+			} else {
 				if parsed.isDelete {
 					thisDelete = string(newval)
+					if lastDelete == thisDelete {
+						// We're looking at the second or
+						// later delete in a span of nodes that
+						// refer to the same global branch;
+						// we can drop it.
+						return nil
+					}
+					lastDelete = thisDelete
 				} else {
 					thisCopyPair = copyPair{string(newval), ""}
 				}
 			}
 		}
+		// Copy-only logic.
 		if match == nil || match.Match(header.payload("Node-copyfrom-path")) {
 			header, newval, oldval = header.replaceHook("Node-copyfrom-path", func(hd string, path []byte) []byte {
 				return swapper(hd, path, parsed)
@@ -2732,8 +2744,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				// Reset the clique state.
 				var zeroCopyPair copyPair
 				lastCopyPair = zeroCopyPair
-				lastDelete = ""
-			} else if !parsed.isDelete {
+			} else {
 				header, newval, oldval = header.replaceHook("Node-copyfrom-path", func(hd string, in []byte) []byte {
 					return swaptrim(hd, in, parsed)
 				})
@@ -2747,15 +2758,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					return nil
 				}
 				lastCopyPair = thisCopyPair
-			} else { // isDelete
-				if lastDelete == thisDelete {
-					// We're looking at the second or
-					// later delete in a span of nodes that
-					// refer to the same global branch;
-					// we can drop it.
-					return nil
-				}
-				lastDelete = thisDelete
 			}
 		}
 
