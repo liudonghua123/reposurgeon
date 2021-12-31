@@ -2557,8 +2557,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
 	// This function is called on certain paths *after* swapping, to trim them.
-	// The objective here is to promote branch and tag copies from being project-
-	// local to a repository-wide branch and tag namespace.
+	// The objective here is to promote branch/tag/trunk operation from being project-
+	// local to a repository-wide branch and tag namespace in which there is
+	// only one trunk.
 	//
 	// Things we know:
 	//
@@ -2571,6 +2572,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	// those are what we may need to promote. We don't want to modify any copies
 	// or other operations deeper in the tree than that because they take place
 	// *within* projects.
+	//
+	// All the promotion logic lives here.
 	//
 	swaptrim := func(hd string, in []byte, parsed parsedNode) []byte {
 		if structural && parsed.isDir {
