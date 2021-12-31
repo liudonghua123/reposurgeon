@@ -2579,7 +2579,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	// or other operations deeper in the tree than that because they take place
 	// *within* projects.
 	//
-	// All the promotion logic lives here.
+	// 4. This function is only called on a copyfrom path after its call on
+	// the Node-path in the same node, and then only if that path was modied.
+	//
+	// All the promotion logic lives here. Paths for all operations - adds,
+	// deletes, changes, and copies - go through here.
 	//
 	swaptrim := func(hd string, in []byte, parsed parsedNode) []byte {
 		if structural && parsed.isDir {
@@ -2711,6 +2715,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			}
 			coalesced = !bytes.Equal(oldval, newval)
 			if !coalesced {
+				// Actions at end of delete spans could go here,
+				// but that action would also have to fire at the end of swap().
+				// Reset the delete-clique state.
 				lastDelete = ""
 			} else {
 				if parsed.isDelete {
@@ -2739,9 +2746,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				})
 			}
 			if !coalesced {
-				// Actions at end of copy or delete spans could go here,
+				// Actions at end of copy spans could go here,
 				// but that action would also have to fire at the end of swap().
-				// Reset the clique state.
+				// Reset the copy-clique state.
 				var zeroCopyPair copyPair
 				lastCopyPair = zeroCopyPair
 			} else {
