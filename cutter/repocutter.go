@@ -1316,7 +1316,7 @@ func (ss StreamSection) payload(hd string) []byte {
 }
 
 // Mutate a specified header through a hook
-func (ss *StreamSection) replaceHook(htype string, hook func([]byte) []byte) (StreamSection, []byte, []byte) {
+func (ss *StreamSection) replaceHook(htype string, hook func(string, []byte) []byte) (StreamSection, []byte, []byte) {
 	header := []byte(*ss)
 	offs := bytes.Index(header, []byte(htype))
 	if offs == -1 {
@@ -1328,7 +1328,7 @@ func (ss *StreamSection) replaceHook(htype string, hook func([]byte) []byte) (St
 	pathline := header[offs:endoffs]
 	after := make([]byte, len(header)-endoffs)
 	copy(after, header[endoffs:])
-	newpathline := hook(pathline)
+	newpathline := hook(htype, pathline)
 	header = before
 	header = append(header, newpathline...)
 	header = append(header, after...)
@@ -1624,7 +1624,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 
 // Hack pathnames to obscure them.
 func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange) {
-	pathMutator := func(s []byte) []byte {
+	pathMutator := func(hd string, s []byte) []byte {
 		parts := strings.Split(filepath.ToSlash(string(s)), "/")
 		for i := range parts {
 			if parts[i] != "trunk" && parts[i] != "tags" && parts[i] != "branches" && parts[i] != "" {
@@ -1653,7 +1653,7 @@ func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange)
 		// ideally we'd also remove the content hashes, they
 		// become invalid after this transformation.
 		if bytes.HasPrefix(s, []byte("link ")) {
-			t := pathMutator(s[5:])
+			t := pathMutator("Content", s[5:])
 			c := min(len(s)-5, len(t))
 			for i := 0; i < c; i++ {
 				s[5+i] = t[i]
@@ -1695,7 +1695,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
-			header, _, _ = header.replaceHook(htype, func(in []byte) []byte {
+			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
 				return []byte(popSegment(string(in)))
 			})
 		}
@@ -1734,7 +1734,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		for _, htype := range []string{"Node-path: ", "Node-copyfrom-path: "} {
-			header, _, _ = header.replaceHook(htype, func(in []byte) []byte {
+			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
 				return []byte(prefix + "/" + string(in))
 			})
 		}
@@ -1865,7 +1865,7 @@ func log(source DumpfileSource, selection SubversionRange) {
 }
 
 // Hack paths by applying a specified transformation.
-func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func([]byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
+func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func(string, []byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
 	revhook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
@@ -1883,7 +1883,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 								buffer.WriteByte(byte(os.PathSeparator))
 								path = path[1:]
 							}
-							buffer.Write(pathMutator([]byte(path)))
+							buffer.Write(pathMutator("Mergeinfo", []byte(path)))
 							buffer.WriteString(":")
 							buffer.WriteString(revrange)
 						} else {
@@ -1953,7 +1953,7 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 				append([]byte("${start}"), append([]byte(patterns[i*2+1]), []byte("${end}")...)...)})
 		}
 	}
-	mutator := func(s []byte) []byte {
+	mutator := func(hd string, s []byte) []byte {
 		for _, op := range ops {
 			s = op.re.ReplaceAll(s, op.to)
 		}
@@ -2368,10 +2368,10 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 			if header.payload("Node-copyfrom-rev") == nil || header.payload("Node-copyfrom-path") == nil {
 				croak("r%d.%d: late node of skipcopy is not a copy", source.Revision, source.Index)
 			}
-			header, _, _ = header.replaceHook("Node-copyfrom-rev: ", func(in []byte) []byte {
+			header, _, _ = header.replaceHook("Node-copyfrom-rev: ", func(hd string, in []byte) []byte {
 				return stashRev
 			})
-			header, _, _ = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
+			header, _, _ = header.replaceHook("Node-copyfrom-path: ", func(hd string, in []byte) []byte {
 				return stashPath
 			})
 		}
@@ -2549,7 +2549,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if m, ok := props.properties[mergeproperty]; ok {
 				for _, part := range bytes.Split([]byte(m), []byte{'\n'}) {
 					var dummy parsedNode
-					dummy.role = "mergeinfoi"
+					dummy.role = "mergeinfo"
 					swapped = append(swapped, string(swapper("", part, dummy)))
 				}
 				props.properties[mergeproperty] = strings.Join(swapped, ":")
@@ -2602,7 +2602,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					suffixer := func(header StreamSection, suffix string) []byte {
 						out := header.clone()
 						for _, tag := range [2]string{"Node-path: ", "Node-copyfrom-path: "} {
-							out, _, _ = out.replaceHook(tag, func(in []byte) []byte {
+							out, _, _ = out.replaceHook(tag, func(hd string, in []byte) []byte {
 								return append(in, []byte(suffix)...)
 							})
 						}
@@ -2634,10 +2634,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			}
 
 			wildcardKey = ""
-			header, newval, oldval = header.replaceHook("Node-path: ", func(path []byte) []byte {
-				return swapper("Node-path: ", path, parsed)
+			header, newval, oldval = header.replaceHook("Node-path: ", func(hd string, path []byte) []byte {
+				return swapper(hd, path, parsed)
 			})
-			header, newval, oldval = header.replaceHook("Node-path: ", func(in []byte) []byte {
+			header, newval, oldval = header.replaceHook("Node-path: ", func(hd string, in []byte) []byte {
 				branchcopy := parsed.isDir && (parsed.isCopy && !parsed.trunkCopy)
 				parts := bytes.Split(in, []byte{os.PathSeparator})
 				if structural && branchcopy && len(parts) == 3 {
@@ -2661,11 +2661,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			}
 		}
 		if match == nil || match.Match(header.payload("Node-copyfrom-path")) {
-			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(path []byte) []byte {
-				return swapper("Node-copyfrom-path: ", path, parsed)
+			header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(hd string, path []byte) []byte {
+				return swapper(hd, path, parsed)
 			})
 			if bytes.Contains(newval, []byte{wildcardMark}) {
-				header, _, _ = header.replaceHook("Node-path: ", func(in []byte) []byte {
+				header, _, _ = header.replaceHook("Node-path: ", func(hd string, in []byte) []byte {
 					return append(in, os.PathSeparator, wildcardMark)
 				})
 			}
@@ -2677,7 +2677,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				lastCopyPair = zeroCopyPair
 				lastDelete = ""
 			} else if !parsed.isDelete {
-				header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(in []byte) []byte {
+				header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(hd string, in []byte) []byte {
 					parts := bytes.Split(in, []byte{os.PathSeparator})
 					if len(parts) == 3 {
 						top := string(parts[0])
