@@ -2540,6 +2540,28 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
+	swaptrim := func(hd string, in []byte, parsed parsedNode) []byte {
+		parts := bytes.Split(in, []byte{os.PathSeparator})
+		if hd == "Node-path: " {
+			branchcopy := parsed.isDir && (parsed.isCopy && !parsed.trunkCopy)
+			if structural && branchcopy && len(parts) == 3 {
+				top := string(parts[0])
+				if top == "branches" || top == "tags" {
+					parts = parts[:2]
+				}
+			}
+		} else if hd == "Node-copyfrom-path: " {
+			if len(parts) == 3 {
+				top := string(parts[0])
+				if top == "trunk" {
+					parts = parts[:1]
+				} else if top == "branches" || top == "tags" {
+					parts = parts[:2]
+				}
+			}
+		}
+		return bytes.Join(parts, []byte{os.PathSeparator})
+	}
 	revhook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
@@ -2638,15 +2660,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				return swapper(hd, path, parsed)
 			})
 			header, newval, oldval = header.replaceHook("Node-path: ", func(hd string, in []byte) []byte {
-				branchcopy := parsed.isDir && (parsed.isCopy && !parsed.trunkCopy)
-				parts := bytes.Split(in, []byte{os.PathSeparator})
-				if structural && branchcopy && len(parts) == 3 {
-					top := string(parts[0])
-					if top == "branches" || top == "tags" {
-						parts = parts[:2]
-					}
-				}
-				return bytes.Join(parts, []byte{os.PathSeparator})
+				return swaptrim(hd, in, parsed)
 			})
 			if oldval != nil && newval == nil {
 				return nil
@@ -2678,16 +2692,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				lastDelete = ""
 			} else if !parsed.isDelete {
 				header, newval, oldval = header.replaceHook("Node-copyfrom-path: ", func(hd string, in []byte) []byte {
-					parts := bytes.Split(in, []byte{os.PathSeparator})
-					if len(parts) == 3 {
-						top := string(parts[0])
-						if top == "trunk" {
-							parts = parts[:1]
-						} else if top == "branches" || top == "tags" {
-							parts = parts[:2]
-						}
-					}
-					return bytes.Join(parts, []byte{os.PathSeparator})
+					return swaptrim(hd, in, parsed)
 				})
 				thisCopyPair.copyfromPath = string(newval)
 
