@@ -2491,6 +2491,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		if rooted {
 			path = path[1:]
 		}
+		originalPath := path
 		parts := bytes.Split(path, []byte{os.PathSeparator})
 		if len(parts) >= 2 {
 			// Swapping logic
@@ -2581,6 +2582,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				parts[0] = parts[1]
 				parts[1] = []byte(top)
 			}
+			if debug >= debugLOGIC {
+				new := bytes.Join(parts, []byte{os.PathSeparator})
+				fmt.Fprintf(os.Stderr, "<r%s: swap of %s %s %s -> %s>\n",
+					source.where(), parsed.role, sourcehdr, originalPath, new)
+			}
 			// Trimming/promotion logic.  This is the trickiest part of the
 			// code, deciding which operations to promote.
 			//
@@ -2595,7 +2601,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			// tags/*/PROJECT
 			// branches/*/PROJECT
 			//
-			if structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
+			if parts != nil && structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
 				var old []byte
 				if debug >= debugLOGIC {
 					old = bytes.Join(parts, []byte{os.PathSeparator})
@@ -2619,7 +2625,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				}
 				if debug >= debugLOGIC {
 					new := bytes.Join(parts, []byte{os.PathSeparator})
-					fmt.Fprintf(os.Stderr, "<r%s: swap trim of %s %s -> %s>\n",
+					fmt.Fprintf(os.Stderr, "<r%s: trim of %s %s -> %s>\n",
 						source.where(), sourcehdr, old, new)
 				}
 			}
