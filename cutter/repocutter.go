@@ -2473,11 +2473,13 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	//
 	// 3. We never want to trim paths in file operations at all.
 	//
-	// 4. The only paths eligible for trimming are two- or three-component paths
-	// that refer to a project-local trunk, one of its branches, or one of its tags -
+	// 4. The only paths eligible for trimming are paths that refer to a subdirectory
+	// of a project-local trunk, or of one of its branches, or of one of its tags -
 	// those are what we may need to promote. We don't want to modify any copies
 	// or other operations deeper in the tree than that because they take place
 	// *within* projects.
+	//
+	// 5. Delete operatiuons should only be trimmed as part of branch-rename sequences.
 	//
 	// All the swap and promotion logic lives here. Paths for all operations - adds,
 	// deletes, changes, and copies - go through here.
@@ -2594,6 +2596,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			// branches/*/PROJECT
 			//
 			if structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
+				var old []byte
+				if debug >= debugLOGIC {
+					old = bytes.Join(parts, []byte{os.PathSeparator})
+				}
 				if sourcehdr == "Node-path" {
 					if (parsed.isCopy && !parsed.trunkCopy) && len(parts) == 3 {
 						top := string(parts[0])
@@ -2610,6 +2616,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 							parts = parts[:2]
 						}
 					}
+				}
+				if debug >= debugLOGIC {
+					new := bytes.Join(parts, []byte{os.PathSeparator})
+					fmt.Fprintf(os.Stderr, "<r%s: swap trim of %s %s -> %s>\n",
+						source.where(), sourcehdr, old, new)
 				}
 			}
 		}
@@ -2721,6 +2732,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				return nil
 			}
 			parsed.coalesced = !bytes.Equal(oldval, newval)
+			if debug >= debugLOGIC {
+				fmt.Fprintf(os.Stderr, "<r%s: %q -> %q, coalesced = %v>\n", source.where(), oldval, newval, parsed.coalesced)
+			}
 			// FIXME: this code won't fire until deletes are truncated.
 			// These will be produced only by rename coalescences,
 			// not ordinary deletes.
