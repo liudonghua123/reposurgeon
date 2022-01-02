@@ -79,7 +79,6 @@ svnaction "project3/trunk/baz.txt" "modesty, and a many deportment." "Of my moth
 svnaction "project3/trunk/foo.txt" "I learned to be religuious and liberal;"  "and to guard not only against evil actions,"
 svnaction "project3/trunk/foo.txt" "but even against any evil intentions" "entering my thoughts"
 svn up
-# Write a span of per-project branch copies that needs to be coalesced by swapsvn
 svnaction project1/trunk/subdir1/
 svnaction "project1/trunk/subdir1/placeholder1" "Tack down subdir1"
 svnaction project2/trunk/subdir2/
@@ -87,6 +86,7 @@ svnaction "project2/trunk/subdir2/placeholder2" "Tack down subdir2"
 svnaction project3/trunk/subdir3/
 svnaction "project3/trunk/subdir3/placeholder3" "Tack down subdir3"
 svn up
+# Write a span of per-project branch copies that needs to be coalesced by swapsvn
 # Ideally these should turn into a single copy trunk/ branches/exiguous
 svn copy project1/trunk/subdir1 project1/branches/exiguous
 svn commit -m "Create exiguous branch of project1"
@@ -112,7 +112,7 @@ svn up
 svn copy project3/branches/exiguous project3/branches/exiguous2
 svn commit -m "Copy exiguous branch of project3"
 svn up
-# Test delete coalescence
+# Test (absence of) delete coalescence
 svn delete project1/branches/exiguous
 svn commit -m "Delete exiguous branch of project1"
 svn up
