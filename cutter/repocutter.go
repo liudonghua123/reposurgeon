@@ -338,10 +338,10 @@ parallel in all top-level (project) directories. These are coalesced
 into single copies in the inverted structure.  No attempts is made
 to coalesce deletes; the user must manually trim unneeded branches.
 
-Accordingly, deletes and copies with three-segment sources and
-three-segment targets are  transformed; for tags/ and branches/ paths
-the last segment (the subdirectory below the branch name)  is dropped,
-Following duplicate deletes and copies are skipped. 
+Accordingly, copies with three-segment sources and three-segment
+targets are transformed; for tags/ and branches/ paths the last
+segment (the subdirectory below the branch name) is dropped, Following
+copies are skipped.
 
 This has two minor negative consequences. One is that metadata
 belonging to all deletes or copies after the first one in a coalesced
