@@ -51,7 +51,7 @@ FAILLOG=/tmp/reposurgeon-make.log
 check:
 	@$(MAKE) -j1 --no-print-directory parallel-tap
 
-.SUFFIXES: .svn .chk .fi .map .sh
+.SUFFIXES: .svn .chk .fi .map .sh .see
 
 .svn.chk:
 	$(REPOSURGEON) "read <$<" "prefer git" "write -" >$@ 2>&1
@@ -61,6 +61,8 @@ check:
 	$(REPOSURGEON) "log -all" "read <$<" "legacy write -" >$@
 .sh.svn:
 	sh $< -d >$@
+.svn.see:
+	@repocutter -q see <$< >$@
 
 clean:
 	@rm -fr .rs* test=repo test-checkout test-repo* test-checkout* git-repo left-repo right-repo *~
