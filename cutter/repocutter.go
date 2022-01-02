@@ -2648,6 +2648,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		copyfromPath string
 	}
 	var thisCopyPair, lastCopyPair copyPair
+	var thisDelete, lastDelete string
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		nodePath := header.payload("Node-path")
 		var parsed parsedNode
@@ -2720,6 +2721,22 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				return nil
 			}
 			parsed.coalesced = !bytes.Equal(oldval, newval)
+			// FIXME: this code won't fire until deletes are truncated.
+			// These will be produced only by rename coalescences,
+			// not ordinary deletes.
+			if parsed.coalesced {
+				lastDelete = ""
+			} else if parsed.isDelete {
+				thisDelete = string(newval)
+				if lastDelete == thisDelete {
+					// We're looking at the second or
+					// later copy in a span of nodes that
+					// refer to the same global branch;
+					// we can drop it.
+					return nil
+				}
+				lastDelete = thisDelete
+			}
 		}
 		// Copy-only logic.
 		if match == nil || match.Match(header.payload("Node-copyfrom-path")) {
@@ -2731,10 +2748,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					return append(in, os.PathSeparator, wildcardMark)
 				})
 			}
+			// Discard all nut the first in spans of identical copies.
+			// These are produced by bramch copy promotions.
 			if !parsed.coalesced {
-				// Actions at end of copy spans could go here,
-				// but that action would also have to fire at the end of swap().
-				// Reset the copy-clique state.
 				var zeroCopyPair copyPair
 				lastCopyPair = zeroCopyPair
 			} else {
