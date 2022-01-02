@@ -2738,7 +2738,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if oldval != nil && newval == nil {
 				return nil
 			}
-			parsed.coalesced = !bytes.Equal(oldval, newval)
+			parsed.coalesced = len(newval) < len(oldval)
 			if debug >= debugLOGIC {
 				fmt.Fprintf(os.Stderr, "<r%s: %q -> %q, coalesced = %v>\n", source.where(), oldval, newval, parsed.coalesced)
 			}
