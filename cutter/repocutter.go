@@ -2648,7 +2648,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		copyfromPath string
 	}
 	var thisCopyPair, lastCopyPair copyPair
-	var thisDelete, lastDelete string
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		nodePath := header.payload("Node-path")
 		var parsed parsedNode
@@ -2721,26 +2720,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				return nil
 			}
 			parsed.coalesced = !bytes.Equal(oldval, newval)
-			if !parsed.coalesced {
-				// Actions at end of delete spans could go here,
-				// but that action would also have to fire at the end of swap().
-				// Reset the delete-clique state.
-				lastDelete = ""
-			} else {
-				if parsed.isDelete {
-					thisDelete = string(newval)
-					if lastDelete == thisDelete {
-						// We're looking at the second or
-						// later delete in a span of nodes that
-						// refer to the same global branch;
-						// we can drop it.
-						return nil
-					}
-					lastDelete = thisDelete
-				} else {
-					thisCopyPair = copyPair{string(newval), ""}
-				}
-			}
 		}
 		// Copy-only logic.
 		if match == nil || match.Match(header.payload("Node-copyfrom-path")) {
