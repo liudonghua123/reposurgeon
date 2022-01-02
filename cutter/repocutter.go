@@ -1331,13 +1331,14 @@ func (ss *StreamSection) replaceHook(htype string, hook func(string, []byte) []b
 	endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
 	before := header[:offs]
 	pathline := header[offs:endoffs]
+	dup := string(pathline)
 	after := make([]byte, len(header)-endoffs)
 	copy(after, header[endoffs:])
 	newpathline := hook(htype, pathline)
 	header = before
 	header = append(header, newpathline...)
 	header = append(header, after...)
-	return StreamSection(header), newpathline, pathline
+	return StreamSection(header), newpathline, []byte(dup)
 }
 
 // Find the index of the content of a specified field
