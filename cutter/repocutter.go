@@ -2454,6 +2454,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	wildcards := make(map[string]orderedStringSet)
 	var wildcardKey string
 	const wildcardMark = '*'
+	var lastPromotedSource string
 	stdlayout := func(payload []byte) bool {
 		return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
 	}
@@ -2553,12 +2554,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								// Start tracking subbranches/subtags of PROJECT.
 								wildcards[string(path)] = newOrderedStringSet()
 								// Then drop this path - nothing else needs doing.
-								parts = nil
+								return nil
 							case "delete":
 								// Stop tracking subbranches/subtags of PROJECT.
 								delete(wildcards, string(path))
 								// Then drop this path - nothing else needs doing.
-								parts = nil
+								return nil
 							case "change":
 								wildcardKey = string(path)
 								parts[1] = []byte{wildcardMark}
@@ -2602,6 +2603,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			// tags/*/PROJECT
 			// branches/*/PROJECT
 			//
+			swapped := string(bytes.Join(parts, []byte{os.PathSeparator}))
 			promote := func(in [][]byte) [][]byte {
 				top := string(parts[0])
 				if top == "trunk" {
@@ -2611,7 +2613,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				}
 				return parts
 			}
-			if parts != nil && structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
+			if structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
 				var old []byte
 				if debug >= debugLOGIC {
 					old = bytes.Join(parts, []byte{os.PathSeparator})
@@ -2620,9 +2622,28 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					if (parsed.isCopy && !parsed.trunkCopy) && len(parts) == 3 {
 						parts = promote(parts)
 					}
+					if parsed.isDelete {
+						if debug >= debugLOGIC {
+							fmt.Fprintf(os.Stderr, "<r%s: comparing %s with %s>\n",
+								source.where(), swapped, lastPromotedSource)
+						}
+						if lastPromotedSource == swapped {
+							parts = promote(parts)
+						}
+						if debug >= debugLOGIC {
+							fmt.Fprintf(os.Stderr, "<r%s: deleting %s>\n",
+								source.where(), bytes.Join(parts, []byte{os.PathSeparator}))
+						}
+						lastPromotedSource = ""
+					}
 				} else if sourcehdr == "Node-copyfrom-path" && parsed.coalesced {
 					if len(parts) == 3 {
 						parts = promote(parts)
+						lastPromotedSource = string(swapped)
+						if debug >= debugLOGIC {
+							fmt.Fprintf(os.Stderr, "<r%s: setting lastPromotedSource = %s>\n",
+								source.where(), lastPromotedSource)
+						}
 					}
 				}
 				if debug >= debugLOGIC {
@@ -2666,7 +2687,8 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		nodePath     string
 		copyfromPath string
 	}
-	var thisCopyPair, lastCopyPair copyPair
+	var thisCopyPair copyPair
+	branchCreations := make(map[copyPair]bool)
 	var thisDelete, lastDelete string
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		nodePath := header.payload("Node-path")
@@ -2743,11 +2765,17 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if debug >= debugLOGIC {
 				fmt.Fprintf(os.Stderr, "<r%s: %q -> %q, coalesced = %v>\n", source.where(), oldval, newval, parsed.coalesced)
 			}
-			// FIXME: this code won't fire until deletes are truncated.
+			if parsed.isCopy {
+				thisCopyPair.nodePath = string(newval)
+			}
 			// These will be produced only by rename coalescences,
 			// not ordinary deletes.
-			if parsed.coalesced {
+			if !parsed.coalesced {
 				lastDelete = ""
+				if debug >= debugLOGIC {
+					fmt.Fprintf(os.Stderr, "<r%s: resetting lastPromoted\n",
+						source.where())
+				}
 			} else if parsed.isDelete {
 				thisDelete = string(newval)
 				if lastDelete == thisDelete {
@@ -2770,22 +2798,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					return append(in, os.PathSeparator, wildcardMark)
 				})
 			}
-			// Discard all nut the first in spans of identical copies.
-			// These are produced by bramch copy promotions.
-			if !parsed.coalesced {
-				var zeroCopyPair copyPair
-				lastCopyPair = zeroCopyPair
-			} else {
-				thisCopyPair.copyfromPath = string(newval)
-
-				if lastCopyPair == thisCopyPair {
-					// We're looking at the second or
-					// later copy in a span of nodes that
-					// refer to the same global branch;
-					// we can drop it.
+			thisCopyPair.copyfromPath = string(newval)
+			if parsed.coalesced {
+				if branchCreations[thisCopyPair] {
 					return nil
 				}
-				lastCopyPair = thisCopyPair
+				branchCreations[thisCopyPair] = true
 			}
 		}
 

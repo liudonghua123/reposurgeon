@@ -34,8 +34,4 @@
 46.1  delete   branches/exiguous/project3
 47.1  copy     branches/exiguous3/ from 46:trunk/
 50.1  copy     branches/renamed/ from 49:branches/exiguous3/
-50.2  delete   branches/exiguous3/project1
-51.1  copy     branches/renamed/ from 50:branches/exiguous3/
-51.2  delete   branches/exiguous3/project2
-52.1  copy     branches/renamed/ from 51:branches/exiguous3/
-52.2  delete   branches/exiguous3/project3
+50.2  delete   branches/exiguous3/
