@@ -2589,38 +2589,24 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				fmt.Fprintf(os.Stderr, "<r%s: swap of %s %s %s -> %s>\n",
 					source.where(), parsed.role, sourcehdr, originalPath, new)
 			}
-			// Trimming/promotion logic.  This is the trickiest part of the
-			// code, deciding which operations to promote.
-			//
-			// Cases we have to deal with here are limited because
-			// paths like PROJECT/branches and PROJECT/tags got a
-			// wildcard mark appended when they were swapped.
-			//
-			// trunk/PROJECT
-			// trunk/PROJECT/SUBDIR
-			// tags/TAGNAME/PROJECT
-			// branches/BRANCHNAME/PROJECT
-			// tags/*/PROJECT
-			// branches/*/PROJECT
-			//
 			swapped := string(bytes.Join(parts, []byte{os.PathSeparator}))
-			promote := func(in [][]byte) [][]byte {
-				top := string(parts[0])
-				if top == "trunk" {
-					parts = parts[:1]
-				} else if top == "branches" || top == "tags" {
-					parts = parts[:2]
+			copyable := func(parts [][]byte) bool {
+				if len(parts) == 2 && string(parts[0]) == "trunk" {
+					return true
 				}
-				return parts
+				if len(parts) == 3 && (string(parts[0]) == "tags" || string(parts[0]) == "branches") {
+					return true
+				}
+				return false
 			}
-			if structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
+			if structural && parsed.isDir && copyable(parts) {
 				var old []byte
 				if debug >= debugLOGIC {
 					old = bytes.Join(parts, []byte{os.PathSeparator})
 				}
 				if sourcehdr == "Node-path" {
-					if (parsed.isCopy && !parsed.trunkCopy) && len(parts) == 3 {
-						parts = promote(parts)
+					if parsed.isCopy {
+						parts = parts[:len(parts)-1]
 					}
 					if parsed.isDelete {
 						if debug >= debugLOGIC {
@@ -2628,7 +2614,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								source.where(), swapped, lastPromotedSource)
 						}
 						if lastPromotedSource == swapped {
-							parts = promote(parts)
+							parts = parts[:len(parts)-1]
 						}
 						if debug >= debugLOGIC {
 							fmt.Fprintf(os.Stderr, "<r%s: deleting %s>\n",
@@ -2637,13 +2623,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						lastPromotedSource = ""
 					}
 				} else if sourcehdr == "Node-copyfrom-path" && parsed.coalesced {
-					if len(parts) == 3 {
-						parts = promote(parts)
-						lastPromotedSource = string(swapped)
-						if debug >= debugLOGIC {
-							fmt.Fprintf(os.Stderr, "<r%s: setting lastPromotedSource = %s>\n",
-								source.where(), lastPromotedSource)
-						}
+					parts = parts[:len(parts)-1]
+					lastPromotedSource = string(swapped)
+					if debug >= debugLOGIC {
+						fmt.Fprintf(os.Stderr, "<r%s: setting lastPromotedSource = %s>\n",
+							source.where(), lastPromotedSource)
 					}
 				}
 				if debug >= debugLOGIC {

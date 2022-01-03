@@ -2,7 +2,7 @@
 5.1   add      trunk/project1/foo.txt
 6.1   add      trunk/project1/bar.txt
 7.1   add      trunk/project1/baz.txt
-8.1   copy     branches/stable/project1/ from 7:trunk/project1/
+8.1   copy     branches/stable/ from 7:trunk/
 10.1  add      trunk/project2/
 13.1  add      trunk/project2/foo.txt
 14.1  add      trunk/project2/bar.txt
@@ -11,7 +11,7 @@
 17.1  change   trunk/project2/foo.txt
 18.1  add      trunk/project2/foodir/
 18.2  add      trunk/project2/foodir/qux.txt
-19.1  copy     tags/1.0/project2/ from 18:trunk/project2/
+19.1  copy     tags/1.0/ from 18:trunk/
 20.1  copy     trunk/project1/evilcopy/ from 18:trunk/project2/
 22.1  add      trunk/project3/
 25.1  add      trunk/project3/foo.txt
@@ -19,17 +19,13 @@
 27.1  add      trunk/project3/baz.txt
 28.1  change   trunk/project3/foo.txt
 29.1  change   trunk/project3/foo.txt
-30.1  copy     branches/sample/project1/ from 29:trunk/project1/
-31.1  copy     branches/sample/project2/ from 30:trunk/project2/
-32.1  copy     branches/sample/project3/ from 31:trunk/project3/
+30.1  copy     branches/sample/ from 29:trunk/
 33.1  change   branches/sample/project3/foo.txt
 34.1  copy     branches/sample/project3/foodir/ from 33:trunk/project2/foodir/
 35.1  copy     branches/sample2/ from 34:branches/sample/
-38.1  delete   branches/sample/project1/
-39.1  delete   branches/sample/project2/
-40.1  delete   branches/sample/project3/
-41.1  copy     branches/sample3/project1/ from 40:trunk/project1/
-42.1  copy     branches/sample3/project2/ from 41:trunk/project2/
-43.1  copy     branches/sample3/project3/ from 42:trunk/project3/
+38.1  delete   branches/sample/project1
+39.1  delete   branches/sample/project2
+40.1  delete   branches/sample/project3
+41.1  copy     branches/sample3/ from 40:trunk/
 44.1  copy     branches/renamed/ from 43:branches/sample3/
-44.2  delete   branches/sample3
+44.2  delete   branches/sample3/
