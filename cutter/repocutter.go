@@ -2602,6 +2602,15 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			// tags/*/PROJECT
 			// branches/*/PROJECT
 			//
+			promote := func(in [][]byte) [][]byte {
+				top := string(parts[0])
+				if top == "trunk" {
+					parts = parts[:1]
+				} else if top == "branches" || top == "tags" {
+					parts = parts[:2]
+				}
+				return parts
+			}
 			if parts != nil && structural && parsed.isDir && (len(parts) == 2 || len(parts) == 3) {
 				var old []byte
 				if debug >= debugLOGIC {
@@ -2609,19 +2618,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				}
 				if sourcehdr == "Node-path" {
 					if (parsed.isCopy && !parsed.trunkCopy) && len(parts) == 3 {
-						top := string(parts[0])
-						if top == "branches" || top == "tags" {
-							parts = parts[:2]
-						}
+						parts = promote(parts)
 					}
 				} else if sourcehdr == "Node-copyfrom-path" && parsed.coalesced {
 					if len(parts) == 3 {
-						top := string(parts[0])
-						if top == "trunk" {
-							parts = parts[:1]
-						} else if top == "branches" || top == "tags" {
-							parts = parts[:2]
-						}
+						parts = promote(parts)
 					}
 				}
 				if debug >= debugLOGIC {
