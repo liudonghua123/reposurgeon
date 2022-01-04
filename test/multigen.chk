@@ -254,234 +254,232 @@ entering my thoughts
 from :30
 M 100644 :31 trunk/foo.txt
 
-blob
-mark :33
-data 18
-Tack down subdir1
-
 commit refs/heads/project1
+#legacy-id 30
+mark :33
+committer fred <fred> 300 +0000
+data 33
+Create sample branch of project1
+from :22
+M 100644 :4 branches/sample/bar.txt
+M 100644 :6 branches/sample/baz.txt
+M 100644 :11 branches/sample/evilcopy/bar.txt
+M 100644 :13 branches/sample/evilcopy/baz.txt
+M 100644 :17 branches/sample/evilcopy/foo.txt
+M 100644 :19 branches/sample/evilcopy/foodir/qux.txt
+M 100644 :2 branches/sample/foo.txt
+
+commit refs/heads/project2
 #legacy-id 31
 mark :34
 committer fred <fred> 310 +0000
-data 0
-from :22
-M 100644 :33 trunk/subdir1/placeholder1
-
-blob
-mark :35
-data 18
-Tack down subdir2
-
-commit refs/heads/project2
-#legacy-id 33
-mark :36
-committer fred <fred> 330 +0000
-data 0
+data 33
+Create sample branch of project2
 from :21
-M 100644 :35 trunk/subdir2/placeholder2
-
-blob
-mark :37
-data 18
-Tack down subdir3
+M 100644 :11 branches/sample/bar.txt
+M 100644 :13 branches/sample/baz.txt
+M 100644 :17 branches/sample/foo.txt
+M 100644 :19 branches/sample/foodir/qux.txt
 
 commit refs/heads/project3
-#legacy-id 35
-mark :38
-committer fred <fred> 350 +0000
-data 0
+#legacy-id 32
+mark :35
+committer fred <fred> 320 +0000
+data 33
+Create sample branch of project3
 from :32
-M 100644 :37 trunk/subdir3/placeholder3
-
-commit refs/heads/project1
-#legacy-id 36
-mark :39
-committer fred <fred> 360 +0000
-data 35
-Create exiguous branch of project1
-from :34
-M 100644 :33 branches/exiguous/placeholder1
-
-commit refs/heads/project2
-#legacy-id 37
-mark :40
-committer fred <fred> 370 +0000
-data 35
-Create exiguous branch of project2
-from :36
-M 100644 :35 branches/exiguous/placeholder2
-
-commit refs/heads/project3
-#legacy-id 38
-mark :41
-committer fred <fred> 380 +0000
-data 35
-Create exiguous branch of project3
-from :38
-M 100644 :37 branches/exiguous/placeholder3
+M 100644 :25 branches/sample/bar.txt
+M 100644 :27 branches/sample/baz.txt
+M 100644 :31 branches/sample/foo.txt
 
 blob
-mark :42
+mark :36
 data 30
 Fourscore and seven years ago
 
 commit refs/heads/project3
+#legacy-id 33
+mark :37
+committer fred <fred> 330 +0000
+data 0
+from :35
+M 100644 :36 branches/sample/foo.txt
+
+commit refs/heads/project3
+#legacy-id 34
+mark :38
+committer fred <fred> 340 +0000
+data 27
+Copy after branch creation
+from :37
+M 100644 :19 branches/sample/foodir/qux.txt
+
+commit refs/heads/project1
+#legacy-id 35
+mark :39
+committer fred <fred> 350 +0000
+data 31
+Copy sample branch of project1
+from :33
+M 100644 :4 branches/sample2/bar.txt
+M 100644 :6 branches/sample2/baz.txt
+M 100644 :11 branches/sample2/evilcopy/bar.txt
+M 100644 :13 branches/sample2/evilcopy/baz.txt
+M 100644 :17 branches/sample2/evilcopy/foo.txt
+M 100644 :19 branches/sample2/evilcopy/foodir/qux.txt
+M 100644 :2 branches/sample2/foo.txt
+
+commit refs/heads/project2
+#legacy-id 36
+mark :40
+committer fred <fred> 360 +0000
+data 31
+Copy sample branch of project2
+from :34
+M 100644 :11 branches/sample2/bar.txt
+M 100644 :13 branches/sample2/baz.txt
+M 100644 :17 branches/sample2/foo.txt
+M 100644 :19 branches/sample2/foodir/qux.txt
+
+commit refs/heads/project3
+#legacy-id 37
+mark :41
+committer fred <fred> 370 +0000
+data 31
+Copy sample branch of project3
+from :38
+M 100644 :25 branches/sample2/bar.txt
+M 100644 :27 branches/sample2/baz.txt
+M 100644 :36 branches/sample2/foo.txt
+M 100644 :19 branches/sample2/foodir/qux.txt
+
+commit refs/heads/project1
+#legacy-id 38
+mark :42
+committer fred <fred> 380 +0000
+data 33
+Delete sample branch of project1
+from :39
+D branches/sample/bar.txt
+D branches/sample/baz.txt
+D branches/sample/evilcopy/bar.txt
+D branches/sample/evilcopy/baz.txt
+D branches/sample/evilcopy/foo.txt
+D branches/sample/evilcopy/foodir/qux.txt
+D branches/sample/foo.txt
+
+commit refs/heads/project2
 #legacy-id 39
 mark :43
 committer fred <fred> 390 +0000
-data 0
-from :41
-M 100644 :42 branches/exiguous/foo.txt
+data 33
+Delete sample branch of project2
+from :40
+D branches/sample/bar.txt
+D branches/sample/baz.txt
+D branches/sample/foo.txt
+D branches/sample/foodir/qux.txt
 
 commit refs/heads/project3
 #legacy-id 40
 mark :44
 committer fred <fred> 400 +0000
-data 27
-Copy after branch creation
-from :43
-M 100644 :19 branches/exiguous/foodir/qux.txt
+data 33
+Delete sample branch of project3
+from :41
+D branches/sample/bar.txt
+D branches/sample/baz.txt
+D branches/sample/foo.txt
+D branches/sample/foodir/qux.txt
 
 commit refs/heads/project1
 #legacy-id 41
 mark :45
 committer fred <fred> 410 +0000
-data 33
-Copy exiguous branch of project1
-from :39
-M 100644 :33 branches/exiguous2/placeholder1
+data 34
+Create sample3 branch of project1
+from :42
+M 100644 :4 branches/sample3/bar.txt
+M 100644 :6 branches/sample3/baz.txt
+M 100644 :11 branches/sample3/evilcopy/bar.txt
+M 100644 :13 branches/sample3/evilcopy/baz.txt
+M 100644 :17 branches/sample3/evilcopy/foo.txt
+M 100644 :19 branches/sample3/evilcopy/foodir/qux.txt
+M 100644 :2 branches/sample3/foo.txt
 
 commit refs/heads/project2
 #legacy-id 42
 mark :46
 committer fred <fred> 420 +0000
-data 33
-Copy exiguous branch of project2
-from :40
-M 100644 :35 branches/exiguous2/placeholder2
+data 34
+Create sample3 branch of project2
+from :43
+M 100644 :11 branches/sample3/bar.txt
+M 100644 :13 branches/sample3/baz.txt
+M 100644 :17 branches/sample3/foo.txt
+M 100644 :19 branches/sample3/foodir/qux.txt
 
 commit refs/heads/project3
 #legacy-id 43
 mark :47
 committer fred <fred> 430 +0000
-data 33
-Copy exiguous branch of project3
+data 34
+Create sample3 branch of project3
 from :44
-M 100644 :42 branches/exiguous2/foo.txt
-M 100644 :19 branches/exiguous2/foodir/qux.txt
-M 100644 :37 branches/exiguous2/placeholder3
+M 100644 :25 branches/sample3/bar.txt
+M 100644 :27 branches/sample3/baz.txt
+M 100644 :31 branches/sample3/foo.txt
 
 commit refs/heads/project1
 #legacy-id 44
 mark :48
 committer fred <fred> 440 +0000
-data 35
-Delete exiguous branch of project1
+data 34
+Rename sample3 branch of project1
 from :45
-D branches/exiguous/placeholder1
+M 100644 :4 branches/renamed/bar.txt
+M 100644 :6 branches/renamed/baz.txt
+M 100644 :11 branches/renamed/evilcopy/bar.txt
+M 100644 :13 branches/renamed/evilcopy/baz.txt
+M 100644 :17 branches/renamed/evilcopy/foo.txt
+M 100644 :19 branches/renamed/evilcopy/foodir/qux.txt
+M 100644 :2 branches/renamed/foo.txt
+D branches/sample3/bar.txt
+D branches/sample3/baz.txt
+D branches/sample3/evilcopy/bar.txt
+D branches/sample3/evilcopy/baz.txt
+D branches/sample3/evilcopy/foo.txt
+D branches/sample3/evilcopy/foodir/qux.txt
+D branches/sample3/foo.txt
 
 commit refs/heads/project2
 #legacy-id 45
 mark :49
 committer fred <fred> 450 +0000
-data 35
-Delete exiguous branch of project2
+data 34
+Rename sample3 branch of project2
 from :46
-D branches/exiguous/placeholder2
+M 100644 :11 branches/renamed/bar.txt
+M 100644 :13 branches/renamed/baz.txt
+M 100644 :17 branches/renamed/foo.txt
+M 100644 :19 branches/renamed/foodir/qux.txt
+D branches/sample3/bar.txt
+D branches/sample3/baz.txt
+D branches/sample3/foo.txt
+D branches/sample3/foodir/qux.txt
 
 commit refs/heads/project3
 #legacy-id 46
 mark :50
 committer fred <fred> 460 +0000
-data 35
-Delete exiguous branch of project3
+data 34
+Rename sample3 branch of project3
 from :47
-D branches/exiguous/foo.txt
-D branches/exiguous/foodir/qux.txt
-D branches/exiguous/placeholder3
-
-commit refs/heads/project1
-#legacy-id 47
-mark :51
-committer fred <fred> 470 +0000
-data 36
-Create exiguous3 branch of project1
-from :48
-M 100644 :33 branches/exiguous3/placeholder1
-
-commit refs/heads/project2
-#legacy-id 48
-mark :52
-committer fred <fred> 480 +0000
-data 36
-Create exiguous3 branch of project2
-from :49
-M 100644 :35 branches/exiguous3/placeholder2
-
-commit refs/heads/project3
-#legacy-id 49
-mark :53
-committer fred <fred> 490 +0000
-data 36
-Create exiguous3 branch of project3
-from :50
-M 100644 :37 branches/exiguous3/placeholder3
-
-commit refs/heads/project1
-#legacy-id 50
-mark :54
-committer fred <fred> 500 +0000
-data 36
-Rename exiguous3 branch of project1
-from :51
-D branches/exiguous3/placeholder1
-M 100644 :33 branches/renamed/placeholder1
-
-commit refs/heads/project2
-#legacy-id 51
-mark :55
-committer fred <fred> 510 +0000
-data 36
-Rename exiguous3 branch of project2
-from :52
-D branches/exiguous3/placeholder2
-M 100644 :35 branches/renamed/placeholder2
-
-commit refs/heads/project3
-#legacy-id 52
-mark :56
-committer fred <fred> 520 +0000
-data 36
-Rename exiguous3 branch of project3
-from :53
-D branches/exiguous3/placeholder3
-M 100644 :37 branches/renamed/placeholder3
-
-tag emptycommit-30
-#legacy-id 30
-from :22
-tagger fred <fred> 300 +0000
-data 84
-project1/trunk/subdir1/ creation
-
-[[Tag from zero-fileop commit at Subversion r30]]
-
-tag emptycommit-32
-#legacy-id 32
-from :21
-tagger fred <fred> 320 +0000
-data 84
-project2/trunk/subdir2/ creation
-
-[[Tag from zero-fileop commit at Subversion r32]]
-
-tag emptycommit-34
-#legacy-id 34
-from :32
-tagger fred <fred> 340 +0000
-data 84
-project3/trunk/subdir3/ creation
-
-[[Tag from zero-fileop commit at Subversion r34]]
+M 100644 :25 branches/renamed/bar.txt
+M 100644 :27 branches/renamed/baz.txt
+M 100644 :31 branches/renamed/foo.txt
+D branches/sample3/bar.txt
+D branches/sample3/baz.txt
+D branches/sample3/foo.txt
 
 done

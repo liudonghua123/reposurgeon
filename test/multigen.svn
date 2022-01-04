@@ -862,21 +862,19 @@ V 27
 K 7
 svn:log
 V 32
-project1/trunk/subdir1/ creation
+Create sample branch of project1
 PROPS-END
 
-Node-path: project1/trunk/subdir1
+Node-path: project1/branches/sample
 Node-kind: dir
 Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
+Node-copyfrom-rev: 29
+Node-copyfrom-path: project1/trunk
 
 
 Revision-number: 31
-Prop-content-length: 98
-Content-length: 98
+Prop-content-length: 131
+Content-length: 131
 
 K 10
 svn:author
@@ -888,21 +886,15 @@ V 27
 1970-01-01T00:05:10.000000Z
 K 7
 svn:log
-V 0
-
+V 32
+Create sample branch of project2
 PROPS-END
 
-Node-path: project1/trunk/subdir1/placeholder1
-Node-kind: file
+Node-path: project2/branches/sample
+Node-kind: dir
 Node-action: add
-Text-content-md5: c468f4e2ef427396712cb27c2fdd087f
-Text-content-sha1: d4fcc8c766788136373c6bc0d03da182e3059953
-Prop-content-length: 10
-Text-content-length: 18
-Content-length: 28
-
-PROPS-END
-Tack down subdir1
+Node-copyfrom-rev: 30
+Node-copyfrom-path: project2/trunk
 
 
 Revision-number: 32
@@ -920,16 +912,14 @@ V 27
 K 7
 svn:log
 V 32
-project2/trunk/subdir2/ creation
+Create sample branch of project3
 PROPS-END
 
-Node-path: project2/trunk/subdir2
+Node-path: project3/branches/sample
 Node-kind: dir
 Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
+Node-copyfrom-rev: 31
+Node-copyfrom-path: project3/trunk
 
 
 Revision-number: 33
@@ -950,22 +940,20 @@ V 0
 
 PROPS-END
 
-Node-path: project2/trunk/subdir2/placeholder2
+Node-path: project3/branches/sample/foo.txt
 Node-kind: file
-Node-action: add
-Text-content-md5: 5980b3ef4e69a29c59bd15a2f0458e74
-Text-content-sha1: 91b3e0cf73e07763b20625932fa1455079191429
-Prop-content-length: 10
-Text-content-length: 18
-Content-length: 28
+Node-action: change
+Text-content-md5: c50efe0c6059707a162bbdc63bef2e2e
+Text-content-sha1: e287fbbe4e5515f9d41f454528a0e0aec0c48e9f
+Text-content-length: 30
+Content-length: 30
 
-PROPS-END
-Tack down subdir2
+Fourscore and seven years ago
 
 
 Revision-number: 34
-Prop-content-length: 131
-Content-length: 131
+Prop-content-length: 125
+Content-length: 125
 
 K 10
 svn:author
@@ -977,22 +965,20 @@ V 27
 1970-01-01T00:05:40.000000Z
 K 7
 svn:log
-V 32
-project3/trunk/subdir3/ creation
+V 26
+Copy after branch creation
 PROPS-END
 
-Node-path: project3/trunk/subdir3
+Node-path: project3/branches/sample/foodir
 Node-kind: dir
 Node-action: add
-Prop-content-length: 10
-Content-length: 10
-
-PROPS-END
+Node-copyfrom-rev: 33
+Node-copyfrom-path: project2/trunk/foodir
 
 
 Revision-number: 35
-Prop-content-length: 98
-Content-length: 98
+Prop-content-length: 129
+Content-length: 129
 
 K 10
 svn:author
@@ -1004,26 +990,20 @@ V 27
 1970-01-01T00:05:50.000000Z
 K 7
 svn:log
-V 0
-
+V 30
+Copy sample branch of project1
 PROPS-END
 
-Node-path: project3/trunk/subdir3/placeholder3
-Node-kind: file
+Node-path: project1/branches/sample2
+Node-kind: dir
 Node-action: add
-Text-content-md5: 18e598fb1e7c3c09f132420aa3500f29
-Text-content-sha1: 8e5ab7e2316b74811a90dc3f2bb861e0bed7a47a
-Prop-content-length: 10
-Text-content-length: 18
-Content-length: 28
-
-PROPS-END
-Tack down subdir3
+Node-copyfrom-rev: 34
+Node-copyfrom-path: project1/branches/sample
 
 
 Revision-number: 36
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 129
+Content-length: 129
 
 K 10
 svn:author
@@ -1035,20 +1015,20 @@ V 27
 1970-01-01T00:06:00.000000Z
 K 7
 svn:log
-V 34
-Create exiguous branch of project1
+V 30
+Copy sample branch of project2
 PROPS-END
 
-Node-path: project1/branches/exiguous
+Node-path: project2/branches/sample2
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 35
-Node-copyfrom-path: project1/trunk/subdir1
+Node-copyfrom-path: project2/branches/sample
 
 
 Revision-number: 37
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 129
+Content-length: 129
 
 K 10
 svn:author
@@ -1060,20 +1040,20 @@ V 27
 1970-01-01T00:06:10.000000Z
 K 7
 svn:log
-V 34
-Create exiguous branch of project2
+V 30
+Copy sample branch of project3
 PROPS-END
 
-Node-path: project2/branches/exiguous
+Node-path: project3/branches/sample2
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 36
-Node-copyfrom-path: project2/trunk/subdir2
+Node-copyfrom-path: project3/branches/sample
 
 
 Revision-number: 38
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 131
+Content-length: 131
 
 K 10
 svn:author
@@ -1085,20 +1065,17 @@ V 27
 1970-01-01T00:06:20.000000Z
 K 7
 svn:log
-V 34
-Create exiguous branch of project3
+V 32
+Delete sample branch of project1
 PROPS-END
 
-Node-path: project3/branches/exiguous
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 37
-Node-copyfrom-path: project3/trunk/subdir3
+Node-path: project1/branches/sample
+Node-action: delete
 
 
 Revision-number: 39
-Prop-content-length: 98
-Content-length: 98
+Prop-content-length: 131
+Content-length: 131
 
 K 10
 svn:author
@@ -1110,26 +1087,17 @@ V 27
 1970-01-01T00:06:30.000000Z
 K 7
 svn:log
-V 0
-
+V 32
+Delete sample branch of project2
 PROPS-END
 
-Node-path: project3/branches/exiguous/foo.txt
-Node-kind: file
-Node-action: add
-Text-content-md5: c50efe0c6059707a162bbdc63bef2e2e
-Text-content-sha1: e287fbbe4e5515f9d41f454528a0e0aec0c48e9f
-Prop-content-length: 10
-Text-content-length: 30
-Content-length: 40
-
-PROPS-END
-Fourscore and seven years ago
+Node-path: project2/branches/sample
+Node-action: delete
 
 
 Revision-number: 40
-Prop-content-length: 125
-Content-length: 125
+Prop-content-length: 131
+Content-length: 131
 
 K 10
 svn:author
@@ -1141,20 +1109,17 @@ V 27
 1970-01-01T00:06:40.000000Z
 K 7
 svn:log
-V 26
-Copy after branch creation
+V 32
+Delete sample branch of project3
 PROPS-END
 
-Node-path: project3/branches/exiguous/foodir
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 39
-Node-copyfrom-path: project2/trunk/foodir
+Node-path: project3/branches/sample
+Node-action: delete
 
 
 Revision-number: 41
-Prop-content-length: 131
-Content-length: 131
+Prop-content-length: 132
+Content-length: 132
 
 K 10
 svn:author
@@ -1166,20 +1131,20 @@ V 27
 1970-01-01T00:06:50.000000Z
 K 7
 svn:log
-V 32
-Copy exiguous branch of project1
+V 33
+Create sample3 branch of project1
 PROPS-END
 
-Node-path: project1/branches/exiguous2
+Node-path: project1/branches/sample3
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 40
-Node-copyfrom-path: project1/branches/exiguous
+Node-copyfrom-path: project1/trunk
 
 
 Revision-number: 42
-Prop-content-length: 131
-Content-length: 131
+Prop-content-length: 132
+Content-length: 132
 
 K 10
 svn:author
@@ -1191,20 +1156,20 @@ V 27
 1970-01-01T00:07:00.000000Z
 K 7
 svn:log
-V 32
-Copy exiguous branch of project2
+V 33
+Create sample3 branch of project2
 PROPS-END
 
-Node-path: project2/branches/exiguous2
+Node-path: project2/branches/sample3
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 41
-Node-copyfrom-path: project2/branches/exiguous
+Node-copyfrom-path: project2/trunk
 
 
 Revision-number: 43
-Prop-content-length: 131
-Content-length: 131
+Prop-content-length: 132
+Content-length: 132
 
 K 10
 svn:author
@@ -1216,20 +1181,20 @@ V 27
 1970-01-01T00:07:10.000000Z
 K 7
 svn:log
-V 32
-Copy exiguous branch of project3
+V 33
+Create sample3 branch of project3
 PROPS-END
 
-Node-path: project3/branches/exiguous2
+Node-path: project3/branches/sample3
 Node-kind: dir
 Node-action: add
 Node-copyfrom-rev: 42
-Node-copyfrom-path: project3/branches/exiguous
+Node-copyfrom-path: project3/trunk
 
 
 Revision-number: 44
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 132
+Content-length: 132
 
 K 10
 svn:author
@@ -1241,17 +1206,24 @@ V 27
 1970-01-01T00:07:20.000000Z
 K 7
 svn:log
-V 34
-Delete exiguous branch of project1
+V 33
+Rename sample3 branch of project1
 PROPS-END
 
-Node-path: project1/branches/exiguous
+Node-path: project1/branches/renamed
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 43
+Node-copyfrom-path: project1/branches/sample3
+
+
+Node-path: project1/branches/sample3
 Node-action: delete
 
 
 Revision-number: 45
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 132
+Content-length: 132
 
 K 10
 svn:author
@@ -1263,17 +1235,24 @@ V 27
 1970-01-01T00:07:30.000000Z
 K 7
 svn:log
-V 34
-Delete exiguous branch of project2
+V 33
+Rename sample3 branch of project2
 PROPS-END
 
-Node-path: project2/branches/exiguous
+Node-path: project2/branches/renamed
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 44
+Node-copyfrom-path: project2/branches/sample3
+
+
+Node-path: project2/branches/sample3
 Node-action: delete
 
 
 Revision-number: 46
-Prop-content-length: 133
-Content-length: 133
+Prop-content-length: 132
+Content-length: 132
 
 K 10
 svn:author
@@ -1285,173 +1264,18 @@ V 27
 1970-01-01T00:07:40.000000Z
 K 7
 svn:log
-V 34
-Delete exiguous branch of project3
-PROPS-END
-
-Node-path: project3/branches/exiguous
-Node-action: delete
-
-
-Revision-number: 47
-Prop-content-length: 134
-Content-length: 134
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:07:50.000000Z
-K 7
-svn:log
-V 35
-Create exiguous3 branch of project1
-PROPS-END
-
-Node-path: project1/branches/exiguous3
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 46
-Node-copyfrom-path: project1/trunk/subdir1
-
-
-Revision-number: 48
-Prop-content-length: 134
-Content-length: 134
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:08:00.000000Z
-K 7
-svn:log
-V 35
-Create exiguous3 branch of project2
-PROPS-END
-
-Node-path: project2/branches/exiguous3
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 47
-Node-copyfrom-path: project2/trunk/subdir2
-
-
-Revision-number: 49
-Prop-content-length: 134
-Content-length: 134
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:08:10.000000Z
-K 7
-svn:log
-V 35
-Create exiguous3 branch of project3
-PROPS-END
-
-Node-path: project3/branches/exiguous3
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 48
-Node-copyfrom-path: project3/trunk/subdir3
-
-
-Revision-number: 50
-Prop-content-length: 134
-Content-length: 134
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:08:20.000000Z
-K 7
-svn:log
-V 35
-Rename exiguous3 branch of project1
-PROPS-END
-
-Node-path: project1/branches/renamed
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 49
-Node-copyfrom-path: project1/branches/exiguous3
-
-
-Node-path: project1/branches/exiguous3
-Node-action: delete
-
-
-Revision-number: 51
-Prop-content-length: 134
-Content-length: 134
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:08:30.000000Z
-K 7
-svn:log
-V 35
-Rename exiguous3 branch of project2
-PROPS-END
-
-Node-path: project2/branches/renamed
-Node-kind: dir
-Node-action: add
-Node-copyfrom-rev: 50
-Node-copyfrom-path: project2/branches/exiguous3
-
-
-Node-path: project2/branches/exiguous3
-Node-action: delete
-
-
-Revision-number: 52
-Prop-content-length: 134
-Content-length: 134
-
-K 10
-svn:author
-V 4
-fred
-K 8
-svn:date
-V 27
-1970-01-01T00:08:40.000000Z
-K 7
-svn:log
-V 35
-Rename exiguous3 branch of project3
+V 33
+Rename sample3 branch of project3
 PROPS-END
 
 Node-path: project3/branches/renamed
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 51
-Node-copyfrom-path: project3/branches/exiguous3
+Node-copyfrom-rev: 45
+Node-copyfrom-path: project3/branches/sample3
 
 
-Node-path: project3/branches/exiguous3
+Node-path: project3/branches/sample3
 Node-action: delete
 
 

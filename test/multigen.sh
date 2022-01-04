@@ -79,68 +79,61 @@ svnaction "project3/trunk/baz.txt" "modesty, and a many deportment." "Of my moth
 svnaction "project3/trunk/foo.txt" "I learned to be religuious and liberal;"  "and to guard not only against evil actions,"
 svnaction "project3/trunk/foo.txt" "but even against any evil intentions" "entering my thoughts"
 svn up
-svnaction project1/trunk/subdir1/
-svnaction "project1/trunk/subdir1/placeholder1" "Tack down subdir1"
-svnaction project2/trunk/subdir2/
-svnaction "project2/trunk/subdir2/placeholder2" "Tack down subdir2"
-svnaction project3/trunk/subdir3/
-svnaction "project3/trunk/subdir3/placeholder3" "Tack down subdir3"
+# Write a span of per-project trunk-to-branch copies that needs to be coalesced by swapsvn
+# Ideally these should turn into a single copy trunk/ branches/sample
+svn copy project1/trunk project1/branches/sample
+svn commit -m "Create sample branch of project1"
 svn up
-# Write a span of per-project branch copies that needs to be coalesced by swapsvn
-# Ideally these should turn into a single copy trunk/ branches/exiguous
-svn copy project1/trunk/subdir1 project1/branches/exiguous
-svn commit -m "Create exiguous branch of project1"
+svn copy project2/trunk project2/branches/sample
+svn commit -m "Create sample branch of project2"
 svn up
-svn copy project2/trunk/subdir2 project2/branches/exiguous
-svn commit -m "Create exiguous branch of project2"
+svn copy project3/trunk project3/branches/sample
+svn commit -m "Create sample branch of project3"
 svn up
-svn copy project3/trunk/subdir3 project3/branches/exiguous
-svn commit -m "Create exiguous branch of project3"
+svnaction "project3/branches/sample/foo.txt" "Fourscore and seven years ago"
 svn up
-svnaction "project3/branches/exiguous/foo.txt" "Fourscore and seven years ago"
-svn up
-svn copy project2/trunk/foodir project3/branches/exiguous
+svn copy project2/trunk/foodir project3/branches/sample
 svn commit -m "Copy after branch creation"
 svn up
 # Now we're going to do a branch to branch copy
-svn copy project1/branches/exiguous project1/branches/exiguous2
-svn commit -m "Copy exiguous branch of project1"
+svn copy project1/branches/sample project1/branches/sample2
+svn commit -m "Copy sample branch of project1"
 svn up
-svn copy project2/branches/exiguous project2/branches/exiguous2
-svn commit -m "Copy exiguous branch of project2"
+svn copy project2/branches/sample project2/branches/sample2
+svn commit -m "Copy sample branch of project2"
 svn up
-svn copy project3/branches/exiguous project3/branches/exiguous2
-svn commit -m "Copy exiguous branch of project3"
+svn copy project3/branches/sample project3/branches/sample2
+svn commit -m "Copy sample branch of project3"
 svn up
 # Test (absence of) delete coalescence
-svn delete project1/branches/exiguous
-svn commit -m "Delete exiguous branch of project1"
+svn delete project1/branches/sample
+svn commit -m "Delete sample branch of project1"
 svn up
-svn delete project2/branches/exiguous
-svn commit -m "Delete exiguous branch of project2"
+svn delete project2/branches/sample
+svn commit -m "Delete sample branch of project2"
 svn up
-svn delete project3/branches/exiguous
-svn commit -m "Delete exiguous branch of project3"
+svn delete project3/branches/sample
+svn commit -m "Delete sample branch of project3"
 svn up
 # Test that handling of second coalescence clique is correct
-svn copy project1/trunk/subdir1 project1/branches/exiguous3
-svn commit -m "Create exiguous3 branch of project1"
+svn copy project1/trunk project1/branches/sample3
+svn commit -m "Create sample3 branch of project1"
 svn up
-svn copy project2/trunk/subdir2 project2/branches/exiguous3
-svn commit -m "Create exiguous3 branch of project2"
+svn copy project2/trunk project2/branches/sample3
+svn commit -m "Create sample3 branch of project2"
 svn up
-svn copy project3/trunk/subdir3 project3/branches/exiguous3
-svn commit -m "Create exiguous3 branch of project3"
+svn copy project3/trunk project3/branches/sample3
+svn commit -m "Create sample3 branch of project3"
 svn up
 # Test rename coalescence
-svn rename project1/branches/exiguous3 project1/branches/renamed
-svn commit -m "Rename exiguous3 branch of project1"
+svn rename project1/branches/sample3 project1/branches/renamed
+svn commit -m "Rename sample3 branch of project1"
 svn up
-svn rename project2/branches/exiguous3 project2/branches/renamed
-svn commit -m "Rename exiguous3 branch of project2"
+svn rename project2/branches/sample3 project2/branches/renamed
+svn commit -m "Rename sample3 branch of project2"
 svn up
-svn rename project3/branches/exiguous3 project3/branches/renamed
-svn commit -m "Rename exiguous3 branch of project3"
+svn rename project3/branches/sample3 project3/branches/renamed
+svn commit -m "Rename sample3 branch of project3"
 svn up
 # We're done
 cd ..

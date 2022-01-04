@@ -95,53 +95,6 @@ M 100644 :12 evilcopy/baz.txt
 M 100644 :16 evilcopy/foo.txt
 M 100644 :18 evilcopy/foodir/qux.txt
 
-blob
-mark :32
-data 18
-Tack down subdir1
-
-commit refs/heads/master
-#legacy-id 31
-mark :33
-committer Fred J. Foonly <foonly@foo.com> 11160 +0000
-data 0
-from :21
-M 100644 :32 subdir1/placeholder1
-
-commit refs/heads/renamed
-#legacy-id 36
-mark :38
-committer Fred J. Foonly <foonly@foo.com> 12960 +0000
-data 35
-Create exiguous branch of project1
-from :33
-D bar.txt
-D baz.txt
-D evilcopy/bar.txt
-D evilcopy/baz.txt
-D evilcopy/foo.txt
-D evilcopy/foodir/qux.txt
-D foo.txt
-M 100644 :32 placeholder1
-D subdir1/placeholder1
-
-commit refs/heads/renamed
-#legacy-id 47
-mark :48
-committer Fred J. Foonly <foonly@foo.com> 16920 +0000
-data 36
-Create exiguous3 branch of project1
-from :33
-D bar.txt
-D baz.txt
-D evilcopy/bar.txt
-D evilcopy/baz.txt
-D evilcopy/foo.txt
-D evilcopy/foodir/qux.txt
-D foo.txt
-M 100644 :32 placeholder1
-D subdir1/placeholder1
-
 tag stable-root
 #legacy-id 8
 from :7
@@ -149,28 +102,33 @@ tagger Fred J. Foonly <foonly@foo.com> 2880 +0000
 data 21
 First directory copy
 
-tag emptycommit-30
+tag deleted/r38/project1/branches/sample-root
 #legacy-id 30
 from :21
 tagger Fred J. Foonly <foonly@foo.com> 10800 +0000
-data 84
-project1/trunk/subdir1/ creation
-
-[[Tag from zero-fileop commit at Subversion r30]]
-
-tag exiguous2-root
-#legacy-id 41
-from :38
-tagger Fred J. Foonly <foonly@foo.com> 14760 +0000
 data 33
-Copy exiguous branch of project1
+Create sample branch of project1
+
+tag sample2-root
+#legacy-id 35
+from :21
+tagger Fred J. Foonly <foonly@foo.com> 12600 +0000
+data 31
+Copy sample branch of project1
+
+tag deleted/r44-2/project1/branches/sample3-root
+#legacy-id 41
+from :21
+tagger Fred J. Foonly <foonly@foo.com> 14760 +0000
+data 34
+Create sample3 branch of project1
 
 tag renamed-root
-#legacy-id 50-1
-from :48
-tagger Fred J. Foonly <foonly@foo.com> 18000 +0000
-data 74
-Rename exiguous3 branch of project1
+#legacy-id 44-1
+from :21
+tagger Fred J. Foonly <foonly@foo.com> 15840 +0000
+data 72
+Rename sample3 branch of project1
 
 [[Split portion of a mixed commit.]]
 
@@ -178,8 +136,12 @@ reset refs/heads/stable
 #legacy-id 8
 from :7
 
-reset refs/heads/exiguous2
-#legacy-id 41
-from :38
+reset refs/heads/sample2
+#legacy-id 35
+from :21
+
+reset refs/heads/renamed
+#legacy-id 44-1
+from :21
 
 done
