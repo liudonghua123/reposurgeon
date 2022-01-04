@@ -2615,6 +2615,13 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						}
 						if lastPromotedSource == swapped {
 							parts = parts[:len(parts)-1]
+							// Never delete trunk, no matter what the provocation.
+							// we can get here from an attempt to rename the trunk line
+							// of a project. This allows that branch to be created,
+							// but does not let us nuke trunk.
+							if string(bytes.Join(parts, []byte{os.PathSeparator})) == "trunk" {
+								return nil
+							}
 						}
 						if debug >= debugLOGIC {
 							fmt.Fprintf(os.Stderr, "<r%s: deleting %s>\n",
