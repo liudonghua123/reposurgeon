@@ -20,12 +20,22 @@
 28.1  change   trunk/project3/foo.txt
 29.1  change   trunk/project3/foo.txt
 30.1  copy     branches/sample/ from 29:trunk/
+31.1  copy     branches/sample/ from 30:trunk/
+32.1  copy     branches/sample/ from 31:trunk/
 33.1  change   branches/sample/project3/foo.txt
 34.1  copy     branches/sample/project3/foodir/ from 33:trunk/project2/foodir/
 35.1  copy     branches/sample2/ from 34:branches/sample/
+36.1  copy     branches/sample2/ from 35:branches/sample/
+37.1  copy     branches/sample2/ from 36:branches/sample/
 38.1  delete   branches/sample/project1
 39.1  delete   branches/sample/project2
 40.1  delete   branches/sample/project3
 41.1  copy     branches/sample3/ from 40:trunk/
+42.1  copy     branches/sample3/ from 41:trunk/
+43.1  copy     branches/sample3/ from 42:trunk/
 44.1  copy     branches/renamed/ from 43:branches/sample3/
 44.2  delete   branches/sample3/
+45.1  copy     branches/renamed/ from 44:branches/sample3/
+45.2  delete   branches/sample3/
+46.1  copy     branches/renamed/ from 45:branches/sample3/
+46.2  delete   branches/sample3/

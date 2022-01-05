@@ -2674,13 +2674,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		return true
 	}
 	var oldval, newval []byte
-	type copyPair struct {
-		nodePath     string
-		copyfromPath string
-	}
-	var thisCopyPair copyPair
-	branchCreations := make(map[copyPair]bool)
-	var thisDelete, lastDelete string
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		nodePath := header.payload("Node-path")
 		var parsed parsedNode
@@ -2756,28 +2749,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if debug >= debugLOGIC {
 				fmt.Fprintf(os.Stderr, "<r%s: %q -> %q, coalesced = %v>\n", source.where(), oldval, newval, parsed.coalesced)
 			}
-			if parsed.isCopy {
-				thisCopyPair.nodePath = string(newval)
-			}
-			// These will be produced only by rename coalescences,
-			// not ordinary deletes.
-			if !parsed.coalesced {
-				lastDelete = ""
-				if debug >= debugLOGIC {
-					fmt.Fprintf(os.Stderr, "<r%s: resetting lastPromoted\n",
-						source.where())
-				}
-			} else if parsed.isDelete {
-				thisDelete = string(newval)
-				if lastDelete == thisDelete {
-					// We're looking at the second or
-					// later copy in a span of nodes that
-					// refer to the same global branch;
-					// we can drop it.
-					return nil
-				}
-				lastDelete = thisDelete
-			}
 		}
 		// Copy-only logic.
 		if match == nil || match.Match(header.payload("Node-copyfrom-path")) {
@@ -2788,13 +2759,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				header, _, _ = header.replaceHook("Node-path", func(hd string, in []byte) []byte {
 					return append(in, os.PathSeparator, wildcardMark)
 				})
-			}
-			thisCopyPair.copyfromPath = string(newval)
-			if parsed.coalesced {
-				if branchCreations[thisCopyPair] {
-					return nil
-				}
-				branchCreations[thisCopyPair] = true
 			}
 		}
 
