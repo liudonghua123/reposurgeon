@@ -106,6 +106,7 @@ class Modification:
 class Analyzer:
     "See file graph analyzer"
     def __init__(self):
+        self.multiproject = None
         self.projects = set()
         self.depends_on = set()
         self.sources = set()
@@ -131,26 +132,43 @@ class Analyzer:
         return path
     
     def get_project(self, path):
-        "FRom a path, get its project directory."
-        for prefix in self.supers:
-            if path.startswith(prefix + "/"):
-                return "/".join(path.split("/")[:2])
-        return path.split("/")[0]
+        "From a path, get its project directory."
+        if self.multiproject:
+            for prefix in self.supers:
+                if path.startswith(prefix + "/"):
+                    return "/".join(path.split("/")[:2])
+            return path.split("/")[0]
+        else:
+            # Return top-level directory, which was the project directory
+            # before seapping.  Note thjat super mapping isn't done here.
+            fields = path.split("/")
+            top = fields.pop(0)
+            if top in {"tags", "branches"}:
+                fields.pop(0)
+            elif top != "trunk":
+                raise ValueError
+            return fields.pop(0)
     
-    def oddcheck(self, path, op, line):
+    def oddcheck(self, path, op):
         "Predicate: does a path not fulfill standard structure?"
         parts = path.split("/")
         isdir = parts[-1] == ""
         if isdir:
             parts.pop()
         stdlayout = {"trunk", "branches", "tags"}
-        if parts[0] in stdlayout:
-            return True
-        if len(parts) == 1:
-            return (not isdir) or (op not in {"add", "delete"}) # copy and change are interesting
-        # If there is no standard structure underneath, that's weird
-        if parts[1] not in stdlayout:
-            return True
+        if self.multiproject:
+            # Check for multiproject layout
+            if parts[0] in stdlayout:
+                return True
+            if len(parts) == 1:
+                return (not isdir) or (op not in {"add", "delete"}) # copy and change are interesting
+            # If there is no standard structure underneath, that's weird
+            if parts[1] not in stdlayout:
+                return True
+        else:
+            # Check for normal layout
+            if parts[0] not in stdlayout:
+                return True
         # Should be nothing that looks like standard Subversion structure
         # further down.
         for segment in parts[2:]:
@@ -208,7 +226,9 @@ class Analyzer:
             self.revcount = number.split("-")[0]
             if op == "add":
                 path = self.pathin(" ".join(fields))
-                if self.oddcheck(path, op, dline):
+                if self.multiproject is None:
+                    self.multiproject = not path.split("/")[0] in {"trunk", "tags", "branches"}
+                if self.oddcheck(path, op):
                     self.irregular.append(dline)
                 self.modifications.append(Modification(path, number, op))
                 project = self.get_project(path)
@@ -222,7 +242,7 @@ class Analyzer:
                     sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
                     raise SystemExit(1)
                 target = self.pathin(" ".join(fields[:ind]))
-                if self.oddcheck(target, op, dline):
+                if self.oddcheck(target, op):
                     self.irregular.append(dline)
                 self.modifications.append(Modification(path, number, op))
                 targetdir = self.get_project(target)
@@ -232,7 +252,7 @@ class Analyzer:
                 source = " ".join(fields[ind+1:])
                 sourcerev = source.split(":")[0]
                 source = self.pathin(source.split(":")[1])
-                if self.oddcheck(source, op, dline) and self.irregular[-1] != line:
+                if self.oddcheck(source, op) and self.irregular[-1] != line:
                     self.irregular.append(dline)
                 sourcedir = self.get_project(source)
                 self.copies.append(Copy(self, number, target, sourcerev, source))
@@ -247,7 +267,7 @@ class Analyzer:
                     self.outbound[sourcedir].add(targetdir)
             elif op in {"change", "delete"}:
                 path = self.pathin(" ".join(fields))
-                if self.oddcheck(path, op, dline):
+                if self.oddcheck(path, op):
                     self.irregular.append(dline)
                 self.modifications.append(Modification(path, number, op))
             if self.revcount == limit:
