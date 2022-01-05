@@ -288,10 +288,14 @@ func (rs *Reposurgeon) evalNeighborhood(state selEvalState,
 		event := rs.chosen().events[ei]
 		if c, ok := event.(*Commit); ok {
 			for _, parent := range c.parents() {
-				addSet.Add(rs.chosen().markToIndex(parent.getMark()))
+				if parentCommit, ok := parent.(*Commit); ok {
+					addSet.Add(rs.chosen().markToIndex(parentCommit.getMark()))
+				}
 			}
 			for _, child := range c.children() {
-				addSet.Add(rs.chosen().markToIndex(child.getMark()))
+				if childCommit, ok := child.(*Commit); ok {
+					addSet.Add(rs.chosen().markToIndex(childCommit.getMark()))
+				}
 			}
 		} else if _, ok := event.(*Blob); ok {
 			removeSet.Add(ei) // Don't select the blob itself
