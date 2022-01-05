@@ -39,7 +39,43 @@ Copyright by Eric S. Raymond
 SPDX-License-Identifier: BSD-2-Clause
 """
 
-import cmd, os.path, sys, copy, shlex, subprocess
+import sys, copy, shlex, subprocess
+
+def coalesce(a, b):
+    "Attempt to coaleesce an endoint or range at a with a neighbor at b."
+    if ":" in a:
+        lo, hi = a.split(":")
+        lo_rev, lo_node = lo.split(".")
+        hi_rev, hi_node = hi.split(".")
+    else:
+        lo_rev, lo_node = a.split(".")
+        hi_rev = lo_rev
+        hi_node = lo_node
+
+    b_rev, b_node = b.split(".")
+        
+    # Check for non-adjacency
+    if lo_rev != b_rev or int(b_node) != int(hi_node) + 1:
+        return None
+
+    return lo_rev + "." + lo_node + ":" + b
+
+def compactify(selection):
+    "Produce the shortest possible selection expression for a list of node specs."
+    selection.sort()
+    i = 0
+    while True:
+        # Have we merged enough entries that we've run out of list?
+        if i >= len(selection) - 1:
+            break
+        # Nope, try to merge the endpoint or range at i with its right-hand neighbor
+        merge = coalesce(selection[i], selection[i+1])
+
+        if merge:
+            selection = selection[:i] + [merge] + selection[i+2:]
+        else:
+            i += 1
+    return selection
 
 class Copy:
     def __init__(self, interpreter, revision, target, from_rev, from_path):
@@ -68,7 +104,7 @@ class Modification:
         return "%s modified at %s by %s" % (self.path, self.revision, self.op)
     
 class Analyzer:
-    "Project graph analyzer"
+    "See file graph analyzer"
     def __init__(self):
         self.projects = set()
         self.depends_on = set()
@@ -111,7 +147,7 @@ class Analyzer:
         if parts[0] in stdlayout:
             return True
         if len(parts) == 1:
-            return (not isdir) or (op not in {"add", "delete"}) # copy and change are interesrting
+            return (not isdir) or (op not in {"add", "delete"}) # copy and change are interesting
         # If there is no standard structure underneath, that's weird
         if parts[1] not in stdlayout:
             return True
@@ -163,64 +199,64 @@ class Analyzer:
         return out
 
     def read(self, seefile, limit):
-        try:
-            for dline in open(seefile):
-                if "propset" in dline:
+        for dline in open(seefile):
+            if "propset" in dline:
+                continue
+            fields = dline.split()
+            number = fields.pop(0)
+            op = fields.pop(0)
+            self.revcount = number.split("-")[0]
+            if op == "add":
+                path = self.pathin(" ".join(fields))
+                if self.oddcheck(path, op, dline):
+                    self.irregular.append(dline)
+                self.modifications.append(Modification(path, number, op))
+                project = self.get_project(path)
+                if project.endswith("/") and project[:-1] in self.supers:
                     continue
-                fields = dline.split()
-                number = fields.pop(0)
-                op = fields.pop(0)
-                self.revcount = number.split("-")[0]
-                if op == "add":
-                    path = self.pathin(" ".join(fields))
-                    if self.oddcheck(path, op, dline):
-                        self.irregular.append(dline)
-                    self.modifications.append(Modification(path, number, op))
-                    project = self.get_project(path)
-                    if project.endswith("/") and project[:-1] in self.supers:
-                        continue
-                    self.projects.add(project)
-                elif op == "copy":
-                    try:
-                        ind = fields.index("from")
-                    except ValueError:
-                        sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
-                        raise SystemExit(1)
-                    target = self.pathin(" ".join(fields[:ind]))
-                    if self.oddcheck(target, op, dline):
-                        self.irregular.append(dline)
-                    self.modifications.append(Modification(path, number, op))
-                    targetdir = self.get_project(target)
-                    if target.endswith("/") and targetdir[:-1] in self.supers:
-                        sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], targetdir, number)) 
-                    self.projects.add(targetdir)
-                    source = " ".join(fields[ind+1:])
-                    sourcerev = source.split(":")[0]
-                    source = self.pathin(source.split(":")[1])
-                    if self.oddcheck(source, op, dline) and self.irregular[-1] != line:
-                        self.irregular.append(dline)
-                    sourcedir = self.get_project(source)
-                    self.copies.append(Copy(self, number, target, sourcerev, source))
-                    if sourcedir != targetdir and sourcedir not in self.supers and targetdir not in self.supers:
-                        self.sources.add(sourcedir)
-                        self.depends_on.add((targetdir, sourcedir))
-                        if not targetdir in self.inbound.keys():
-                            self.inbound[targetdir] = set()
-                        self.inbound[targetdir].add(sourcedir)
-                        if not sourcedir in self.outbound.keys():
-                            self.outbound[sourcedir] = set()
-                        self.outbound[sourcedir].add(targetdir)
-                elif op in {"change", "delete"}:
-                    path = self.pathin(" ".join(fields))
-                    if self.oddcheck(path, op, dline):
-                        self.irregular.append(dline)
-                    self.modifications.append(Modification(path, number, op))
-                if self.revcount == limit:
-                    return true
-        except FileNotFoundError:
-            print("No such file, bailing out!")
-            raise SystemExit(1)
+                self.projects.add(project)
+            elif op == "copy":
+                try:
+                    ind = fields.index("from")
+                except ValueError:
+                    sys.stderr.write("%s: no from field in '%s'" % (sys.argv[0], dline.strip()))
+                    raise SystemExit(1)
+                target = self.pathin(" ".join(fields[:ind]))
+                if self.oddcheck(target, op, dline):
+                    self.irregular.append(dline)
+                self.modifications.append(Modification(path, number, op))
+                targetdir = self.get_project(target)
+                if target.endswith("/") and targetdir[:-1] in self.supers:
+                    sys.stderr.write("%s: unexpected copy to super %s at r%s\n" % (sys.argv[0], targetdir, number)) 
+                self.projects.add(targetdir)
+                source = " ".join(fields[ind+1:])
+                sourcerev = source.split(":")[0]
+                source = self.pathin(source.split(":")[1])
+                if self.oddcheck(source, op, dline) and self.irregular[-1] != line:
+                    self.irregular.append(dline)
+                sourcedir = self.get_project(source)
+                self.copies.append(Copy(self, number, target, sourcerev, source))
+                if sourcedir != targetdir and sourcedir not in self.supers and targetdir not in self.supers:
+                    self.sources.add(sourcedir)
+                    self.depends_on.add((targetdir, sourcedir))
+                    if not targetdir in self.inbound.keys():
+                        self.inbound[targetdir] = set()
+                    self.inbound[targetdir].add(sourcedir)
+                    if not sourcedir in self.outbound.keys():
+                        self.outbound[sourcedir] = set()
+                    self.outbound[sourcedir].add(targetdir)
+            elif op in {"change", "delete"}:
+                path = self.pathin(" ".join(fields))
+                if self.oddcheck(path, op, dline):
+                    self.irregular.append(dline)
+                self.modifications.append(Modification(path, number, op))
+            if self.revcount == limit:
+                return True
         return False
+
+# Generic analyzer machinery ends here
+    
+import cmd, os.path
 
 class Reposwapper(cmd.Cmd, Analyzer):
     "Multiproject repository explorer."
@@ -247,8 +283,12 @@ uppermost revision to be analyzed.
 """)
     def do_read(self, line):
         cfields = line.split()
-        if self.read(cfields[0], cfields[1] if len(cfields) > 1 else "infinity"):
-            print("Stopped")
+        try:
+            if self.read(cfields[0], cfields[1] if len(cfields) > 1 else "infinity"):
+                print("Stopped")
+        except FileNotFoundError:
+            print("No such file, bailing out!")
+            raise SystemExit(1)
 
     def help_supers(self):
         sys.stdout.write("""
@@ -353,7 +393,7 @@ filecopy command to resolve the outbound file copies.
         sever_set = set()
         for copy in self.copies:
             # Not trying to resolve directory copies, that is seriously hard.
-            # We're only resolving exterior file coies here
+            # We're only resolving exterior file copies here
             if not (copy.filecopy() and not copy.interior()):
                 continue
             # All filecopies, or filecopies with a specified from-path prefix
@@ -375,7 +415,7 @@ filecopy command to resolve the outbound file copies.
                 else:
                     sys.stderr.write("Unexpected failure while looking for source of %s\n" % copy.sourceloc())
                     return
-        print("repocutter -r", ",".join(sorted(list(sever_set))), "filecopy")
+        print("repocutter -r", ",".join(compactify(list(sever_set))), "filecopy")
 
     def help_graph(self):
         sys.stdout.write("""
