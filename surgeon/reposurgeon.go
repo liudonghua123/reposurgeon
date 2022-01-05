@@ -599,6 +599,7 @@ func (rs *Reposurgeon) PreCmd(line string) string {
 	if len(rs.callstack) == 0 {
 		control.setAbort(false)
 	}
+	control.baton.start = time.Now()
 	return rest
 }
 
@@ -5991,6 +5992,9 @@ interpreted by 'authors read', with entries for each unique committer,
 author, and tagger (to standard output or a >-redirected file). This
 may be helpful as a start on building an authors file, though each
 part to the right of an equals sign will need editing.
+
+You xan also use 'write' after 'read' to dump a list of the name mappings
+reposurgeon currently knows about.
 `)
 }
 
