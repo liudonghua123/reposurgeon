@@ -3300,13 +3300,13 @@ func (rs *Reposurgeon) DoPrepend(line string) bool {
 // HelpSquash says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSquash() {
 	rs.helpOutput(`
-[SELECTION] squash [--POLICY...]
+{SELECTION} squash [--POLICY...]
 
 Combine a selection set of events; this may mean deleting them or
 pushing their content forward or back onto a target commit just
 outside the selection range, depending on policy flags.
 
-The default selection set for this command is empty.  Blobs cannot be
+Requires an explicit selection set.  Blobs cannot be
 directly affected by this command; they move or are deleted only when
 removal of fileops associated with commits requires this.
 
@@ -3317,7 +3317,7 @@ oytherwise.
 
 // DoSquash squashes events in the specified selection set.
 func (rs *Reposurgeon) DoSquash(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
 }
@@ -3325,12 +3325,12 @@ func (rs *Reposurgeon) DoSquash(line string) bool {
 // HelpDelete says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDelete() {
 	rs.helpOutput(`
-[SELECTION] delete
+{SELECTION} delete
 
-Delete a selection set of events.  The default selection set for this
-command is empty.  Tags, resets, and passthroughs are deleted with no
-side effects.  Blobs cannot be directly deleted with this command; they
-are removed only when removal of fileops associated with commits requires this.
+Delete a selection set of events.  Requires an explicit selection set.
+Tags, resets, and passthroughs are deleted with no side effects.  Blobs
+cannot be directly deleted with this command; they are removed only when
+removal of fileops associated with commits requires this.
 
 A delete is equivalent to a squash with the --delete flag.
 
@@ -3340,7 +3340,7 @@ Clears all Q bits.
 
 // DoDelete is the handler for the "delete" command.
 func (rs *Reposurgeon) DoDelete(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	parse.options.Add("--delete")
 	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
