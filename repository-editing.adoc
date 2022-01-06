@@ -2720,13 +2720,13 @@ fileset of the import-stream branch.  When a branch
 finishes with a deleteall at its tip, the deleteall is transformed
 into a tag. This rule cleans up after aborted branch renames.
 
-Occasionally (and usually by mistake) a branchy Subversion
-repository will contain revisions that touch multiple branches. These
-are handled by partitioning them into multiple import-stream commits,
-one on each affected branch. The Legacy-ID of such a split commit
-will have a pseudo-decimal part - for example, if Subversion revision 2317
-touches three branches, the three generated commits will have IDs
-2317.1, 2317.2, and 2317.3.
+Occasionally (and usually by mistake) a branchy Subversion repository
+will contain revisions that touch multiple branches. These are handled
+by partitioning them into multiple import-stream commits, one on each
+affected branch. The Legacy-ID of such a split commit will have a
+1-origin split number separated by a dash - for example, if Subversion
+revision 2317 touches three branches, the three generated commits will
+have IDs 2317-1, 2317-2, and 2317-3.
 
 The `svn:executable` and `svn:special` properties are translated
 into permission settings in the input stream; `svn:executable` becomes
@@ -2860,7 +2860,38 @@ projects, with the root directory containing one subdirectory per
 project and each subdirectory having its own trunk/branches/tags
 layout.
 
-==== Dissecting out individual projects with repocutter
+==== Whole-repository conversion with repocutter swapsvn
+
+The preferred way to handle multiproject repositories is with the
+repocutter "swapsvn" primitive.  If the multiproject structure is
+perfectly regular - top-level directories are always projects, and
+always have trunk/tags/branches structure immediately underneath -
+swapsvn will transform the repository to a regular Subversion
+structure with trunk/tags/branches at the top level.
+
+Be aware that if you do this, all project-local tags and branches
+will be promoted to become tags and branches across the entire
+repository.
+
+Sometimes you may be able to transform a nearly-regular multiproject
+structure into a perfectly regular one with repocutter pathrename
+commands, then apply repocutter swapsvn.
+
+Paths that swapsvn does not recognize as transformable will be passed
+through unaltered.
+
+Subversion mergeinfos, being file- and dirtectory-oriented rather than
+true branch merges, often can't be carried over even in a
+single-project conversion. The global branch coalescence that
+repocutter swapsvn does multiplies the problem; you may simply have to
+discard those poperties to get a clean conversion.
+
+See the embedded help listed by "repocutter help swapsvn" for some
+details and caveats.
+
+==== Using the --branchify flag
+
+Note: this feature is deprecated and may be removed in a future release/
 
 Suppose you have a stream dump from a repository with two project
 subdirectories, project1 and project2.  One pattern for dissecting out
@@ -2893,31 +2924,8 @@ While something like this could be done with
 correctly resolve Subversion copies across projects.  This reposurgeon
 procedure handles those correctly.
 
-==== Whole-repository conversion with repocutter swapsvn
-
-Another useful tool is the repocutter "swapsvn" primitive.  If the
-multiproject structure is perfectly regular - top-level directories
-are always projects, and always have trunk/tags/branches structure
-immediately underneath - swapsvn will transform the repository to
-a regular Subversion structure with trunk/tags/branches at the top
-level.
-
-Be aware that if you do this, all project-local tags and branches
-will be promoted to become tags and branches across the entire
-repository
-
-Sometimes you may be able to transform a nearly-regular multiproject
-structure into a perfectly regular one with repocutter pathrename
-commands, then apply repocutter swapsvn.
-
-Paths that swapsvn does not recognize as transformable will be passed
-through unaltered. This means they will end up in the synthetic
-``ubranched`` branch.
-
-See the embedded help listed by "repocutter help swapsvn" for some
-details and caveats.
-
-==== Branchlift on flat repositories
+[[flat]]
+=== Flat repositories
 
 If the repository has no branch structure at all, you might want to
 filter the stream with "repocutter push trunk" and then individually
