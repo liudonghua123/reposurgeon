@@ -7,9 +7,9 @@ and should be useful for preparing a multiproject repository
 for that opewration.
 
 The big difference between repocutter and this tool is that
-repcutter is optimized for dpeed and to hold down itsa working 
-set to one or a gandful of adjacent Subvewrsion nodes at a time.
-This tool, omn the other hand, pulls the entire set of copies
+repcutter is optimized for speed and to hold down its working 
+set to one or a handful of adjacent Subversion nodes at a time.
+This tool, on the other hand, pulls the entire set of copies
 in a stream into memory in order to do random access.
 
 The multiproject repository is expected not to have
@@ -26,7 +26,7 @@ Assumes "=" never occurs in any pathname and has been used to
 substitute for a slash that should be ignored.  The "delimiter"
 command can be used to set a different one.
 
-If a file named ".repowapper" exists in the working directory,
+If a file named ".reposwapper" exists in the working directory,
 commands in it are executed at startup.  This can be useful
 for setting goals and supers.
 
@@ -42,7 +42,7 @@ SPDX-License-Identifier: BSD-2-Clause
 import sys, copy, shlex, subprocess
 
 def coalesce(a, b):
-    "Attempt to coaleesce an endoint or range at a with a neighbor at b."
+    "Attempt to coaleesce an endpoint or range at a with a neighbor at b."
     if ":" in a:
         lo, hi = a.split(":")
         lo_rev, lo_node = lo.split(".")
@@ -85,7 +85,7 @@ class Copy:
         self.from_rev = from_rev
         self.from_path = from_path
     def interior(self):
-        "Is this a copy withion a project tree?"
+        "Is this a copy within a project tree?"
         return self.interpreter.get_project(self.target) == self.interpreter.get_project(self.from_path)
     def filecopy(self):
         "Is this a file copy?"

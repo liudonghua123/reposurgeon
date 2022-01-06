@@ -1,5 +1,5 @@
 #!/bin/sh
-# Create artifical test load containing svn:ignore or
+# Create artificial test load containing svn:ignore or
 # svn:global-ignores.  Takes the property suffix - ignores or
 # global-ignores - as first argument. Writes the stream to stdout.
 #

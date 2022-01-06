@@ -2,7 +2,7 @@
 ## Test comparing tags between git and hg repo
 # Reproduces https://gitlab.com/esr/reposurgeon/issues/39
 
-# Should be independent of what strem file we speciy here.
+# Should be independent of what stem file we specify here.
 stem=lighttag
 
 # No user-serviceable parts below this line

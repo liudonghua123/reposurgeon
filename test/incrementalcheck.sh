@@ -2,7 +2,7 @@
 ## Test read of incremental commit sreams.
 
 # This is a simple test to verify that incremenmtal stream import
-# works the way we thiunk it does
+# works the way we think it does
 
 # This must match fi-to-fi's assumptions
 testrepo=${TMPDIR:-/tmp}/test-repo$$

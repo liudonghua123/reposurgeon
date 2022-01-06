@@ -1,5 +1,5 @@
 #! /bin/sh
-## Test repocutter propdel on durectory
+## Test repocutter propdel on directory
 trap 'rm -f /tmp/propdel-before$$ /tmp/propdel-after$$' EXIT HUP INT QUIT TERM
 cat >/tmp/propdel-before$$ <<EOF
 Revision-number: 7952

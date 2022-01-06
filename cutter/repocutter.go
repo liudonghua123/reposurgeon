@@ -150,7 +150,7 @@ replace the file copy with an explicit add/change using the stashed content.
 With the -f flag and a BASENAME argument, require the source basename
 to be as specified.  Otherrwise, with -f and no BASENAME, require a
 match of source to targwt on basename only rather than the full path.
-This may be requred in order to extract filecopies from branches.
+This may be required in order to extract filecopies from branches.
 
 Restricting the range holds down the memory requirement of this tool,
 which in the worst (and default) 1:$ case will keep a copy of evert blob
@@ -287,10 +287,10 @@ them as fixed strings.
 `,
 	"skipcopy": `skipcopy: usage: repocutter {-r selection} skipcopy
 
-Replace the source ewvisiion and path of a copy at the upper end of the selection
+Replace the source revision and path of a copy at the upper end of the selection
 with the source revisions and path of a copy at the lower end. Fails unless both
 revisions are copies.  Used to remove an unwanted intermediate copy or
-copies - fails noisily if there is a change operatin on the target 
+copies - fails noisily if there is a change operating on the target 
 path between these revisions.
 `,
 	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
@@ -1534,7 +1534,7 @@ func dumpall(header StreamSection, properties []byte, content []byte) []byte {
 	return all
 }
 
-// Replace dile copy operations with explicit add/change opweration
+// Replace file copy operations with explicit add/change operation
 func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool, matchpaths []string) {
 	//if debug >= debugLOGIC {
 	//	fmt.Fprintf(os.Stderr, "<filecopy selection is %s>\n", selection)
@@ -1571,9 +1571,9 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 			}
 		}
 		// The logic here is a bit more complex than might seem necessary
-		// because for so,me inexplicable reason Subversion occasiionally generates nodes
-		// which have copyfrom informatiopn *and* the copy already performed - that is,
-		// the node conent is non-nil and should be used.  In that case we want to strip
+		// because for some inexplicable reason Subversion occasionally generates nodes
+		// which have copyfrom information *and* the copy already performed - that is,
+		// the node content is non-nil and should be used.  In that case we want to strip
 		// out the copyfrom information without modifyinmg the content.
 		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
 			if byBasename {

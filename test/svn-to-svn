@@ -70,7 +70,7 @@ With the -q option. suppress progress messages from svnadmin load
 and checkout.
 
 With the -r option, limit the number of Subversion revisions processed
-from the input dump; the specified argument is the humber of the last
+from the input dump; the specified argument is the number of the last
 revision emitted.
 
 The -s option strips out generated time-varying headers - the UUID and

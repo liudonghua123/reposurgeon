@@ -2340,7 +2340,7 @@ as the command parser cannot handle spaces inside arguments.
 
 ----
 # This is what the branchify option would look like
-# If you needed to specify the default set of branch patterns.
+# if you needed to specify the default set of branch patterns.
 read --branchify=trunk:tags/*:branches/*:* <example.svn
 ----
 
@@ -5993,7 +5993,7 @@ author, and tagger (to standard output or a >-redirected file). This
 may be helpful as a start on building an authors file, though each
 part to the right of an equals sign will need editing.
 
-You xan also use 'write' after 'read' to dump a list of the name mappings
+You can also use 'write' after 'read' to dump a list of the name mappings
 reposurgeon currently knows about.
 `)
 }

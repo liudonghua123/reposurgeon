@@ -1,5 +1,5 @@
 #!/bin/sh
-# Generate a Subversion output stream with a "clean" tag (1.0) and one that was commited to after tagging (2.0).
+# Generate a Subversion output stream with a "clean" tag (1.0) and one that was committed to after tagging (2.0).
 
 # This is a GENERATOR
 
