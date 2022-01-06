@@ -492,7 +492,7 @@ With no prefix, display all matching copies
             if ((copy.target.startswith(line) and show_to) or (copy.from_path.startswith(line)) and show_from) and not (copy.interior() or show_interior):
                 print(copy)
 
-    def help_expunge(self):
+    def help_script(self):
         sys.stdout.write("""
 Read and execute a file of reposwapper commands.
 
@@ -505,7 +505,14 @@ This can be useful for setting goals and supers.
                     continue
                 else:
                     self.onecmd(self.precmd(line.strip()))
-                
+
+    def do_timeline(self, _line):
+        "Report a timeline of project creations."
+        for mod in self.modifications:
+            parts = mod.path.split("/")
+            if mod.op == "add" and len(parts) == 3 and parts[0] == "trunk" and parts[1] in self.projects and parts[2] == "":
+                print("%s: %s" % (parts[1], mod.revision))
+
     def cleanup(self):
         pass
 
