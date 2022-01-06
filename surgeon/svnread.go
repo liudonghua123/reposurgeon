@@ -55,7 +55,7 @@ import (
 	"unsafe" // Actually safe - only uses Sizeof
 )
 
-// Helpers for manipulating pathna,es in Subversion files.
+// Helpers for manipulating pathnames in Subversion files.
 
 // Path separator as found in Subversion dump files. Isolated because
 // it might be "\" on OSes not to be mentioned in polite company.
@@ -105,6 +105,19 @@ type svnReader struct {
 	flat        bool
 	noSimplify  bool
 	firstnode   *NodeAction
+}
+
+func (sp *svnReader) initialize() {
+	// Parse branchify to speed up things later
+	sp.branchify = make(map[int][][]string)
+	for _, trial := range []string{"trunk", "tags/*", "branches/*", "*"} {
+		// use explicit "/" here instead of svnSep (which might be "\")
+		// - would clash with "\s" as placeholder for space in dir name
+		// - would clash with documentation where all examples are with "/" anyway
+		split := strings.Split(trial, "/")
+		l := len(split)
+		sp.branchify[l] = append(sp.branchify[l], split)
+	}
 }
 
 func (sp svnReader) maxRev() revidx {
@@ -921,19 +934,6 @@ func nodePermissions(node NodeAction) string {
 	return "100644"
 }
 
-func (sp *StreamParser) initBranchify() {
-	// Parse branchify to speed up things later
-	sp.branchify = make(map[int][][]string)
-	for _, trial := range []string{"trunk", "tags/*", "branches/*", "*"} {
-		// use explicit "/" here instead of svnSep (which might be "\")
-		// - would clash with "\s" as placeholder for space in dir name
-		// - would clash with documentation where all examples are with "/" anyway
-		split := strings.Split(trial, "/")
-		l := len(split)
-		sp.branchify[l] = append(sp.branchify[l], split)
-	}
-}
-
 func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton *Baton) {
 	// Subversion actions to import-stream commits.
 
@@ -1000,7 +1000,7 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 		}
 	}
 
-	sp.initBranchify()
+	sp.initialize()
 
 	sp.repo.addEvent(newPassthrough(sp.repo, "#reposurgeon sourcetype svn\n"))
 

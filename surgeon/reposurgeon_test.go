@@ -1905,18 +1905,18 @@ func TestDeclaredBranch(t *testing.T) {
 		{"/", false},
 		{"", false},
 	}
+	sp := new(svnReader)
+	sp.initialize()
 	for idx, test := range testcases {
 		t.Run(fmt.Sprint(idx), func(t *testing.T) {
-			sp := new(StreamParser)
-			sp.initBranchify()
 			assertBool(t, sp.isDeclaredBranch(test.path), test.isDeclaredBranch)
 		})
 	}
 }
 
 func TestBranchSplit(t *testing.T) {
-	sp := new(StreamParser)
-	sp.initBranchify()
+	sp := new(svnReader)
+	sp.initialize()
 	type splitTestEntry struct {
 		raw    string
 		branch string
