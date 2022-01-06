@@ -199,13 +199,13 @@ class Analyzer:
         "Parse a list of projects from a line, using shell-like quoting if required"
         return set([self.pathin(f) for f in shlex.split(line)])
     
-    def dotgraph(self):
+    def dotgraph(self, options):
         "Compute DOT notation for the project-directory graph."
         out = "digraph {\n"
         for project in self.goals:
             out += '\t"%s" [shape=box];\n' % (self.pathout(project),)
         for project in self.projects - self.goals:
-            if not project in self.outbound.keys():
+            if not project in self.outbound.keys() and "sinks" in options:
                 out += '\t"%s" [color=green,style=filled];\n' % (self.pathout(project,))
         for (target, source) in self.depends_on:
             out += '\t"%s" -> "%s";\n' % (self.pathout(source), self.pathout(target))
@@ -228,9 +228,10 @@ class Analyzer:
                     self.irregular.append(dline)
                 self.modifications.append(Modification(path, number, op))
                 project = self.get_project(path)
-                if project.endswith("/") and project[:-1] in self.supers:
-                    continue
-                self.projects.add(project)
+                if project:
+                    if project.endswith("/") and project[:-1] in self.supers:
+                        continue
+                    self.projects.add(project)
             elif op == "copy":
                 try:
                     ind = fields.index("from")
@@ -439,11 +440,13 @@ Display the project dependency graph. The arrow relationship is "is copied to".
 
 Goal projects are shown as boxes rather than ovals.
 
+Use the modifier "sinks" to highligh projects with no outbound links in green.
+
 Requires graphviz and imagemagick to be installed.
 """)
-    def do_graph(self, _line):
+    def do_graph(self, line):
         with subprocess.Popen("dot -Tpng | display", shell=True, stdin=subprocess.PIPE) as proc:
-            proc.stdin.write(self.dotgraph().encode("ascii"))
+            proc.stdin.write(self.dotgraph(line).encode("ascii"))
 
     def do_dump(self, _line):
         "Dump the DOT notation for the dependency graph."
