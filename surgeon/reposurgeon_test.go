@@ -1893,69 +1893,30 @@ func TestDeclaredBranch(t *testing.T) {
 		path             string
 		isDeclaredBranch bool
 	}
-	var branchifyOptions = []string{
-		"--branchify=trunk:tags/*:branches/*",
-		"--branchify=trunk:tags/*:branches/*:*",
-		"--branchify=trunk:tags/*/*:branches/*",
+	var testcases = []testcase{
+		{"trunk", true},
+		{"branches/foobar", true},
+		{"branches/foobar/test", false},
+		{"tags/foobar", true},
+		{"tags/foobar/cetc", false},
+		{"tag/foobar", false},
+		{"tags", false},
+		{"branches", false},
+		{"/", false},
+		{"", false},
 	}
-	var testcases = [][]testcase{
-		{
-			{"trunk", true},
-			{"foobar", false},
-			{"branches/foobar", true},
-			{"branches/foobar/test", false},
-			{"tags/foobar", true},
-			{"tags/foobar/cetc", false},
-			{"tag/foobar", false},
-			{"tags", false},
-			{"branches", false},
-			{"/", false},
-			{"", false},
-		},
-		{
-			{"trunk", true},
-			{"foobar", true},
-			{"branches/foobar", true},
-			{"branches/foobar/test", false},
-			{"tags/foobar", true},
-			{"tags/foobar/cetc", false},
-			{"tag/foobar", false},
-			{"tags", false},
-			{"branches", false},
-			{"/", false},
-			{"", false},
-		},
-		{
-			{"trunk", true},
-			{"foobar", false},
-			{"branches/foobar", true},
-			{"branches/foobar/test", false},
-			{"tags/foobar", false},
-			{"tags/foobar/cetc", true},
-			{"tag/foobar", false},
-			{"tags", false},
-			{"branches", false},
-			{"/", false},
-			{"", false},
-		},
-	}
-	for idx, branchifyOption := range branchifyOptions {
+	for idx, test := range testcases {
 		t.Run(fmt.Sprint(idx), func(t *testing.T) {
-			for idx, test := range testcases[idx] {
-				test := test
-				t.Run(fmt.Sprint(idx), func(t *testing.T) {
-					sp := new(StreamParser)
-					sp.initBranchify(newStringSet(branchifyOption))
-					assertBool(t, sp.isDeclaredBranch(test.path), test.isDeclaredBranch)
-				})
-			}
+			sp := new(StreamParser)
+			sp.initBranchify()
+			assertBool(t, sp.isDeclaredBranch(test.path), test.isDeclaredBranch)
 		})
 	}
 }
 
 func TestBranchSplit(t *testing.T) {
 	sp := new(StreamParser)
-	sp.initBranchify(nullStringSet)
+	sp.initBranchify()
 	type splitTestEntry struct {
 		raw    string
 		branch string

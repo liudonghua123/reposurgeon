@@ -2632,22 +2632,12 @@ thousands of dead branches. While it is important that content copies
 from dead branches be resolved correctly, the branches themselves are
 almost never interesting.)
 
-[[branchify_opt,--branchify=]]
-include::docinclude/branchify.adoc[]
-
 These modifiers can go anywhere in any order on the command line after
 the `<<read_cmd>>` verb. They must be whitespace-separated.
 
 As stacking up read options can result in a very long read invocation
 line, it's useful to know that backslash is accepted as a continuation
-character.  Thus, you can do something like this, which is an actual
-line from reposurgeon's test suite:
-
-----
-read <nesting.svn \
-     --branchify=cpp-msbuild/trunk:cpp-msbuild/branches/*:cpp-msbuild/tags/*
-----
-
+character.
 
 It is also possible to embed a magic comment in a Subversion stream
 file to set these options (this is mainly useful in test
@@ -2662,44 +2652,22 @@ will accept.
 Here are the rules used for mapping subdirectories in a
 Subversion repository to branches:
 
-* At any given time there is a set of eligible paths and path
-wildcards which declare potential branches.  See the documentation of
-the `<<branchify_opt>>` read option for how to alter this set, which
-initially consists of {`+trunk+`, `+tags/*+`, `+branches/*+`, and `*`}.
+* '```trunk```' always becomes the master
+branch.  Directories under '```branches```' become gitspace branches;
+directories under '```tags```' become gitspace tags.
 
-* A repository is considered "`__flat__`" if it has no
-directory that matches a path or path wildcard in the branchify set.
-All commits in a flat repository are assigned to branch `master`, and
-what would have been branch structure becomes directory structure.  In
-this case, we're done; all the other rules apply to non-flat
-repos.
-
-* If '```trunk```' is eligible, it always becomes the master
-branch.
-
-* If an element of the branchify set ends with `+/*+`, it is
-considered a branch namespace: each immediate subdirectory of it is
-considered a potential branch, unless it itself appears in
-`<<branchify_opt>>` as a namespace.  If `*` is in the branchify set
-(which is true by default) all top-level directories are also
-considered potential branches (other than `/trunk` which is mapped to
-`master`, and `/tags` and `/branches` which are namespaces by
-default).
-
-* Files in the top-level directory are assigned to a synthetic branch
-named '```unbranched```'. If there is no "trunk", then this synthetic
-'```unbranched```' branch becomes the master branch.  If the
-Subversion repository has a branch named '```unbranched```' the name
-'```unbranched-bis```' is used instead; actually, '```-bis```' is
-appended enough times to get to an unused branch name.
-
-* Each potential branch is checked to see if it has commits on it
+* Each potential tag is checked to see if it has commits on it
 after the initial creation or copy.  If there are such commits, or if the
 branch creation or copy introduces changes other than the copy, it
 becomes a branch.  If not, it may become a tag in order to preserve
 the commit metadata. In all cases, the name of any created tag or
-branch is the basename of the directory, unless another mapping is
-in place.
+branch is the basename of the directory.
+
+* Files in the top-level directory are assigned to a synthetic branch
+named '```unbranched```'. If the Subversion repository has a branch
+named '```unbranched```' the name '```unbranched-bis```' is used
+instead; actually, '```-bis```' is appended enough times to get to an
+unused branch name.
 
 Branch-creation operations with no following commits are usually
 tagified. However, this is done to preserve comment/committer
@@ -2888,41 +2856,6 @@ discard those poperties to get a clean conversion.
 
 See the embedded help listed by "repocutter help swapsvn" for some
 details and caveats.
-
-==== Using the --branchify flag
-
-Note: this feature is deprecated and may be removed in a future release/
-
-Suppose you have a stream dump from a repository with two project
-subdirectories, project1 and project2.  One pattern for dissecting out
-project1 looks like this:
-
---------
-read <multiproject.svn \
-  --branchify=project1/trunk:project1/branches/*:project1/tags/*:*
-branch rename heads/project1/trunk heads/master
-branch rename @heads/project1/branches/(.*)@ heads/\1
-branch delete heads/project2
---------
-
-The read option branchifies every directory underneath project1 for
-which that's required, with project2 left as its own branch from top
-level. This transformation is performed when the actual read of the
-repository happens.  
-
-The following branch renames transform these branches into a
-standard layout.  Tag creations do not need to be mapped separately,
-as the generated gitspace tags are moved when their base branch is.
-Following the renames, the unneeded project2 branch can be dropped.
-
-Of course we could have done the same thing with project2 and dropped
-project1.  Repeat this as many times as required to turn each partial
-into an autonomous git repository.
-
-While something like this could be done with
-<<repocutter.adoc#,repocutter>> sift commands, that would not
-correctly resolve Subversion copies across projects.  This reposurgeon
-procedure handles those correctly.
 
 [[flat]]
 === Flat repositories
@@ -3438,6 +3371,10 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
+In versions 4.30 and earlier, the read command had a --branchify
+option. This has been retired, you are now expected to do the
+equivalent manipulations with repocutter.
+
 The "tip" command present in 4.24 and earlier has been removed,
 because the concept it's trying to compute is not clearly defined at
 any commit upstream of a fork point. There's no evidence this was
@@ -3502,7 +3439,7 @@ In versions before 4.1, the `<<index_cmd>>` command did not see blobs
 by default.
 
 In versions before 4.0, `<<msgin_cmd>>` and `<<msgout_cmd>>` were
-named "mailbox_in" and "mailbox_out:"; `<<branchify_opt>>` was
+named "mailbox_in" and "mailbox_out:"; `--branchify` was
 "branchify_map". Previous versions used the Python variant of regular
 expressions; some of the more idiosyncratic features of these are not
 replicated in the Go implementation.
