@@ -7469,13 +7469,13 @@ func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
 		return false
 	}
 	words := strings.Split(line, " ")
-	rs.callstack = append(rs.callstack, words)
 	fname := words[0]
 	scriptfp, err := os.Open(filepath.Clean(fname))
 	if err != nil {
 		croak("script failure on '%s': %s", fname, err)
 		return false
 	}
+	rs.callstack = append(rs.callstack, words)
 	defer closeOrDie(scriptfp)
 	script := bufio.NewReader(scriptfp)
 
