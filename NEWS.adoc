@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.31: 2022-01-08:: 
      Minor improvements in baton handling.
      repocutter pathrename/sift/expunge REs are constrained to match full path segments
      --nobranch and --branchify are retired; use repocutter to prepare nonstandard repositories
