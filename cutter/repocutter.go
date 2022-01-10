@@ -2889,13 +2889,7 @@ func main() {
 	flag.IntVar(&base, "base", 0, "base value to renumber from")
 	flag.StringVar(&tag, "t", "", "set error tag")
 	flag.StringVar(&tag, "tag", "", "set error tag")
-	flag.BoolVar(&docgen, "docgen", false, "generate asciidoc from embedded help")
 	flag.Parse()
-
-	if docgen {
-		dumpDocs()
-		os.Exit(0)
-	}
 
 	if tag != "" {
 		tag = "(" + tag + ")"
@@ -2945,6 +2939,9 @@ func main() {
 	case "deselect":
 		assertNoArgs()
 		deselect(NewDumpfileSource(input, baton), selection)
+	case "docgen": // Not documented
+		assertNoArgs()
+		dumpDocs()
 	case "expunge":
 		expunge(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "filecopy":
