@@ -2261,7 +2261,6 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 
 // Strip out ops defined by a revision selection and a path regexp.
 func see(source DumpfileSource, selection SubversionRange) {
-	props := ""
 	seenode := func(header StreamSection, _, _ []byte) []byte {
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
@@ -2280,12 +2279,7 @@ func see(source DumpfileSource, selection SubversionRange) {
 			path = append(path, []byte(fmt.Sprintf(" from %s:%s", fromrev, frompath))...)
 			action = []byte("copy")
 		}
-		leader := source.where()
-		fmt.Printf("%-5s %-8s %s\n", leader, action, path)
-		if props != "" {
-			fmt.Printf("%-5s %-8s %s\n", leader, "propset", props)
-		}
-		props = ""
+		fmt.Printf("%-5s %-8s %s\n", source.where(), action, path)
 		return nil
 	}
 	seeprops := func(properties *Properties) bool {
@@ -2297,7 +2291,10 @@ func see(source DumpfileSource, selection SubversionRange) {
 				return true
 			}
 		}
-		props = properties.String()
+		props := properties.String()
+		if props != "" {
+			fmt.Printf("%-5s %-8s %s\n", source.where(), "propset", props)
+		}
 		return true
 	}
 	source.Report(selection, seenode, seeprops, false)
