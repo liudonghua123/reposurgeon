@@ -207,8 +207,8 @@ This transform can be restricted by a selection set.
 	"propclean": `ppropclean: usage: repocutter [-r SELECTION ] [-p PROPERTY] propclean [SUFFIXES]
 
 Every path with a suffix matching one of SUFFIXES gets a property turned
-off.  The default prperty is svn:executable; some Subversion front ends spam it.
-Another prperty may be set with the -p option.
+off.  The default property is svn:executable; some Subversion front ends spam it.
+Another property may be set with the -p option.
 
 `,
 	"proprename": `proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
@@ -1074,7 +1074,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 *
 	 * Both hooks can count on the DumpfileSource members to be up to
 	 * date, including NodePath and Revision and Index, because those.
-	 * are acquired before the prpeerties or node content are parsed.
+	 * are acquired before the properties or node content are parsed.
 	 *
 	 * passthrough - pass through all node text that the nodehook
 	 * has not filtered to nil. When any node in a revision passes
