@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -23,9 +24,8 @@ import (
 )
 
 const linesep = "\n"
-const pathsep = "/" // Arrgh - we should derive this from os.PathSeparator
 
-var doc = `repocutter - stream surgery on SVN dump files
+var dochead = `repocutter - stream surgery on SVN dump files
 general usage: repocutter [-q] [-r SELECTION] SUBCOMMAND
 
 In all commands, the -r (or --range) option limits the selection of revisions 
@@ -43,32 +43,7 @@ suppresses this.
 Type 'repocutter help <subcommand>' for help on a specific subcommand.
 
 Available subcommands and help topics:
-   closure
-   deselect
-   expunge
-   filecopy
-   log
-   obscure
-   pathlist
-   pathrename
-   pop
-   propdel
-   proprename
-   propset
-   push
-   reduce
-   renumber
-   replace
-   see
-   select
-   setlog
-   sift
-   skipcopy
-   strip
-   swap
-   swapsvn
-   testify
-   version
+
 `
 
 // Translated from the 2017-12-13 version of repocutter,
@@ -80,51 +55,30 @@ var debug int
 const debugLOGIC = 1
 const debugPARSE = 2
 
-var quiet, docgen bool
+var quiet bool
 
-var oneliners = map[string]string{
-	"closure":    "Compute the transitive closure of a path set",
-	"deselect":   "Deselecting revisions",
-	"expunge":    "Expunge operations by Node-path header",
-	"filecopy":   "Resolve filecopy operations on a stream.",
-	"log":        "Extracting log entries",
-	"obscure":    "Obscure pathnames",
-	"pathlist":   "List all distinct paths in a stream",
-	"pathrename": "Transform path headers with a regexp replace",
-	"pop":        "Pop the first segment off each path",
-	"propclean":  "Turn off executable bit on all files with specified suffixes",
-	"propdel":    "Deleting revision properties",
-	"proprename": "Renaming revision properties",
-	"propset":    "Setting revision properties",
-	"push":       "Push a first segment onto each path",
-	"reduce":     "Topologically reduce a dump.",
-	"renumber":   "Renumber revisions so they're contiguous",
-	"replace":    "Regexp replace in blobs",
-	"see":        "Report only essential topological information",
-	"select":     "Selecting revisions",
-	"setlog":     "Mutating log entries",
-	"sift":       "Sift for operations by Node-path header",
-	"skipcopy":   "Skip an intermediate copy chain between specified revisions",
-	"strip":      "Replace content with unique cookies, preserving structure",
-	"swap":       "Swap first two components of pathnames",
-	"swapsvn":    "Subversion structure-aware swap",
-	"testify":    "Massage a stream file into a neutralized test load",
-	"version":    "Report repocutter's version",
-}
-
-var helpdict = map[string]string{
-	"closure": `closure: usage: repocutter [-q] closure PATH...
+var helpdict = map[string]struct {
+	oneliner string
+	text     string
+}{
+	"closure": {
+		"Compute the transitive closure of a path set",
+		`closure: usage: repocutter [-q] closure PATH...
 
 The 'closure' subcommand computes the transitive closure of a path set under the
 relation 'copies from' - that is, with the smallest set of additional paths such
 that every copy-from source is in the set.
-`,
-	"deselect": `deselect: usage: repocutter [-q] [-r SELECTION] deselect
+`},
+	"deselect": {
+		"Deselecting revisions",
+		`deselect: usage: repocutter [-q] [-r SELECTION] deselect
 
 The 'deselect' subcommand selects a range and permits only revisions and nodes
 NOT in that range to pass to standard output.
-`,
-	"expunge": `expunge: usage: repocutter [-r SELECTION ] [-f|-fixed] expunge PATTERN...
+`},
+	"expunge": {
+		"Expunge operations by Node-path header",
+		`expunge: usage: repocutter [-r SELECTION ] [-f|-fixed] expunge PATTERN...
 
 Delete all operations with Node-path or Node-copyfrom-path headers matching 
 specified Golang regular expressions (opposite of 'sift').  Any revision
@@ -140,8 +94,10 @@ record is removed as well.
 
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
-`,
-	"filecopy": `filecopy: usage: repocutter [-f] [-r SELECTION] filecopy [BASENAME]
+`},
+	"filecopy": {
+		"Resolve filecopy operations on a stream.",
+		`filecopy: usage: repocutter [-f] [-r SELECTION] filecopy [BASENAME]
 
 For each node in the revision range, stash the current version of the 
 node-path's content.  For each later file copy operation with that source,
@@ -155,25 +111,33 @@ This may be required in order to extract filecopies from branches.
 Restricting the range holds down the memory requirement of this tool,
 which in the worst (and default) 1:$ case will keep a copy of evert blob
 in the repository until it's done processing the stream. 
-`,
-	"log": `log: usage: repocutter [-r SELECTION] log
+`},
+	"log": {
+		"Extracting log entries",
+		`log: usage: repocutter [-r SELECTION] log
 
 Generate a log report, same format as the output of svn log on a
 repository, to standard output.
-`,
-	"obscure": `obscure: usage: repocutter [-r SELECTION] obscure
+`},
+	"obscure": {
+		"Obscure pathnames",
+		`obscure: usage: repocutter [-r SELECTION] obscure
 
 Replace path segments and committer IDs with arbitrary but consistent
 names in order to obscure them. The replacement algorithm is tuned to
 make the replacements readily distinguishable by eyeball.  This
 transform can be restricted by a selection set.
-`,
-	"pathlist": `pathlist: usage: repocutter [-r SELECTION ] pathlist
+`},
+	"pathlist": {
+		"List all distinct paths in a stream",
+		`pathlist: usage: repocutter [-r SELECTION ] pathlist
 
 List all distinct node-paths in the stream, once each, in the order first
 encountered. 
-`,
-	"pathrename": `pathrename: usage: repocutter [-r SELECTION ] pathrename {FROM TO}+
+`},
+	"pathrename": {
+		"Transform path headers with a regexp replace",
+		`pathrename: usage: repocutter [-r SELECTION ] pathrename {FROM TO}+
 
 Modify Node-path headers, Node-copyfrom-path headers, and
 svn:mergeinfo properties matching the specified Golang regular
@@ -191,61 +155,81 @@ $, a trailing one.
 Multiple FROM/TO pairs may be specified and are applied in order.
 This transform can be restricted by a selection set.
 
-`,
-	"propdel": `propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
-
-Delete the property PROPNAME. May be restricted by a revision
-selection. You may specify multiple properties to be deleted.
-`,
-	"pop": `pop: usage: repocutter [-r SELECTION ] pop
+`},
+	"pop": {
+		"Pop the first segment off each path",
+		`pop: usage: repocutter [-r SELECTION ] pop
 
 Pop initial segment off each path. May be useful after a sift command to turn
 a dump from a subproject stripped from a dump for a multiple-project repository
 into the normal form with trunk/tags/branches at the top level.
 This transform can be restricted by a selection set.
-`,
-	"propclean": `ppropclean: usage: repocutter [-r SELECTION ] [-p PROPERTY] propclean [SUFFIXES]
+`},
+	"propclean": {
+		"Turn off executable bit on all files with specified suffixes",
+		`ppropclean: usage: repocutter [-r SELECTION ] [-p PROPERTY] propclean [SUFFIXES]
 
 Every path with a suffix matching one of SUFFIXES gets a property turned
 off.  The default property is svn:executable; some Subversion front ends spam it.
 Another property may be set with the -p option.
 
-`,
-	"proprename": `proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
+`},
+	"propdel": {
+		"Deleting revision properties",
+		`propdel: usage: repocutter [-r SELECTION] propdel PROPNAME...
+
+Delete the property PROPNAME. May be restricted by a revision
+selection. You may specify multiple properties to be deleted.
+`},
+	"proprename": {
+		"Renaming revision properties",
+		`proprename: usage: repocutter [-r SELECTION] proprename OLDNAME->NEWNAME...
 
 Rename the property OLDNAME to NEWNAME. May be restricted by a
 revision selection. You may specify multiple properties to be renamed.
-`,
-	"propset": `propset: usage: repocutter [-r SELECTION] propset PROPNAME=PROPVAL...
+`},
+	"propset": {
+		"Setting revision properties",
+		`propset: usage: repocutter [-r SELECTION] propset PROPNAME=PROPVAL...
 
 Set the property PROPNAME to PROPVAL. May be restricted by a revision
 selection. You may specify multiple property settings.
-`,
-	"push": `push: usage: repocutter [-r SELECTION ] push segment
+`},
+	"push": {
+		"Push a first segment onto each path",
+		`push: usage: repocutter [-r SELECTION ] push segment
 
 Push an initial segment onto each path.  Normally used to add a "trunk" prefix
 to every path ion a flat repository. This transform can be restricted by a selection set.
-`,
-	"renumber": `renumber: usage: repocutter renumber
-
-Renumber all revisions, patching Node-copyfrom headers as required.
-Any selection option is ignored. Takes no arguments.  The -b option 
-can be used to set the base to renumber from, defaulting to 0.
-`,
-	"reduce": `reduce: usage: repocutter [-r selection] reduce
+`},
+	"reduce": {
+		"Topologically reduce a dump.",
+		`reduce: usage: repocutter [-r selection] reduce
 
 Strip revisions out of a dump so the only parts left those likely to
 be relevant to a conversion problem. This is done by dropping every
 node that consists of a change on a file and has no property settings.
-`,
-	"replace": `replace: usage: repocutter replace /REGEXP/REPLACE/
+`},
+	"renumber": {
+		"Renumber revisions so they're contiguous",
+		`renumber: usage: repocutter renumber
+
+Renumber all revisions, patching Node-copyfrom headers as required.
+Any selection option is ignored. Takes no arguments.  The -b option 
+can be used to set the base to renumber from, defaulting to 0.
+`},
+	"replace": {
+		"Regexp replace in blobs",
+		`replace: usage: repocutter replace /REGEXP/REPLACE/
 
 Perform a regular expression search/replace on blob content. The first
 character of the argument (normally /) is treated as the end delimiter 
 for the regular-expression and replacement parts. This transform can be 
 restricted by a selection set.
-`,
-	"see": `see: usage: repocutter [-r SELECTION] see
+`},
+	"see": {
+		"Report only essential topological information",
+		`see: usage: repocutter [-r SELECTION] see
 
 Render a very condensed report on the repository node structure, mainly
 useful for examining strange and pathological repositories.  File content
@@ -255,20 +239,26 @@ Directory paths are distinguished by a trailing slash.  The 'copy'
 operation is really an 'add' with a directory source and target;
 the display name is changed to make them easier to see. This report
 can be restricted by a selection set.
-`,
-	"select": `select: usage: repocutter [-q] [-r SELECTION] select
+`},
+	"select": {
+		"Selecting revisions",
+		`select: usage: repocutter [-q] [-r SELECTION] select
 
 The 'select' subcommand selects a range and permits only revisions and
 nodes in that range to pass to standard output.  A range beginning with 0
 includes the dumpfile header.
-`,
-	"setlog": `setlog: usage: repocutter [-r SELECTION] -logentries=LOGFILE setlog
+`},
+	"setlog": {
+		"Mutating log entries",
+		`setlog: usage: repocutter [-r SELECTION] -logentries=LOGFILE setlog
 
 Replace the log entries in the input dumpfile with the corresponding entries
 in the LOGFILE, which should be in the format of an svn log output.
 Replacements may be restricted to a specified range.
-`,
-	"sift": `sift: usage: repocutter [-r SELECTION] [-f|-fixed] sift PATTERN...
+`},
+	"sift": {
+		"Sift for operations by Node-path header",
+		`sift: usage: repocutter [-r SELECTION] [-f|-fixed] sift PATTERN...
 
 Delete all operations with Node-path or Node-copyfrom-path headers *not*
 matching specified Golang regular expressions (opposite of 'expunge').
@@ -284,32 +274,40 @@ $, a trailing one.
 
 The -f/-fixed option disables regexp compilation of the patterns, treating
 them as fixed strings.
-`,
-	"skipcopy": `skipcopy: usage: repocutter {-r selection} skipcopy
+`},
+	"skipcopy": {
+		"Skip an intermediate copy chain between specified revisions",
+		`skipcopy: usage: repocutter {-r selection} skipcopy
 
 Replace the source revision and path of a copy at the upper end of the selection
 with the source revisions and path of a copy at the lower end. Fails unless both
 revisions are copies.  Used to remove an unwanted intermediate copy or
 copies - fails noisily if there is a change operating on the target 
 path between these revisions.
-`,
-	"strip": `strip: usage: repocutter [-r SELECTION] strip PATTERN...
+`},
+	"strip": {
+		"Replace content with unique cookies, preserving structure",
+		`strip: usage: repocutter [-r SELECTION] strip PATTERN...
 
 Replace content with unique generated cookies on all node paths
 matching the specified regular expressions; if no expressions are
 given, match all paths.  Useful when you need to examine a
 particularly complex node structure. This transform can be restricted
 by a selection set.
-`,
-	"swap": `swap: usage: repocutter [-r SELECTION] swap [PATTERN]
+`},
+	"swap": {
+		"Swap first two components of pathnames",
+		`swap: usage: repocutter [-r SELECTION] swap [PATTERN]
 
 Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
 a common form of multi-project repository.  If a PATTERN argument is given, 
 only paths matching the pattern are swapped. This transform can be restricted
 by a selection set.
-`,
-	"swapsvn": `swapsvn: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
+`},
+	"swapsvn": {
+		"Subversion structure-aware swap",
+		`swapsvn: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
 
 Like swap, but is aware of Subversion structure.  Used for transforming
 multiproject repositories into a standard layout with trunk, tags, and
@@ -359,19 +357,23 @@ directory creations and can thus not be fed directly to svnload. reposurgeon
 copes with this, but Subversion will not.
 
 This transform can be restricted by a selection set.
-`,
-	"testify": `testify: usage: repocutter [-r SELECTION] testify
+`},
+	"testify": {
+		"Massage a stream file into a neutralized test load",
+		`testify: usage: repocutter [-r SELECTION] testify
 
 Replace commit timestamps with a monotonically increasing clock tick
 starting at the Unix epoch and advancing by 10 seconds per commit.
 Replace all attributions with 'fred'.  Discard the repository UUID.
 Use this to neutralize procedurally-generated streams so they can be
 compared. This transform can be restricted by a selection set.
-`,
-	"version": `version: usage: version
+`},
+	"version": {
+		"Report repocutter's version",
+		`version: usage: version
 
 Report major and minor repocutter version.
-`,
+`},
 }
 
 var narrativeOrder []string = []string{
@@ -396,6 +398,7 @@ var narrativeOrder []string = []string{
 	"pathrename",
 	"pop",
 	"push",
+	"filecopy",
 	"skipcopy",
 
 	"swap",
@@ -411,9 +414,13 @@ var narrativeOrder []string = []string{
 }
 
 func dumpDocs() {
+	if len(narrativeOrder) != len(helpdict) {
+		os.Stderr.WriteString("repocutter: documentation sanity check failed.\n")
+		os.Exit(1)
+	}
 	re := regexp.MustCompile("([a-z][a-z]*):[^\n]*\n")
 	for _, item := range narrativeOrder {
-		text := helpdict[item]
+		text := helpdict[item].text
 		text = re.ReplaceAllString(text, `${1}::`)
 		text = strings.Replace(text, "\n\n", "\n+\n", -1)
 		os.Stdout.WriteString(text)
@@ -2481,7 +2488,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	// or other operations deeper in the tree than that because they take place
 	// *within* projects.
 	//
-	// 5. Delete operatiuons should only be trimmed as part of branch-rename sequences.
+	// 5. Delete operations should only be trimmed as part of branch-rename sequences.
 	//
 	// All the swap and promotion logic lives here. Paths for all operations - adds,
 	// deletes, changes, and copies - go through here.
@@ -2517,7 +2524,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 							// This is where we capture information about what
 							// branches and tags exist under a specified project
 							// directory.
-							key := top + pathsep + string(parts[1])
+							key := top + string([]byte{os.PathSeparator}) + string(parts[1])
 							subbranch := string(parts[2])
 							switch parsed.role {
 							case "add":
@@ -2691,7 +2698,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		// All operations, includung copies.
 		if match == nil || match.Match(nodePath) {
 			// Special handling of operations on bare project directories
-			if structural && bytes.Count(nodePath, []byte(pathsep)) == 0 {
+			if structural && bytes.Count(nodePath, []byte{os.PathSeparator}) == 0 {
 				// Top-level copies must be split
 				if parsed.role == "copy" {
 					if p := string(properties); p != "" && p != "PROPS-END\n" {
@@ -2918,7 +2925,7 @@ func main() {
 	var baton *Baton
 	if flag.Arg(0) != "help" && flag.Arg(0) != "version" {
 		if !quiet {
-			baton = NewBaton(oneliners[flag.Arg(0)], "done")
+			baton = NewBaton(helpdict[flag.Arg(0)].oneliner, "done")
 		} else {
 			baton = nil
 		}
@@ -2948,11 +2955,19 @@ func main() {
 		filecopy(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "help":
 		if len(flag.Args()) == 1 {
-			os.Stdout.WriteString(doc)
+			os.Stdout.WriteString(dochead)
+			keys := make([]string, 0)
+			for k := range helpdict {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				os.Stdout.WriteString(fmt.Sprintf("%-12s %s\n", key, helpdict[key].oneliner))
+			}
 			break
 		}
 		if cdoc, ok := helpdict[flag.Arg(1)]; ok {
-			os.Stdout.WriteString(cdoc)
+			os.Stdout.WriteString(cdoc.text)
 			break
 		}
 		croak("no such command\n")
@@ -2969,14 +2984,14 @@ func main() {
 	case "pop":
 		assertNoArgs()
 		pop(NewDumpfileSource(input, baton), selection)
+	case "propclean":
+		propclean(NewDumpfileSource(input, baton), property, flag.Args()[1:], selection)
 	case "propdel":
 		propdel(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
 	case "propset":
 		propset(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
 	case "proprename":
 		proprename(NewDumpfileSource(input, baton), flag.Args()[1:], selection)
-	case "propclean":
-		propclean(NewDumpfileSource(input, baton), property, flag.Args()[1:], selection)
 	case "reduce":
 		assertNoArgs()
 		reduce(NewDumpfileSource(input, baton), selection)
