@@ -1033,7 +1033,8 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * must do its own selection filtering.  When called
 	 * per-revision the value of ds.Index is zero
 	 *
-	 * nodehook is only called on nodes in the selection set.
+	 * nodehook is called on all nodes. It's up to each nodehook to do
+	 * its own selection filtering.
 	 *
 	 * Both hooks can count on the DumpfileSource members to be up to
 	 * date, including NodePath and Revision and Index, because those.
@@ -1041,7 +1042,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 *
 	 * passthrough - pass through all node text that the nodehook
 	 * has not filtered to nil. When any node in a revision passes
-	 * through and its revision header has not already beem passed
+	 * through and its revision header has not already been passed
 	 * through, pass that. Properties are shipped (filtered by
 	 * revhook) if their node header or revision header is shipped.
 	 * It is exceptional for passthrough to be off; other than in
@@ -1133,22 +1134,12 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					fmt.Fprintf(os.Stderr, "<content: %q>\n", content)
 				}
 				var nodetxt []byte
-				// The nodehook is only applied on selected nodes; others, and any revision
-				// with no nodes, are passed through unaltered.
-				if nodehook != nil && selection.ContainsNode(ds.Revision, nodecount) {
+				if nodehook != nil {
 					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<nodehook called with: %d %d>\n",
 							ds.Revision, nodecount)
 					}
 					nodetxt = nodehook(StreamSection(header), properties, content)
-				} else {
-					if debug >= debugPARSE {
-						fmt.Fprintf(os.Stderr, "<nodehook skipped with: %d %d>\n",
-							ds.Revision, nodecount)
-					}
-					nodetxt = append(nodetxt, header...)
-					nodetxt = append(nodetxt, properties...)
-					nodetxt = append(nodetxt, content...)
 				}
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<nodetxt: %q>\n", nodetxt)
@@ -1393,6 +1384,9 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	copiesFrom := make(map[string][]string)
 	gather := func(header StreamSection, properties []byte, _ []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return nil
+		}
 		nodepath := string(header.payload("Node-path"))
 		copysource := header.payload("Node-copyfrom-path")
 		if copysource != nil {
@@ -1514,6 +1508,9 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 	}
 	values := make(map[string][]trackCopy)
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		nodePath := string(header.payload("Node-path"))
 		if debug >= debugLOGIC {
 			fmt.Fprintf(os.Stderr,
@@ -1670,6 +1667,9 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
 			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
 				return []byte(popSegment(string(in)))
@@ -1709,6 +1709,9 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
 			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
 				return []byte(prefix + "/" + string(in))
@@ -1877,6 +1880,9 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
 			header, _, _ = header.replaceHook(htype, pathMutator)
 		}
@@ -1895,7 +1901,9 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 func pathlist(source DumpfileSource, selection SubversionRange) {
 	pathList := newOrderedStringSet()
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
-		pathList.Add(string(header.payload("Node-path")))
+		if selection.ContainsNode(source.Revision, source.Index) {
+			pathList.Add(string(header.payload("Node-path")))
+		}
 		return nil
 	}
 	source.Report(selection, nil, nodehook, nil, false)
@@ -1942,6 +1950,9 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 // Topologically reduce a dump, removing plain file modifications.
 func reduce(source DumpfileSource, selection SubversionRange) {
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		if string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change" && len(properties) == 0 {
 			return nil
 		}
@@ -2048,6 +2059,9 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 	}
 
 	innerreplace := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		newcontent := tre.ReplaceAll(content, []byte(patternParts[1]))
 		if string(content) != string(newcontent) {
 			header = header.setLength("Text-content", len(newcontent))
@@ -2067,6 +2081,9 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 // Strip out ops defined by a revision selection and a path regexp.
 func see(source DumpfileSource, selection SubversionRange) {
 	seenode := func(header StreamSection, _, _ []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return nil
+		}
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 		}
@@ -2141,6 +2158,9 @@ func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 		}
 	}
 	sifthook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
@@ -2202,6 +2222,9 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
 	innerstrip := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		// first check against the patterns, if any are given
 		ok := true
 		nodepath := header.payload("Node-path")
@@ -2484,6 +2507,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	}
 	var oldval, newval []byte
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return append([]byte(header), append(properties, content...)...)
+		}
 		nodePath := header.payload("Node-path")
 		var parsed parsedNode
 		parsed.action = header.payload("Node-action")
