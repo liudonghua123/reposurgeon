@@ -1072,12 +1072,12 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	passthrough bool) {
 
 	/*
-	 * The revhook is called before the nodehook.  It is alled on every node
-	 * and must do its own selection filtering.
+	 * The prophook is called before the nodehook. It is called on
+	 * every property section, both per-node and per-revision, and
+	 * must do its own selection filtering.  When called
+	 * per-revision the value of ds.Index is zero
 	 *
-	 * nodehook is only called on nodes in the selection set.  prophook
-	 * is called on every property section, both per-node and per-revision.
-	 * When called per-revision the value of ds.Index is zero
+	 * nodehook is only called on nodes in the selection set.
 	 *
 	 * Both hooks can count on the DumpfileSource members to be up to
 	 * date, including NodePath and Revision and Index, because those.
@@ -1146,7 +1146,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				ds.Lbs.Push(line)
 				// If there has been content since the last Revision-number line,
 				// whether we ship the previous revision record depends on the
-				// flag value the revhook passed back.
+				// flag value the prophook passed back.
 				if len(stash) != 0 && nodecount == 0 && retain {
 					if passthrough {
 						if debug >= debugPARSE {
@@ -1422,10 +1422,10 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		}
 		return nil
 	}
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		return selection.ContainsRevision(source.Revision) != invert
 	}
-	source.Report(NewSubversionRange("0:HEAD"), nodehook, revhook, true)
+	source.Report(NewSubversionRange("0:HEAD"), nodehook, prophook, true)
 }
 
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
@@ -1507,7 +1507,7 @@ func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patte
 		}
 		return []byte{}
 	}
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -1526,7 +1526,7 @@ func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patte
 
 		return true
 	}
-	source.Report(selection, expungehook, revhook, true)
+	source.Report(selection, expungehook, prophook, true)
 }
 
 func dumpall(header StreamSection, properties []byte, content []byte) []byte {
@@ -1687,7 +1687,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		}
 		return ""
 	}
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -1719,12 +1719,12 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, nodehook, revhook, true)
+	source.Report(selection, nodehook, prophook, true)
 }
 
 // Push a prefix segment onto each pathname in an input dump
 func push(source DumpfileSource, selection SubversionRange, prefix string) {
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -1758,12 +1758,12 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, nodehook, revhook, true)
+	source.Report(selection, nodehook, prophook, true)
 }
 
 // propdel - Delete properties
 func propdel(source DumpfileSource, propnames []string, selection SubversionRange) {
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -1772,12 +1772,12 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 		}
 		return true
 	}
-	source.Report(selection, dumpall, revhook, true)
+	source.Report(selection, dumpall, prophook, true)
 }
 
 // Set properties.
 func propset(source DumpfileSource, propnames []string, selection SubversionRange) {
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -1790,12 +1790,12 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 		}
 		return true
 	}
-	source.Report(selection, dumpall, revhook, true)
+	source.Report(selection, dumpall, prophook, true)
 }
 
 // Turn off property by suffix, defaulting to svn:executable
 func propclean(source DumpfileSource, property string, suffixes []string, selection SubversionRange) {
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		for _, suffix := range suffixes {
 			if strings.HasSuffix(source.NodePath, suffix) {
 				props.Delete(property)
@@ -1804,12 +1804,12 @@ func propclean(source DumpfileSource, property string, suffixes []string, select
 		}
 		return true
 	}
-	source.Report(selection, dumpall, revhook, true)
+	source.Report(selection, dumpall, prophook, true)
 }
 
 // Rename properties.
 func proprename(source DumpfileSource, propnames []string, selection SubversionRange) {
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		for _, propname := range propnames {
 			fields := strings.Split(propname, "->")
 			if _, present := props.properties[fields[0]]; present {
@@ -1829,7 +1829,7 @@ func proprename(source DumpfileSource, propnames []string, selection SubversionR
 		}
 		return true
 	}
-	source.Report(selection, dumpall, revhook, true)
+	source.Report(selection, dumpall, prophook, true)
 }
 
 func getAuthor(props map[string]string) string {
@@ -1852,7 +1852,7 @@ func SVNTimeParse(rdate string) time.Time {
 
 // Extract log entries
 func log(source DumpfileSource, selection SubversionRange) {
-	revhook := func(prop *Properties) bool {
+	prophook := func(prop *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -1875,12 +1875,12 @@ func log(source DumpfileSource, selection SubversionRange) {
 		os.Stdout.WriteString("\n" + logentry + "\n")
 		return true
 	}
-	source.Report(selection, nil, revhook, false)
+	source.Report(selection, nil, prophook, false)
 }
 
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func(string, []byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -1927,7 +1927,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, nodehook, revhook, true)
+	source.Report(selection, nodehook, prophook, true)
 }
 
 func pathlist(source DumpfileSource, selection SubversionRange) {
@@ -2653,7 +2653,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
-	revhook := func(props *Properties) bool {
+	prophook := func(props *Properties) bool {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
@@ -2784,7 +2784,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 
 		return all
 	}
-	source.Report(selection, nodehook, revhook, true)
+	source.Report(selection, nodehook, prophook, true)
 }
 
 // Neutralize the input test load
