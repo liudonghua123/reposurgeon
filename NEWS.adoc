@@ -1,6 +1,9 @@
 = reposurgeon project news =
 
-4.31: 2022-01-08:: 
+Repository Head::
+     “lint” command no longer accidentally clears most of the Q bits that it has set
+
+4.31: 2022-01-08::
      Minor improvements in baton handling.
      repocutter pathrename/sift/expunge REs are constrained to match full path segments
      --nobranch and --branchify are retired; use repocutter to prepare nonstandard repositories

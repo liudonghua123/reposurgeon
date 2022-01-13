@@ -3,6 +3,8 @@ read <bs.fi
 lint
 1 root commits in Q set.
 reposurgeon: all commit times in this repository are unique.
+=Q list
+     5 1993-11-15T17:25:16Z     :4 8d05e8 Initial revision
 read <lint.svn
 lint
 1 root commits in Q set.
@@ -11,3 +13,6 @@ unknown shortname: fraggle
 email address missing @: commit@:3=<1>
 email address missing @: commit@:4=<2>
 reposurgeon: all commit times in this repository are unique.
+=Q list
+     4 2009-10-02T22:36:41Z     :3 837eea    <1> Initial import.
+     5 2009-10-02T22:37:42Z     :4 258b24    <2> Recreating the tag properly.

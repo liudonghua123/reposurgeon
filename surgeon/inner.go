@@ -5910,7 +5910,6 @@ func (repo *Repository) parseDollarCookies() {
 
 // Audit the repository for uniqueness properties.
 func (repo *Repository) checkUniqueness() (int, int) {
-	repo.clearColor(colorQSET)
 	timecheck := make(map[string]Event)
 	timeCollisions := make(map[string][]Event)
 	// Not worth parallelizing this loop, there isn't enough going on
