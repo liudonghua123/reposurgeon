@@ -434,7 +434,6 @@ func dumpDocs() {
 // on the "first, doo no harm" principle.
 var mergeProperties = []string{"svn:mergeinfo", "svnmerge-integrated"}
 
-var base int
 var tag string
 
 // Baton - ship progress indications to stderr
@@ -881,6 +880,7 @@ func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties) bool) (StreamS
 	return section, []byte(properties), content
 }
 
+// ReadUntilNextRevision does whatr it says on the tin.
 func (ds *DumpfileSource) ReadUntilNextRevision(contentLength int) []byte {
 	stash := []byte{}
 	for {
@@ -2043,9 +2043,8 @@ func renumberMergeInfo(lines []byte, renumbering map[int]int) []byte {
 }
 
 // Renumber all revisions.
-func renumber(source DumpfileSource) {
+func renumber(source DumpfileSource, counter int) {
 	renumbering = make(map[int]int)
-	counter := base
 	var p []byte
 	type HeaderState int
 	const (
@@ -2789,10 +2788,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 }
 
 // Neutralize the input test load
-func testify(source DumpfileSource) {
+func testify(source DumpfileSource, counter int) {
 	const NeutralUser = "fred"
 	const NeutralUserLen = len(NeutralUser)
-	counter := base
 	var p []byte
 	var state, oldAutherLen, oldPropLen, oldContentLen int
 	var headerBuf []byte // need buffer to edit Prop-content-length and Content-length
@@ -2870,12 +2868,15 @@ func testify(source DumpfileSource) {
 
 func main() {
 	selection := NewSubversionRange("0:HEAD")
+	var base int
 	var fixed bool
 	var logentries string
 	var property string
 	var rangestr string
 	var infile string
 	input := os.Stdin
+	flag.IntVar(&base, "b", 0, "base value to renumber from")
+	flag.IntVar(&base, "base", 0, "base value to renumber from")
 	flag.IntVar(&debug, "d", 0, "enable debug messages")
 	flag.IntVar(&debug, "debug", 0, "enable debug messages")
 	flag.BoolVar(&fixed, "f", false, "disable regexp interpretation")
@@ -2890,8 +2891,6 @@ func main() {
 	flag.BoolVar(&quiet, "quiet", false, "disable progress messages")
 	flag.StringVar(&rangestr, "r", "", "set selection range")
 	flag.StringVar(&rangestr, "range", "", "set selection range")
-	flag.IntVar(&base, "b", 0, "base value to renumber from")
-	flag.IntVar(&base, "base", 0, "base value to renumber from")
 	flag.StringVar(&tag, "t", "", "set error tag")
 	flag.StringVar(&tag, "tag", "", "set error tag")
 	flag.Parse()
@@ -2997,7 +2996,7 @@ func main() {
 		push(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "renumber":
 		assertNoArgs()
-		renumber(NewDumpfileSource(input, baton))
+		renumber(NewDumpfileSource(input, baton), base)
 	case "replace":
 		replace(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "see":
@@ -3024,7 +3023,7 @@ func main() {
 		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:], true)
 	case "testify":
 		assertNoArgs()
-		testify(NewDumpfileSource(input, baton))
+		testify(NewDumpfileSource(input, baton), base)
 	case "version":
 		assertNoArgs()
 		fmt.Println(version)
