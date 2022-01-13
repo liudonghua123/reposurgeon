@@ -881,9 +881,6 @@ func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties) bool) (StreamS
 	return section, []byte(properties), content
 }
 
-// ReadUntilNextRevision - Must only be called from renumber, as it
-// doesn't apply the revmap.  On the other hand, it can't be confused
-// by content resembling dumpfile headers.
 func (ds *DumpfileSource) ReadUntilNextRevision(contentLength int) []byte {
 	stash := []byte{}
 	for {
