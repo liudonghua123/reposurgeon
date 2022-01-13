@@ -1,0 +1,83 @@
+SVN-fs-dump-format-version: 2
+ ## Stream with empty revision
+ # These can bne produced by svnadmin dump with exclude/include options.
+
+UUID: 7a698196-fbee-4595-9658-48168f0bc5f0
+
+Revision-number: 0
+Prop-content-length: 56
+Content-length: 56
+
+K 8
+svn:date
+V 27
+2008-02-27T14:55:50.838153Z
+PROPS-END
+
+Revision-number: 1
+Prop-content-length: 128
+Content-length: 128
+
+K 7
+svn:log
+V 28
+Stream with empty revision.
+
+K 10
+svn:author
+V 3
+esr
+K 8
+svn:date
+V 27
+2011-11-30T17:00:55.652068Z
+PROPS-END
+
+Node-path: trunk
+Node-kind: dir
+Node-action: add
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 2
+Prop-content-length: 10
+Content-length: 10
+
+PROPS-END
+
+
+Revision-number: 3
+Prop-content-length: 131
+Content-length: 131
+
+K 7
+svn:log
+V 33
+We're not exactly onomatopoetic.
+
+K 10
+svn:author
+V 3
+esr
+K 8
+svn:date
+V 27
+2011-11-30T17:02:46.158886Z
+PROPS-END
+
+Node-path: trunk/README
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 46
+Text-content-md5: ce90a5f32052ebbcd3b20b315556e154
+Text-content-sha1: bae5ed658ab3546aee12f23f36392f35dba1ebdd
+Content-length: 56
+
+PROPS-END
+The quick brown fox jumped over the lazy dog.
+
+

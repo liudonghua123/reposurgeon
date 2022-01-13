@@ -902,12 +902,14 @@ func newRevisionRecord(nodes []*NodeAction, props OrderedMap, revision revidx) *
 	props.delete("svn:log")
 	rr.author = props.get("svn:author")
 	props.delete("svn:author")
-	t, e := time.Parse(time.RFC3339Nano, props.get("svn:date"))
-	if e != nil {
-		panic(throw("parse", "ill-formed date in dump stream at r%d", rr.revision))
+	if d := props.get("svn:date"); d != "" {
+		t, e := time.Parse(time.RFC3339Nano, d)
+		if e != nil {
+			panic(throw("parse", "ill-formed date in dump stream at r%d", rr.revision))
+		}
+		rr.date = t
+		props.delete("svn:date")
 	}
-	rr.date = t
-	props.delete("svn:date")
 	rr.props = props
 	return rr
 }
