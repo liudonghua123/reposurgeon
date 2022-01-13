@@ -1,16 +1,17 @@
 = reposurgeon project news =
 
 Repository Head::
-     “lint” command no longer accidentally clears most of the Q bits that it has set
+     "lint" command no longer accidentally clears most Q bits.
+     repocutter renumberno longer mangles mergeinfo properties.
 
 4.31: 2022-01-08::
      Minor improvements in baton handling.
-     repocutter pathrename/sift/expunge REs are constrained to match full path segments
-     --nobranch and --branchify are retired; use repocutter to prepare nonstandard repositories
+     repocutter pathrename/sift/expunge REs now match only full path segments.
+     --nobranch/--branchify are gone; use repocutter to prep nonstandard repos.
      repocutter reduce now has simpler behavior and can take input from stdin.
      reposurgeon incorporarte can handle symlinks
      repocutter can now select and deselect node spans within revisions.
-     In repocutter sift/expunge, a new -f option disables regexp interpretation.
+     In repocutter sift/expunge, new -f option disables regexp interpretation.
      In repocutter, new skipcopy and filecopy commands.
      In Subversion IDs, uniform use of .-notation for node indices.
 
@@ -65,7 +66,7 @@ Repository Head::
      The "paths [sub|sup]" command has been replaced by "path rename".
      The =Q set now provides a way to inspect recently modified events.
      The "edit" and "references edit" commands gave been retired.
-     Subcommand moves to before first argument in branch/path/tag/reset commands.
+     Subcommand moves to before first arg in branch/path/tag/reset commands.
      Filter syntax now uses subcommands rather than options.
      Blob command now takes an explicit mark.
 
@@ -87,7 +88,7 @@ Repository Head::
      Add --obscure option to reposurgeon strip command, like repocutter.
      --preserve prevents automatic deletion of cv2svn branch creation tags.
      The repocutter see command dumps property settings
-     Many improvements to the documentation, including improved cross-references.
+     Many improvements to documentation, including improved cross-references.
 
 4.21: 2020-11-18::
      Fix for a bug that could scramble history in pathological tag-copy cases.

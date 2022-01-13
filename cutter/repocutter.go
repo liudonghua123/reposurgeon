@@ -1469,7 +1469,7 @@ func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patte
 }
 
 func dumpall(header StreamSection, properties []byte, content []byte) []byte {
-	// Drop empty nodes left vehind by propdel
+	// Drop empty nodes left behind by propdel
 	if len(content) == 0 && bytes.Equal(properties, []byte("PROPS-END\n")) && bytes.Equal(header.payload("Node-action"), []byte("change")) {
 		return nil
 	}
