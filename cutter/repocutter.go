@@ -756,52 +756,6 @@ func SetLength(header string, data []byte, val int) []byte {
 	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
 }
 
-// ReadRevisionHeader - read a revision header, parsing its properties.
-func (ds *DumpfileSource) ReadRevisionHeader(PropertyHook func(*Properties) bool) ([]byte, map[string]string, bool) {
-	stash := ds.Require("Revision-number:")
-	rev := string(bytes.Fields(stash)[1])
-	rval, err := strconv.Atoi(rev)
-	if err != nil {
-		fmt.Printf("repocutter: invalid revision number %s at line %d\n", rev, ds.Lbs.linenumber)
-		os.Exit(1)
-	}
-	ds.Revision = rval
-	if debugline := ds.Optional("Debug-level:"); debugline != nil {
-		debug, err = strconv.Atoi(string(bytes.Fields(debugline)[1]))
-		if err != nil {
-			fmt.Printf("repocutter: invalid debug level %s at line %d\n", rev, ds.Lbs.linenumber)
-			os.Exit(1)
-		}
-	}
-	ds.Index = 0
-	stash = append(stash, ds.Require("Prop-content-length:")...)
-	stash = append(stash, ds.Require("Content-length:")...)
-	stash = append(stash, ds.Require(linesep)...)
-	props := NewProperties(ds)
-	retain := true
-	if PropertyHook != nil {
-		retain = PropertyHook(&props)
-		proplen := len(props.Stringer())
-		stash = SetLength("Prop-content", stash, proplen)
-		stash = SetLength("Content", stash, proplen)
-	}
-	stash = append(stash, []byte(props.Stringer())...)
-	if debug >= debugPARSE {
-		fmt.Fprintf(os.Stderr, "<after append: %d>\n", ds.Lbs.linenumber)
-	}
-	for string(ds.Lbs.Peek()) == linesep {
-		stash = append(stash, ds.Lbs.Readline()...)
-	}
-	if ds.Baton != nil {
-		ds.Baton.Twirl("")
-	}
-	if debug >= debugPARSE {
-		fmt.Fprintf(os.Stderr, "<ReadRevisionHeader %d: returns stash=%q>\n",
-			ds.Lbs.linenumber, stash)
-	}
-	return stash, props.properties, retain
-}
-
 // Require - read a line, requiring it to have a specified prefix.
 func (ds *DumpfileSource) Require(prefix string) []byte {
 	line := ds.Lbs.Readline()
@@ -822,87 +776,6 @@ func (ds *DumpfileSource) Optional(prefix string) []byte {
 	}
 	ds.Lbs.Push(line)
 	return nil
-}
-
-// ReadNode - read a node header and body.
-func (ds *DumpfileSource) ReadNode(PropertyHook func(*Properties) bool) (StreamSection, []byte, []byte) {
-	if debug >= debugPARSE {
-		fmt.Fprintf(os.Stderr, "<READ NODE BEGINS>\n")
-	}
-	header := ds.Require("Node-")
-	for {
-		line := ds.Lbs.Readline()
-		if len(line) == 0 {
-			fmt.Fprintf(os.Stderr, "repocutter: unexpected EOF in node header\n")
-			os.Exit(1)
-		}
-		m := nodeCopyfrom.FindSubmatch(line)
-		if m != nil {
-			r := string(m[1])
-			if !ds.EmittedRevisions[r] {
-				header = append(header, line...)
-				header = append(header, ds.Require("Node-copyfrom-path")...)
-				continue
-			}
-		}
-		header = append(header, line...)
-		if string(line) == linesep {
-			break
-		}
-	}
-	properties := ""
-	if bytes.Contains(header, []byte("Prop-content-length")) {
-		props := NewProperties(ds)
-		if PropertyHook != nil {
-			PropertyHook(&props)
-		}
-		properties = props.Stringer()
-	}
-	// Using a read() here allows us to handle binary content
-	content := []byte{}
-	cl := textContentLength.FindSubmatch(header)
-	if len(cl) > 1 {
-		n, _ := strconv.Atoi(string(cl[1]))
-		content = append(content, ds.Lbs.Read(n)...)
-	}
-	if debug >= debugPARSE {
-		fmt.Fprintf(os.Stderr, "<READ NODE ENDS>\n")
-	}
-	if PropertyHook != nil {
-		header = SetLength("Prop-content", header, len(properties))
-		header = SetLength("Content", header, len(properties)+len(content))
-	}
-	section := StreamSection(header)
-	if p := section.payload("Node-kind"); p != nil {
-		ds.DirTracking[string(section.payload("Node-path"))] = bytes.Equal(p, []byte("dir"))
-	}
-
-	return section, []byte(properties), content
-}
-
-// ReadUntilNextRevision does what it says on the tin.
-func (ds *DumpfileSource) ReadUntilNextRevision(contentLength int) []byte {
-	stash := []byte{}
-	for {
-		line := ds.Lbs.Readline()
-		if len(line) == 0 {
-			return stash
-		}
-		if string(line) == "\n" {
-			if contentLength > 0 {
-				stash = append(stash, ds.Lbs.Read(contentLength)...)
-				contentLength = 0
-			}
-		} else if strings.HasPrefix(string(line), "Revision-number:") {
-			ds.Lbs.Push(line)
-			return stash
-		}
-
-		stash = append(stash, line...)
-		if strings.HasPrefix(string(line), "Content-length:") {
-			contentLength, _ = strconv.Atoi(string(bytes.Fields(line)[1]))
-		}
-	}
 }
 
 func (ds *DumpfileSource) say(text []byte) {
@@ -1070,7 +943,22 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	}
 
 	emit := passthrough && selection.intervals[0][0].rev == 0
-	stash := ds.ReadUntilNextRevision(0)
+
+	stash := []byte{}
+	for {
+		line := ds.Lbs.Readline()
+		if len(line) == 0 {
+			break
+		}
+		if string(line) == "\n" {
+		} else if strings.HasPrefix(string(line), "Revision-number:") {
+			ds.Lbs.Push(line)
+			break
+		}
+
+		stash = append(stash, line...)
+	}
+
 	if emit {
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<early stash dump: %q>\n", stash)
@@ -1086,7 +974,49 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		// Invariant: We're always looking at the beginning of a revision here
 		ds.Index = 0
 		nodecount = 0
-		stash, _, retain := ds.ReadRevisionHeader(prophook)
+
+		stash := ds.Require("Revision-number:")
+		rev := string(bytes.Fields(stash)[1])
+		rval, err := strconv.Atoi(rev)
+		if err != nil {
+			fmt.Printf("repocutter: invalid revision number %s at line %d\n", rev, ds.Lbs.linenumber)
+			os.Exit(1)
+		}
+		ds.Revision = rval
+		if debugline := ds.Optional("Debug-level:"); debugline != nil {
+			debug, err = strconv.Atoi(string(bytes.Fields(debugline)[1]))
+			if err != nil {
+				fmt.Printf("repocutter: invalid debug level %s at line %d\n", rev, ds.Lbs.linenumber)
+				os.Exit(1)
+			}
+		}
+		ds.Index = 0
+		stash = append(stash, ds.Require("Prop-content-length:")...)
+		stash = append(stash, ds.Require("Content-length:")...)
+		stash = append(stash, ds.Require(linesep)...)
+		props := NewProperties(ds)
+		retain := true
+		if prophook != nil {
+			retain = prophook(&props)
+			proplen := len(props.Stringer())
+			stash = SetLength("Prop-content", stash, proplen)
+			stash = SetLength("Content", stash, proplen)
+		}
+		stash = append(stash, []byte(props.Stringer())...)
+		if debug >= debugPARSE {
+			fmt.Fprintf(os.Stderr, "<after append: %d>\n", ds.Lbs.linenumber)
+		}
+		for string(ds.Lbs.Peek()) == linesep {
+			stash = append(stash, ds.Lbs.Readline()...)
+		}
+		if ds.Baton != nil {
+			ds.Baton.Twirl("")
+		}
+		if debug >= debugPARSE {
+			fmt.Fprintf(os.Stderr, "<ReadRevisionHeader %d: returns stash=%q>\n",
+				ds.Lbs.linenumber, stash)
+		}
+
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<at start of revision %d>\n", ds.Revision)
 		}
@@ -1129,7 +1059,58 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					ds.NodePath = string(line[11 : len(line)-1])
 				}
 				ds.Lbs.Push(line)
-				header, properties, content := ds.ReadNode(prophook)
+
+				if debug >= debugPARSE {
+					fmt.Fprintf(os.Stderr, "<READ NODE BEGINS>\n")
+				}
+				rawHeader := ds.Require("Node-")
+				for {
+					line := ds.Lbs.Readline()
+					if len(line) == 0 {
+						fmt.Fprintf(os.Stderr, "repocutter: unexpected EOF in node header\n")
+						os.Exit(1)
+					}
+					m := nodeCopyfrom.FindSubmatch(line)
+					if m != nil {
+						r := string(m[1])
+						if !ds.EmittedRevisions[r] {
+							rawHeader = append(rawHeader, line...)
+							rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)
+							continue
+						}
+					}
+					rawHeader = append(rawHeader, line...)
+					if string(line) == linesep {
+						break
+					}
+				}
+				properties := ""
+				if bytes.Contains(rawHeader, []byte("Prop-content-length")) {
+					props := NewProperties(ds)
+					if prophook != nil {
+						prophook(&props)
+					}
+					properties = props.Stringer()
+				}
+				// Using a read() here allows us to handle binary content
+				content := []byte{}
+				cl := textContentLength.FindSubmatch(rawHeader)
+				if len(cl) > 1 {
+					n, _ := strconv.Atoi(string(cl[1]))
+					content = append(content, ds.Lbs.Read(n)...)
+				}
+				if debug >= debugPARSE {
+					fmt.Fprintf(os.Stderr, "<READ NODE ENDS>\n")
+				}
+				if prophook != nil {
+					rawHeader = SetLength("Prop-content", rawHeader, len(properties))
+					rawHeader = SetLength("Content", rawHeader, len(properties)+len(content))
+				}
+				header := StreamSection(rawHeader)
+				if p := header.payload("Node-kind"); p != nil {
+					ds.DirTracking[string(header.payload("Node-path"))] = bytes.Equal(p, []byte("dir"))
+				}
+
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
 					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
@@ -1141,7 +1122,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 						fmt.Fprintf(os.Stderr, "<nodehook called with: %d %d>\n",
 							ds.Revision, nodecount)
 					}
-					nodetxt = nodehook(StreamSection(header), properties, content)
+					nodetxt = nodehook(StreamSection(header), []byte(properties), content)
 				}
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<nodetxt: %q>\n", nodetxt)
