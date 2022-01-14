@@ -247,7 +247,7 @@ summary:
 surgeon/help-index.go: help-index.awk repository-editing.adoc
 	$(AWK) -f $^ >$@
 
-cuttercommands.inc: repocutter
+cuttercommands.inc: build
 	./repocutter -q docgen >cuttercommands.inc
 
 #
