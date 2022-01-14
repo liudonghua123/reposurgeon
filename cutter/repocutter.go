@@ -805,6 +805,15 @@ func (s SubversionEndpoint) Equals(t SubversionEndpoint) bool {
 	return s.rev == t.rev && s.node == t.node
 }
 
+// Stringer is the textualization method for interval endpoints
+func (s SubversionEndpoint) Stringer() string {
+	out := fmt.Sprintf("%d", s.rev)
+	if s.node != 0 {
+		out += fmt.Sprintf(".%d", s.node)
+	}
+	return out
+}
+
 // SubversionRange - represent a polyrange of Subversion commit numbers
 type SubversionRange struct {
 	intervals [][2]SubversionEndpoint
@@ -891,6 +900,26 @@ func (s *SubversionRange) Lowerbound() SubversionEndpoint {
 // Upperbound - what is the uppermost revision in the spec?
 func (s *SubversionRange) Upperbound() SubversionEndpoint {
 	return s.intervals[len(s.intervals)-1][1]
+}
+
+// dump exists because there are two different textualizations,
+// one using : fir ranges and the other using -.
+func (s *SubversionRange) dump(rangesep string) string {
+	out := ""
+	for _, interval := range s.intervals {
+		if interval[0] == interval[1] {
+			out += interval[0].Stringer()
+		} else {
+			out += interval[0].Stringer() + rangesep + interval[1].Stringer()
+		}
+		out += ","
+	}
+	return out[:len(out)-1]
+}
+
+// Stringer is the texturalization method for Subversion ranges
+func (s *SubversionRange) Stringer() string {
+	return s.dump(":")
 }
 
 // Report a filtered portion of content.
@@ -1990,6 +2019,26 @@ func renumber(source DumpfileSource, counter int) {
 		return all
 	}
 
+	optimizeRange := func(txt string) string {
+		// Neware. this code is only good forr parsing mergeinfo ranges
+		var s SubversionRange
+		s.intervals = make([][2]SubversionEndpoint, 0)
+		for _, item := range strings.Split(txt, ",") {
+			var parts [2]SubversionEndpoint
+			if strings.Contains(item, "-") {
+				fields := strings.Split(item, "-")
+				parts[0].rev, _ = strconv.Atoi(fields[0])
+				parts[1].rev, _ = strconv.Atoi(fields[1])
+			} else {
+				parts[0].rev, _ = strconv.Atoi(item)
+				parts[1].rev, _ = strconv.Atoi(item)
+			}
+			s.intervals = append(s.intervals, parts)
+		}
+		// Emit optimized representation
+		return s.dump("-")
+	}
+
 	prophook := func(props *Properties) bool {
 		for _, mergeproperty := range mergeProperties {
 			if oldval, present := props.properties[mergeproperty]; present {
@@ -2016,11 +2065,13 @@ func renumber(source DumpfileSource, counter int) {
 								digits = make([]byte, 0)
 							}
 							// Preserve commas and other non-digit chars
-							out += string(c)
+							if c != '\n' {
+								out += string(c)
+							}
 						}
 					}
 
-					modifiedLines = modifiedLines + fields[0] + ":" + out
+					modifiedLines = modifiedLines + fields[0] + ":" + optimizeRange(out) + "\n"
 				}
 				props.properties[mergeproperty] = strings.TrimRight(modifiedLines, "\n")
 			}
