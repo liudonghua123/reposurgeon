@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"testing"
 )
 
@@ -29,8 +27,21 @@ func TestNameSequenceLength(t *testing.T) {
 	for _, s := range input {
 		names = append(names, seq.obscureString(s))
 	}
-	fmt.Fprintf(os.Stderr, "names = %#v\n", names)
 	for i := range expected {
 		assertEqual(t, names[i], expected[i])
+	}
+}
+
+func TestOptimizeRange(t *testing.T) {
+	type optimizeTestEntry struct {
+		before string
+		after  string
+	}
+	tests := []optimizeTestEntry{
+		{"1-2,3-4", "1-2,3-4"},
+		{"1-1", "1"},
+	}
+	for _, item := range tests {
+		assertEqual(t, optimizeRange(item.before), item.after)
 	}
 }
