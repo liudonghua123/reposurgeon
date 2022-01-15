@@ -711,7 +711,7 @@ func (props *Properties) Delete(key string) {
 	}
 }
 
-// MutateMergeinfo mutates meregeinfo paths and ranges through a hook function
+// MutateMergeinfo mutates mergeinfo paths and ranges through a hook function
 func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, string)) {
 	for _, mergeproperty := range []string{"svn:mergeinfo", "svnmerge-integrated"} {
 		if oldval, present := props.properties[mergeproperty]; present {
@@ -2523,24 +2523,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
-		swapped := make([]string, 0)
-		for _, mergeproperty := range mergeProperties {
-			if m, ok := props.properties[mergeproperty]; ok {
-				for _, part := range bytes.Split([]byte(m), []byte{'\n'}) {
-					var dummy parsedNode
-					dummy.role = "mergeinfo"
-					swapped = append(swapped, string(swapper("", part, dummy)))
-				}
-				props.properties[mergeproperty] = strings.Join(swapped, ":")
-			}
-		}
-		if structural && source.Revision == 1 && props.Contains("svn:log") {
-			props.properties["svn:log"] = "Synthetic branch-structure creation.\n"
-		}
-		// We leave author and date alone.  This will get
-		// dropped in the git version; it's only being
-		// generated so reposurgeon doesn't get confused about
-		// the branch structure.
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			var dummy parsedNode
+			dummy.role = "mergeinfo"
+			return string(swapper("", []byte(path), dummy)), revrange
+		})
 		return true
 	}
 	var oldval, newval []byte
