@@ -1693,20 +1693,9 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
-		for _, mergeproperty := range mergeProperties {
-			if oldval, present := props.properties[mergeproperty]; present {
-				rooted := false
-				if oldval[0] == os.PathSeparator {
-					rooted = true
-					oldval = oldval[1:]
-				}
-				newval := popSegment(oldval)
-				if rooted {
-					newval = "/" + newval
-				}
-				props.properties[mergeproperty] = newval
-			}
-		}
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			return popSegment(path), revrange
+		})
 		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
@@ -1733,22 +1722,9 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
-		for _, mergeproperty := range mergeProperties {
-			if oldval, present := props.properties[mergeproperty]; present {
-				rooted := false
-				if oldval[0] == os.PathSeparator {
-					rooted = true
-					if len(oldval) > 0 {
-						oldval = oldval[1:]
-					}
-				}
-				newval := prefix + "/" + oldval
-				if rooted {
-					newval = "/" + newval
-				}
-				props.properties[mergeproperty] = newval
-			}
-		}
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			return prefix + string(os.PathSeparator) + path, revrange
+		})
 		return true
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
