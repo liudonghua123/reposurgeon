@@ -46,6 +46,11 @@ func TestOptimizeRange(t *testing.T) {
 		{"1-1,2-2,3-3,5-5,7-7,8-8", "1-3,5,7-8"},
 		{"1,2,3,5-5,7,8", "1-3,5,7-8"},
 	}
+	optimizeRange := func(in string) string {
+		span := parseMergeinfoRange(in)
+		span.Optimize()
+		return span.dump("-")
+	}
 	for _, item := range tests {
 		assertEqual(t, optimizeRange(item.before), item.after)
 	}

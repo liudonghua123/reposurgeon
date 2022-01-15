@@ -974,7 +974,7 @@ func (s *SubversionRange) Optimize() {
 	}
 }
 
-func optimizeRange(txt string) string {
+func parseMergeinfoRange(txt string) SubversionRange {
 	// Beware: this code is only good for parsing mergeinfo ranges
 	var s SubversionRange
 	s.intervals = make([][2]SubversionEndpoint, 0)
@@ -990,9 +990,7 @@ func optimizeRange(txt string) string {
 		}
 		s.intervals = append(s.intervals, parts)
 	}
-	s.Optimize()
-	// Emit representation with n-n ranges collapsed to n.
-	return s.dump("-")
+	return s
 }
 
 // Report a filtered portion of content.
@@ -2060,8 +2058,9 @@ func renumber(source DumpfileSource, counter int) {
 					out += string(c)
 				}
 			}
-			out = optimizeRange(out[:len(out)-1])
-			return path, out
+			span := parseMergeinfoRange(out[:len(out)-1])
+			span.Optimize()
+			return path, span.dump("-")
 		})
 		return true
 	}
