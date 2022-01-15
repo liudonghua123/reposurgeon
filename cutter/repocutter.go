@@ -1499,8 +1499,8 @@ func segmentize(pattern string) string {
 	return "(?P<start>^|/)" + pattern + "(?P<end>/|$)"
 }
 
-// Strip out ops defined by a revision selection and a path regexp.
-func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
+// Drop or retain ops defined by a revision selection and a path regexp.
+func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fixed bool, patterns []string) {
 	regexps := make([]*regexp.Regexp, len(patterns))
 	for i, pattern := range patterns {
 		if fixed {
@@ -1525,7 +1525,7 @@ func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patte
 				matched = matched || pathmatch(string(nodepath))
 			}
 		}
-		if !matched {
+		if matched != drop {
 			all := make([]byte, 0)
 			all = append(all, []byte(header)...)
 			all = append(all, properties...)
@@ -1539,7 +1539,7 @@ func expunge(source DumpfileSource, selection SubversionRange, fixed bool, patte
 			return true
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-			if pathmatch(path) {
+			if pathmatch(path) == drop {
 				return "", ""
 			}
 			// FIXME: Hack the revrange to drop out excluded revisions
@@ -2152,63 +2152,6 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 	source.Report(selection, nil, prophook, dumpall, true)
 }
 
-// Sift for ops defined by a revision selection and a path regexp.
-func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
-	regexps := make([]*regexp.Regexp, len(patterns))
-	for i, pattern := range patterns {
-		if fixed {
-			regexps[i] = regexp.MustCompile(segmentize(regexp.QuoteMeta(pattern)))
-		} else {
-			regexps[i] = regexp.MustCompile(segmentize(pattern))
-		}
-	}
-	pathmatch := func(header StreamSection) bool {
-		matched := false
-		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
-			nodepath := header.payload(hd)
-			if nodepath != nil {
-				for _, r := range regexps {
-					if r.Match(nodepath) {
-						matched = true
-						break
-					}
-				}
-			}
-		}
-		return matched
-	}
-	/*
-		 * FIXME: Mutate mergeinfo properties
-		prophook := func(props *Properties) bool {
-			if !selection.ContainsRevision(source.Revision) {
-				return true
-			}
-			props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-				if !pathmatch(header) {
-					return "", ""
-				}
-				// FIXME: Hack the revrange to drop out excluded revisions
-				return path, revrange
-			})
-			return true
-		}
-	*/
-	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return append([]byte(header), append(properties, content...)...)
-		}
-		if pathmatch(header) {
-			all := make([]byte, 0)
-			all = append(all, []byte(header)...)
-			all = append(all, properties...)
-			all = append(all, content...)
-			return all
-		}
-		return []byte{}
-	}
-	source.Report(selection, nil, nil, nodehook, true)
-}
-
 // Skip unwanted copies between specified revisions
 func skipcopy(source DumpfileSource, selection SubversionRange) {
 	//within := false
@@ -2789,7 +2732,7 @@ func main() {
 		assertNoArgs()
 		dumpDocs()
 	case "expunge":
-		expunge(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
+		pathfilter(NewDumpfileSource(input, baton), selection, true, fixed, flag.Args()[1:])
 	case "filecopy":
 		filecopy(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "help":
@@ -2854,7 +2797,7 @@ func main() {
 		}
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
 	case "sift":
-		sift(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
+		pathfilter(NewDumpfileSource(input, baton), selection, false, fixed, flag.Args()[1:])
 	case "skipcopy":
 		skipcopy(NewDumpfileSource(input, baton), selection)
 	case "strip":
