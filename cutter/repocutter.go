@@ -942,7 +942,7 @@ func (s *SubversionRange) Upperbound() SubversionEndpoint {
 }
 
 // dump exists because there are two different textualizations,
-// one using : fir ranges and the other using -.
+// one using : for ranges and the other using -.
 func (s *SubversionRange) dump(rangesep string) string {
 	out := ""
 	for _, interval := range s.intervals {
@@ -962,7 +962,8 @@ func (s *SubversionRange) Stringer() string {
 }
 
 func optimizeRange(txt string) string {
-	// Neware. this code is only good forr parsing mergeinfo ranges
+	// Beware: this code is only good for parsing mergeinfo ranges
+	// FIXME: Does no actual coalescence yet
 	var s SubversionRange
 	s.intervals = make([][2]SubversionEndpoint, 0)
 	for _, item := range strings.Split(txt, ",") {
@@ -977,7 +978,7 @@ func optimizeRange(txt string) string {
 		}
 		s.intervals = append(s.intervals, parts)
 	}
-	// Emit optimized representation
+	// Emit representation with n-n ranges collapsed to n.
 	return s.dump("-")
 }
 
@@ -1447,6 +1448,7 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		return nil
 	}
 	prophook := func(props *Properties) bool {
+		// FIXME: Hack revrange to account for excluded revisions.
 		return selection.ContainsRevision(source.Revision) != invert
 	}
 	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, nodehook, true)
