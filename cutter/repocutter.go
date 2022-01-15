@@ -711,6 +711,43 @@ func (props *Properties) Delete(key string) {
 	}
 }
 
+// MutateMergeinfo mutates meregeinfo paths and ranges through a hook function
+func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, string)) {
+	for _, mergeproperty := range mergeProperties {
+		if oldval, present := props.properties[mergeproperty]; present {
+			mergeinfo := string(oldval)
+			var buffer bytes.Buffer
+			if len(mergeinfo) != 0 {
+				for _, line := range strings.Split(strings.TrimSuffix(mergeinfo, "\n"), "\n") {
+					if strings.Contains(line, ":") {
+						lastidx := strings.LastIndex(line, ":")
+						path, revrange := line[:lastidx], line[lastidx+1:]
+						rooted := false
+						if path[0] == os.PathSeparator {
+							rooted = true
+							path = path[1:]
+						}
+						newpath, newrange := mutator(path, revrange)
+						if newpath == "" && newrange == "" {
+							continue
+						}
+						if rooted {
+							buffer.WriteByte(byte(os.PathSeparator))
+						}
+						buffer.WriteString(newpath)
+						buffer.WriteString(":")
+						buffer.WriteString(newrange)
+					} else {
+						buffer.WriteString(line)
+					}
+					buffer.WriteString("\n")
+				}
+			}
+			props.properties[mergeproperty] = buffer.String()
+		}
+	}
+}
+
 // Dumpfile parsing machinery goes here
 
 var revisionLine *regexp.Regexp
@@ -1861,31 +1898,9 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		if !selection.ContainsRevision(source.Revision) {
 			return true
 		}
-		for _, mergeproperty := range mergeProperties {
-			if oldval, present := props.properties[mergeproperty]; present {
-				mergeinfo := string(oldval)
-				var buffer bytes.Buffer
-				if len(mergeinfo) != 0 {
-					for _, line := range strings.Split(strings.TrimSuffix(mergeinfo, "\n"), "\n") {
-						if strings.Contains(line, ":") {
-							lastidx := strings.LastIndex(line, ":")
-							path, revrange := line[:lastidx], line[lastidx+1:]
-							if path[0] == os.PathSeparator {
-								buffer.WriteByte(byte(os.PathSeparator))
-								path = path[1:]
-							}
-							buffer.Write(pathMutator("Mergeinfo", []byte(path)))
-							buffer.WriteString(":")
-							buffer.WriteString(revrange)
-						} else {
-							buffer.WriteString(line)
-						}
-						buffer.WriteString("\n")
-					}
-				}
-				props.properties[mergeproperty] = buffer.String()
-			}
-		}
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			return string(pathMutator("Mergeinfo", []byte(path))), revrange
+		})
 		if userid, present := props.properties["svn:author"]; present && nameMutator != nil {
 			props.properties["svn:author"] = nameMutator(userid)
 		}
