@@ -755,15 +755,11 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 var revisionLine *regexp.Regexp
 var textContentLength *regexp.Regexp
 var nodeCopyfrom *regexp.Regexp
-var trunkCopy *regexp.Regexp
 
 func init() {
 	revisionLine = regexp.MustCompile("Revision-number: ([0-9])")
 	textContentLength = regexp.MustCompile("Text-content-length: ([1-9][0-9]*)")
 	nodeCopyfrom = regexp.MustCompile("Node-copyfrom-rev: ([1-9][0-9]*)")
-	// This one is a liitle weird. Whatvwe're trying to detect here is
-	// a partial copy from trunk under under a project directory.
-	trunkCopy = regexp.MustCompile("Node-copyfrom-path: [^/]+/trunk\n")
 }
 
 // DumpfileSource - this class knows about Subversion dumpfile format.
@@ -980,7 +976,6 @@ func (s *SubversionRange) Optimize() {
 
 func optimizeRange(txt string) string {
 	// Beware: this code is only good for parsing mergeinfo ranges
-	// FIXME: Does no actual coalescence yet
 	var s SubversionRange
 	s.intervals = make([][2]SubversionEndpoint, 0)
 	for _, item := range strings.Split(txt, ",") {
@@ -2267,7 +2262,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		isDelete  bool
 		isCopy    bool
 		isDir     bool
-		trunkCopy bool
 		coalesced bool
 	}
 	wildcards := make(map[string]orderedStringSet)
@@ -2491,7 +2485,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		parsed.isCopy = header.index("Node-copyfrom-path") != -1
 		parsed.isDir = header.isDir(source)
 		parsed.role = string(parsed.action)
-		parsed.trunkCopy = trunkCopy.Match(header)
 		parsed.coalesced = false
 
 		if parsed.isCopy {
