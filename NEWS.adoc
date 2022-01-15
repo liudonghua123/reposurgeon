@@ -2,7 +2,8 @@
 
 Repository Head::
      "lint" command no longer accidentally clears most Q bits.
-     repocutter renumberno longer mangles mergeinfo properties.
+     repocutter renumber no longer mangles mergeinfo properties.
+     Fixed mergeinfo handling in repoocutter commands that remove revisions.
 
 4.31: 2022-01-08::
      Minor improvements in baton handling.

@@ -785,12 +785,6 @@ func NewDumpfileSource(rd io.Reader, baton *Baton) DumpfileSource {
 	//runtime.SetFinalizer(&ds, func (s DumpfileSource) {s.Baton.End("")})
 }
 
-// SetLength - alter the length field of a specified header
-func SetLength(header string, data []byte, val int) []byte {
-	re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
-	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
-}
-
 // Require - read a line, requiring it to have a specified prefix.
 func (ds *DumpfileSource) Require(prefix string) []byte {
 	line := ds.Lbs.Readline()
@@ -824,6 +818,19 @@ func (ds *DumpfileSource) say(text []byte) {
 // where - format reference to current node for error logging and see().
 func (ds *DumpfileSource) where() string {
 	return fmt.Sprintf("%d.%d", ds.Revision, ds.Index)
+}
+
+// patchMergeinfo fixes the input mergeinfo range to contain only emitted revisions
+func (ds *DumpfileSource) patchMergeinfo(revrange string) string {
+	inspan := parseMergeinfoRange(revrange)
+	outspan := NewSubversionRange("")
+	for rev := inspan.Lowerbound().rev; rev < inspan.Upperbound().rev; rev++ {
+		if inspan.ContainsRevision(rev) && ds.EmittedRevisions[fmt.Sprintf("%d", rev)] {
+			outspan.intervals = append(outspan.intervals, [2]SubversionEndpoint{{rev, 0}, {rev, 0}})
+		}
+	}
+	outspan.Optimize()
+	return outspan.dump("-")
 }
 
 // SubversionEndpoint - represent as Subversion revision or revision.node spec
@@ -991,6 +998,12 @@ func parseMergeinfoRange(txt string) SubversionRange {
 		s.intervals = append(s.intervals, parts)
 	}
 	return s
+}
+
+// SetLength - alter the length field of a specified header
+func SetLength(header string, data []byte, val int) []byte {
+	re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
+	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
 }
 
 // Report a filtered portion of content.
@@ -1459,7 +1472,9 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		return nil
 	}
 	prophook := func(props *Properties) bool {
-		// FIXME: Hack revrange to account for excluded revisions.
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			return path, source.patchMergeinfo(revrange)
+		})
 		return selection.ContainsRevision(source.Revision) != invert
 	}
 	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, nodehook, true)
@@ -1555,7 +1570,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 			if pathmatch(path) == drop {
 				return "", ""
 			}
-			// FIXME: Hack the revrange to drop out excluded revisions
+			revrange = source.patchMergeinfo(revrange)
 			return path, revrange
 		})
 		return true
