@@ -961,6 +961,23 @@ func (s *SubversionRange) Stringer() string {
 	return s.dump(":")
 }
 
+// Optimize compacts a range as much as possible
+func (s *SubversionRange) Optimize() {
+	i := 0
+	for {
+		// Have we merged enough entries that we've run out of list?
+		if i >= len(s.intervals)-1 {
+			break
+		}
+		// Nope, try to merge the endpoint or range at i with its right-hand neighbor
+		if s.intervals[i+1][0] == s.intervals[i][1] || s.intervals[i+1][0].rev == s.intervals[i][1].rev+1 {
+			s.intervals = append(s.intervals[:i], append([][2]SubversionEndpoint{[2]SubversionEndpoint{s.intervals[i][0], s.intervals[i+1][1]}}, s.intervals[i+2:]...)...)
+		} else {
+			i++
+		}
+	}
+}
+
 func optimizeRange(txt string) string {
 	// Beware: this code is only good for parsing mergeinfo ranges
 	// FIXME: Does no actual coalescence yet
@@ -978,6 +995,7 @@ func optimizeRange(txt string) string {
 		}
 		s.intervals = append(s.intervals, parts)
 	}
+	s.Optimize()
 	// Emit representation with n-n ranges collapsed to n.
 	return s.dump("-")
 }
