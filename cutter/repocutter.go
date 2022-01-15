@@ -1475,7 +1475,7 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return path, source.patchMergeinfo(revrange)
 		})
-		return selection.ContainsRevision(source.Revision) != invert
+		return selection.ContainsNode(source.Revision, source.Index) != invert
 	}
 	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, nodehook, true)
 }
@@ -1546,6 +1546,12 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		return false
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			if drop {
+				return append([]byte(header), append(properties, content...)...)
+			}
+			return nil
+		}
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
