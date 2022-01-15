@@ -428,12 +428,6 @@ func dumpDocs() {
 	}
 }
 
-// The svnmerge-integrated property is set by svmerge.py.
-// Its semantucs are poorly documented, but we process it
-// exactly lile svn:mergeinfo and punt that problem to reposurgeon
-// on the "first, doo no harm" principle.
-var mergeProperties = []string{"svn:mergeinfo", "svnmerge-integrated"}
-
 var tag string
 
 // Baton - ship progress indications to stderr
@@ -713,12 +707,17 @@ func (props *Properties) Delete(key string) {
 
 // MutateMergeinfo mutates mergeinfo paths and ranges through a hook function
 func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, string)) {
+	// The svnmerge-integrated property is set by svmerge.py.
+	// Its semantics are poorly documented, but we process it
+	// exactly like svn:mergeinfo and punt that problem to reposurgeon
+	// on the "first, doo no harm" principle.
+	//fmt.Fprintf(os.Stderr, "XXX props before %q\n", props)
 	for _, mergeproperty := range []string{"svn:mergeinfo", "svnmerge-integrated"} {
 		if oldval, present := props.properties[mergeproperty]; present {
 			mergeinfo := string(oldval)
 			var buffer bytes.Buffer
 			if len(mergeinfo) != 0 {
-				for _, line := range strings.Split(strings.TrimSuffix(mergeinfo, "\n"), "\n") {
+				for _, line := range strings.Split(mergeinfo, "\n") {
 					if strings.Contains(line, ":") {
 						lastidx := strings.LastIndex(line, ":")
 						path, revrange := line[:lastidx], line[lastidx+1:]
@@ -743,9 +742,14 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 					buffer.WriteString("\n")
 				}
 			}
+			// Discard last newline, because the V length of the property
+			// does not counnt it - but does count interior \n in
+			// multiline values.
+			buffer.Truncate(buffer.Len() - 1)
 			props.properties[mergeproperty] = buffer.String()
 		}
 	}
+	//fmt.Fprintf(os.Stderr, "YYY props after %q\n", props)
 }
 
 // Dumpfile parsing machinery goes here
@@ -957,6 +961,26 @@ func (s *SubversionRange) dump(rangesep string) string {
 // Stringer is the texturalization method for Subversion ranges
 func (s *SubversionRange) Stringer() string {
 	return s.dump(":")
+}
+
+func optimizeRange(txt string) string {
+	// Neware. this code is only good forr parsing mergeinfo ranges
+	var s SubversionRange
+	s.intervals = make([][2]SubversionEndpoint, 0)
+	for _, item := range strings.Split(txt, ",") {
+		var parts [2]SubversionEndpoint
+		if strings.Contains(item, "-") {
+			fields := strings.Split(item, "-")
+			parts[0].rev, _ = strconv.Atoi(fields[0])
+			parts[1].rev, _ = strconv.Atoi(fields[1])
+		} else {
+			parts[0].rev, _ = strconv.Atoi(item)
+			parts[1].rev, _ = strconv.Atoi(item)
+		}
+		s.intervals = append(s.intervals, parts)
+	}
+	// Emit optimized representation
+	return s.dump("-")
 }
 
 // Report a filtered portion of content.
@@ -2004,63 +2028,28 @@ func renumber(source DumpfileSource, counter int) {
 		return all
 	}
 
-	optimizeRange := func(txt string) string {
-		// Neware. this code is only good forr parsing mergeinfo ranges
-		var s SubversionRange
-		s.intervals = make([][2]SubversionEndpoint, 0)
-		for _, item := range strings.Split(txt, ",") {
-			var parts [2]SubversionEndpoint
-			if strings.Contains(item, "-") {
-				fields := strings.Split(item, "-")
-				parts[0].rev, _ = strconv.Atoi(fields[0])
-				parts[1].rev, _ = strconv.Atoi(fields[1])
-			} else {
-				parts[0].rev, _ = strconv.Atoi(item)
-				parts[1].rev, _ = strconv.Atoi(item)
-			}
-			s.intervals = append(s.intervals, parts)
-		}
-		// Emit optimized representation
-		return s.dump("-")
-	}
-
 	prophook := func(props *Properties) bool {
-		for _, mergeproperty := range mergeProperties {
-			if oldval, present := props.properties[mergeproperty]; present {
-				modifiedLines := ""
-				for _, line := range strings.Split(oldval, "\n") {
-					out := ""
-					line += "\n"
-					// Split into path:revlist
-					fields := strings.Split(line, ":")
-
-					if len(fields) == 1 {
-						modifiedLines += line
-						continue
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			out := ""
+			digits := make([]byte, 0)
+			revrange += "X"
+			for i := range revrange {
+				c := revrange[i]
+				if bytes.ContainsAny([]byte{c}, "0123456789") {
+					digits = append(digits, c)
+				} else {
+					if len(digits) > 0 {
+						v, _ := strconv.Atoi(string(digits))
+						out += fmt.Sprintf("%d", renumberBack(v))
+						digits = make([]byte, 0)
 					}
-					digits := make([]byte, 0)
-					for i := range fields[1] {
-						c := fields[1][i]
-						if bytes.ContainsAny([]byte{c}, "0123456789") {
-							digits = append(digits, c)
-						} else {
-							if len(digits) > 0 {
-								v, _ := strconv.Atoi(string(digits))
-								out += fmt.Sprintf("%d", renumberBack(v))
-								digits = make([]byte, 0)
-							}
-							// Preserve commas and other non-digit chars
-							if c != '\n' {
-								out += string(c)
-							}
-						}
-					}
-
-					modifiedLines = modifiedLines + fields[0] + ":" + optimizeRange(out) + "\n"
+					// Preserve commas and other non-digit chars
+					out += string(c)
 				}
-				props.properties[mergeproperty] = strings.TrimRight(modifiedLines, "\n")
 			}
-		}
+			out = optimizeRange(out[:len(out)-1])
+			return path, out
+		})
 		return true
 	}
 
