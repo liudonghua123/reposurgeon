@@ -711,7 +711,6 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 	// Its semantics are poorly documented, but we process it
 	// exactly like svn:mergeinfo and punt that problem to reposurgeon
 	// on the "first, doo no harm" principle.
-	//fmt.Fprintf(os.Stderr, "XXX props before %q\n", props)
 	for _, mergeproperty := range []string{"svn:mergeinfo", "svnmerge-integrated"} {
 		if oldval, present := props.properties[mergeproperty]; present {
 			mergeinfo := string(oldval)
@@ -749,7 +748,6 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 			props.properties[mergeproperty] = buffer.String()
 		}
 	}
-	//fmt.Fprintf(os.Stderr, "YYY props after %q\n", props)
 }
 
 // Dumpfile parsing machinery goes here
@@ -2164,7 +2162,6 @@ func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 			regexps[i] = regexp.MustCompile(segmentize(pattern))
 		}
 	}
-	// FIXME: Is this right? expunge does not match on copyfrom path
 	pathmatch := func(header StreamSection) bool {
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
@@ -2181,7 +2178,7 @@ func sift(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 		return matched
 	}
 	/*
-		 * FIXME: Mutate mrgeinfo properties
+		 * FIXME: Mutate mergeinfo properties
 		prophook := func(props *Properties) bool {
 			if !selection.ContainsRevision(source.Revision) {
 				return true
