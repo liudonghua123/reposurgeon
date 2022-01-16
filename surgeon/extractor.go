@@ -940,7 +940,7 @@ func (he *HgExtractor) postExtract(repo *Repository) {
 		he.hgcl = nil
 	}
 	if !repo.branchset().Contains("refs/heads/master") {
-		walkEvents(repo.events, func(_ int, event Event) {
+		walkEvents(repo.events, func(_ int, event Event) bool {
 			switch event.(type) {
 			case *Commit:
 				if event.(*Commit).Branch == "refs/heads/default" {
@@ -951,6 +951,7 @@ func (he *HgExtractor) postExtract(repo *Repository) {
 					event.(*Reset).ref = "refs/heads/master"
 				}
 			}
+			return true
 		})
 	}
 }

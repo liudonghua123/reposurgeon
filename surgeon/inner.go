@@ -1252,7 +1252,7 @@ func (c *colorSet) Clear() {
 }
 
 func (repo *Repository) clearColor(color colorType) {
-	walkEvents(repo.events, func(i int, event Event) { event.removeColor(color) })
+	walkEvents(repo.events, func(i int, event Event) bool { event.removeColor(color); return true })
 }
 
 func (repo *Repository) countColor(color colorType) int {
@@ -4826,10 +4826,12 @@ type Event interface {
 // Note: There's a clone of this code that walks selection sets.
 // Go is not quite generic enough to make unifying the two convenient.
 // We need to make sure they stay in sync.
-func walkEvents(events []Event, hook func(int, Event)) {
+func walkEvents(events []Event, hook func(int, Event) bool) {
 	if control.flagOptions["serial"] {
 		for i, e := range events {
-			hook(i, e)
+			if !hook(i, e) {
+				break
+			}
 		}
 		return
 	}
@@ -4845,7 +4847,9 @@ func walkEvents(events []Event, hook func(int, Event)) {
 		go func() {
 			// The for loop will stop when channel is closed
 			for i := range channel {
-				hook(i, events[i])
+				if !hook(i, events[i]) {
+					break
+				}
 			}
 			done <- true
 		}()
@@ -5495,7 +5499,7 @@ func (repo *Repository) readAuthorMap(selection selectionSet, fp io.Reader) erro
 	}
 
 	repo.clearColor(colorQSET)
-	repo.walkEvents(selection, func(idx int, event Event) {
+	repo.walkEvents(selection, func(idx int, event Event) bool {
 		switch event.(type) {
 		case *Commit:
 			c := event.(*Commit)
@@ -5508,6 +5512,7 @@ func (repo *Repository) readAuthorMap(selection selectionSet, fp io.Reader) erro
 		case *Tag:
 			event.(*Tag).tagger.remap(repo.authormap)
 		}
+		return true
 	})
 	// Email addresses have changed.
 	// Force rebuild of action-stamp mapping on next lookup
@@ -5846,9 +5851,9 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 	}
 
 	if !selection.isDefined() || selection.Size() == 0 {
-		walkEvents(repo.events, func(index int, e Event) { tagifyEvent(index) })
+		walkEvents(repo.events, func(index int, e Event) bool { tagifyEvent(index); return true })
 	} else {
-		repo.walkEvents(selection, func(index int, e Event) { tagifyEvent(index) })
+		repo.walkEvents(selection, func(index int, e Event) bool { tagifyEvent(index); return true })
 	}
 	repo.delete(deletia, []string{"--tagback", "--no-preserve-refs"}, baton)
 	return errout
@@ -5870,10 +5875,10 @@ func (repo *Repository) parseDollarCookies() {
 	// CVS. Might be we should explicitly time-check in the latter
 	// case, but CVS timestamps aren't reliable so it might not
 	// include conversion quality any.
-	walkEvents(repo.events, func(idx int, event Event) {
+	walkEvents(repo.events, func(idx int, event Event) bool {
 		commit, iscommit := event.(*Commit)
 		if !iscommit {
-			return
+			return true
 		}
 		for _, fileop := range commit.operations() {
 			if fileop.op != opM {
@@ -5905,6 +5910,7 @@ func (repo *Repository) parseDollarCookies() {
 				repo.dollarMap.LoadOrStore(cvskey, commit)
 			}
 		}
+		return true
 	})
 }
 
@@ -6178,10 +6184,12 @@ func (repo *Repository) ancestors(ei int) selectionSet {
 
 // walkEvents walks a selection applying a hook function.to the events
 // This method needs to be kept in sync with the walkEvents function.
-func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, event Event)) {
+func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, event Event) bool) {
 	if control.flagOptions["serial"] {
 		for it := selection.Iterator(); it.Next(); {
-			hook(it.Index(), repo.events[it.Value()])
+			if !hook(it.Index(), repo.events[it.Value()]) {
+				break
+			}
 		}
 		return
 	}
@@ -6197,7 +6205,9 @@ func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, even
 		go func() {
 			// The for loop will stop when channel is closed
 			for i := range channel {
-				hook(i, repo.events[selection.Fetch(i)])
+				if !hook(i, repo.events[selection.Fetch(i)]) {
+					break
+				}
 			}
 			done <- true
 		}()
@@ -6784,10 +6794,10 @@ func (repo *Repository) delete(selected selectionSet, policy orderedStringSet, b
 // Replace references to duplicate blobs according to the given dupMap,
 // which maps marks of duplicate blobs to canonical marks`
 func (repo *Repository) dedup(dupMap map[string]string, baton *Baton) {
-	walkEvents(repo.events, func(idx int, event Event) {
+	walkEvents(repo.events, func(idx int, event Event) bool {
 		commit, ok := event.(*Commit)
 		if !ok {
-			return
+			return true
 		}
 		for _, fileop := range commit.operations() {
 			if fileop.op == opM && dupMap[fileop.ref] != "" {
@@ -6795,6 +6805,7 @@ func (repo *Repository) dedup(dupMap map[string]string, baton *Baton) {
 			}
 		}
 		baton.twirl()
+		return true
 	})
 	repo.gcBlobs()
 }
@@ -8381,13 +8392,13 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 	isChangeLog := func(filename string) bool {
 		return clRe.MatchString(filepath.Base(filename))
 	}
-	repo.walkEvents(selection, func(eventRank int, event Event) {
+	repo.walkEvents(selection, func(eventRank int, event Event) bool {
 		event.removeColor(colorQSET)
 		commit, iscommit := event.(*Commit)
 		evts.bump()
 		defer baton.percentProgress(uint64(evts.value))
 		if !iscommit {
-			return
+			return true
 		}
 		cc.bump()
 		// If a changeset is *all* ChangeLog mods, it is probably either
@@ -8401,7 +8412,7 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 			}
 		}
 		if !notChangelog {
-			return
+			return true
 		}
 		foundAttribution := ""
 		coAuthors := make(map[string]bool, 0)
@@ -8459,7 +8470,7 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 								if foundAttribution != "" &&
 									foundAttribution != attribution {
 									// there is more than one active, skip the commit
-									return
+									return true
 								}
 								foundAttribution = attribution
 								lastIsValid = false // it is now irrelevant
@@ -8487,6 +8498,7 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 		}
 		sort.Strings(sorted)
 		allCoAuthors[eventRank] = sorted
+		return true
 	})
 	baton.endProgress()
 	for it := selection.Iterator(); it.Next(); {
@@ -8614,7 +8626,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 	}
 	altered := new(Safecounter)
 	repo.clearColor(colorQSET)
-	repo.walkEvents(selection, func(idx int, event Event) {
+	repo.walkEvents(selection, func(idx int, event Event) bool {
 		if tag, ok := event.(*Tag); ok {
 			if nonblobs {
 				oldcomment := tag.Comment
@@ -8703,6 +8715,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 		if !quiet {
 			baton.percentProgress(uint64(idx))
 		}
+		return true
 	})
 	if !quiet {
 		baton.endProgress()

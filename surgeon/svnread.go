@@ -1921,7 +1921,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 	var reqlock sync.Mutex
 
 	baton.startProgress("SVN6a: split detection", uint64(len(sp.repo.events)))
-	walkEvents(sp.repo.events, func(i int, event Event) {
+	walkEvents(sp.repo.events, func(i int, event Event) bool {
 		if commit, ok := event.(*Commit); ok {
 			var oldbranch, newbranch string
 			cliques := make([]clique, 0)
@@ -1957,6 +1957,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 			}
 		}
 		baton.percentProgress(uint64(i) + 1)
+		return true
 	})
 	baton.endProgress()
 
@@ -2790,10 +2791,11 @@ func svnGitifyBranches(ctx context.Context, sp *StreamParser, options stringSet,
 			logit("histories of files in the root directory have been put on branch %s",
 				unbranched)
 		}
-		walkEvents(sp.repo.events, func(i int, event Event) {
+		walkEvents(sp.repo.events, func(i int, event Event) bool {
 			if commit, ok := event.(*Commit); ok && commit.Branch == illegalBranch {
 				commit.setBranch(unbranched)
 			}
+			return true
 		})
 	}
 
@@ -2956,12 +2958,13 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	// Parallelize, and use a concurrent-map implometation that has per-bucket locking,
 	// because this phase has been observed to blow up in the wild. (GitLab issue #259.)
 	origBranches := new(sync.Map)
-	walkEvents(sp.repo.events, func(i int, event Event) {
+	walkEvents(sp.repo.events, func(i int, event Event) bool {
 		if commit, ok := event.(*Commit); ok {
 			if strings.HasPrefix(commit.Branch, "refs/deleted/") {
 				origBranches.Store(commit.mark, commit.Branch)
 			}
 		}
+		return true
 	})
 	preserve := options.Contains("--preserve")
 	if !preserve {

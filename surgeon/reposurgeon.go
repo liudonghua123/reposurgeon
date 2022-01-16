@@ -1672,10 +1672,10 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 	countDisconnected := 0
 
 	rs.chosen().clearColor(colorQSET)
-	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
+	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) bool {
 		commit, iscommit := event.(*Commit)
 		if !iscommit {
-			return
+			return true
 		}
 		if checkDeletealls && len(commit.operations()) > 0 && commit.operations()[0].op == deleteall && commit.hasChildren() {
 			lintmutex.Lock()
@@ -1760,6 +1760,11 @@ func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 				}
 			}
 		}
+		if control.getAbort() {
+			respond("lint aborted at %s", event.idMe())
+			return false
+		}
+		return true
 	})
 
 	// This check isn't done by default because these are common in Subverrsion repos
@@ -3833,7 +3838,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 		}
 		loc = time.FixedZone(args[1], zoffset)
 	}
-	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
+	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) bool {
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagger != nil {
 				tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(offset)
@@ -3852,6 +3857,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 				}
 			}
 		}
+		return true
 	})
 	return false
 }
@@ -6178,15 +6184,15 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 	lineEnders := orderedStringSet{".", ",", ";", ":", "?", "!"}
 	control.baton.startProgress("gitifying comments", uint64(rs.selection.Size()))
 	rs.chosen().clearColor(colorQSET)
-	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) {
+	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) bool {
 		if commit, ok := event.(*Commit); ok {
 			commit.Comment = canonicalizeComment(commit.Comment)
 			if strings.Count(commit.Comment, "\n") < 2 {
-				return
+				return true
 			}
 			firsteol := strings.Index(commit.Comment, "\n")
 			if commit.Comment[firsteol+1] == byte('\n') {
-				return
+				return true
 			}
 			if lineEnders.Contains(string(commit.Comment[firsteol-1])) {
 				commit.Comment = commit.Comment[:firsteol] +
@@ -6197,11 +6203,11 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 		} else if tag, ok := event.(*Tag); ok {
 			tag.Comment = strings.TrimSpace(tag.Comment) + "\n"
 			if strings.Count(tag.Comment, "\n") < 2 {
-				return
+				return true
 			}
 			firsteol := strings.Index(tag.Comment, "\n")
 			if tag.Comment[firsteol+1] == byte('\n') {
-				return
+				return true
 			}
 			if lineEnders.Contains(string(tag.Comment[firsteol-1])) {
 				tag.Comment = tag.Comment[:firsteol] +
@@ -6213,6 +6219,7 @@ func (rs *Reposurgeon) DoGitify(line string) bool {
 			}
 		}
 		control.baton.percentProgress(uint64(idx))
+		return true
 	})
 	control.baton.endProgress()
 	return false
