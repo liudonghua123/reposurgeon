@@ -931,6 +931,9 @@ func (s *SubversionRange) ContainsNode(rev int, node int) bool {
 	}
 	return false
 checkNode:
+	// Omitting a node part in a specification becomes a zero
+	// index, which matches all nodes *and* (in a property hook)
+	// the revision properties as well.
 	return node >= interval[0].node && (interval[1].node == 0 || node <= interval[1].node)
 }
 
@@ -1014,12 +1017,14 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	passthrough bool) {
 
 	/*
-	 * The revhook is xalled on every node.
+	 * The revhook is called on every node.
 	 *
 	 * The prophook is called before the nodehook. It is called on
 	 * every property section, both per-node and per-revision, and
-	 * must do its own selection filtering.  When called
-	 * per-revision the value of ds.Index is zero
+	 * must do its own selection filtering.  When called on the
+	 * revision properties the value of ds.Index is zero, and will
+	 * therefore match a range element with an unspecified node
+	 * part.
 	 *
 	 * nodehook is called on all nodes. It's up to each nodehook to do
 	 * its own selection filtering.
@@ -1569,7 +1574,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		return []byte{}
 	}
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
@@ -1746,7 +1751,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		return ""
 	}
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
@@ -1775,7 +1780,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 // Push a prefix segment onto each pathname in an input dump
 func push(source DumpfileSource, selection SubversionRange, prefix string) {
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
@@ -1804,7 +1809,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 // propdel - Delete properties
 func propdel(source DumpfileSource, propnames []string, selection SubversionRange) {
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		for _, propname := range propnames {
@@ -1818,7 +1823,7 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 // Set properties.
 func propset(source DumpfileSource, propnames []string, selection SubversionRange) {
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		for _, propname := range propnames {
@@ -1921,7 +1926,7 @@ func log(source DumpfileSource, selection SubversionRange) {
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func(string, []byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
@@ -2146,7 +2151,7 @@ func see(source DumpfileSource, selection SubversionRange) {
 		return nil
 	}
 	seeprops := func(properties *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		for _, skippable := range []string{"svn:log", "svn:date", "svn:author"} {
@@ -2483,7 +2488,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
+		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
