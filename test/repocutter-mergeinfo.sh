@@ -1,5 +1,6 @@
 #!/bin/sh
 ## Test patching of mergeinfo references in renumber
+# There's a gap in the revisioning number at 3.
 ${REPOCUTTER:-repocutter} -q renumber <<EOF
 SVN-fs-dump-format-version: 2
 

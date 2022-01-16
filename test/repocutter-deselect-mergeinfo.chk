@@ -1,0 +1,33 @@
+--- A
++++ B
+@@ -6,11 +6,9 @@
+ 3.1   change   trunk/VERSION
+ 3.2   change   trunk/src
+ 4.1   copy     branches/v1.0/ from 3:trunk/
+-5.1   change   trunk/VERSION
+-5.2   change   trunk/src
+ 6.1   change   branches/v1.0/VERSION
+ 6.2   change   branches/v1.0/src
+-7.1   propset  svn:mergeinfo = "/branches/v1.0:4-6";
++7.1   propset  svn:mergeinfo = "/branches/v1.0:4,6";
+ 7.1   change   trunk/
+ 7.2   change   trunk/VERSION
+ 7.3   change   trunk/src
+@@ -20,7 +18,7 @@
+ 9.2   change   branches/v1.0/src
+ 10.1  change   branches/v1.0/VERSION
+ 10.2  change   branches/v1.0/src
+-11.1  propset  svn:mergeinfo = "/branches/v1.0:4-6,8-9";
++11.1  propset  svn:mergeinfo = "/branches/v1.0:4,6,8-9";
+ 11.1  change   trunk/
+ 11.2  change   trunk/VERSION
+ 11.3  change   trunk/src
+@@ -31,7 +29,7 @@
+ 14.2  change   trunk/src
+ 15.1  change   branches/v2.0/VERSION
+ 15.2  change   branches/v2.0/src
+-16.1  propset  svn:mergeinfo = "/branches/v1.0:4-6,8-9\n/branches/v2.0:15";
++16.1  propset  svn:mergeinfo = "/branches/v1.0:4,6,8-9\n/branches/v2.0:15";
+ 16.1  change   trunk/
+ 16.2  change   trunk/VERSION
+ 16.3  change   trunk/src

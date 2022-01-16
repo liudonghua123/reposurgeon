@@ -757,7 +757,7 @@ var textContentLength *regexp.Regexp
 var nodeCopyfrom *regexp.Regexp
 
 func init() {
-	revisionLine = regexp.MustCompile("Revision-number: ([0-9])")
+	revisionLine = regexp.MustCompile("Revision-number: ([0-9]+)")
 	textContentLength = regexp.MustCompile("Text-content-length: ([1-9][0-9]*)")
 	nodeCopyfrom = regexp.MustCompile("Node-copyfrom-rev: ([1-9][0-9]*)")
 }
@@ -824,7 +824,7 @@ func (ds *DumpfileSource) where() string {
 func (ds *DumpfileSource) patchMergeinfo(revrange string) string {
 	inspan := parseMergeinfoRange(revrange)
 	outspan := NewSubversionRange("")
-	for rev := inspan.Lowerbound().rev; rev < inspan.Upperbound().rev; rev++ {
+	for rev := inspan.Lowerbound().rev; rev <= inspan.Upperbound().rev; rev++ {
 		if inspan.ContainsRevision(rev) && ds.EmittedRevisions[fmt.Sprintf("%d", rev)] {
 			outspan.intervals = append(outspan.intervals, [2]SubversionEndpoint{{rev, 0}, {rev, 0}})
 		}
@@ -866,6 +866,9 @@ func NewSubversionRange(txt string) SubversionRange {
 	var s SubversionRange
 	s.intervals = make([][2]SubversionEndpoint, 0)
 	var upperbound int
+	if txt == "" {
+		return s
+	}
 	for _, item := range strings.Split(txt, ",") {
 		var parts [2]SubversionEndpoint
 		if strings.Contains(item, "-") {
@@ -950,6 +953,9 @@ func (s *SubversionRange) Upperbound() SubversionEndpoint {
 // dump exists because there are two different textualizations,
 // one using : for ranges and the other using -.
 func (s *SubversionRange) dump(rangesep string) string {
+	if len(s.intervals) == 0 {
+		return ""
+	}
 	out := ""
 	for _, interval := range s.intervals {
 		if interval[0] == interval[1] {
