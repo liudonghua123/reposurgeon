@@ -1558,10 +1558,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) {
-			if drop {
-				return append([]byte(header), append(properties, content...)...)
-			}
-			return nil
+			return append([]byte(header), append(properties, content...)...)
 		}
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {

@@ -1,0 +1,11 @@
+--- A
++++ B
+@@ -1,8 +1,5 @@
+ 1.1   add      trunk/
+ 2.1   add      trunk/README
+-2.2   add      trunk/dev/
+-2.3   add      trunk/releases/
+-3.1   add      trunk/dev/VERSION
+ 4.1   change   trunk/dev/VERSION
+ 4.2   copy     trunk/releases/v1.0/ from 2:trunk/dev/
+ 4.3   copy     trunk/releases/v1.0/VERSION from 3:trunk/dev/VERSION
