@@ -466,8 +466,6 @@ FIXME: the branch creation case tickled by branchreateempty.sh is unresolved.
 
 FIXME: Needs some tests of hg import with hg-git-fast-import.
 
-FIXME: Need to test mergeinfo handling in select/deselect/expunge/sift.
-
 FIXME: Need a test of incorporate with symlink in the tarball
 
 FIXME: reposurgeon expunge with --not and --notagify needs tests

@@ -1580,9 +1580,6 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		return []byte{}
 	}
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
-		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			if pathmatch(path) == drop {
 				return "", ""
@@ -1757,9 +1754,6 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		return ""
 	}
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
-		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return popSegment(path), revrange
 		})
@@ -1786,9 +1780,6 @@ func pop(source DumpfileSource, selection SubversionRange) {
 // Push a prefix segment onto each pathname in an input dump
 func push(source DumpfileSource, selection SubversionRange, prefix string) {
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
-		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return prefix + string(os.PathSeparator) + path, revrange
 		})
@@ -1932,14 +1923,13 @@ func log(source DumpfileSource, selection SubversionRange) {
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func(string, []byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
-		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return string(pathMutator("Mergeinfo", []byte(path))), revrange
 		})
-		if userid, present := props.properties["svn:author"]; present && nameMutator != nil {
-			props.properties["svn:author"] = nameMutator(userid)
+		if selection.ContainsNode(source.Revision, source.Index) {
+			if userid, present := props.properties["svn:author"]; present && nameMutator != nil {
+				props.properties["svn:author"] = nameMutator(userid)
+			}
 		}
 		return true
 	}
@@ -2494,9 +2484,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
 	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
-		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			var dummy parsedNode
 			dummy.role = "mergeinfo"
