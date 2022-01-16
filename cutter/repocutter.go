@@ -1494,13 +1494,12 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	copiesFrom := make(map[string][]string)
 	nodehook := func(header StreamSection, properties []byte, _ []byte) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return nil
-		}
-		nodepath := string(header.payload("Node-path"))
-		copysource := header.payload("Node-copyfrom-path")
-		if copysource != nil {
-			copiesFrom[nodepath] = append(copiesFrom[nodepath], string(copysource))
+		if selection.ContainsNode(source.Revision, source.Index) {
+			nodepath := string(header.payload("Node-path"))
+			copysource := header.payload("Node-copyfrom-path")
+			if copysource != nil {
+				copiesFrom[nodepath] = append(copiesFrom[nodepath], string(copysource))
+			}
 		}
 		return nil
 	}
