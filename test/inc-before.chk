@@ -1,21 +1,26 @@
 blob
 mark :5
+data 17
+/tmp/tarball/snip
+blob
+mark :6
 data 25
 second sample small file
 
 blob
-mark :6
+mark :7
 data 24
 first sample small file
 
 commit refs/heads/master
-mark :7
-committer Fred J. Foonly <foonly@foo.com> 1508119911 +0000
+mark :8
+committer Fred J. Foonly <foonly@foo.com> 1642369048 +0000
 data 24
 Content from sample.tar
 deleteall
-M 100755 :5 snap
-M 100644 :6 snip
+M 120000 :5 alias
+M 100755 :6 snap
+M 100644 :7 snip
 
 blob
 mark :1
@@ -27,7 +32,7 @@ mark :2
 committer Ralf Schlatterbeck <rsc@runtux.com> 0 +0000
 data 14
 First commit.
-from :7
+from :8
 M 100644 :1 README
 
 blob

@@ -324,6 +324,7 @@ make-tarball:
 	echo "first sample small file" >/tmp/tarball/snip
 	echo "second sample small file" >/tmp/tarball/snap
 	chmod a+x /tmp/tarball/snap
+	ln -s /tmp/tarball/snip /tmp/tarball/alias
 	here=`pwd`
 	(cd /tmp; tar cf sample.tar tarball)
 	mv /tmp/sample.tar .
