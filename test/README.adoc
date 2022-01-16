@@ -18,7 +18,7 @@ and trying again.
 
 Test behavior is controlled by these variables:
 
-REPOSURGEON: defaults to 'reposurgeon '
+REPOSURGEON: defaults to 'reposurgeon'
 
 TESTOPT: Use this to pass in a command or option setting, such
 as "set experimental".
@@ -96,9 +96,12 @@ from the repo root.
 
 === singletest === 
 
-The "singletest" script takes the stem of a .tst file name, captures
+By default "singletest" script takes the stem of a .tst file name, captures
 stdout and stderr, and diffs the result against the corresponding
 check (.chk) file.  It emits a TAP report.
+
+There are options for other useful behaviors; do "singletest -h" or
+read the source code.
 
 === singlelift
 
@@ -106,11 +109,17 @@ The "singlelift" script normally takes the stem of a .svn file name,
 captures stdout and stderr, and diffs the result against the
 corresponding check (.chk) file. It emits a TAP report.
 
+There are options for other behaviors; do "singlelift -h" or read
+the source code.
+
 === liftcheck
 
-The "liftcheck" script takes a Subversion stream file, builds a Git
+By default, the "liftcheck" script takes a Subversion stream file, builds a Git
 repository from it, and checks for differences using repotool's
 compare-all function (all tags and branches). It emits a TAP report.
+
+There are options too modify comparisomn and reporting behaviors; do
+"liftcheck -h" or read the source code.
 
 === tapdiffer
 
@@ -457,7 +466,7 @@ FIXME: the branch creation case tickled by branchreateempty.sh is unresolved.
 
 FIXME: Needs some tests of hg import with hg-git-fast-import.
 
-FIXME: Need some tests of multiline mergeinfo properties
+FIXME: Beed to test mergeinfo handling in select/deselect/expunge/sift.
 
 FIXME: Need a test of incorporate with symlink in the tarball
 
