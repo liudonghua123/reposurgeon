@@ -2003,6 +2003,12 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 
 // Topologically reduce a dump, removing plain file modifications.
 func reduce(source DumpfileSource, selection SubversionRange) {
+	prophook := func(props *Properties) bool {
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			return path, source.patchMergeinfo(revrange)
+		})
+		return true
+	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) {
 			return append([]byte(header), append(properties, content...)...)
@@ -2016,7 +2022,7 @@ func reduce(source DumpfileSource, selection SubversionRange) {
 		all = append(all, content...)
 		return all
 	}
-	source.Report(selection, nil, nil, nodehook, true)
+	source.Report(selection, nil, prophook, nodehook, true)
 }
 
 // Renumber all revisions.
