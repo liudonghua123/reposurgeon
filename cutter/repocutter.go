@@ -1048,52 +1048,29 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * closure(), pathlist(), log(), and see() it is always on.
 	 */
 
-	if passthrough {
-		// Pass through SVN-fs-dump-format-version and UUID
-		for {
-			line := ds.Lbs.Readline()
-			if len(line) == 0 {
-				return
-			} else if strings.HasPrefix(string(line), "Revision-number:") {
-				if revhook != nil {
-					line = revhook(StreamSection(line))
-				}
-				ds.Lbs.Push(line)
-				break
-			} else {
-				os.Stdout.Write(line)
-			}
-		}
-	}
-
-	emit := passthrough && selection.intervals[0][0].rev == 0
-
-	stash := []byte{}
 	for {
 		line := ds.Lbs.Readline()
 		if len(line) == 0 {
 			break
-		}
-		if string(line) == "\n" {
 		} else if strings.HasPrefix(string(line), "Revision-number:") {
+			if revhook != nil {
+				line = revhook(StreamSection(line))
+			}
 			ds.Lbs.Push(line)
 			break
 		}
-
-		stash = append(stash, line...)
-	}
-
-	if emit {
-		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<early stash dump: %q>\n", stash)
+		if passthrough {
+			os.Stdout.Write(line)
 		}
-		os.Stdout.Write(stash)
 	}
+
 	if !ds.Lbs.HasLineBuffered() {
 		return
 	}
 	var nodecount int
 	var line []byte
+
+	emit := passthrough
 	for {
 		// Invariant: We're always looking at the beginning of a revision here
 		ds.Index = 0
@@ -1494,11 +1471,10 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	copiesFrom := make(map[string][]string)
 	nodehook := func(header StreamSection, properties []byte, _ []byte) []byte {
-		if selection.ContainsNode(source.Revision, source.Index) {
-			nodepath := string(header.payload("Node-path"))
+		if selection.ContainsNode(source.Revision, source.Index) && source.NodePath != "" {
 			copysource := header.payload("Node-copyfrom-path")
 			if copysource != nil {
-				copiesFrom[nodepath] = append(copiesFrom[nodepath], string(copysource))
+				copiesFrom[source.NodePath] = append(copiesFrom[source.NodePath], string(copysource))
 			}
 		}
 		return nil
