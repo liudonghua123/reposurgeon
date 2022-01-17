@@ -1048,6 +1048,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	 * closure(), pathlist(), log(), and see() it is always on.
 	 */
 
+	prestash := []byte{}
 	for {
 		line := ds.Lbs.Readline()
 		if len(line) == 0 {
@@ -1060,8 +1061,11 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			break
 		}
 		if passthrough {
-			os.Stdout.Write(line)
+			prestash = append(prestash, line...)
 		}
+	}
+	if nodehook != nil {
+		ds.say(nodehook(prestash, nil, nil))
 	}
 
 	if !ds.Lbs.HasLineBuffered() {
@@ -1532,7 +1536,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		return false
 	}
 	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return append([]byte(header), append(properties, content...)...)
 		}
 		matched := false
@@ -2101,7 +2105,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 // Strip out ops defined by a revision selection and a path regexp.
 func see(source DumpfileSource, selection SubversionRange) {
 	seenode := func(header StreamSection, _, _ []byte) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return nil
 		}
 		if debug >= debugPARSE {
