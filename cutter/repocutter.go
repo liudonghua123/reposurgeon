@@ -1060,9 +1060,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			ds.Lbs.Push(line)
 			break
 		}
-		if passthrough {
-			prestash = append(prestash, line...)
-		}
+		prestash = append(prestash, line...)
 	}
 	if nodehook != nil {
 		ds.say(nodehook(prestash, nil, nil))
@@ -1074,7 +1072,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	var nodecount int
 	var line []byte
 
-	emit := passthrough
 	for {
 		// Invariant: We're always looking at the beginning of a revision here
 		ds.Index = 0
@@ -1125,6 +1122,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<at start of revision %d>\n", ds.Revision)
 		}
+		emit := true
 		for {
 			line = ds.Lbs.Readline()
 			if len(line) == 0 {
@@ -1144,7 +1142,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					line = revhook(StreamSection(line))
 				}
 				ds.Lbs.Push(line)
-				// If there has been content since the last Revision-number line,
+				// If there has been no content since the last Revision-number line,
 				// whether we ship the previous revision record depends on the
 				// flag value the prophook passed back.
 				if len(stash) != 0 && nodecount == 0 && retain {
@@ -1233,14 +1231,14 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					fmt.Fprintf(os.Stderr, "<nodetxt: %q>\n", nodetxt)
 				}
 				emit = len(nodetxt) > 0
-				if emit && len(stash) > 0 {
-					if debug >= debugPARSE {
-						fmt.Fprintf(os.Stderr, "<appending to: %q>\n", stash)
+				if emit {
+					if len(stash) > 0 {
+						if debug >= debugPARSE {
+							fmt.Fprintf(os.Stderr, "<appending to: %q>\n", stash)
+						}
+						nodetxt = append(stash, nodetxt...)
+						stash = []byte{}
 					}
-					nodetxt = append(stash, nodetxt...)
-					stash = []byte{}
-				}
-				if passthrough && len(nodetxt) > 0 {
 					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<node dump: %q>\n", nodetxt)
 					}
