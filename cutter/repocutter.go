@@ -1199,6 +1199,7 @@ func (ds *DumpfileSource) OldReport(selection SubversionRange,
 				if len(cl) > 1 {
 					n, _ := strconv.Atoi(string(cl[1]))
 					content = append(content, ds.Lbs.Read(n)...)
+					ds.HasContent = true
 				}
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<READ NODE ENDS>\n")
@@ -1822,18 +1823,6 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 	source.OldReport(selection, nil, prophook, nodehook)
 }
 
-func dumpall(header StreamSection, properties []byte, content []byte) []byte {
-	// Drop empty nodes left behind by propdel
-	if len(content) == 0 && bytes.Equal(properties, []byte("PROPS-END\n")) && bytes.Equal(header.payload("Node-action"), []byte("change")) {
-		return nil
-	}
-	all := make([]byte, 0)
-	all = append(all, []byte(header)...)
-	all = append(all, properties...)
-	all = append(all, content...)
-	return all
-}
-
 // Replace file copy operations with explicit add/change operation
 func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool, matchpaths []string) {
 	//if debug >= debugLOGIC {
@@ -2027,16 +2016,26 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 
 // propdel - Delete properties
 func propdel(source DumpfileSource, propnames []string, selection SubversionRange) {
+	var propsNuked bool
 	prophook := func(props *Properties) bool {
 		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
+		oldlen := len(props.propkeys)
 		for _, propname := range propnames {
 			props.Delete(propname)
 		}
+		propsNuked = oldlen > 0 && len(props.propkeys) == 0
 		return true
 	}
-	source.OldReport(selection, nil, prophook, dumpall)
+	nodehook := func(header StreamSection) []byte {
+		// Drop empty nodes left behind by propdel
+		if !source.HasContent && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
+			return nil
+		}
+		return []byte(header)
+	}
+	source.Report(selection, nil, prophook, nodehook, nil)
 }
 
 // Set properties.
@@ -2059,16 +2058,29 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 
 // Turn off property by suffix, defaulting to svn:executable
 func propclean(source DumpfileSource, property string, suffixes []string, selection SubversionRange) {
+	var propsNuked bool
 	prophook := func(props *Properties) bool {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return true
+		}
+		oldlen := len(props.propkeys)
 		for _, suffix := range suffixes {
 			if strings.HasSuffix(source.NodePath, suffix) {
 				props.Delete(property)
 				break
 			}
 		}
+		propsNuked = oldlen > 0 && len(props.propkeys) == 0
 		return true
 	}
-	source.OldReport(selection, nil, prophook, dumpall)
+	nodehook := func(header StreamSection) []byte {
+		// Drop empty nodes left behind by propdel
+		if !source.HasContent && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
+			return nil
+		}
+		return []byte(header)
+	}
+	source.Report(selection, nil, prophook, nodehook, nil)
 }
 
 // Rename properties.
