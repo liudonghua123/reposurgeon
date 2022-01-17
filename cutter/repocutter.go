@@ -650,6 +650,11 @@ func NewProperties(source *DumpfileSource) Properties {
 	return props
 }
 
+// NonEmpty is the obvious predicate
+func (props *Properties) NonEmpty() bool {
+	return len(props.propkeys) > 0
+}
+
 // Stringer - return a representation of properties that can round-trip
 func (props *Properties) Stringer() string {
 	var b strings.Builder
@@ -669,7 +674,7 @@ func (props *Properties) Stringer() string {
 
 // String - use for visualization, need not round-trip
 func (props *Properties) String() string {
-	if props == nil || len(props.propkeys) == 0 {
+	if props == nil || !props.NonEmpty() {
 		return ""
 	}
 	txt := ""
@@ -1070,6 +1075,7 @@ func (ds *DumpfileSource) OldReport(selection SubversionRange,
 	for {
 		// Invariant: We're always looking at the beginning of a revision here
 		stash := ds.Require("Revision-number:")
+		ds.Index = 0
 		rev := string(bytes.Fields(stash)[1])
 		rval, err := strconv.Atoi(rev)
 		if err != nil {
@@ -1116,7 +1122,6 @@ func (ds *DumpfileSource) OldReport(selection SubversionRange,
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<at start of node content %d>\n", ds.Revision)
 		}
-		ds.Index = 0
 		emit := true
 		nodecount := 0
 		for {
@@ -1134,6 +1139,7 @@ func (ds *DumpfileSource) OldReport(selection SubversionRange,
 				continue
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
+				ds.Index = 0
 				// Putting this check here rather than at the top of the look
 				// guarantees it won't firte on revision 0
 				if revhook != nil {
@@ -1195,6 +1201,7 @@ func (ds *DumpfileSource) OldReport(selection SubversionRange,
 				}
 				// Using a read() here allows us to handle binary content
 				content := []byte{}
+				ds.HasContent = false
 				cl := textContentLength.FindSubmatch(rawHeader)
 				if len(cl) > 1 {
 					n, _ := strconv.Atoi(string(cl[1]))
@@ -1308,6 +1315,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	for {
 		// Invariant: We're always looking at the beginning of a revision here
 		stash := ds.Require("Revision-number:")
+		ds.Index = 0
 		rev := string(bytes.Fields(stash)[1])
 		rval, err := strconv.Atoi(rev)
 		if err != nil {
@@ -1354,7 +1362,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		if debug >= debugPARSE {
 			fmt.Fprintf(os.Stderr, "<at start of node content %d>\n", ds.Revision)
 		}
-		ds.Index = 0
 		emit := true
 		nodecount := 0
 		for {
@@ -1372,6 +1379,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				continue
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
+				ds.Index = 0
 				// Putting this check here rather than at the top of the look
 				// guarantees it won't firte on revision 0
 				if revhook != nil {
@@ -1479,11 +1487,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 						}
 						content = newcontent
 					}
-
-					// FIXME: Drop empty nodes left behind by propdel
-					//if len(content) == 0 && bytes.Equal(properties, []byte("PROPS-END\n")) && bytes.Equal(header.payload("Node-action"), []byte("change")) {
-					//	return nil
-					//}
 
 					nodetxt := append(header, append([]byte(properties), content...)...)
 					if debug >= debugPARSE {
@@ -1875,7 +1878,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 				fmt.Fprintf(os.Stderr, "<r%s: filecopy investigates %s>\n",
 					source.where(), copypath)
 			}
-			if len(content) > 0 {
+			if source.HasContent {
 				header = header.delete("Node-copyfrom-path")
 				header = header.delete("Node-copyfrom-rev")
 				header = header.stripChecksums()
@@ -2021,11 +2024,11 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
-		oldlen := len(props.propkeys)
+		hadProps := props.NonEmpty()
 		for _, propname := range propnames {
 			props.Delete(propname)
 		}
-		propsNuked = oldlen > 0 && len(props.propkeys) == 0
+		propsNuked = hadProps && !props.NonEmpty()
 		return true
 	}
 	nodehook := func(header StreamSection) []byte {
@@ -2063,14 +2066,14 @@ func propclean(source DumpfileSource, property string, suffixes []string, select
 		if !selection.ContainsNode(source.Revision, source.Index) {
 			return true
 		}
-		oldlen := len(props.propkeys)
+		hadProps := props.NonEmpty()
 		for _, suffix := range suffixes {
 			if strings.HasSuffix(source.NodePath, suffix) {
 				props.Delete(property)
 				break
 			}
 		}
-		propsNuked = oldlen > 0 && len(props.propkeys) == 0
+		propsNuked = hadProps && !props.NonEmpty()
 		return true
 	}
 	nodehook := func(header StreamSection) []byte {
@@ -2231,26 +2234,28 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 
 // Topologically reduce a dump, removing plain file modifications.
 func reduce(source DumpfileSource, selection SubversionRange) {
+	var hasProperties bool
 	prophook := func(props *Properties) bool {
+		hasProperties = false
+		if source.Index == 0 {
+			return true
+		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return path, source.patchMergeinfo(revrange)
 		})
+		hasProperties = props.NonEmpty()
 		return true
 	}
-	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) {
-			return append([]byte(header), append(properties, content...)...)
+			return []byte(header)
 		}
-		if string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change" && len(properties) == 0 {
+		if string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change" && !hasProperties {
 			return nil
 		}
-		all := make([]byte, 0)
-		all = append(all, []byte(header)...)
-		all = append(all, properties...)
-		all = append(all, content...)
-		return all
+		return []byte(header)
 	}
-	source.OldReport(selection, nil, prophook, nodehook)
+	source.Report(selection, nil, prophook, nodehook, nil)
 }
 
 // Renumber all revisions.
