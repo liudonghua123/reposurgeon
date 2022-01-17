@@ -1065,14 +1065,9 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	if !ds.Lbs.HasLineBuffered() {
 		return
 	}
-	var nodecount int
-	var line []byte
 
 	for {
 		// Invariant: We're always looking at the beginning of a revision here
-		ds.Index = 0
-		nodecount = 0
-
 		stash := ds.Require("Revision-number:")
 		rev := string(bytes.Fields(stash)[1])
 		rval, err := strconv.Atoi(rev)
@@ -1088,10 +1083,11 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				os.Exit(1)
 			}
 		}
-		ds.Index = 0
 		stash = append(stash, ds.Require("Prop-content-length:")...)
 		stash = append(stash, ds.Require("Content-length:")...)
 		stash = append(stash, ds.Require(linesep)...)
+
+		// Process per-revision properties
 		props := NewProperties(ds)
 		retain := true
 		if prophook != nil {
@@ -1101,8 +1097,9 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			stash = SetLength("Content", stash, proplen)
 		}
 		stash = append(stash, []byte(props.Stringer())...)
+
 		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<after append: %d>\n", ds.Lbs.linenumber)
+			fmt.Fprintf(os.Stderr, "<after properties: %d>\n", ds.Lbs.linenumber)
 		}
 		for string(ds.Lbs.Peek()) == linesep {
 			stash = append(stash, ds.Lbs.Readline()...)
@@ -1116,11 +1113,13 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		}
 
 		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<at start of revision %d>\n", ds.Revision)
+			fmt.Fprintf(os.Stderr, "<at start of node content %d>\n", ds.Revision)
 		}
+		ds.Index = 0
 		emit := true
+		nodecount := 0
 		for {
-			line = ds.Lbs.Readline()
+			line := ds.Lbs.Readline()
 			if len(line) == 0 {
 				return
 			}
@@ -1134,6 +1133,8 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				continue
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
+				// Putting this check here rather than at the top of the look
+				// guarantees it won't firte on revision 0
 				if revhook != nil {
 					line = revhook(StreamSection(line))
 				}
