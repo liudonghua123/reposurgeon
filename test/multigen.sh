@@ -135,6 +135,10 @@ svn up
 svn rename project3/branches/sample3 project3/branches/renamed
 svn commit -m "Rename sample3 branch of project3"
 svn up
+# Pathological copy that needs to be split
+svn copy project3 project4
+svn commit -m "Should become 3 copies of project3/{trunk,branches,tags}"
+svn up
 # We're done
 cd ..
 } >/dev/$verbose 2>&1

@@ -2761,6 +2761,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if structural && bytes.Count(nodePath, []byte{os.PathSeparator}) == 0 {
 				// Top-level copies must be split
 				if parsed.role == "copy" {
+					if debug >= debugLOGIC {
+						fmt.Fprintf(os.Stderr, "<r%s: top-level copy of %q>\n", source.where(), nodePath)
+					}
 					if p := string(properties); p != "" && p != "PROPS-END\n" {
 						croak("can't split a node with nonempty properties (%v).", string(properties))
 					}
@@ -2784,6 +2787,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					source.Lbs.Push(suffixer(header, "/tags"))
 					source.Lbs.Push(suffixer(header, "/branches"))
 					source.Lbs.Push(suffixer(header, "/trunk"))
+					if debug >= debugLOGIC {
+						fmt.Fprintf(os.Stderr, "<r%s: top-level copy of %q is done>\n", source.where(), nodePath)
+					}
 					return nil
 				}
 				// Non-copy operations - pass through anything that looks like standard layout

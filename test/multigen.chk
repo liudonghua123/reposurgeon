@@ -482,4 +482,15 @@ D branches/sample3/bar.txt
 D branches/sample3/baz.txt
 D branches/sample3/foo.txt
 
+tag project4-root
+#legacy-id 47
+from :50
+tagger fred <fred> 470 +0000
+data 57
+Should become 3 copies of project3/{trunk,branches,tags}
+
+reset refs/heads/project4
+#legacy-id 47
+from :50
+
 done

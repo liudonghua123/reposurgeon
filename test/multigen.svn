@@ -1279,3 +1279,28 @@ Node-path: project3/branches/sample3
 Node-action: delete
 
 
+Revision-number: 47
+Prop-content-length: 155
+Content-length: 155
+
+K 10
+svn:author
+V 4
+fred
+K 8
+svn:date
+V 27
+1970-01-01T00:07:50.000000Z
+K 7
+svn:log
+V 56
+Should become 3 copies of project3/{trunk,branches,tags}
+PROPS-END
+
+Node-path: project4
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 46
+Node-copyfrom-path: project3
+
+
