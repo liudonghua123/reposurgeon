@@ -2550,7 +2550,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	//
 	// Things we know:
 	//
-	// 1. We need swapping on every path.
+	// 1. We need swapping on every path that is not alreadt in standard layout.
 	//
 	// 2. We never want to trim paths unless we're doing a structural swap.
 	//
@@ -2579,7 +2579,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		if len(parts) >= 2 {
 			// Swapping logic
 			top := string(parts[0])
-			if structural {
+			if !structural {
+				parts[0] = parts[1]
+				parts[1] = []byte(top)
+			} else if !stdlayout(path) {
 				under := string(parts[1])
 				if under == "trunk" {
 					// PROJECT/trunk/...;  Just map this to trunk/PROJECT/...,
@@ -2661,9 +2664,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						}
 					}
 				}
-			} else { // naive swap
-				parts[0] = parts[1]
-				parts[1] = []byte(top)
 			}
 			if debug >= debugLOGIC {
 				new := bytes.Join(parts, []byte{os.PathSeparator})
@@ -2680,7 +2680,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 				}
 				return false
 			}
-			if structural && parsed.isDir && copyable(parts) {
+			if structural && !stdlayout(path) && parsed.isDir && copyable(parts) {
 				var old []byte
 				if debug >= debugLOGIC {
 					old = bytes.Join(parts, []byte{os.PathSeparator})
