@@ -1793,9 +1793,9 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		}
 		return false
 	}
-	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
-			return append([]byte(header), append(properties, content...)...)
+			return []byte(header)
 		}
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
@@ -1805,13 +1805,9 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 			}
 		}
 		if matched != drop {
-			all := make([]byte, 0)
-			all = append(all, []byte(header)...)
-			all = append(all, properties...)
-			all = append(all, content...)
-			return all
+			return []byte(header)
 		}
-		return []byte{}
+		return nil
 	}
 	prophook := func(props *Properties) bool {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
@@ -1823,7 +1819,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		})
 		return true
 	}
-	source.OldReport(selection, nil, prophook, nodehook)
+	source.Report(selection, nil, prophook, nodehook, nil)
 }
 
 // Replace file copy operations with explicit add/change operation
