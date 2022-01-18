@@ -2757,10 +2757,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
 					}
-					propdelim := ""
-					if strings.Contains(string(header), "Prop-content") {
-						propdelim = "PROPS-END\n\n"
-					}
+					header.delete("Prop-content-lengh")
 					suffixer := func(header StreamSection, suffix string) []byte {
 						out := header.clone()
 						for _, tag := range [2]string{"Node-path", "Node-copyfrom-path"} {
@@ -2768,9 +2765,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								return append(in, []byte(suffix)...)
 							})
 						}
-						return []byte(string(out) + propdelim + string(properties) + string(content))
+						return append(out, '\n')
 					}
 					// Push these back so the branches and tags will get wildcarding
+					// FIXME: This is not working right.
 					source.Lbs.Push(suffixer(header, "/tags"))
 					source.Lbs.Push(suffixer(header, "/branches"))
 					source.Lbs.Push(suffixer(header, "/trunk"))
