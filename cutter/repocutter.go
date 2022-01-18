@@ -1032,240 +1032,6 @@ func SetLength(header string, data []byte, val int) []byte {
 	return data
 }
 
-// OldReport - report a filtered portion of content.
-func (ds *DumpfileSource) OldReport(selection SubversionRange,
-	revhook func(header StreamSection) []byte,
-	prophook func(properties *Properties) bool,
-	nodehook func(header StreamSection, properties []byte, content []byte) []byte) {
-
-	/*
-	 * The revhook is called on every node.
-	 *
-	 * The prophook is called before the nodehook. It is called on
-	 * every property section, both per-node and per-revision, and
-	 * must do its own selection filtering.  When called on the
-	 * revision properties the value of ds.Index is zero, and will
-	 * therefore match a range element with an unspecified node
-	 * part.
-	 *
-	 * nodehook is called on all nodes. It's up to each nodehook to do
-	 * its own selection filtering.
-	 *
-	 * Both hooks can count on the DumpfileSource members to be up to
-	 * date, including NodePath and Revision and Index, because those.
-	 * are acquired before the properties or node content are parsed.
-	 */
-
-	var passthrough bool
-	prestash := []byte{}
-	for {
-		line := ds.Lbs.Readline()
-		if len(line) == 0 {
-			break
-		} else if strings.HasPrefix(string(line), "Revision-number:") {
-			if revhook != nil {
-				line = revhook(StreamSection(line))
-			}
-			ds.Lbs.Push(line)
-			break
-		}
-		prestash = append(prestash, line...)
-	}
-	if nodehook != nil {
-		out := nodehook(prestash, nil, nil)
-		if out != nil {
-			passthrough = true
-		}
-		ds.say(out)
-	}
-
-	if !ds.Lbs.HasLineBuffered() {
-		return
-	}
-
-	for {
-		// Invariant: We're always looking at the beginning of a revision here
-		stash := ds.Require("Revision-number:")
-		ds.Index = 0
-		rev := string(bytes.Fields(stash)[1])
-		rval, err := strconv.Atoi(rev)
-		if err != nil {
-			fmt.Printf("repocutter: invalid revision number %s at line %d\n", rev, ds.Lbs.linenumber)
-			os.Exit(1)
-		}
-		ds.Revision = rval
-		if debugline := ds.Optional("Debug-level:"); debugline != nil {
-			debug, err = strconv.Atoi(string(bytes.Fields(debugline)[1]))
-			if err != nil {
-				fmt.Printf("repocutter: invalid debug level %s at line %d\n", rev, ds.Lbs.linenumber)
-				os.Exit(1)
-			}
-		}
-		stash = append(stash, ds.Require("Prop-content-length:")...)
-		stash = append(stash, ds.Require("Content-length:")...)
-		stash = append(stash, ds.Require(linesep)...)
-
-		// Process per-revision properties
-		props := NewProperties(ds)
-		retain := true
-		if prophook != nil {
-			retain = prophook(&props)
-			proplen := len(props.Stringer())
-			stash = SetLength("Prop-content", stash, proplen)
-			stash = SetLength("Content", stash, proplen)
-		}
-		stash = append(stash, []byte(props.Stringer())...)
-
-		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<after properties: %d>\n", ds.Lbs.linenumber)
-		}
-		for string(ds.Lbs.Peek()) == linesep {
-			stash = append(stash, ds.Lbs.Readline()...)
-		}
-		if ds.Baton != nil {
-			ds.Baton.Twirl("")
-		}
-		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<ReadRevisionHeader %d: returns stash=%q>\n",
-				ds.Lbs.linenumber, stash)
-		}
-
-		if debug >= debugPARSE {
-			fmt.Fprintf(os.Stderr, "<at start of node content %d>\n", ds.Revision)
-		}
-		emit := true
-		nodecount := 0
-		for {
-			line := ds.Lbs.Readline()
-			if len(line) == 0 {
-				return
-			}
-			if string(line) == "\n" {
-				if passthrough && emit {
-					if debug >= debugPARSE {
-						fmt.Fprintf(os.Stderr, "<passthrough dump: %q>\n", line)
-					}
-					os.Stdout.Write(line)
-				}
-				continue
-			}
-			if strings.HasPrefix(string(line), "Revision-number:") {
-				ds.Index = 0
-				// Putting this check here rather than at the top of the look
-				// guarantees it won't firte on revision 0
-				if revhook != nil {
-					line = revhook(StreamSection(line))
-				}
-				ds.Lbs.Push(line)
-				// If there has been no content since the last Revision-number line,
-				// whether we ship the previous revision record depends on the
-				// flag value the prophook passed back.
-				if len(stash) != 0 && nodecount == 0 && retain {
-					if passthrough {
-						if debug >= debugPARSE {
-							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
-						}
-						ds.say(stash)
-					}
-				}
-				break
-			}
-			if strings.HasPrefix(string(line), "Node-") {
-				nodecount++
-				if strings.HasPrefix(string(line), "Node-path: ") {
-					ds.Index++
-					ds.NodePath = string(line[11 : len(line)-1])
-				}
-				ds.Lbs.Push(line)
-
-				if debug >= debugPARSE {
-					fmt.Fprintf(os.Stderr, "<READ NODE BEGINS>\n")
-				}
-				rawHeader := ds.Require("Node-")
-				for {
-					line := ds.Lbs.Readline()
-					if len(line) == 0 {
-						fmt.Fprintf(os.Stderr, "repocutter: unexpected EOF in node header\n")
-						os.Exit(1)
-					}
-					m := nodeCopyfrom.FindSubmatch(line)
-					if m != nil {
-						r := string(m[1])
-						if !ds.EmittedRevisions[r] {
-							rawHeader = append(rawHeader, line...)
-							rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)
-							continue
-						}
-					}
-					rawHeader = append(rawHeader, line...)
-					if string(line) == linesep {
-						break
-					}
-				}
-				properties := ""
-				if bytes.Contains(rawHeader, []byte("Prop-content-length")) {
-					props := NewProperties(ds)
-					if prophook != nil {
-						prophook(&props)
-					}
-					properties = props.Stringer()
-				}
-				// Using a read() here allows us to handle binary content
-				content := []byte{}
-				cl := textContentLength.FindSubmatch(rawHeader)
-				if len(cl) > 1 {
-					n, _ := strconv.Atoi(string(cl[1]))
-					content = append(content, ds.Lbs.Read(n)...)
-				}
-				if debug >= debugPARSE {
-					fmt.Fprintf(os.Stderr, "<READ NODE ENDS>\n")
-				}
-				if prophook != nil {
-					rawHeader = SetLength("Prop-content", rawHeader, len(properties))
-					rawHeader = SetLength("Content", rawHeader, len(properties)+len(content))
-				}
-				header := StreamSection(rawHeader)
-				if p := header.payload("Node-kind"); p != nil {
-					ds.DirTracking[string(header.payload("Node-path"))] = bytes.Equal(p, []byte("dir"))
-				}
-
-				if debug >= debugPARSE {
-					fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
-					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
-					fmt.Fprintf(os.Stderr, "<content: %q>\n", content)
-				}
-				var nodetxt []byte
-				if nodehook != nil {
-					if debug >= debugPARSE {
-						fmt.Fprintf(os.Stderr, "<nodehook called with: %d %d>\n",
-							ds.Revision, nodecount)
-					}
-					nodetxt = nodehook(StreamSection(header), []byte(properties), content)
-				}
-				if debug >= debugPARSE {
-					fmt.Fprintf(os.Stderr, "<nodetxt: %q>\n", nodetxt)
-				}
-				emit = len(nodetxt) > 0
-				if emit {
-					if len(stash) > 0 {
-						if debug >= debugPARSE {
-							fmt.Fprintf(os.Stderr, "<appending to: %q>\n", stash)
-						}
-						nodetxt = append(stash, nodetxt...)
-						stash = []byte{}
-					}
-					if debug >= debugPARSE {
-						fmt.Fprintf(os.Stderr, "<node dump: %q>\n", nodetxt)
-					}
-					ds.say(nodetxt)
-				}
-				continue
-			}
-			croak("at <%d>, line %d: parse of %q doesn't look right, aborting!", ds.Revision, ds.Lbs.linenumber, string(line))
-		}
-	}
-}
-
 // Report - simpler reporting of a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	revhook func(header StreamSection) []byte,
@@ -2723,9 +2489,9 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		return true
 	}
 	var oldval, newval []byte
-	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
+	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) {
-			return append([]byte(header), append(properties, content...)...)
+			return []byte(header)
 		}
 		nodePath := header.payload("Node-path")
 		var parsed parsedNode
@@ -2820,25 +2586,19 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			}
 		}
 
-		all := make([]byte, 0)
 		if wildcardKey == "" {
-			all = append(all, []byte(header)...)
-			all = append(all, properties...)
-			all = append(all, content...)
-		} else {
-			for _, subbranch := range wildcards[wildcardKey].Iterate() {
-				clone := bytes.Replace(header,
-					[]byte{wildcardMark}, []byte(subbranch),
-					-1)
-				all = append(all, clone...)
-				all = append(all, properties...)
-				all = append(all, content...)
-			}
+			return []byte(header)
 		}
-
+		all := make([]byte, 0)
+		for _, subbranch := range wildcards[wildcardKey].Iterate() {
+			clone := bytes.Replace(header,
+				[]byte{wildcardMark}, []byte(subbranch),
+				-1)
+			all = append(all, clone...)
+		}
 		return all
 	}
-	source.OldReport(selection, nil, prophook, nodehook)
+	source.Report(selection, nil, prophook, nodehook, nil)
 }
 
 // Neutralize the input test load
