@@ -1493,9 +1493,9 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 						}
 						newcontent := contenthook(content)
 						if string(content) != string(newcontent) {
+							header = header.stripChecksums()
 							header = header.setLength("Text-content", len(newcontent))
 							header = header.setLength("Content", len(properties)+len(newcontent))
-							header = header.stripChecksums()
 						}
 						content = newcontent
 					}
@@ -1680,8 +1680,20 @@ func (ss StreamSection) isDir(context DumpfileSource) bool {
 
 // SetLength - alter the length field of a specified header
 func (ss StreamSection) setLength(header string, val int) []byte {
-	re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
-	return StreamSection(re.ReplaceAll([]byte(ss), []byte("$1 "+strconv.Itoa(val))))
+	if bytes.Contains(ss, []byte(header)) {
+		re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
+		return re.ReplaceAll([]byte(ss), []byte("$1 "+strconv.Itoa(val)))
+	} else if val > 0 {
+		lf := ss[len(ss)-1] == '\n'
+		if lf {
+			ss = ss[:len(ss)-1]
+		}
+		ss = append(ss, []byte(fmt.Sprintf("%s-length: %d\n", header, val))...)
+		if lf {
+			ss = append(ss, '\n')
+		}
+	}
+	return []byte(ss)
 }
 
 // stripChecksums - remove checksums from a blob header
@@ -1844,11 +1856,13 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 		content  []byte
 	}
 	values := make(map[string][]trackCopy)
-	nodehook := func(header StreamSection, properties []byte, content []byte) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return append([]byte(header), append(properties, content...)...)
-		}
-		nodePath := string(header.payload("Node-path"))
+	var replacement []byte
+	var nodePath string
+	nodehook := func(header StreamSection) []byte {
+		nodePath = source.NodePath
+		//if debug >= debugLOGIC {
+		//	fmt.Fprintf(os.Stderr, "  <nodePath gets %q>\n", nodePath)
+		//}
 		if debug >= debugLOGIC {
 			fmt.Fprintf(os.Stderr,
 				"<r%s: filecopy investigates this revision>\n",
@@ -1864,20 +1878,15 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 				nodePath = filepath.Base(nodePath)
 			}
 		}
-		if content != nil && len(content) > 0 {
-			trampoline := values[nodePath]
-			trampoline = append(trampoline, trackCopy{source.Revision, content})
-			values[nodePath] = trampoline
-			if debug >= debugLOGIC {
-				fmt.Fprintf(os.Stderr, "<r%s: stashed content %q>\n",
-					source.where(), content)
-			}
-		}
+		replacement = nil
 		// The logic here is a bit more complex than might seem necessary
 		// because for some inexplicable reason Subversion occasionally generates nodes
 		// which have copyfrom information *and* the copy already performed - that is,
 		// the node content is non-nil and should be used.  In that case we want to strip
 		// out the copyfrom information without modifyinmg the content.
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return []byte(header)
+		}
 		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
 			if byBasename {
 				copypath = []byte(filepath.Base(string(copypath)))
@@ -1907,13 +1916,10 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 							header = header.delete("Node-copyfrom-path")
 							header = header.delete("Node-copyfrom-rev")
 							header = header.stripChecksums()
-							content = sources[i].content
-							header = append(header[:len(header)-1],
-								[]byte(fmt.Sprintf("Text-content-length: %d\nContent-length: %d\n\n",
-									len(content), len(content)))...)
-							//if debug >= debugLOGIC {
-							//	fmt.Fprintf(os.Stderr, "    <modified header '%q'>\n", header)
-							//}
+							replacement = sources[i].content
+							if debug >= debugLOGIC {
+								fmt.Fprintf(os.Stderr, "    <r%s replacement is '%q'>\n", source.where(), replacement)
+							}
 							break
 						}
 					}
@@ -1922,14 +1928,28 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 				}
 			}
 		}
-
-		all := make([]byte, 0)
-		all = append(all, []byte(header)...)
-		all = append(all, properties...)
-		all = append(all, content...)
-		return all
+		return []byte(header)
 	}
-	source.OldReport(selection, nil, nil, nodehook)
+	contenthook := func(content []byte) []byte {
+		if replacement != nil {
+			content = replacement
+			if debug >= debugLOGIC {
+				fmt.Fprintf(os.Stderr, "  <r%s replacing with %q>\n", source.where(), content)
+			}
+		}
+		if content != nil && len(content) > 0 {
+			trampoline := values[nodePath]
+			trampoline = append(trampoline, trackCopy{source.Revision, content})
+			values[nodePath] = trampoline
+			if debug >= debugLOGIC {
+				fmt.Fprintf(os.Stderr, "<r%s: for %s, stashed content %q>\n",
+					source.where(), nodePath, content)
+			}
+		}
+		return content
+	}
+
+	source.Report(selection, nil, nil, nodehook, contenthook)
 }
 
 // Hack pathnames to obscure them.
