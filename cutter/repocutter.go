@@ -2262,23 +2262,20 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 
 // Topologically reduce a dump, removing plain file modifications.
 func reduce(source DumpfileSource, selection SubversionRange) {
-	var hasProperties bool
 	prophook := func(props *Properties) bool {
-		hasProperties = false
 		if source.Index == 0 {
 			return true
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return path, source.patchMergeinfo(revrange)
 		})
-		hasProperties = props.NonEmpty()
 		return true
 	}
 	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) {
 			return []byte(header)
 		}
-		if string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change" && !hasProperties {
+		if string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change" && !header.hasProperties() {
 			return nil
 		}
 		return []byte(header)
@@ -2764,8 +2761,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					if debug >= debugLOGIC {
 						fmt.Fprintf(os.Stderr, "<r%s: top-level copy of %q>\n", source.where(), nodePath)
 					}
-					if p := string(properties); p != "" && p != "PROPS-END\n" {
-						croak("can't split a node with nonempty properties (%v).", string(properties))
+					if header.hasProperties() {
+						croak("r%s: can't split a top node with nonempty properties.", source.where())
+					}
+					if source.HasContent {
+						croak("r%s: can't split a top node with nonempty content.", source.where())
 					}
 					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
