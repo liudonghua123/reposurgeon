@@ -773,7 +773,6 @@ type DumpfileSource struct {
 	Baton            *Baton
 	Revision         int
 	Index            int // 1-origin within nodes
-	HasContent       bool
 	NodePath         string
 	EmittedRevisions map[string]bool
 	DirTracking      map[string]bool
@@ -1213,12 +1212,10 @@ func (ds *DumpfileSource) OldReport(selection SubversionRange,
 				}
 				// Using a read() here allows us to handle binary content
 				content := []byte{}
-				ds.HasContent = false
 				cl := textContentLength.FindSubmatch(rawHeader)
 				if len(cl) > 1 {
 					n, _ := strconv.Atoi(string(cl[1]))
 					content = append(content, ds.Lbs.Read(n)...)
-					ds.HasContent = true
 				}
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<READ NODE ENDS>\n")
@@ -1466,7 +1463,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					rawHeader = SetLength("Content", rawHeader, len(properties)+len(content))
 				}
 				header := StreamSection(rawHeader)
-				ds.HasContent = len(content) > 0
 				if p := header.payload("Node-kind"); p != nil {
 					ds.DirTracking[string(header.payload("Node-path"))] = bytes.Equal(p, []byte("dir"))
 				}
@@ -1719,6 +1715,10 @@ func (ss StreamSection) hasProperties() bool {
 	return proplen != nil && string(proplen) != "10"
 }
 
+func (ss StreamSection) hasContent() bool {
+	return ss.payload("Text-content-length") != nil
+}
+
 // Subcommand implementations begin here
 
 func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
@@ -1882,7 +1882,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 				fmt.Fprintf(os.Stderr, "<r%s: filecopy investigates %s>\n",
 					source.where(), copypath)
 			}
-			if source.HasContent {
+			if header.hasContent() {
 				header = header.delete("Node-copyfrom-path")
 				header = header.delete("Node-copyfrom-rev")
 				header = header.stripChecksums()
@@ -2048,7 +2048,7 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 	}
 	nodehook := func(header StreamSection) []byte {
 		// Drop empty nodes left behind by propdel
-		if !source.HasContent && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
+		if !header.hasContent() && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
 			return nil
 		}
 		return []byte(header)
@@ -2093,7 +2093,7 @@ func propclean(source DumpfileSource, property string, suffixes []string, select
 	}
 	nodehook := func(header StreamSection) []byte {
 		// Drop empty nodes left behind by propdel
-		if !source.HasContent && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
+		if !header.hasContent() && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
 			return nil
 		}
 		return []byte(header)
@@ -2751,7 +2751,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					if header.hasProperties() {
 						croak("r%s: can't split a top node with nonempty properties.", source.where())
 					}
-					if source.HasContent {
+					if header.hasContent() {
 						croak("r%s: can't split a top node with nonempty content.", source.where())
 					}
 					if debug >= debugPARSE {
