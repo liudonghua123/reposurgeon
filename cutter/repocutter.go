@@ -1680,20 +1680,7 @@ func (ss StreamSection) isDir(context DumpfileSource) bool {
 
 // SetLength - alter the length field of a specified header
 func (ss StreamSection) setLength(header string, val int) []byte {
-	if bytes.Contains(ss, []byte(header)) {
-		re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
-		return re.ReplaceAll([]byte(ss), []byte("$1 "+strconv.Itoa(val)))
-	} else if val > 0 {
-		lf := ss[len(ss)-1] == '\n'
-		if lf {
-			ss = ss[:len(ss)-1]
-		}
-		ss = append(ss, []byte(fmt.Sprintf("%s-length: %d\n", header, val))...)
-		if lf {
-			ss = append(ss, '\n')
-		}
-	}
-	return []byte(ss)
+	return SetLength(header, ss, val)
 }
 
 // stripChecksums - remove checksums from a blob header
