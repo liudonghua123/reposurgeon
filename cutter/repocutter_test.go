@@ -55,3 +55,78 @@ func TestOptimizeRange(t *testing.T) {
 		assertEqual(t, optimizeRange(item.before), item.after)
 	}
 }
+
+func TestSetLength(t *testing.T) {
+	type SetLengthTestEntry struct {
+		before string
+		header string
+		newlen int
+		check  string
+	}
+	tests := []SetLengthTestEntry{
+		// Modify header already present
+		{
+			before: `Node-path: branches/testbranch/placeholder
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 80
+Content-length: 90
+
+`,
+			header: "Text-content",
+			newlen: 23,
+			check: `Node-path: branches/testbranch/placeholder
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Text-content-length: 23
+Content-length: 90
+
+`,
+		},
+		// Add length header not present
+		{
+			before: `Node-path: branches/testbranch/placeholder
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Content-length: 90
+
+`,
+			header: "Text-content",
+			newlen: 23,
+			check: `Node-path: branches/testbranch/placeholder
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Content-length: 90
+Text-content-length: 23
+
+`,
+		},
+		// Do not make nonexistent zero headers
+		{
+			before: `Node-path: branches/testbranch/placeholder
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Content-length: 90
+
+`,
+			header: "Text-content",
+			newlen: 0,
+			check: `Node-path: branches/testbranch/placeholder
+Node-kind: file
+Node-action: add
+Prop-content-length: 10
+Content-length: 90
+
+`,
+		},
+	}
+	for _, item := range tests {
+		after := SetLength(item.header, []byte(item.before), item.newlen)
+		assertEqual(t, string(after), item.check)
+	}
+}

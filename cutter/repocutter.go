@@ -1017,8 +1017,20 @@ func parseMergeinfoRange(txt string) SubversionRange {
 
 // SetLength - alter the length field of a specified header
 func SetLength(header string, data []byte, val int) []byte {
-	re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
-	return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
+	if bytes.Contains(data, []byte(header)) {
+		re := regexp.MustCompile("(" + header + "-length:) ([0-9]+)")
+		return re.ReplaceAll(data, []byte("$1 "+strconv.Itoa(val)))
+	} else if val > 0 {
+		lf := data[len(data)-1] == '\n'
+		if lf {
+			data = data[:len(data)-1]
+		}
+		data = append(data, []byte(fmt.Sprintf("%s-length: %d\n", header, val))...)
+		if lf {
+			data = append(data, '\n')
+		}
+	}
+	return data
 }
 
 // OldReport - report a filtered portion of content.
