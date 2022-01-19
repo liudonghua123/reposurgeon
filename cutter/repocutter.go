@@ -1038,7 +1038,7 @@ func SetLength(header string, data []byte, val int) []byte {
 // Report - simpler reporting of a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	revhook func(header StreamSection) []byte,
-	prophook func(properties *Properties) bool,
+	prophook func(properties *Properties),
 	nodehook func(header StreamSection) []byte,
 	contenthook func(header []byte) []byte) {
 
@@ -1115,9 +1115,8 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 
 		// Process per-revision properties
 		props := NewProperties(ds)
-		retain := true
 		if prophook != nil {
-			retain = prophook(&props)
+			prophook(&props)
 			proplen := len(props.Stringer())
 			stash = SetLength("Prop-content", stash, proplen)
 			stash = SetLength("Content", stash, proplen)
@@ -1163,10 +1162,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					line = revhook(StreamSection(line))
 				}
 				ds.Lbs.Push(line)
-				// If there has been no content since the last Revision-number line,
-				// whether we ship the previous revision record depends on the
-				// flag value the prophook passed back.
-				if len(stash) != 0 && ds.Index == 0 && retain {
+				if len(stash) != 0 && ds.Index == 0 {
 					if passthrough {
 						if debug >= debugPARSE {
 							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
@@ -1495,11 +1491,10 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<entering select>")
 	}
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return path, source.patchMergeinfo(revrange)
 		})
-		return selection.ContainsNode(source.Revision, source.Index) != invert
 	}
 	nodehook := func(header StreamSection) []byte {
 		if selection.ContainsNode(source.Revision, source.Index) != invert {
@@ -1590,7 +1585,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		}
 		return nil
 	}
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			if pathmatch(path) == drop {
 				return "", ""
@@ -1598,7 +1593,6 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 			revrange = source.patchMergeinfo(revrange)
 			return path, revrange
 		})
-		return true
 	}
 	source.Report(selection, nil, prophook, nodehook, nil)
 }
@@ -1760,11 +1754,10 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		}
 		return ""
 	}
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return popSegment(path), revrange
 		})
-		return true
 	}
 	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
@@ -1782,11 +1775,10 @@ func pop(source DumpfileSource, selection SubversionRange) {
 
 // Push a prefix segment onto each pathname in an input dump
 func push(source DumpfileSource, selection SubversionRange, prefix string) {
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return prefix + string(os.PathSeparator) + path, revrange
 		})
-		return true
 	}
 	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
@@ -1805,16 +1797,15 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 // propdel - Delete properties
 func propdel(source DumpfileSource, propnames []string, selection SubversionRange) {
 	var propsNuked bool
-	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
+	prophook := func(props *Properties) {
+		propsNuked = false
+		if selection.ContainsNode(source.Revision, source.Index) {
+			hadProps := props.NonEmpty()
+			for _, propname := range propnames {
+				props.Delete(propname)
+			}
+			propsNuked = hadProps && !props.NonEmpty()
 		}
-		hadProps := props.NonEmpty()
-		for _, propname := range propnames {
-			props.Delete(propname)
-		}
-		propsNuked = hadProps && !props.NonEmpty()
-		return true
 	}
 	nodehook := func(header StreamSection) []byte {
 		// Drop empty nodes left behind by propdel
@@ -1828,18 +1819,16 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 
 // Set properties.
 func propset(source DumpfileSource, propnames []string, selection SubversionRange) {
-	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
-		}
-		for _, propname := range propnames {
-			fields := strings.Split(propname, "=")
-			if _, present := props.properties[fields[0]]; !present {
-				props.propkeys = append(props.propkeys, fields[0])
+	prophook := func(props *Properties) {
+		if selection.ContainsNode(source.Revision, source.Index) {
+			for _, propname := range propnames {
+				fields := strings.Split(propname, "=")
+				if _, present := props.properties[fields[0]]; !present {
+					props.propkeys = append(props.propkeys, fields[0])
+				}
+				props.properties[fields[0]] = fields[1]
 			}
-			props.properties[fields[0]] = fields[1]
 		}
-		return true
 	}
 	source.Report(selection, nil, prophook, nil, nil)
 }
@@ -1847,19 +1836,18 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 // Turn off property by suffix, defaulting to svn:executable
 func propclean(source DumpfileSource, property string, suffixes []string, selection SubversionRange) {
 	var propsNuked bool
-	prophook := func(props *Properties) bool {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
-		}
-		hadProps := props.NonEmpty()
-		for _, suffix := range suffixes {
-			if strings.HasSuffix(source.NodePath, suffix) {
-				props.Delete(property)
-				break
+	prophook := func(props *Properties) {
+		propsNuked = false
+		if selection.ContainsNode(source.Revision, source.Index) {
+			hadProps := props.NonEmpty()
+			for _, suffix := range suffixes {
+				if strings.HasSuffix(source.NodePath, suffix) {
+					props.Delete(property)
+					break
+				}
 			}
+			propsNuked = hadProps && !props.NonEmpty()
 		}
-		propsNuked = hadProps && !props.NonEmpty()
-		return true
 	}
 	nodehook := func(header StreamSection) []byte {
 		// Drop empty nodes left behind by propdel
@@ -1873,25 +1861,26 @@ func propclean(source DumpfileSource, property string, suffixes []string, select
 
 // Rename properties.
 func proprename(source DumpfileSource, propnames []string, selection SubversionRange) {
-	prophook := func(props *Properties) bool {
-		for _, propname := range propnames {
-			fields := strings.Split(propname, "->")
-			if _, present := props.properties[fields[0]]; present {
-				props.properties[fields[1]] = props.properties[fields[0]]
-				props.properties[fields[0]] = ""
-				for i, item := range props.propkeys {
-					if item == fields[0] {
-						props.propkeys[i] = fields[1]
+	prophook := func(props *Properties) {
+		if selection.ContainsNode(source.Revision, source.Index) {
+			for _, propname := range propnames {
+				fields := strings.Split(propname, "->")
+				if _, present := props.properties[fields[0]]; present {
+					props.properties[fields[1]] = props.properties[fields[0]]
+					props.properties[fields[0]] = ""
+					for i, item := range props.propkeys {
+						if item == fields[0] {
+							props.propkeys[i] = fields[1]
+						}
 					}
-				}
-				for i, item := range props.propdelkeys {
-					if item == fields[0] {
-						props.propdelkeys[i] = fields[1]
+					for i, item := range props.propdelkeys {
+						if item == fields[0] {
+							props.propdelkeys[i] = fields[1]
+						}
 					}
 				}
 			}
 		}
-		return true
 	}
 	source.Report(selection, nil, prophook, nil, nil)
 }
@@ -1916,28 +1905,25 @@ func SVNTimeParse(rdate string) time.Time {
 
 // Extract log entries
 func log(source DumpfileSource, selection SubversionRange) {
-	prophook := func(prop *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
-			return true
+	prophook := func(prop *Properties) {
+		if selection.ContainsRevision(source.Revision) {
+			props := prop.properties
+			logentry := props["svn:log"]
+			// This test implicitly excludes r0 metadata from being dumped.
+			// It is not certain this is the right thing.
+			if logentry != "" {
+				os.Stdout.Write([]byte(delim + "\n"))
+				author := getAuthor(props)
+				date := SVNTimeParse(props["svn:date"])
+				drep := date.Format("2006-01-02 15:04:05 +0000 (Mon, 02 Jan 2006)")
+				fmt.Printf("r%d | %s | %s | %d lines\n",
+					source.Revision,
+					author,
+					drep,
+					strings.Count(logentry, "\n"))
+				os.Stdout.WriteString("\n" + logentry + "\n")
+			}
 		}
-		props := prop.properties
-		logentry := props["svn:log"]
-		// This test implicitly excludes r0 metadata from being dumped.
-		// It is not certain this is the right thing.
-		if logentry == "" {
-			return true
-		}
-		os.Stdout.Write([]byte(delim + "\n"))
-		author := getAuthor(props)
-		date := SVNTimeParse(props["svn:date"])
-		drep := date.Format("2006-01-02 15:04:05 +0000 (Mon, 02 Jan 2006)")
-		fmt.Printf("r%d | %s | %s | %d lines\n",
-			source.Revision,
-			author,
-			drep,
-			strings.Count(logentry, "\n"))
-		os.Stdout.WriteString("\n" + logentry + "\n")
-		return false
 	}
 	nodehook := func(header StreamSection) []byte { return nil }
 	source.Report(selection, nil, prophook, nodehook, nil)
@@ -1945,7 +1931,7 @@ func log(source DumpfileSource, selection SubversionRange) {
 
 // Hack paths by applying a specified transformation.
 func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func(string, []byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return string(pathMutator("Mergeinfo", []byte(path))), revrange
 		})
@@ -1954,7 +1940,6 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 				props.properties["svn:author"] = nameMutator(userid)
 			}
 		}
-		return true
 	}
 	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
@@ -2019,14 +2004,13 @@ func pathrename(source DumpfileSource, selection SubversionRange, patterns []str
 
 // Topologically reduce a dump, removing plain file modifications.
 func reduce(source DumpfileSource, selection SubversionRange) {
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		if source.Index == 0 {
-			return true
+			return
 		}
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return path, source.patchMergeinfo(revrange)
 		})
-		return true
 	}
 	nodehook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
@@ -2077,7 +2061,7 @@ func renumber(source DumpfileSource, counter int) {
 		return []byte(header)
 	}
 
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			out := ""
 			digits := make([]byte, 0)
@@ -2100,7 +2084,6 @@ func renumber(source DumpfileSource, counter int) {
 			span.Optimize()
 			return path, span.dump("-")
 		})
-		return true
 	}
 
 	source.Report(NewSubversionRange("0:HEAD"), revhook, prophook, nodehook, nil)
@@ -2151,20 +2134,19 @@ func see(source DumpfileSource, selection SubversionRange) {
 		fmt.Printf("%-5s %-8s %s\n", source.where(), action, path)
 		return nil
 	}
-	seeprops := func(properties *Properties) bool {
+	seeprops := func(properties *Properties) {
 		if !selection.ContainsNode(source.Revision, source.Index) {
-			return true
+			return
 		}
 		for _, skippable := range []string{"svn:log", "svn:date", "svn:author"} {
 			if _, ok := properties.properties[skippable]; ok {
-				return true
+				return
 			}
 		}
 		props := properties.String()
 		if props != "" {
 			fmt.Printf("%-5s %-8s %s\n", source.where(), "propset", props)
 		}
-		return true
 	}
 	source.Report(selection, nil, seeprops, seenode, nil)
 }
@@ -2176,19 +2158,17 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 		croak("couldn't open " + logpath)
 	}
 	logpatch := NewLogfile(fd, &selection)
-	prophook := func(prop *Properties) bool {
-		if !selection.ContainsRevision(source.Revision) {
-			return true
-		}
-		_, haslog := prop.properties["svn:log"]
-		if haslog && logpatch.Contains(source.Revision) {
-			logentry := logpatch.comments[source.Revision]
-			if string(logentry.author) != getAuthor(prop.properties) {
-				croak("author of revision %d doesn't look right, aborting!\n", source.Revision)
+	prophook := func(prop *Properties) {
+		if selection.ContainsRevision(source.Revision) {
+			_, haslog := prop.properties["svn:log"]
+			if haslog && logpatch.Contains(source.Revision) {
+				logentry := logpatch.comments[source.Revision]
+				if string(logentry.author) != getAuthor(prop.properties) {
+					croak("author of revision %d doesn't look right, aborting!\n", source.Revision)
+				}
+				prop.properties["svn:log"] = string(logentry.text)
 			}
-			prop.properties["svn:log"] = string(logentry.text)
 		}
-		return true
 	}
 	source.Report(selection, nil, prophook, nil, nil)
 }
@@ -2484,13 +2464,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return bytes.Join(parts, []byte{os.PathSeparator})
 	}
-	prophook := func(props *Properties) bool {
+	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			var dummy parsedNode
 			dummy.role = "mergeinfo"
 			return string(swapper("", []byte(path), dummy)), revrange
 		})
-		return true
 	}
 	var oldval, newval []byte
 	nodehook := func(header StreamSection) []byte {
