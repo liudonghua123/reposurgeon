@@ -847,7 +847,7 @@ type SubversionEndpoint struct {
 // Equals - are the components of two endoints equal?
 func (s SubversionEndpoint) Equals(t SubversionEndpoint) bool {
 	if s.node == 0 || t.node == 0 {
-		croak("a full node specification with node index is required")
+		croak("comparing %v=%v a full node specification with node index is required", t, s)
 	}
 	return s.rev == t.rev && s.node == t.node
 }
@@ -2199,6 +2199,9 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 	var stashPath []byte
 	var stashRev []byte
 	nodehook := func(header StreamSection) []byte {
+		if source.Revision == 0 {
+			return []byte(header)
+		}
 		if selection.Lowerbound().Equals(SubversionEndpoint{source.Revision, source.Index}) {
 			stashRev = header.payload("Node-copyfrom-rev")
 			stashPath = header.payload("Node-copyfrom-path")
