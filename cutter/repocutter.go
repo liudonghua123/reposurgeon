@@ -1249,7 +1249,9 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					}
 					header = nodehook(StreamSection(header))
 				}
-				if header == nil {
+				// headerr can be non-nil but empty following a wildvard expansion
+				// that didn't turn up any matches.
+				if len(header) == 0 {
 					emit = false
 				} else {
 					if contenthook != nil {
@@ -2379,10 +2381,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						// that looks like this, simply swapping the two parts
 						// cannot be correct.  By the premise of this operation,
 						// PROJECT should become a directory name under some branch
-						// spe which isn'tcified here.
+						// spec which isn't identified here.
 						//
 						// We may need to insert a wildcard for later expansion
-						// ay a later point in this code.
+						// at a later point in this code.
 						if !parsed.isDir {
 							// Probably never happens but let's be safe.
 							parts[1] = []byte(top)
