@@ -1641,7 +1641,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 		// which have copyfrom information *and* the copy already performed - that is,
 		// the node content is non-nil and should be used.  In that case we want to strip
 		// out the copyfrom information without modifyinmg the content.
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
 		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
@@ -1767,7 +1767,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		return true
 	}
 	nodehook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
@@ -1789,7 +1789,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 		return true
 	}
 	nodehook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
@@ -1957,7 +1957,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		return true
 	}
 	nodehook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
@@ -2029,7 +2029,7 @@ func reduce(source DumpfileSource, selection SubversionRange) {
 		return true
 	}
 	nodehook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
 		if string(StreamSection(header).payload("Node-kind")) == "file" && string(StreamSection(header).payload("Node-action")) == "change" && !header.hasProperties() {
@@ -2117,9 +2117,6 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 	}
 
 	nodehook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return []byte(header)
-		}
 		return []byte(header)
 	}
 	contenthook := func(content []byte) []byte {
@@ -2497,7 +2494,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 	}
 	var oldval, newval []byte
 	nodehook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
 		nodePath := header.payload("Node-path")
