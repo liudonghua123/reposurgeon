@@ -2512,9 +2512,6 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			if structural && bytes.Count(nodePath, []byte{os.PathSeparator}) == 0 {
 				// Top-level copies must be split
 				if parsed.role == "copy" {
-					if debug >= debugLOGIC {
-						fmt.Fprintf(os.Stderr, "<r%s: top-level copy of %q>\n", source.where(), nodePath)
-					}
 					if header.hasProperties() {
 						croak("r%s: can't split a top node with nonempty properties.", source.where())
 					}
@@ -2525,23 +2522,18 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
 					}
 					header.delete("Prop-content-lengh")
-					suffixer := func(header StreamSection, suffix string) []byte {
+					prefixer := func(header StreamSection, prefix string) []byte {
 						out := header.clone()
 						for _, tag := range [2]string{"Node-path", "Node-copyfrom-path"} {
 							out, _, _ = out.replaceHook(tag, func(hd string, in []byte) []byte {
-								return append(in, []byte(suffix)...)
+								return append([]byte(prefix), in...)
 							})
 						}
 						return append(out, '\n')
 					}
 					// Push these back so the branches and tags will get wildcarding
-					// FIXME: This is not working right.
-					source.Lbs.Push(suffixer(header, "/tags"))
-					source.Lbs.Push(suffixer(header, "/branches"))
-					source.Lbs.Push(suffixer(header, "/trunk"))
-					if debug >= debugLOGIC {
-						fmt.Fprintf(os.Stderr, "<r%s: top-level copy of %q is done>\n", source.where(), nodePath)
-					}
+					// FIXME: This is not working qute right. Tags and branches aren't copied.
+					os.Stdout.Write(prefixer(header, "trunk/"))
 					return nil
 				}
 				// Non-copy operations - pass through anything that looks like standard layout

@@ -39,4 +39,4 @@
 45.2  delete   branches/sample3/
 46.1  copy     branches/renamed/ from 45:branches/sample3/
 46.2  delete   branches/sample3/
-47.1  copy     trunk/ from 46:trunk/
+46.3  copy     trunk/project4/ from 46:trunk/project3/
