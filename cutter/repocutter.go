@@ -1039,26 +1039,27 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 	nodehook func(header StreamSection) []byte,
 	contenthook func(header []byte) []byte) {
 
-	/*
-	 * The revhook is called on every node.
-	 *
-	 * The prophook is called before the nodehook. It is called on
-	 * every property section, both per-node and per-revision, and
-	 * must do its own selection filtering.  When called on the
-	 * revision properties the value of ds.Index is zero, and will
-	 * therefore match a range element with an unspecified node
-	 * part.
-	 *
-	 * nodehook is called on all nodes. It's up to each nodehook to do
-	 * its own selection filtering.  If nodehook returns nil, discarding
-	 * the header, its content is also duscarded.
-	 *
-	 * contenthook, if present, is called on the content to mutate it.
-	 *
-	 * All hooks can count on the DumpfileSource members to be up to
-	 * date, including NodePath and Revision and Index, because those.
-	 * are acquired before the properties or node content are parsed.
-	 */
+	// The revhook is called once on every revision and can be used
+	// to modify the Revion-number line.
+	//
+	// The prophook is called before the nodehook. It is called on
+	// every property section, both per-node and per-revision.
+	// When called on the revision properties the value of
+	// ds.Index is zero, and will therefore match a range element
+	// with an unspecified node part.
+	//
+	// nodehook is called on each node headers.  If this hook
+	// returns nil, discarding the header, its properties and
+	// content are also duscarded.
+	//
+	// contenthook is called on the content to mutate it.
+	//
+	// A nil hook rgument means the section should be passed
+	// through unaltered.
+	//
+	// All hooks can count on the DumpfileSource members to be up to
+	// date, including NodePath and Revision and Index, because those.
+	// are acquired before the properties or node content are parsed.
 
 	var passthrough bool
 	prestash := []byte{}
