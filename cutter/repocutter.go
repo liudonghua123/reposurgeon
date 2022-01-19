@@ -1142,7 +1142,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			fmt.Fprintf(os.Stderr, "<at start of node content %d>\n", ds.Revision)
 		}
 		emit := true
-		nodecount := 0
 		for {
 			line := ds.Lbs.Readline()
 			if len(line) == 0 {
@@ -1158,7 +1157,6 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				continue
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
-				ds.Index = 0
 				// Putting this check here rather than at the top of the look
 				// guarantees it won't firte on revision 0
 				if revhook != nil {
@@ -1168,7 +1166,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				// If there has been no content since the last Revision-number line,
 				// whether we ship the previous revision record depends on the
 				// flag value the prophook passed back.
-				if len(stash) != 0 && nodecount == 0 && retain {
+				if len(stash) != 0 && ds.Index == 0 && retain {
 					if passthrough {
 						if debug >= debugPARSE {
 							fmt.Fprintf(os.Stderr, "<revision stash dump: %q>\n", stash)
@@ -1176,10 +1174,10 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 						ds.say(stash)
 					}
 				}
+				ds.Index = 0
 				break
 			}
 			if strings.HasPrefix(string(line), "Node-") {
-				nodecount++
 				if strings.HasPrefix(string(line), "Node-path: ") {
 					ds.Index++
 					ds.NodePath = string(line[11 : len(line)-1])
@@ -1244,8 +1242,8 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				}
 				if nodehook != nil {
 					if debug >= debugPARSE {
-						fmt.Fprintf(os.Stderr, "<nodehook called with: %d %d>\n",
-							ds.Revision, nodecount)
+						fmt.Fprintf(os.Stderr, "<r%s: nodehook called>\n",
+							ds.where())
 					}
 					header = nodehook(StreamSection(header))
 				}
@@ -1256,8 +1254,8 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 				} else {
 					if contenthook != nil {
 						if debug >= debugPARSE {
-							fmt.Fprintf(os.Stderr, "<contenthook called with: %d %d>\n",
-								ds.Revision, nodecount)
+							fmt.Fprintf(os.Stderr, "<r%s: contenthook called with>\n",
+								ds.where())
 						}
 						newcontent := contenthook(content)
 						if string(content) != string(newcontent) {
