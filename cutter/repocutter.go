@@ -747,9 +747,12 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 				}
 			}
 			// Discard last newline, because the V length of the property
-			// does not counnt it - but does count interior \n in
-			// multiline values.
-			buffer.Truncate(buffer.Len() - 1)
+			// does not count it - but does count interior \n in
+			// multiline values.  The guard is required because empty
+			// mefeinfo properties have been seen in the wild.
+			if buffer.Len() > 0 {
+				buffer.Truncate(buffer.Len() - 1)
+			}
 			props.properties[mergeproperty] = buffer.String()
 		}
 	}
