@@ -135,8 +135,9 @@ svn up
 svn rename project3/branches/sample3 project3/branches/renamed
 svn commit -m "Rename sample3 branch of project3"
 svn up
-# Pathological copy that needs to be split
-svn copy project3 project4
+# Pathological copy that needs to be split.  We're cipying project1
+# because it has a branch that should be caught by wildcarding.
+svn copy project1 project4
 svn commit -m "Should become 3 copies of project3/{trunk,branches,tags}"
 svn up
 # We're done

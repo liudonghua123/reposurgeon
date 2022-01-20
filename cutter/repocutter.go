@@ -2290,10 +2290,10 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		parts := bytes.Split(path, []byte{os.PathSeparator})
 		if len(parts) >= 2 {
 			// Swapping logic
-			top := string(parts[0])
+			project := string(parts[0])
 			if !structural {
 				parts[0] = parts[1]
-				parts[1] = []byte(top)
+				parts[1] = []byte(project)
 			} else if !stdlayout(path) {
 				under := string(parts[1])
 				if under == "trunk" {
@@ -2301,7 +2301,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					// Lossless transformation, still refers to the same
 					// set of paths.
 					parts[0] = parts[1]
-					parts[1] = []byte(top)
+					parts[1] = []byte(project)
 				} else if under == "branches" || under == "tags" {
 					// Shift "branches" or "tags" to top level
 					parts[0] = []byte(under)
@@ -2313,10 +2313,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 							// This is where we capture information about what
 							// branches and tags exist under a specified project
 							// directory.
-							key := top + string([]byte{os.PathSeparator}) + string(parts[1])
+							key := project + string(os.PathSeparator) + under
 							subbranch := string(parts[2])
 							switch parsed.role {
 							case "add":
+								fallthrough
+							case "copy":
 								trackSet := wildcards[key]
 								trackSet.Add(subbranch)
 								wildcards[key] = trackSet
@@ -2328,7 +2330,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						}
 						// Mutate to tags/SUBDIR/PROJECT/... or branches/SUBDIR/PROJECT/...
 						parts[1] = parts[2]
-						parts[2] = []byte(top)
+						parts[2] = []byte(project)
 					} else { // len(parts) == 2
 						// Deal with paths of the form PROJECT/branches or PROJECT/tags
 						// and no subdirectory following. Dangerous curve!
@@ -2343,7 +2345,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						// at a later point in this code.
 						if !parsed.isDir {
 							// Probably never happens but let's be safe.
-							parts[1] = []byte(top)
+							parts[1] = []byte(project)
 						} else {
 							switch parsed.role {
 							case "add":
@@ -2359,12 +2361,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 							case "change":
 								wildcardKey = string(path)
 								parts[1] = []byte{wildcardMark}
-								parts = append(parts, []byte(top))
+								parts = append(parts, []byte(project))
 							case "copy":
 								if sourcehdr == "Node-copyfrom-path" {
 									wildcardKey = string(path)
 									parts[1] = []byte{wildcardMark}
-									parts = append(parts, []byte(top))
+									parts = append(parts, []byte(project))
 								}
 							case "mergeinfo":
 								croak("r$s: unexpected mergeinfo of path %s",
@@ -2491,9 +2493,19 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 						}
 						return append(out, '\n')
 					}
-					// Push these back so the branches and tags will get wildcarding
-					// FIXME: This is not working qute right. Tags and branches aren't copied.
 					os.Stdout.Write(prefixer(header, "trunk/"))
+					for _, under := range [2]string{"branches", "tags"} {
+						copyfrom := string(header.payload("Node-copyfrom-path"))
+						key := copyfrom + string(os.PathSeparator) + under
+						for _, subpart := range wildcards[key] {
+							// Add to tracking set in case of future copies from here
+							key := source.NodePath + string(os.PathSeparator) + string(under)
+							trackSet := wildcards[key]
+							trackSet.Add(subpart)
+							wildcards[key] = trackSet
+							os.Stdout.Write(prefixer(header, under+"/"+subpart+"/"))
+						}
+					}
 					return nil
 				}
 				// Non-copy operations - pass through anything that looks like standard layout
