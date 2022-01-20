@@ -610,235 +610,7 @@ func (lbs *LineBufferedSource) HasLineBuffered() bool {
 	return len(lbs.Linebuffer) != 0
 }
 
-// Properties -- represent revision or node properties
-type Properties struct {
-	properties  map[string]string
-	propkeys    []string
-	propdelkeys []string
-}
-
-// NewProperties - create a new Properties object for a revision or node
-func NewProperties(source *DumpfileSource) Properties {
-	var props Properties
-	newprops := make(map[string]string)
-	props.properties = newprops
-	for {
-		currentline := source.Lbs.Peek()
-		if bytes.HasPrefix(currentline, []byte("PROPS-END")) {
-			break
-		}
-
-		if bytes.HasPrefix(currentline, []byte("D ")) {
-			source.Require("D")
-			keyhd := string(source.Lbs.Readline())
-			key := strings.TrimRight(keyhd, linesep)
-			props.propdelkeys = append(props.propdelkeys, key)
-			continue
-		}
-		source.Require("K")
-		keyhd := string(source.Lbs.Readline())
-		key := strings.TrimRight(keyhd, linesep)
-		valhd := source.Require("V")
-		vlen, _ := strconv.Atoi(string(bytes.Fields(valhd)[1]))
-		value := string(source.Lbs.Read(vlen))
-		source.Require(linesep)
-		props.properties[key] = value
-		props.propkeys = append(props.propkeys, key)
-	}
-	source.Lbs.Flush()
-	return props
-}
-
-// NonEmpty is the obvious predicate
-func (props *Properties) NonEmpty() bool {
-	return len(props.propkeys) > 0
-}
-
-// Stringer - return a representation of properties that can round-trip
-func (props *Properties) Stringer() string {
-	var b strings.Builder
-	for _, key := range props.propkeys {
-		fmt.Fprintf(&b, "K %d%s", len(key), linesep)
-		fmt.Fprintf(&b, "%s%s", key, linesep)
-		fmt.Fprintf(&b, "V %d%s", len(props.properties[key]), linesep)
-		fmt.Fprintf(&b, "%s%s", props.properties[key], linesep)
-	}
-	for _, key := range props.propdelkeys {
-		fmt.Fprintf(&b, "D %d%s", len(key), linesep)
-		fmt.Fprintf(&b, "%s%s", key, linesep)
-	}
-	b.WriteString("PROPS-END\n")
-	return b.String()
-}
-
-// String - use for visualization, need not round-trip
-func (props *Properties) String() string {
-	if props == nil || !props.NonEmpty() {
-		return ""
-	}
-	txt := ""
-	for _, k := range props.propkeys {
-		txt += fmt.Sprintf("%s = %q; ", k, props.properties[k])
-	}
-	for _, k := range props.propdelkeys {
-		txt += fmt.Sprintf("delete %s; ", k)
-	}
-	return txt[:len(txt)-1]
-}
-
-// Contains - does a Properties object contain a specified key?
-func (props *Properties) Contains(key string) bool {
-	_, ok := props.properties[key]
-	return ok
-}
-
-// Delete - delete the specified property
-func (props *Properties) Delete(key string) {
-	delete(props.properties, key)
-	for delindex, item := range props.propkeys {
-		if item == key {
-			props.propkeys = append(props.propkeys[:delindex], props.propkeys[delindex+1:]...)
-			break
-		}
-	}
-	for delindex, item := range props.propdelkeys {
-		if item == key {
-			props.propdelkeys = append(props.propdelkeys[:delindex], props.propdelkeys[delindex+1:]...)
-			break
-		}
-	}
-}
-
-// MutateMergeinfo mutates mergeinfo paths and ranges through a hook function
-func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, string)) {
-	// The svnmerge-integrated property is set by svmerge.py.
-	// Its semantics are poorly documented, but we process it
-	// exactly like svn:mergeinfo and punt that problem to reposurgeon
-	// on the "first, doo no harm" principle.
-	for _, mergeproperty := range []string{"svn:mergeinfo", "svnmerge-integrated"} {
-		if oldval, present := props.properties[mergeproperty]; present {
-			mergeinfo := string(oldval)
-			var buffer bytes.Buffer
-			if len(mergeinfo) != 0 {
-				for _, line := range strings.Split(mergeinfo, "\n") {
-					if strings.Contains(line, ":") {
-						lastidx := strings.LastIndex(line, ":")
-						path, revrange := line[:lastidx], line[lastidx+1:]
-						rooted := false
-						if path[0] == os.PathSeparator {
-							rooted = true
-							path = path[1:]
-						}
-						newpath, newrange := mutator(path, revrange)
-						if newpath == "" && newrange == "" {
-							continue
-						}
-						if rooted {
-							buffer.WriteByte(byte(os.PathSeparator))
-						}
-						buffer.WriteString(newpath)
-						buffer.WriteString(":")
-						buffer.WriteString(newrange)
-					} else {
-						buffer.WriteString(line)
-					}
-					buffer.WriteString(linesep)
-				}
-			}
-			// Discard last newline, because the V length of the property
-			// does not count it - but does count interior \n in
-			// multiline values.  The guard is required because empty
-			// mefeinfo properties have been seen in the wild.
-			if buffer.Len() > 0 {
-				buffer.Truncate(buffer.Len() - 1)
-			}
-			props.properties[mergeproperty] = buffer.String()
-		}
-	}
-}
-
-// Dumpfile parsing machinery goes here
-
-var revisionLine *regexp.Regexp
-var textContentLength *regexp.Regexp
-var nodeCopyfrom *regexp.Regexp
-
-func init() {
-	revisionLine = regexp.MustCompile("Revision-number: ([0-9]+)")
-	textContentLength = regexp.MustCompile("Text-content-length: ([1-9][0-9]*)")
-	nodeCopyfrom = regexp.MustCompile("Node-copyfrom-rev: ([1-9][0-9]*)")
-}
-
-// DumpfileSource - this class knows about Subversion dumpfile format.
-type DumpfileSource struct {
-	Lbs              LineBufferedSource
-	Baton            *Baton
-	Revision         int
-	Index            int // 1-origin within nodes
-	NodePath         string
-	EmittedRevisions map[string]bool
-	DirTracking      map[string]bool
-}
-
-// NewDumpfileSource - declare a new dumpfile source object with implied parsing
-func NewDumpfileSource(rd io.Reader, baton *Baton) DumpfileSource {
-	return DumpfileSource{
-		Lbs:              NewLineBufferedSource(rd),
-		Baton:            baton,
-		Revision:         0,
-		EmittedRevisions: make(map[string]bool),
-		DirTracking:      make(map[string]bool),
-	}
-	//runtime.SetFinalizer(&ds, func (s DumpfileSource) {s.Baton.End("")})
-}
-
-// Require - read a line, requiring it to have a specified prefix.
-func (ds *DumpfileSource) Require(prefix string) []byte {
-	line := ds.Lbs.Readline()
-	if !strings.HasPrefix(string(line), prefix) {
-		croak("required prefix '%s' not seen on %q after line %d (r%v)", prefix, line, ds.Lbs.linenumber, ds.Revision)
-	}
-	//if debug >= debugPARSE {
-	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
-	//}
-	return line
-}
-
-// Optional - read a line, reporting if it to have a specified prefix.
-func (ds *DumpfileSource) Optional(prefix string) []byte {
-	line := ds.Lbs.Readline()
-	if strings.HasPrefix(string(line), prefix) {
-		return line
-	}
-	ds.Lbs.Push(line)
-	return nil
-}
-
-func (ds *DumpfileSource) say(text []byte) {
-	matches := revisionLine.FindSubmatch(text)
-	if len(matches) > 1 {
-		ds.EmittedRevisions[string(matches[1])] = true
-	}
-	os.Stdout.Write(text)
-}
-
-// where - format reference to current node for error logging and see().
-func (ds *DumpfileSource) where() string {
-	return fmt.Sprintf("%d.%d", ds.Revision, ds.Index)
-}
-
-// patchMergeinfo fixes the input mergeinfo range to contain only emitted revisions
-func (ds *DumpfileSource) patchMergeinfo(revrange string) string {
-	inspan := parseMergeinfoRange(revrange)
-	outspan := NewSubversionRange("")
-	for rev := inspan.Lowerbound().rev; rev <= inspan.Upperbound().rev; rev++ {
-		if inspan.ContainsRevision(rev) && ds.EmittedRevisions[fmt.Sprintf("%d", rev)] {
-			outspan.intervals = append(outspan.intervals, [2]SubversionEndpoint{{rev, 0}, {rev, 0}})
-		}
-	}
-	outspan.Optimize()
-	return outspan.dump("-")
-}
+// Handle revision-range specifications
 
 // SubversionEndpoint - represent as Subversion revision or revision.node spec
 type SubversionEndpoint struct {
@@ -997,6 +769,157 @@ func (s *SubversionRange) Optimize() {
 	}
 }
 
+// Property handling
+
+// Properties -- represent revision or node properties
+type Properties struct {
+	properties  map[string]string
+	propkeys    []string
+	propdelkeys []string
+}
+
+// NewProperties - create a new Properties object for a revision or node
+func NewProperties(source *DumpfileSource) Properties {
+	var props Properties
+	newprops := make(map[string]string)
+	props.properties = newprops
+	for {
+		currentline := source.Lbs.Peek()
+		if bytes.HasPrefix(currentline, []byte("PROPS-END")) {
+			break
+		}
+
+		if bytes.HasPrefix(currentline, []byte("D ")) {
+			source.Require("D")
+			keyhd := string(source.Lbs.Readline())
+			key := strings.TrimRight(keyhd, linesep)
+			props.propdelkeys = append(props.propdelkeys, key)
+			continue
+		}
+		source.Require("K")
+		keyhd := string(source.Lbs.Readline())
+		key := strings.TrimRight(keyhd, linesep)
+		valhd := source.Require("V")
+		vlen, _ := strconv.Atoi(string(bytes.Fields(valhd)[1]))
+		value := string(source.Lbs.Read(vlen))
+		source.Require(linesep)
+		props.properties[key] = value
+		props.propkeys = append(props.propkeys, key)
+	}
+	source.Lbs.Flush()
+	return props
+}
+
+// NonEmpty is the obvious predicate
+func (props *Properties) NonEmpty() bool {
+	return len(props.propkeys) > 0
+}
+
+// Stringer - return a representation of properties that can round-trip
+func (props *Properties) Stringer() string {
+	var b strings.Builder
+	for _, key := range props.propkeys {
+		fmt.Fprintf(&b, "K %d%s", len(key), linesep)
+		fmt.Fprintf(&b, "%s%s", key, linesep)
+		fmt.Fprintf(&b, "V %d%s", len(props.properties[key]), linesep)
+		fmt.Fprintf(&b, "%s%s", props.properties[key], linesep)
+	}
+	for _, key := range props.propdelkeys {
+		fmt.Fprintf(&b, "D %d%s", len(key), linesep)
+		fmt.Fprintf(&b, "%s%s", key, linesep)
+	}
+	b.WriteString("PROPS-END\n")
+	return b.String()
+}
+
+// String - use for visualization, need not round-trip
+func (props *Properties) String() string {
+	if props == nil || !props.NonEmpty() {
+		return ""
+	}
+	txt := ""
+	for _, k := range props.propkeys {
+		txt += fmt.Sprintf("%s = %q; ", k, props.properties[k])
+	}
+	for _, k := range props.propdelkeys {
+		txt += fmt.Sprintf("delete %s; ", k)
+	}
+	return txt[:len(txt)-1]
+}
+
+// Contains - does a Properties object contain a specified key?
+func (props *Properties) Contains(key string) bool {
+	_, ok := props.properties[key]
+	return ok
+}
+
+// Delete - delete the specified property
+func (props *Properties) Delete(key string) {
+	delete(props.properties, key)
+	for delindex, item := range props.propkeys {
+		if item == key {
+			props.propkeys = append(props.propkeys[:delindex], props.propkeys[delindex+1:]...)
+			break
+		}
+	}
+	for delindex, item := range props.propdelkeys {
+		if item == key {
+			props.propdelkeys = append(props.propdelkeys[:delindex], props.propdelkeys[delindex+1:]...)
+			break
+		}
+	}
+}
+
+// MutateMergeinfo mutates mergeinfo paths and ranges through a hook function
+func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, string)) {
+	// The svnmerge-integrated property is set by svmerge.py.
+	// Its semantics are poorly documented, but we process it
+	// exactly like svn:mergeinfo and punt that problem to reposurgeon
+	// on the "first, doo no harm" principle.
+	for _, mergeproperty := range []string{"svn:mergeinfo", "svnmerge-integrated"} {
+		if oldval, present := props.properties[mergeproperty]; present {
+			mergeinfo := string(oldval)
+			var buffer bytes.Buffer
+			if len(mergeinfo) != 0 {
+				for _, line := range strings.Split(mergeinfo, "\n") {
+					if strings.Contains(line, ":") {
+						lastidx := strings.LastIndex(line, ":")
+						path, revrange := line[:lastidx], line[lastidx+1:]
+						rooted := false
+						if path[0] == os.PathSeparator {
+							rooted = true
+							path = path[1:]
+						}
+						newpath, newrange := mutator(path, revrange)
+						if newpath == "" && newrange == "" {
+							continue
+						}
+						if rooted {
+							buffer.WriteByte(byte(os.PathSeparator))
+						}
+						buffer.WriteString(newpath)
+						buffer.WriteString(":")
+						buffer.WriteString(newrange)
+					} else {
+						buffer.WriteString(line)
+					}
+					buffer.WriteString(linesep)
+				}
+			}
+			// Discard last newline, because the V length of the property
+			// does not count it - but does count interior \n in
+			// multiline values.  The guard is required because empty
+			// mefeinfo properties have been seen in the wild.
+			if buffer.Len() > 0 {
+				buffer.Truncate(buffer.Len() - 1)
+			}
+			props.properties[mergeproperty] = buffer.String()
+		}
+	}
+}
+
+// Miscellaneous helper functions
+
 func parseMergeinfoRange(txt string) SubversionRange {
 	// Beware: this code is only good for parsing mergeinfo ranges
 	var s SubversionRange
@@ -1034,23 +957,106 @@ func SetLength(header string, data []byte, val int) []byte {
 	return data
 }
 
+// Dumpfile parsing machinery goes here
+
+var revisionLine *regexp.Regexp
+var textContentLength *regexp.Regexp
+var nodeCopyfrom *regexp.Regexp
+
+func init() {
+	revisionLine = regexp.MustCompile("Revision-number: ([0-9]+)")
+	textContentLength = regexp.MustCompile("Text-content-length: ([1-9][0-9]*)")
+	nodeCopyfrom = regexp.MustCompile("Node-copyfrom-rev: ([1-9][0-9]*)")
+}
+
+// DumpfileSource - this class knows about Subversion dumpfile format.
+type DumpfileSource struct {
+	Lbs              LineBufferedSource
+	Baton            *Baton
+	Revision         int
+	Index            int // 1-origin within nodes
+	NodePath         string
+	EmittedRevisions map[string]bool
+	DirTracking      map[string]bool
+}
+
+// NewDumpfileSource - declare a new dumpfile source object with implied parsing
+func NewDumpfileSource(rd io.Reader, baton *Baton) DumpfileSource {
+	return DumpfileSource{
+		Lbs:              NewLineBufferedSource(rd),
+		Baton:            baton,
+		Revision:         0,
+		EmittedRevisions: make(map[string]bool),
+		DirTracking:      make(map[string]bool),
+	}
+	//runtime.SetFinalizer(&ds, func (s DumpfileSource) {s.Baton.End("")})
+}
+
+// Require - read a line, requiring it to have a specified prefix.
+func (ds *DumpfileSource) Require(prefix string) []byte {
+	line := ds.Lbs.Readline()
+	if !strings.HasPrefix(string(line), prefix) {
+		croak("required prefix '%s' not seen on %q after line %d (r%v)", prefix, line, ds.Lbs.linenumber, ds.Revision)
+	}
+	//if debug >= debugPARSE {
+	//	fmt.Fprintf(os.Stderr, "<Require %s -> %q>\n", strconv.Quote(prefix), viline)
+	//}
+	return line
+}
+
+// Optional - read a line, reporting if it to have a specified prefix.
+func (ds *DumpfileSource) Optional(prefix string) []byte {
+	line := ds.Lbs.Readline()
+	if strings.HasPrefix(string(line), prefix) {
+		return line
+	}
+	ds.Lbs.Push(line)
+	return nil
+}
+
+func (ds *DumpfileSource) say(text []byte) {
+	matches := revisionLine.FindSubmatch(text)
+	if len(matches) > 1 {
+		ds.EmittedRevisions[string(matches[1])] = true
+	}
+	os.Stdout.Write(text)
+}
+
+// where - format reference to current node for error logging and see().
+func (ds *DumpfileSource) where() string {
+	return fmt.Sprintf("%d.%d", ds.Revision, ds.Index)
+}
+
+// patchMergeinfo fixes the input mergeinfo range to contain only emitted revisions
+func (ds *DumpfileSource) patchMergeinfo(revrange string) string {
+	inspan := parseMergeinfoRange(revrange)
+	outspan := NewSubversionRange("")
+	for rev := inspan.Lowerbound().rev; rev <= inspan.Upperbound().rev; rev++ {
+		if inspan.ContainsRevision(rev) && ds.EmittedRevisions[fmt.Sprintf("%d", rev)] {
+			outspan.intervals = append(outspan.intervals, [2]SubversionEndpoint{{rev, 0}, {rev, 0}})
+		}
+	}
+	outspan.Optimize()
+	return outspan.dump("-")
+}
+
 // Report - simpler reporting of a filtered portion of content.
 func (ds *DumpfileSource) Report(selection SubversionRange,
 	revhook func(header StreamSection) []byte,
 	prophook func(properties *Properties),
-	nodehook func(header StreamSection) []byte,
+	headerhook func(header StreamSection) []byte,
 	contenthook func(header []byte) []byte) {
 
 	// The revhook is called once on every revision and can be used
 	// to modify the Revion-number line.
 	//
-	// The prophook is called before the nodehook. It is called on
+	// The prophook is called before the headerhook. It is called on
 	// every property section, both per-node and per-revision.
 	// When called on the revision properties the value of
 	// ds.Index is zero, and will therefore match a range element
 	// with an unspecified node part.
 	//
-	// nodehook is called on each node headers.  If this hook
+	// headerhook is called on each node headers.  If this hook
 	// returns nil, discarding the header, its properties and
 	// content are also duscarded.
 	//
@@ -1078,8 +1084,8 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		}
 		prestash = append(prestash, line...)
 	}
-	if nodehook != nil {
-		out := nodehook(prestash)
+	if headerhook != nil {
+		out := headerhook(prestash)
 		if out != nil {
 			passthrough = true
 		}
@@ -1235,12 +1241,12 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
 					fmt.Fprintf(os.Stderr, "<content: %q>\n", content)
 				}
-				if nodehook != nil {
+				if headerhook != nil {
 					if debug >= debugPARSE {
-						fmt.Fprintf(os.Stderr, "<r%s: nodehook called>\n",
+						fmt.Fprintf(os.Stderr, "<r%s: headerhook called>\n",
 							ds.where())
 					}
-					header = nodehook(StreamSection(header))
+					header = headerhook(StreamSection(header))
 				}
 				// headerr can be non-nil but empty following a wildvard expansion
 				// that didn't turn up any matches.
@@ -1470,6 +1476,8 @@ func (ss StreamSection) hasContent() bool {
 
 // Subcommand implementations begin here
 
+// Helpers
+
 func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 	if debug >= debugPARSE {
 		fmt.Fprintf(os.Stderr, "<entering select>")
@@ -1479,19 +1487,56 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 			return path, source.patchMergeinfo(revrange)
 		})
 	}
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if selection.ContainsNode(source.Revision, source.Index) != invert {
 			return []byte(header)
 		}
 		return nil
 	}
 
-	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, nodehook, nil)
+	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, headerhook, nil)
 }
+
+// Hack paths by applying a specified transformation.
+func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func(string, []byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
+	prophook := func(props *Properties) {
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			return string(pathMutator("Mergeinfo", []byte(path))), revrange
+		})
+		if selection.ContainsNode(source.Revision, source.Index) {
+			if userid, present := props.properties["svn:author"]; present && nameMutator != nil {
+				props.properties["svn:author"] = nameMutator(userid)
+			}
+		}
+	}
+	headerhook := func(header StreamSection) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
+			return []byte(header)
+		}
+		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
+			header, _, _ = header.replaceHook(htype, pathMutator)
+		}
+		return []byte(header)
+	}
+	source.Report(selection, nil, prophook, headerhook, contentMutator)
+}
+
+func segmentize(pattern string) string {
+	if pattern[0] == '^' && pattern[len(pattern)-1] == '$' {
+		return pattern
+	} else if pattern[0] == '^' {
+		return pattern + "(?P<end>/|$)"
+	} else if pattern[len(pattern)-1] == '$' {
+		return "(?P<start>^|/)" + pattern
+	}
+	return "(?P<start>^|/)" + pattern + "(?P<end>/|$)"
+}
+
+// The commands proper
 
 func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	copiesFrom := make(map[string][]string)
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if selection.ContainsNode(source.Revision, source.Index) && source.NodePath != "" {
 			copysource := header.payload("Node-copyfrom-path")
 			if copysource != nil {
@@ -1500,7 +1545,7 @@ func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 		}
 		return nil
 	}
-	source.Report(selection, nil, nil, nodehook, nil)
+	source.Report(selection, nil, nil, headerhook, nil)
 	s := newStringSet(paths...)
 	for {
 		count := s.Len()
@@ -1523,19 +1568,8 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, true)
 }
 
-func segmentize(pattern string) string {
-	if pattern[0] == '^' && pattern[len(pattern)-1] == '$' {
-		return pattern
-	} else if pattern[0] == '^' {
-		return pattern + "(?P<end>/|$)"
-	} else if pattern[len(pattern)-1] == '$' {
-		return "(?P<start>^|/)" + pattern
-	}
-	return "(?P<start>^|/)" + pattern + "(?P<end>/|$)"
-}
-
 // Drop or retain ops defined by a revision selection and a path regexp.
-func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fixed bool, patterns []string) {
+func expungesift(source DumpfileSource, selection SubversionRange, drop bool, fixed bool, patterns []string) {
 	regexps := make([]*regexp.Regexp, len(patterns))
 	for i, pattern := range patterns {
 		if fixed {
@@ -1552,7 +1586,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 		}
 		return false
 	}
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
@@ -1577,7 +1611,7 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 			return path, revrange
 		})
 	}
-	source.Report(selection, nil, prophook, nodehook, nil)
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 // Replace file copy operations with explicit add/change operation
@@ -1589,7 +1623,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 	values := make(map[string][]trackCopy)
 	var replacement []byte
 	var nodePath string
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		nodePath = source.NodePath
 		if debug >= debugLOGIC {
 			fmt.Fprintf(os.Stderr,
@@ -1668,7 +1702,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 		return content
 	}
 
-	source.Report(selection, nil, nil, nodehook, contenthook)
+	source.Report(selection, nil, nil, headerhook, contenthook)
 }
 
 // Hack pathnames to obscure them.
@@ -1727,7 +1761,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 			return popSegment(path), revrange
 		})
 	}
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
@@ -1738,7 +1772,7 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, nodehook, nil)
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 // Push a prefix segment onto each pathname in an input dump
@@ -1748,7 +1782,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 			return prefix + string(os.PathSeparator) + path, revrange
 		})
 	}
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
@@ -1759,7 +1793,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, nodehook, nil)
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 // propdel - Delete properties
@@ -1775,14 +1809,14 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 			propsNuked = hadProps && !props.NonEmpty()
 		}
 	}
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		// Drop empty nodes left behind by propdel
 		if !header.hasContent() && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
 			return nil
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, nodehook, nil)
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 // Set properties.
@@ -1817,14 +1851,14 @@ func propclean(source DumpfileSource, property string, suffixes []string, select
 			propsNuked = hadProps && !props.NonEmpty()
 		}
 	}
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		// Drop empty nodes left behind by propdel
 		if !header.hasContent() && propsNuked && bytes.Equal(header.payload("Node-action"), []byte("change")) {
 			return nil
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, nodehook, nil)
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 // Rename properties.
@@ -1893,43 +1927,19 @@ func log(source DumpfileSource, selection SubversionRange) {
 			}
 		}
 	}
-	nodehook := func(header StreamSection) []byte { return nil }
-	source.Report(selection, nil, prophook, nodehook, nil)
-}
-
-// Hack paths by applying a specified transformation.
-func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator func(string, []byte) []byte, nameMutator func(string) string, contentMutator func([]byte) []byte) {
-	prophook := func(props *Properties) {
-		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-			return string(pathMutator("Mergeinfo", []byte(path))), revrange
-		})
-		if selection.ContainsNode(source.Revision, source.Index) {
-			if userid, present := props.properties["svn:author"]; present && nameMutator != nil {
-				props.properties["svn:author"] = nameMutator(userid)
-			}
-		}
-	}
-	nodehook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
-			return []byte(header)
-		}
-		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
-			header, _, _ = header.replaceHook(htype, pathMutator)
-		}
-		return []byte(header)
-	}
-	source.Report(selection, nil, prophook, nodehook, contentMutator)
+	headerhook := func(header StreamSection) []byte { return nil }
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 func pathlist(source DumpfileSource, selection SubversionRange) {
 	pathList := newOrderedStringSet()
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if selection.ContainsNode(source.Revision, source.Index) {
 			pathList.Add(string(header.payload("Node-path")))
 		}
 		return nil
 	}
-	source.Report(selection, nil, nil, nodehook, nil)
+	source.Report(selection, nil, nil, headerhook, nil)
 	for _, item := range pathList.Iterate() {
 		os.Stdout.WriteString(item + linesep)
 	}
@@ -1980,7 +1990,7 @@ func reduce(source DumpfileSource, selection SubversionRange) {
 			return path, source.patchMergeinfo(revrange)
 		})
 	}
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
@@ -1989,7 +1999,7 @@ func reduce(source DumpfileSource, selection SubversionRange) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, nodehook, nil)
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 // Renumber all revisions.
@@ -2021,7 +2031,7 @@ func renumber(source DumpfileSource, counter int) {
 		return newhdr
 	}
 
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		header, _, _ = header.replaceHook("Node-copyfrom-rev", func(hd string, in []byte) []byte {
 			oldnum, _ := strconv.Atoi(string(in))
 			return []byte(fmt.Sprintf("%d", renumberBack(oldnum)))
@@ -2054,7 +2064,7 @@ func renumber(source DumpfileSource, counter int) {
 		})
 	}
 
-	source.Report(NewSubversionRange("0:HEAD"), revhook, prophook, nodehook, nil)
+	source.Report(NewSubversionRange("0:HEAD"), revhook, prophook, headerhook, nil)
 }
 
 func replace(source DumpfileSource, selection SubversionRange, transform string) {
@@ -2067,13 +2077,13 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 		croak("illegal regular expression: %v", err)
 	}
 
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		return []byte(header)
 	}
 	contenthook := func(content []byte) []byte {
 		return tre.ReplaceAll(content, []byte(patternParts[1]))
 	}
-	source.Report(selection, nil, nil, nodehook, contenthook)
+	source.Report(selection, nil, nil, headerhook, contenthook)
 }
 
 // Strip out ops defined by a revision selection and a path regexp.
@@ -2146,7 +2156,7 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 	//within := false
 	var stashPath []byte
 	var stashRev []byte
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if source.Revision == 0 {
 			return []byte(header)
 		}
@@ -2172,12 +2182,12 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, nil, nodehook, nil)
+	source.Report(selection, nil, nil, headerhook, nil)
 }
 
 func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
 	var ok bool
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) {
 			return []byte(header)
 		}
@@ -2211,7 +2221,7 @@ func strip(source DumpfileSource, selection SubversionRange, patterns []string) 
 		}
 		return content
 	}
-	source.Report(selection, nil, nil, nodehook, contenthook)
+	source.Report(selection, nil, nil, headerhook, contenthook)
 }
 
 // Select a portion of the dump file not defined by a revision selection.
@@ -2440,7 +2450,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		})
 	}
 	var oldval, newval []byte
-	nodehook := func(header StreamSection) []byte {
+	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
@@ -2541,7 +2551,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		return all
 	}
-	source.Report(selection, nil, prophook, nodehook, nil)
+	source.Report(selection, nil, prophook, headerhook, nil)
 }
 
 // Neutralize the input test load
@@ -2704,7 +2714,7 @@ func main() {
 		assertNoArgs()
 		dumpDocs()
 	case "expunge":
-		pathfilter(NewDumpfileSource(input, baton), selection, true, fixed, flag.Args()[1:])
+		expungesift(NewDumpfileSource(input, baton), selection, true, fixed, flag.Args()[1:])
 	case "filecopy":
 		filecopy(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "help":
@@ -2769,7 +2779,7 @@ func main() {
 		}
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
 	case "sift":
-		pathfilter(NewDumpfileSource(input, baton), selection, false, fixed, flag.Args()[1:])
+		expungesift(NewDumpfileSource(input, baton), selection, false, fixed, flag.Args()[1:])
 	case "skipcopy":
 		skipcopy(NewDumpfileSource(input, baton), selection)
 	case "strip":
