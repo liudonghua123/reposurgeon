@@ -460,7 +460,7 @@ but this feature is not yet exploited.
 
 == Missing tests
 
-FIXME: need tests for resort and for cut-failure case of divide.
+FIXME: need tests for cut-failure case of divide.
 
 FIXME: the branch creation case tickled by branchreateempty.sh is unresolved.
 
