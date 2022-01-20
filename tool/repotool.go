@@ -72,7 +72,7 @@ var makefileTemplate = `# Makefile for {{.Project}} conversion using reposurgeon
 #    then uncomment the line that builds REMOTE_URL 
 #    Note: for CVS hosts other than Sourceforge or Savannah you will need to 
 #    include the path to the CVS modules directory after the hostname.
-# 4. Set any required read options, such as --user-ignores or --nobranch,
+# 4. Set any required read options, such as --user-ignores
 #    by setting READ_OPTIONS.
 # 5. Optionally, replace the default value of DUMPFILTER with a
 #    command or pipeline that actually filters the dump rather than
@@ -87,7 +87,8 @@ var makefileTemplate = `# Makefile for {{.Project}} conversion using reposurgeon
 #
 # For a production-quality conversion you will need to edit the map
 # file and the lift script.  During the process you can set EXTRAS to
-# name extra metadata such as a comments message-box.
+# name extra metadata such as a comments message-box that the final.
+# conversion depends on.
 #
 # Afterwards, you can use the *compare productions to check your work.
 #
@@ -111,7 +112,7 @@ LOGFILE = conversion.log
 
 # Configuration ends here
 
-.PHONY: local-clobber remote-clobber gitk gc compare clean dist stubmap
+.PHONY: local-clobber remote-clobber gitk gc compare clean stubmap
 
 default: {{.Project}}-{{.TargetVCS}}
 
@@ -157,13 +158,6 @@ allcompare: {{.Project}}-mirror {{.Project}}-{{.TargetVCS}}
 # General cleanup and utility
 clean:
 	rm -fr *~ .rs* {{.Project}}-conversion.tar.gz *.{{.SourceVCS}} *.fi *.fo
-
-# Bundle up the conversion metadata for shipping
-SOURCES = Makefile {{.Project}}.opts {{.Project}}.lift {{.Project}}.map $(EXTRAS)
-{{.Project}}-conversion.tar.gz: $(SOURCES)
-	tar --dereference --transform 's:^:{{.Project}}-conversion/:' -czvf {{.Project}}-conversion.tar.gz $(SOURCES)
-
-dist: {{.Project}}-conversion.tar.gz
 `
 
 var gitTemplateAdditions = `
