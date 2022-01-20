@@ -3608,6 +3608,8 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 		opindex, line = popToken(line)
 	}
 	rs.chosen().clearColor(colorQSET)
+	rs.chosen().clearColor(colorDELETE)
+	delCount := 0
 	for it := rs.selection.Iterator(); it.Next(); {
 		ei := it.Value()
 		ev := repo.events[ei]
@@ -3674,13 +3676,12 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 			if removed.op == opM {
 				blob := repo.markToEvent(removed.ref).(*Blob)
 				blob.removeOperation(removed)
-				blob.addColor(colorQSET)
-				// FIXME: Someday, scavenge blobs with no references left
-				//if len(blob.opset) == 0 {
-				//	i := repo.markToIndex(removed.ref)
-				//	repo.events = append(repo.events[:i], repo.events[i+1:]...)
-				//}
-				repo.declareSequenceMutation("scavenging blob")
+				if len(blob.opset) == 0 {
+					blob.addColor(colorDELETE)
+					delCount++
+				} else {
+					blob.addColor(colorQSET)
+				}
 			}
 		} else {
 			present := target >= 0 && target < len(repo.events)
@@ -3706,6 +3707,7 @@ func (rs *Reposurgeon) DoRemove(line string) bool {
 			}
 		}
 	}
+	repo.scavenge(delCount, "remove")
 	return false
 }
 

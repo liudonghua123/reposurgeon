@@ -6397,6 +6397,25 @@ var allPolicies = orderedStringSet{
 	"--blobs",
 }
 
+// scavenge removes deletion-marged blobs
+func (repo *Repository) scavenge(delCount int, legend string) {
+	// Preserve assignments
+	repo.filterAssignments(func(e Event) bool { return e.hasColor(colorDELETE) })
+	// Do the actual deletions
+	survivors := make([]Event, 0, len(repo.events)-delCount)
+	for _, e := range repo.events {
+		if e.hasColor(colorDELETE) {
+			continue
+		}
+		if b, ok := e.(*Blob); ok && len(b.opset) == 0 {
+			continue
+		}
+		survivors = append(survivors, e)
+	}
+	repo.events = survivors
+	repo.declareSequenceMutation(legend)
+}
+
 // Delete a set of events, or rearrange it forward or backwards.
 func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, baton *Baton) error {
 	if logEnable(logDELETE) {
@@ -6739,21 +6758,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 			commit.forget()
 		}
 	}
-	// Preserve assignments
-	repo.filterAssignments(func(e Event) bool { return e.hasColor(colorDELETE) })
-	// Do the actual deletions
-	survivors := make([]Event, 0, len(repo.events)-delCount)
-	for _, e := range repo.events {
-		if e.hasColor(colorDELETE) {
-			continue
-		}
-		if b, ok := e.(*Blob); ok && len(b.opset) == 0 {
-			continue
-		}
-		survivors = append(survivors, e)
-	}
-	repo.events = survivors
-	repo.declareSequenceMutation("squash/delete")
+	repo.scavenge(delCount, "squash/delete")
 	// Canonicalize all the commits that got ops pushed to them
 	if coalesce {
 		for _, commit := range altered {
