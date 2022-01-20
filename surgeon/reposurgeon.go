@@ -2370,13 +2370,19 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 			}
 		}
 		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
-	} else if isdir(parse.line) {
-		err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
-		if err != nil {
-			croak(err.Error())
-		}
 	} else {
-		croak("write no longer takes a filename argument - use > redirection instead")
+		if strings.hasSuffix(parse.line, "/") && !exists(parse.line) {
+			croak("creating dir %v", parse.line)
+			os.Mkdir(parse.line, 0755)
+		}
+		if isdir(parse.line) {
+			err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
+			if err != nil {
+				croak(err.Error())
+			}
+		} else {
+			croak("write no longer takes a filename argument - use > redirection instead")
+		}
 	}
 	return false
 }
