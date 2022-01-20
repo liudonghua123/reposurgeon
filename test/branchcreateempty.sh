@@ -14,11 +14,11 @@
 # 6-1   change   branches/release-1.0/file
 # 7-1   change   trunk/file
 #
-# This ought to be turned into a branch copy, but every
-# attempt to do so has created more problems than it solved.
+# If this isn't turned into a branch creation something
+# has gone badly wrong.
 #
-# If you fix this, don't forget to modify or delete the note
-# in README.adoc.
+# In an ideal world, we might want the gitspace commit
+# corresponding to r5 to become a tag.
 
 # This is a GENERATOR
 

@@ -462,8 +462,6 @@ but this feature is not yet exploited.
 
 FIXME: need tests for cut-failure case of divide.
 
-FIXME: the branch creation case tickled by branchreateempty.sh is unresolved.
-
 FIXME: Needs some tests of hg import with hg-git-fast-import.
 
 FIXME: reposurgeon expunge with --not and --notagify needs tests
