@@ -569,7 +569,7 @@ func (lbs *LineBufferedSource) Read(rlen int) []byte {
 		rlen -= n
 		chunk = chunk[:rlen]
 	}
-	lbs.linenumber += strings.Count(string(text), "\n")
+	lbs.linenumber += strings.Count(string(text), linesep)
 	return text
 }
 
@@ -743,7 +743,7 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 					} else {
 						buffer.WriteString(line)
 					}
-					buffer.WriteString("\n")
+					buffer.WriteString(linesep)
 				}
 			}
 			// Discard last newline, because the V length of the property
@@ -1146,7 +1146,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 			if len(line) == 0 {
 				return
 			}
-			if string(line) == "\n" {
+			if string(line) == linesep {
 				if passthrough && emit {
 					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<passthrough dump: %q>\n", line)
@@ -1399,7 +1399,7 @@ func (ss StreamSection) payload(hd string) []byte {
 		return nil
 	}
 	offs += len(hd) + 2
-	end := bytes.Index(ss[offs:], []byte("\n"))
+	end := bytes.Index(ss[offs:], []byte(linesep))
 	return ss[offs : offs+end]
 }
 
@@ -1411,7 +1411,7 @@ func (ss *StreamSection) replaceHook(htype string, hook func(string, []byte) []b
 		return StreamSection(header), nil, nil
 	}
 	offs += len(htype) + 2
-	endoffs := offs + bytes.Index(header[offs:], []byte("\n"))
+	endoffs := offs + bytes.Index(header[offs:], []byte(linesep))
 	before := header[:offs]
 	pathline := header[offs:endoffs]
 	dup := string(pathline)
@@ -1466,7 +1466,7 @@ func (ss StreamSection) delete(htype string) StreamSection {
 		return ss
 	}
 	header := []byte(ss)
-	header = append(header[:offs], header[offs+bytes.Index(header[offs:], []byte("\n"))+1:]...)
+	header = append(header[:offs], header[offs+bytes.Index(header[offs:], []byte(linesep))+1:]...)
 	return StreamSection(header)
 }
 
@@ -1948,7 +1948,7 @@ func pathlist(source DumpfileSource, selection SubversionRange) {
 	}
 	source.Report(selection, nil, nil, nodehook, nil)
 	for _, item := range pathList.Iterate() {
-		os.Stdout.WriteString(item + "\n")
+		os.Stdout.WriteString(item + linesep)
 	}
 }
 
@@ -2619,12 +2619,12 @@ func testify(source DumpfileSource, counter int) {
 		}
 
 		if state == 3 {
-			line = []byte(NeutralUser + "\n")
+			line = []byte(NeutralUser + linesep)
 			state = 0
 		} else if state == 6 {
 			t := time.Unix(int64((counter-1)*10), 0).UTC().Format(time.RFC3339)
 			t2 := t[:19] + ".000000Z"
-			line = []byte(t2 + "\n")
+			line = []byte(t2 + linesep)
 			state = 0
 		}
 
