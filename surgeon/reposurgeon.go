@@ -2321,10 +2321,14 @@ func (rs *Reposurgeon) HelpWrite() {
 
 Dump a fast-import stream representing selected events to standard
 output (if second argument is empty or '-') or via > redirect to a file.
+
 Alternatively, if there is no redirect and the argument names a
 directory the repository is rebuilt into that directory, with any
 selection set argument being ignored; if that target directory is
 nonempty its contents are backed up to a save directory.
+
+If the argument ends with a '/' and does not exist, that
+directory is created and he repository written into it.
 
 Property extensions will be omitted if the importer for the
 preferred repository type cannot digest them.
@@ -2372,7 +2376,6 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
 	} else {
 		if strings.HasSuffix(parse.line, "/") && !exists(parse.line) {
-			croak("creating dir %v", parse.line)
 			os.Mkdir(parse.line, 0755)
 		}
 		if isdir(parse.line) {
