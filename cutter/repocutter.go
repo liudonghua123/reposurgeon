@@ -1599,9 +1599,6 @@ func pathfilter(source DumpfileSource, selection SubversionRange, drop bool, fix
 
 // Replace file copy operations with explicit add/change operation
 func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool, matchpaths []string) {
-	//if debug >= debugLOGIC {
-	//	fmt.Fprintf(os.Stderr, "<filecopy selection is %s>\n", selection)
-	//}
 	type trackCopy struct {
 		revision int
 		content  []byte
@@ -1611,9 +1608,6 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 	var nodePath string
 	nodehook := func(header StreamSection) []byte {
 		nodePath = source.NodePath
-		//if debug >= debugLOGIC {
-		//	fmt.Fprintf(os.Stderr, "  <nodePath gets %q>\n", nodePath)
-		//}
 		if debug >= debugLOGIC {
 			fmt.Fprintf(os.Stderr,
 				"<r%s: filecopy investigates this revision>\n",
@@ -1653,17 +1647,8 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 			} else {
 				copyrev, _ := strconv.Atoi(string(header.payload("Node-copyfrom-rev")))
 				if sources, ok := values[string(copypath)]; ok {
-					//if debug >= debugLOGIC {
-					//	fmt.Fprintf(os.Stderr, "  <found a path match>\n")
-					//}
 					for i := len(sources) - 1; i >= 0; i-- {
-						//if debug >= debugLOGIC {
-						//	fmt.Fprintf(os.Stderr, "    <checking against revision %d>\n", sources[i].revision)
-						//}
 						if sources[i].revision <= copyrev {
-							//if debug >= debugLOGIC {
-							//	fmt.Fprintf(os.Stderr, "    <revision %d works for %s: header before is '%q'>\n", sources[i].revision, copypath, header)
-							//}
 							header = header.delete("Node-copyfrom-path")
 							header = header.delete("Node-copyfrom-rev")
 							header = header.stripChecksums()
