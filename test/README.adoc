@@ -464,7 +464,7 @@ FIXME: need tests for cut-failure case of divide.
 
 FIXME: Needs some tests of hg import with hg-git-fast-import.
 
-FIXME: reposurgeon expunge with --not and --notagify needs tests
+FIXME: reposurgeon expunge with --notagify needs a test
 
 FIXME: R and C handling in expunge needs tests
 
