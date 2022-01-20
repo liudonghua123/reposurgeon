@@ -12,7 +12,6 @@ import (
 	"io"
 	"math"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -1305,22 +1304,6 @@ type Logfile struct {
 func (lf *Logfile) Contains(revision int) bool {
 	_, ok := lf.comments[revision]
 	return ok
-}
-
-// captureFromProcess runs a specified command, capturing the output.
-func captureFromProcess(command string) []byte {
-	if !quiet {
-		announce("%s: capturing %s", time.Now(), command)
-	}
-	cmd := exec.Command("sh", "-c", command)
-	content, err := cmd.CombinedOutput()
-	if err != nil {
-		croak("executing %q: %v", cmd, err)
-	}
-	//if verbose {
-	announce(string(content))
-	//}
-	return content
 }
 
 const delim = "------------------------------------------------------------------------"
