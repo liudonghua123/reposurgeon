@@ -2371,7 +2371,7 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 		}
 		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
 	} else {
-		if strings.hasSuffix(parse.line, "/") && !exists(parse.line) {
+		if strings.HasSuffix(parse.line, "/") && !exists(parse.line) {
 			croak("creating dir %v", parse.line)
 			os.Mkdir(parse.line, 0755)
 		}
