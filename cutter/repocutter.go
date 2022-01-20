@@ -281,8 +281,7 @@ them as fixed strings.
 Replace the source revision and path of a copy at the upper end of the selection
 with the source revisions and path of a copy at the lower end. Fails unless both
 revisions are copies.  Used to remove an unwanted intermediate copy or
-copies - fails noisily if there is a change operating on the target 
-path between these revisions.
+copies.
 `},
 	"strip": {
 		"Replace content with unique cookies, preserving structure",
