@@ -517,7 +517,7 @@ func mirror(args []string) {
 			}
 		})
 		if !quiet {
-			baton.Write([]byte{'\n'}) // Kludge, FIXME
+			baton.Write([]byte{'\n'})
 		}
 		baton.endProgress()
 	} else if isdir(filepath.Join(operand, "locks")) {
@@ -554,7 +554,7 @@ func mirror(args []string) {
 				}
 			})
 			if !quiet {
-				baton.Write([]byte{'\n'}) // Kludge, FIXME
+				baton.Write([]byte{'\n'})
 			}
 			baton.endProgress()
 		}
