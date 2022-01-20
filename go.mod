@@ -14,9 +14,9 @@ require (
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778
 	gitlab.com/esr/fqme v0.1.0
 	gitlab.com/ianbruene/kommandant v0.6.2
-	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
-	golang.org/x/term v0.0.0-20210406210042-72f3dc4e9b72
-	golang.org/x/text v0.3.6
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	golang.org/x/text v0.3.7
 )
 
 go 1.13
