@@ -1247,7 +1247,7 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 					}
 					header = headerhook(StreamSection(header))
 				}
-				// headerr can be non-nil but empty following a wildvard expansion
+				// header can be non-nil but empty following a wildvard expansion
 				// that didn't turn up any matches.
 				if len(header) == 0 {
 					emit = false
@@ -2482,7 +2482,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
 					}
-					header.delete("Prop-content-lengh")
+					header.delete("Prop-content-length")
 					prefixer := func(header StreamSection, prefix string) []byte {
 						out := header.clone()
 						for _, tag := range [2]string{"Node-path", "Node-copyfrom-path"} {
@@ -2555,10 +2555,12 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 		}
 		all := make([]byte, 0)
 		for _, subbranch := range wildcards[wildcardKey].Iterate() {
-			clone := bytes.Replace(header,
+			clone := StreamSection(bytes.Replace(header,
 				[]byte{wildcardMark}, []byte(subbranch),
-				-1)
-			all = append(all, clone...)
+				-1))
+			clone = clone.delete("Prop-content-length")
+			clone = clone.delete("Content-length")
+			all = append(all, []byte(clone)...)
 		}
 		return all
 	}
