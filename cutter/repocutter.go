@@ -2358,9 +2358,11 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 								// Then drop this path - nothing else needs doing.
 								return nil
 							case "change":
-								wildcardKey = string(path)
-								parts[1] = []byte{wildcardMark}
-								parts = append(parts, []byte(project))
+								// FIXME: Someday, handle the case with properties
+								//wildcardKey = string(path)
+								//parts[1] = []byte{wildcardMark}
+								//parts = append(parts, []byte(project))
+								return nil
 							case "copy":
 								if sourcehdr == "Node-copyfrom-path" {
 									wildcardKey = string(path)
