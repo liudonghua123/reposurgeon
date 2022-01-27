@@ -967,6 +967,34 @@ func SetLength(header string, data []byte, val int) []byte {
 	return data
 }
 
+// SegmentMatcher is strate for a path segment matcher
+type SegmentMatcher struct {
+	regexps []*regexp.Regexp
+}
+
+// NewSegmentMatcher returns a stateful object for path segment matching
+func NewSegmentMatcher(patterns []string, fixed bool) SegmentMatcher {
+	var s SegmentMatcher
+	s.regexps = make([]*regexp.Regexp, len(patterns))
+	for i, pattern := range patterns {
+		if fixed {
+			s.regexps[i] = regexp.MustCompile(segmentize(regexp.QuoteMeta(pattern)))
+		} else {
+			s.regexps[i] = regexp.MustCompile(segmentize(pattern))
+		}
+	}
+	return s
+}
+
+func (s SegmentMatcher) pathmatch(path string) bool {
+	for _, r := range s.regexps {
+		if r.MatchString(path) {
+			return true
+		}
+	}
+	return false
+}
+
 // Dumpfile parsing machinery goes here
 
 var revisionLine *regexp.Regexp
@@ -1580,22 +1608,7 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 
 // Drop or retain ops defined by a revision selection and a path regexp.
 func expungesift(source DumpfileSource, selection SubversionRange, drop bool, fixed bool, patterns []string) {
-	regexps := make([]*regexp.Regexp, len(patterns))
-	for i, pattern := range patterns {
-		if fixed {
-			regexps[i] = regexp.MustCompile(segmentize(regexp.QuoteMeta(pattern)))
-		} else {
-			regexps[i] = regexp.MustCompile(segmentize(pattern))
-		}
-	}
-	pathmatch := func(path string) bool {
-		for _, r := range regexps {
-			if r.MatchString(path) {
-				return true
-			}
-		}
-		return false
-	}
+	matcher := NewSegmentMatcher(patterns, fixed)
 	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
@@ -1604,7 +1617,7 @@ func expungesift(source DumpfileSource, selection SubversionRange, drop bool, fi
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
 			if nodepath != nil {
-				matched = matched || pathmatch(string(nodepath))
+				matched = matched || matcher.pathmatch(string(nodepath))
 			}
 		}
 		if matched != drop {
@@ -1614,7 +1627,7 @@ func expungesift(source DumpfileSource, selection SubversionRange, drop bool, fi
 	}
 	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-			if pathmatch(path) == drop {
+			if matcher.pathmatch(path) == drop {
 				return "", ""
 			}
 			revrange = source.patchMergeinfo(revrange)
