@@ -1110,10 +1110,11 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		}
 		prestash = append(prestash, line...)
 	}
+	passthrough = true
 	if headerhook != nil {
 		out := headerhook(prestash)
-		if out != nil {
-			passthrough = true
+		if out == nil {
+			passthrough = false
 		}
 		ds.say(out)
 	}
@@ -2154,9 +2155,8 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 	}
 	logpatch := NewLogfile(fd, &selection)
 	prophook := func(prop *Properties) {
-		if selection.ContainsRevision(source.Revision) {
-			_, haslog := prop.properties["svn:log"]
-			if haslog && logpatch.Contains(source.Revision) {
+		if selection.ContainsRevision(source.Revision) && source.Index == 0 {
+			if _, haslog := prop.properties["svn:log"]; haslog && logpatch.Contains(source.Revision) {
 				logentry := logpatch.comments[source.Revision]
 				if string(logentry.author) != getAuthor(prop.properties) {
 					croak("author of revision %d doesn't look right, aborting!\n", source.Revision)
