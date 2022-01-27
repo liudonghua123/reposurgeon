@@ -925,6 +925,13 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 	}
 }
 
+func (props *Properties) getAuthor() string {
+	if author, ok := props.properties["svn:author"]; ok {
+		return author
+	}
+	return "(no author)"
+}
+
 // Miscellaneous helper functions
 
 func parseMergeinfoRange(txt string) SubversionRange {
@@ -1733,6 +1740,41 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 	source.Report(nil, nil, headerhook, contenthook)
 }
 
+// Extract log entries
+func log(source DumpfileSource, selection SubversionRange) {
+	SVNTimeParse := func(rdate string) time.Time {
+		// Parse a date in the Subversion variant of RFC3339 format
+		// An example date in SVN format is '2011-11-30T16:40:02.180831Z'
+		date, ok := time.Parse(time.RFC3339Nano, rdate)
+		if ok != nil {
+			fmt.Fprintf(os.Stderr, "ill-formed date '%s': %v\n", rdate, ok)
+			os.Exit(1)
+		}
+		return date
+	}
+
+	prophook := func(prop *Properties) {
+		if selection.ContainsRevision(source.Revision) {
+			// This test implicitly excludes r0 metadata from being dumped.
+			// It is not certain this is the right thing.
+			if logentry := prop.properties["svn:log"]; logentry != "" {
+				os.Stdout.Write([]byte(delim + "\n"))
+				author := prop.getAuthor()
+				date := SVNTimeParse(prop.properties["svn:date"])
+				drep := date.Format("2006-01-02 15:04:05 +0000 (Mon, 02 Jan 2006)")
+				fmt.Printf("r%d | %s | %s | %d lines\n",
+					source.Revision,
+					author,
+					drep,
+					strings.Count(logentry, "\n"))
+				os.Stdout.WriteString("\n" + logentry + "\n")
+			}
+		}
+	}
+	headerhook := func(header StreamSection) []byte { return nil }
+	source.Report(nil, prophook, headerhook, nil)
+}
+
 // Hack pathnames to obscure them.
 func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange) {
 	pathMutator := func(hd string, s []byte) []byte {
@@ -1776,6 +1818,57 @@ func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange)
 	mutatePaths(source, selection, pathMutator, nameMutator, contentMutator)
 }
 
+func pathlist(source DumpfileSource, selection SubversionRange) {
+	pathList := newOrderedStringSet()
+	headerhook := func(header StreamSection) []byte {
+		if selection.ContainsNode(source.Revision, source.Index) {
+			if path := header.payload("Node-path"); path != nil {
+				pathList.Add(string(path))
+			}
+		}
+		return nil
+	}
+	source.Report(nil, nil, headerhook, nil)
+	for _, item := range pathList.Iterate() {
+		os.Stdout.WriteString(item + linesep)
+	}
+}
+
+// Hack paths by applying regexp transformations on segment sequences.
+func pathrename(source DumpfileSource, selection SubversionRange, patterns []string) {
+	if len(patterns)%2 == 1 {
+		croak("pathrename can't have odd number of arguments")
+	}
+	type transform struct {
+		re *regexp.Regexp
+		to []byte
+	}
+	ops := make([]transform, 0)
+	for i := 0; i < len(patterns)/2; i++ {
+		if patterns[i*2][0] == '^' && patterns[i*2][len(patterns[i*2])-1] == '$' {
+			ops = append(ops, transform{regexp.MustCompile(patterns[i*2]),
+				[]byte(patterns[i*2+1])})
+		} else if patterns[i*2][0] == '^' {
+			ops = append(ops, transform{regexp.MustCompile(patterns[i*2] + "(?P<end>/|$)"),
+				append([]byte(patterns[i*2+1]), []byte("${end}")...)})
+		} else if patterns[i*2][len(patterns[i*2])-1] == '$' {
+			ops = append(ops, transform{regexp.MustCompile("(?P<start>^|/)" + patterns[i*2]),
+				append([]byte("${start}"), []byte(patterns[i*2+1])...)})
+		} else {
+			ops = append(ops, transform{regexp.MustCompile("(?P<start>^|/)" + patterns[i*2] + "(?P<end>/|$)"),
+				append([]byte("${start}"), append([]byte(patterns[i*2+1]), []byte("${end}")...)...)})
+		}
+	}
+	mutator := func(hd string, s []byte) []byte {
+		for _, op := range ops {
+			s = op.re.ReplaceAll(s, op.to)
+		}
+		return s
+	}
+
+	mutatePaths(source, selection, mutator, nil, nil)
+}
+
 // Pop the top segment off each pathname in an input dump
 func pop(source DumpfileSource, fixed bool, patterns []string) {
 	var matcher SegmentMatcher
@@ -1803,24 +1896,6 @@ func pop(source DumpfileSource, fixed bool, patterns []string) {
 					return []byte(popSegment(string(in)))
 				}
 				return in
-			})
-		}
-		return []byte(header)
-	}
-	source.Report(nil, prophook, headerhook, nil)
-}
-
-// Push a prefix segment onto each pathname in an input dump
-func push(source DumpfileSource, prefix string) {
-	prophook := func(props *Properties) {
-		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-			return prefix + string(os.PathSeparator) + path, revrange
-		})
-	}
-	headerhook := func(header StreamSection) []byte {
-		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
-			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
-				return []byte(prefix + "/" + string(in))
 			})
 		}
 		return []byte(header)
@@ -1919,99 +1994,22 @@ func proprename(source DumpfileSource, propnames []string, selection SubversionR
 	source.Report(nil, prophook, nil, nil)
 }
 
-func getAuthor(props map[string]string) string {
-	if author, ok := props["svn:author"]; ok {
-		return author
+// Push a prefix segment onto each pathname in an input dump
+func push(source DumpfileSource, prefix string) {
+	prophook := func(props *Properties) {
+		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
+			return prefix + string(os.PathSeparator) + path, revrange
+		})
 	}
-	return "(no author)"
-}
-
-// SVNTimeParse - parse a date in the Subversion variant of RFC3339 format
-func SVNTimeParse(rdate string) time.Time {
-	// An example date in SVN format is '2011-11-30T16:40:02.180831Z'
-	date, ok := time.Parse(time.RFC3339Nano, rdate)
-	if ok != nil {
-		fmt.Fprintf(os.Stderr, "ill-formed date '%s': %v\n", rdate, ok)
-		os.Exit(1)
-	}
-	return date
-}
-
-// Extract log entries
-func log(source DumpfileSource, selection SubversionRange) {
-	prophook := func(prop *Properties) {
-		if selection.ContainsRevision(source.Revision) {
-			props := prop.properties
-			logentry := props["svn:log"]
-			// This test implicitly excludes r0 metadata from being dumped.
-			// It is not certain this is the right thing.
-			if logentry != "" {
-				os.Stdout.Write([]byte(delim + "\n"))
-				author := getAuthor(props)
-				date := SVNTimeParse(props["svn:date"])
-				drep := date.Format("2006-01-02 15:04:05 +0000 (Mon, 02 Jan 2006)")
-				fmt.Printf("r%d | %s | %s | %d lines\n",
-					source.Revision,
-					author,
-					drep,
-					strings.Count(logentry, "\n"))
-				os.Stdout.WriteString("\n" + logentry + "\n")
-			}
-		}
-	}
-	headerhook := func(header StreamSection) []byte { return nil }
-	source.Report(nil, prophook, headerhook, nil)
-}
-
-func pathlist(source DumpfileSource, selection SubversionRange) {
-	pathList := newOrderedStringSet()
 	headerhook := func(header StreamSection) []byte {
-		if selection.ContainsNode(source.Revision, source.Index) {
-			if path := header.payload("Node-path"); path != nil {
-				pathList.Add(string(path))
-			}
+		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
+			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
+				return []byte(prefix + "/" + string(in))
+			})
 		}
-		return nil
+		return []byte(header)
 	}
-	source.Report(nil, nil, headerhook, nil)
-	for _, item := range pathList.Iterate() {
-		os.Stdout.WriteString(item + linesep)
-	}
-}
-
-// Hack paths by applying regexp transformations on segment sequences.
-func pathrename(source DumpfileSource, selection SubversionRange, patterns []string) {
-	if len(patterns)%2 == 1 {
-		croak("pathrename can't have odd number of arguments")
-	}
-	type transform struct {
-		re *regexp.Regexp
-		to []byte
-	}
-	ops := make([]transform, 0)
-	for i := 0; i < len(patterns)/2; i++ {
-		if patterns[i*2][0] == '^' && patterns[i*2][len(patterns[i*2])-1] == '$' {
-			ops = append(ops, transform{regexp.MustCompile(patterns[i*2]),
-				[]byte(patterns[i*2+1])})
-		} else if patterns[i*2][0] == '^' {
-			ops = append(ops, transform{regexp.MustCompile(patterns[i*2] + "(?P<end>/|$)"),
-				append([]byte(patterns[i*2+1]), []byte("${end}")...)})
-		} else if patterns[i*2][len(patterns[i*2])-1] == '$' {
-			ops = append(ops, transform{regexp.MustCompile("(?P<start>^|/)" + patterns[i*2]),
-				append([]byte("${start}"), []byte(patterns[i*2+1])...)})
-		} else {
-			ops = append(ops, transform{regexp.MustCompile("(?P<start>^|/)" + patterns[i*2] + "(?P<end>/|$)"),
-				append([]byte("${start}"), append([]byte(patterns[i*2+1]), []byte("${end}")...)...)})
-		}
-	}
-	mutator := func(hd string, s []byte) []byte {
-		for _, op := range ops {
-			s = op.re.ReplaceAll(s, op.to)
-		}
-		return s
-	}
-
-	mutatePaths(source, selection, mutator, nil, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Topologically reduce a dump, removing plain file modifications.
@@ -2174,7 +2172,7 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 		if selection.ContainsRevision(source.Revision) && source.Index == 0 {
 			if _, haslog := prop.properties["svn:log"]; haslog && logpatch.Contains(source.Revision) {
 				logentry := logpatch.comments[source.Revision]
-				if string(logentry.author) != getAuthor(prop.properties) {
+				if string(logentry.author) != prop.getAuthor() {
 					croak("author of revision %d doesn't look right, aborting!\n", source.Revision)
 				}
 				prop.properties["svn:log"] = string(logentry.text)
