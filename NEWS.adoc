@@ -5,7 +5,8 @@ Repository Head::
      repocutter renumber no longer mangles mergeinfo properties.
      Fixed mergeinfo handling in repoocutter commands that remove revisions.
      Interactive lint listing is interruptible.
-     Significant bugfixes and major code simplification in repocutter swapsvn 
+     Significant bugfixes and major code simplification in repocutter swapsvn.
+     repocutter push is restructed by pathmatch rather than range.
 
 4.31: 2022-01-08::
      Minor improvements in baton handling.

@@ -1772,7 +1772,11 @@ func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange)
 }
 
 // Pop the top segment off each pathname in an input dump
-func pop(source DumpfileSource) {
+func pop(source DumpfileSource, patterns []string, fixed bool) {
+	var matcher SegmentMatcher
+	if len(patterns) > 0 {
+		matcher = NewSegmentMatcher(patterns, fixed)
+	}
 	popSegment := func(ins string) string {
 		if strings.Contains(ins, "/") {
 			return ins[strings.Index(ins, "/")+1:]
@@ -1781,13 +1785,19 @@ func pop(source DumpfileSource) {
 	}
 	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-			return popSegment(path), revrange
+			if len(patterns) == 0 || matcher.pathmatch(path) {
+				path = popSegment(path)
+			}
+			return path, revrange
 		})
 	}
 	headerhook := func(header StreamSection) []byte {
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
 			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
-				return []byte(popSegment(string(in)))
+				if len(patterns) == 0 || matcher.pathmatch(string(in)) {
+					return []byte(popSegment(string(in)))
+				}
+				return in
 			})
 		}
 		return []byte(header)
@@ -2788,7 +2798,7 @@ func main() {
 		pathrename(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "pop":
 		assertNoSelection()
-		pop(NewDumpfileSource(input, baton))
+		pop(NewDumpfileSource(input, baton), flag.Args()[1:], fixed)
 	case "propclean":
 		propclean(NewDumpfileSource(input, baton), property, flag.Args()[1:], selection)
 	case "propdel":
