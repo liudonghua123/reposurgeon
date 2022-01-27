@@ -35,6 +35,16 @@ a revision, the special name HEAD for the head (last) revision, or a node
 specification of the form rev.node where rev is an integer revision number and
 node in a 1-origin node index.
 
+Filename PATTERN arguments are regular expressiuons constrained so that each
+match must be a path segment or a sequence of path segments; that is, the left
+end must be either at the start of path or immediately following a /, and the
+right end must precede a / or be at end of string.  With a leading ^ the match is
+constrained to be a leading sequence of the pathname; with a trailing
+$, a trailing one.
+
+The -f/-fixed option disables regexp compilation of PATTERN arguments, treating
+them as fixed strings.
+
 Normally, each subcommand produces a progress spinner on standard error; each
 turn means another revision has been filtered. The -q (or --quiet) option
 suppresses this.
@@ -81,18 +91,7 @@ NOT in that range to pass to standard output.
 
 Delete all operations with Node-path or Node-copyfrom-path headers matching 
 specified Golang regular expressions (opposite of 'sift').  Any revision
-left with no Node records after this filtering has its Revision
-
-Matches are constrained so that each match must be a path segment or a
-sequence of path segments; that is, the left end must be either at the
-start of path or immediately following a /, and the right end must
-precede a / or be at end of string.  With a leading ^ the match is
-constrained to be a leading sequence of the pathname; with a trailing
-$, a trailing one.
-record is removed as well.
-
-The -f/-fixed option disables regexp compilation of the patterns, treating
-them as fixed strings.
+left with no Node records after this filtering has its Revision.
 `},
 	"filecopy": {
 		"Resolve filecopy operations on a stream.",
@@ -103,7 +102,7 @@ node-path's content.  For each later file copy operation with that source,
 replace the file copy with an explicit add/change using the stashed content.
 
 With the -f flag and a BASENAME argument, require the source basename
-to be as specified.  Otherrwise, with -f and no BASENAME, require a
+to be as specified.  Otherwise, with -f and no BASENAME, require a
 match of source to targwt on basename only rather than the full path.
 This may be required in order to extract filecopies from branches.
 
@@ -160,9 +159,6 @@ This transform can be restricted by a selection set.
 		`pop: usage: repocutter pop [-f|-fixed] [PATTERN]
 
 Pop initial segment off each path matching PATTERN - by default, all paths.
-The pattern is constrained to match a path segment or segment sequence. 
-The -f option says to disable regexp interpretation, requiring the match
-to be literal.
 
 May be useful after a sift command to turn a dump from a subproject
 stripped from a dump for a multiple-project repository into the normal
@@ -275,16 +271,6 @@ Delete all operations with Node-path or Node-copyfrom-path headers *not*
 matching specified Golang regular expressions (opposite of 'expunge').
 Any revision left with no Node records after this filtering has its Revision record
 removed as well. This transform can be restricted by a selection set.
-
-Matches are constrained so that each match must be a path segment or a
-sequence of path segments; that is, the left end must be either at the
-start of path or immediately following a /, and the right end must
-precede a / or be at end of string.  With a leading ^ the match is
-constrained to be a leading sequence of the pathname; with a trailing
-$, a trailing one.
-
-The -f/-fixed option disables regexp compilation of the patterns, treating
-them as fixed strings.
 `},
 	"skipcopy": {
 		"Skip an intermediate copy chain between specified revisions",
@@ -301,11 +287,9 @@ copies.
 
 Replace content with unique generated cookies on all node paths matching
 the specified regular expressions; if no expressions are given, match all
-paths. Patterns must match entire path segments or segment sequences. The
--f/-fixed option disable regexp intyerpeetation of the pattern, requiring
-a fixed matchThis transform can be restricted by a selection set.
+paths.
 
-This command is useful for rdsucing the bulk of a stream without touching
+This command is useful for reducing the bulk of a stream without touching
 its metdata, so you can doio test conversions more quickly.
 `},
 	"swap": {
@@ -315,12 +299,12 @@ its metdata, so you can doio test conversions more quickly.
 Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
 a common form of multi-project repository.  If a PATTERN argument is given, 
-only paths matching the pattern are swapped. This transform can be restricted
-by a selection set.
+only paths matching it are swapped.
+
 `},
 	"swapsvn": {
 		"Subversion structure-aware swap",
-		`swapsvn: usage: repocutter [-r SELECTION] swapsvn [PATTERN]
+		`swapsvn: usage: repocutter [-r SELECTION] swapsvn [-f|-fixed] [PATTERN]
 
 Like swap, but is aware of Subversion structure.  Used for transforming
 multiproject repositories into a standard layout with trunk, tags, and
