@@ -296,7 +296,7 @@ copies.
 `},
 	"strip": {
 		"Replace content with unique cookies, preserving structure",
-		`strip: usage: repocutter [-r SELECTION] strip PATTERN...
+		`strip: usage: repocutter [-r SELECTION] strip [-f] [PATTERN...]
 
 Replace content with unique generated cookies on all node paths
 matching the specified regular expressions; if no expressions are
@@ -2214,31 +2214,21 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 	source.Report(selection, nil, nil, headerhook, nil)
 }
 
-func strip(source DumpfileSource, selection SubversionRange, patterns []string) {
-	var ok bool
+func strip(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
+	var matcher SegmentMatcher
+	if len(patterns) > 0 {
+		matcher = NewSegmentMatcher(patterns, fixed)
+	}
+	var stripIt bool
 	headerhook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return []byte(header)
-		}
-		// first check against the patterns, if any are given
-		ok = true
-		nodepath := header.payload("Node-path")
-		if nodepath != nil {
-			for _, pattern := range patterns {
-				ok = false
-				re := regexp.MustCompile(pattern)
-				if re.Match(nodepath) {
-					//os.Stderr.Write("strip skipping: %s\n", nodepath)
-					ok = true
-					header = header.stripChecksums()
-					break
-				}
-			}
+		stripIt = source.Revision > 0 && selection.ContainsNode(source.Revision, source.Index) && (len(patterns) == 0 || matcher.pathmatch(source.NodePath))
+		if stripIt {
+			header = header.stripChecksums()
 		}
 		return []byte(header)
 	}
 	contenthook := func(content []byte) []byte {
-		if ok {
+		if stripIt {
 			if len(content) > 0 { //len([]nil == 0)
 				// Avoid replacing symlinks, a reposurgeon sanity check barfs.
 				if !bytes.HasPrefix(content, []byte("link ")) {
@@ -2838,7 +2828,7 @@ func main() {
 	case "skipcopy":
 		skipcopy(NewDumpfileSource(input, baton), selection)
 	case "strip":
-		strip(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+		strip(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "swap":
 		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:], false)
 	case "swapsvn":
