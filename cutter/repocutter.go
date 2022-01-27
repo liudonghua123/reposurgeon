@@ -1962,7 +1962,9 @@ func pathlist(source DumpfileSource, selection SubversionRange) {
 	pathList := newOrderedStringSet()
 	headerhook := func(header StreamSection) []byte {
 		if selection.ContainsNode(source.Revision, source.Index) {
-			pathList.Add(string(header.payload("Node-path")))
+			if path := header.payload("Node-path"); path != nil {
+				pathList.Add(string(path))
+			}
 		}
 		return nil
 	}
