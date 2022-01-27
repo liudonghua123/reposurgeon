@@ -1,6 +1,6 @@
 #!/bin/sh
 ## Test path-seqment pushing
-${REPOCUTTER:-repocutter} -q push PREFIX <<EOF
+${REPOCUTTER:-repocutter} -q -s PREFIX push <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: be5bedff-a577-4def-8afe-cf522686966a

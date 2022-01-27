@@ -204,11 +204,12 @@ in the rtevision; you'll probably want to specify a node index.
 You may specify multiple property settings.
 `},
 	"push": {
-		"Push a first segment onto each path",
-		`push: usage: repocutter push segment
+		"Push a first segment onto each matching path",
+		`push: usage: repocutter push [-s segment] [-f] [PATTERN...]
 
-Push an initial segment onto each path. Normally used to add a "trunk"
-prefix to every path in a flat repository.
+Push an initial segment onto each matching path. Normally used to add a
+"trunk" prefix to every path in a flat repository.  The -s option can be used 
+rton set a different initial segment.
 
 This transform cannot be restricted by a selection set, as it is not
 possible to guarantee that copyfro paths and mergeinfo properties will
@@ -1995,16 +1996,26 @@ func proprename(source DumpfileSource, propnames []string, selection SubversionR
 }
 
 // Push a prefix segment onto each pathname in an input dump
-func push(source DumpfileSource, prefix string) {
+func push(source DumpfileSource, segment string, fixed bool, patterns []string) {
+	var matcher SegmentMatcher
+	if len(patterns) > 0 {
+		matcher = NewSegmentMatcher(patterns, fixed)
+	}
 	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-			return prefix + string(os.PathSeparator) + path, revrange
+			if len(patterns) == 0 || matcher.pathmatch(path) {
+				path = segment + string(os.PathSeparator) + path
+			}
+			return path, revrange
 		})
 	}
 	headerhook := func(header StreamSection) []byte {
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
 			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
-				return []byte(prefix + "/" + string(in))
+				if len(patterns) == 0 || matcher.pathmatch(string(in)) {
+					in = []byte(segment + string(os.PathSeparator) + string(in))
+				}
+				return in
 			})
 		}
 		return []byte(header)
@@ -2677,6 +2688,7 @@ func main() {
 	var logentries string
 	var property string
 	var rangestr string
+	var segment string
 	var infile string
 	input := os.Stdin
 	flag.IntVar(&base, "b", 0, "base value to renumber from")
@@ -2695,6 +2707,8 @@ func main() {
 	flag.BoolVar(&quiet, "quiet", false, "disable progress messages")
 	flag.StringVar(&rangestr, "r", "", "set selection range")
 	flag.StringVar(&rangestr, "range", "", "set selection range")
+	flag.StringVar(&segment, "s", "trunk", "set set segment for push operation")
+	flag.StringVar(&segment, "segment", "trunk", "set set segment for push operation")
 	flag.StringVar(&tag, "t", "", "set error tag")
 	flag.StringVar(&tag, "tag", "", "set error tag")
 	flag.Parse()
@@ -2806,7 +2820,7 @@ func main() {
 		reduce(NewDumpfileSource(input, baton), selection)
 	case "push":
 		assertNoSelection()
-		push(NewDumpfileSource(input, baton), flag.Args()[1])
+		push(NewDumpfileSource(input, baton), segment, fixed, flag.Args()[1:])
 	case "renumber":
 		assertNoArgs()
 		assertNoSelection()

@@ -7,6 +7,8 @@ Repository Head::
      Interactive lint listing is interruptible.
      Significant bugfixes and major code simplification in repocutter swapsvn.
      repocutter push is restructed by pathmatch rather than range.
+     repocutter push can be pattern-restricted.
+     All repocutter commands with a pattern rsetruction match against segments.
 
 4.31: 2022-01-08::
      Minor improvements in baton handling.
