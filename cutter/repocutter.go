@@ -894,7 +894,7 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 							path = path[1:]
 						}
 						newpath, newrange := mutator(path, revrange)
-						if newpath == "" && newrange == "" {
+						if newpath == "" || newrange == "" {
 							continue
 						}
 						if rooted {
@@ -916,7 +916,11 @@ func (props *Properties) MutateMergeinfo(mutator func(string, string) (string, s
 			if buffer.Len() > 0 {
 				buffer.Truncate(buffer.Len() - 1)
 			}
-			props.properties[mergeproperty] = buffer.String()
+			if r := buffer.String(); r == "" {
+				props.Delete(mergeproperty)
+			} else {
+				props.properties[mergeproperty] = r
+			}
 		}
 	}
 }
