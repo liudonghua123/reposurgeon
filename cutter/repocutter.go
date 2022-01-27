@@ -157,11 +157,12 @@ This transform can be restricted by a selection set.
 `},
 	"pop": {
 		"Pop the first segment off each path",
-		`pop: usage: repocutter pop [-f] [PATTERN]
+		`pop: usage: repocutter pop [-f|-fixed] [PATTERN]
 
-Pop initial segment off each path matching PATTERN - by default, all paths. The pattern
-is (like expunge) constrainred to match path segments.  The -f option says to disable
-regexp interpretatiuon, requiring the match to be literal.
+Pop initial segment off each path matching PATTERN - by default, all paths.
+The pattern is constrained to match a path segment or segment sequence. 
+The -f option says to disable regexp interpretation, requiring the match
+to be literal.
 
 May be useful after a sift command to turn a dump from a subproject
 stripped from a dump for a multiple-project repository into the normal
@@ -296,17 +297,20 @@ copies.
 `},
 	"strip": {
 		"Replace content with unique cookies, preserving structure",
-		`strip: usage: repocutter [-r SELECTION] strip [-f] [PATTERN...]
+		`strip: usage: repocutter [-r SELECTION] strip [-f|-fixed] [PATTERN...]
 
-Replace content with unique generated cookies on all node paths
-matching the specified regular expressions; if no expressions are
-given, match all paths.  Useful when you need to examine a
-particularly complex node structure. This transform can be restricted
-by a selection set.
+Replace content with unique generated cookies on all node paths matching
+the specified regular expressions; if no expressions are given, match all
+paths. Patterns must match entire path segments or segment sequences. The
+-f/-fixed option disable regexp intyerpeetation of the pattern, requiring
+a fixed matchThis transform can be restricted by a selection set.
+
+This command is useful for rdsucing the bulk of a stream without touching
+its metdata, so you can doio test conversions more quickly.
 `},
 	"swap": {
 		"Swap first two components of pathnames",
-		`swap: usage: repocutter [-r SELECTION] swap [PATTERN]
+		`swap: usage: repocutter [-r SELECTION] swap [-f|-fixed] [PATTERN]
 
 Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
@@ -2250,10 +2254,10 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 
 // Hack paths by swapping the top two components - if "structural" is on, be Subversion-aware
 // and also attempt to merge spans of partial branch creations.
-func swap(source DumpfileSource, selection SubversionRange, patterns []string, structural bool) {
-	var match *regexp.Regexp
+func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string, structural bool) {
+	var matcher SegmentMatcher
 	if len(patterns) > 0 {
-		match = regexp.MustCompile(patterns[0])
+		matcher = NewSegmentMatcher(patterns, fixed)
 	}
 	type parsedNode struct {
 		role      string
@@ -2490,7 +2494,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			parsed.role = "copy"
 		}
 		// All operations, includung copies.
-		if match == nil || match.Match(nodePath) {
+		if len(patterns) == 0 || matcher.pathmatch(string(nodePath)) {
 			// Special handling of operations on bare project directories
 			if structural && bytes.Count(nodePath, []byte{os.PathSeparator}) == 0 {
 				// Top-level copies must be split
@@ -2561,7 +2565,7 @@ func swap(source DumpfileSource, selection SubversionRange, patterns []string, s
 			}
 		}
 		// Copy-only logic.
-		if match == nil || match.Match(header.payload("Node-copyfrom-path")) {
+		if len(patterns) == 0 || matcher.pathmatch(string(header.payload("Node-copyfrom-path"))) {
 			header, newval, oldval = header.replaceHook("Node-copyfrom-path", func(hd string, path []byte) []byte {
 				return swapper(hd, path, parsed)
 			})
@@ -2830,9 +2834,9 @@ func main() {
 	case "strip":
 		strip(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "swap":
-		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:], false)
+		swap(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], false)
 	case "swapsvn":
-		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:], true)
+		swap(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], true)
 	case "testify":
 		assertNoArgs()
 		assertNoSelection()
