@@ -157,12 +157,19 @@ This transform can be restricted by a selection set.
 `},
 	"pop": {
 		"Pop the first segment off each path",
-		`pop: usage: repocutter [-r SELECTION ] pop
+		`pop: usage: repocutter pop [-f] [PATTERN]
 
-Pop initial segment off each path. May be useful after a sift command to turn
-a dump from a subproject stripped from a dump for a multiple-project repository
-into the normal form with trunk/tags/branches at the top level.
-This transform can be restricted by a selection set.
+Pop initial segment off each path matching PATTERN - by default, all paths. The pattern
+is (like expunge) constrainred to match path segments.  The -f option says to disable
+regexp interpretatiuon, requiring the match to be literal.
+
+May be useful after a sift command to turn a dump from a subproject
+stripped from a dump for a multiple-project repository into the normal
+form with trunk/tags/branches at the top level.
+
+This transform cannot be restricted by a selection set, as it is not possible to guarantee 
+that copyfro paths and mergeinfo properties will be modified consistently in the presence of 
+that kind of restriction.
 `},
 	"propclean": {
 		"Turn off executable bit on all files with specified suffixes",
@@ -196,10 +203,14 @@ selection. You may specify multiple property settings.
 `},
 	"push": {
 		"Push a first segment onto each path",
-		`push: usage: repocutter [-r SELECTION ] push segment
+		`push: usage: repocutter push segment
 
-Push an initial segment onto each path.  Normally used to add a "trunk" prefix
-to every path ion a flat repository. This transform can be restricted by a selection set.
+Push an initial segment onto each path. Normally used to add a "trunk"
+prefix to every path in a flat repository.
+
+This transform cannot be restricted by a selection set, as it is not
+possible to guarantee that copyfro paths and mergeinfo properties will
+be modified consistently in the presence of that kind of restriction.
 `},
 	"reduce": {
 		"Topologically reduce a dump.",
@@ -1748,7 +1759,7 @@ func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange)
 }
 
 // Pop the top segment off each pathname in an input dump
-func pop(source DumpfileSource, selection SubversionRange) {
+func pop(source DumpfileSource) {
 	popSegment := func(ins string) string {
 		if strings.Contains(ins, "/") {
 			return ins[strings.Index(ins, "/")+1:]
@@ -1761,9 +1772,6 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		})
 	}
 	headerhook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
-			return []byte(header)
-		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
 			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
 				return []byte(popSegment(string(in)))
@@ -1771,20 +1779,17 @@ func pop(source DumpfileSource, selection SubversionRange) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, headerhook, nil)
 }
 
 // Push a prefix segment onto each pathname in an input dump
-func push(source DumpfileSource, selection SubversionRange, prefix string) {
+func push(source DumpfileSource, prefix string) {
 	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
 			return prefix + string(os.PathSeparator) + path, revrange
 		})
 	}
 	headerhook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
-			return []byte(header)
-		}
 		for _, htype := range []string{"Node-path", "Node-copyfrom-path"} {
 			header, _, _ = header.replaceHook(htype, func(hd string, in []byte) []byte {
 				return []byte(prefix + "/" + string(in))
@@ -1792,7 +1797,7 @@ func push(source DumpfileSource, selection SubversionRange, prefix string) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, headerhook, nil)
 }
 
 // propdel - Delete properties
@@ -2716,6 +2721,12 @@ func main() {
 		}
 	}
 
+	assertNoSelection := func() {
+		if rangestr != "" {
+			croak("subcommand does not take a selection!\n")
+		}
+	}
+
 	// Undocumented: Debug level can be set with a "Debug-level:" header
 	// immediately after a Revision-number header.
 
@@ -2727,12 +2738,14 @@ func main() {
 		deselect(NewDumpfileSource(input, baton), selection)
 	case "docgen": // Not documented
 		assertNoArgs()
+		assertNoSelection()
 		dumpDocs()
 	case "expunge":
 		expungesift(NewDumpfileSource(input, baton), selection, true, fixed, flag.Args()[1:])
 	case "filecopy":
 		filecopy(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "help":
+		assertNoSelection()
 		if len(flag.Args()) == 1 {
 			os.Stdout.WriteString(dochead)
 			keys := make([]string, 0)
@@ -2761,8 +2774,8 @@ func main() {
 	case "pathrename":
 		pathrename(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "pop":
-		assertNoArgs()
-		pop(NewDumpfileSource(input, baton), selection)
+		assertNoSelection()
+		pop(NewDumpfileSource(input, baton))
 	case "propclean":
 		propclean(NewDumpfileSource(input, baton), property, flag.Args()[1:], selection)
 	case "propdel":
@@ -2775,9 +2788,11 @@ func main() {
 		assertNoArgs()
 		reduce(NewDumpfileSource(input, baton), selection)
 	case "push":
-		push(NewDumpfileSource(input, baton), selection, flag.Args()[1])
+		assertNoSelection()
+		push(NewDumpfileSource(input, baton), flag.Args()[1])
 	case "renumber":
 		assertNoArgs()
+		assertNoSelection()
 		renumber(NewDumpfileSource(input, baton), base)
 	case "replace":
 		replace(NewDumpfileSource(input, baton), selection, flag.Args()[1])
@@ -2805,9 +2820,11 @@ func main() {
 		swap(NewDumpfileSource(input, baton), selection, flag.Args()[1:], true)
 	case "testify":
 		assertNoArgs()
+		assertNoSelection()
 		testify(NewDumpfileSource(input, baton), base)
 	case "version":
 		assertNoArgs()
+		assertNoSelection()
 		fmt.Println(version)
 	default:
 		croak("%q: unknown subcommand", flag.Arg(0))
