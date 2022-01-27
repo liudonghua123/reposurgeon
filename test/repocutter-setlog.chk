@@ -1,3 +1,8 @@
+SVN-fs-dump-format-version: 2
+ ## Standard layout. Linear. Simplest case, no tags or branches
+
+UUID: be5bedff-a577-4def-8afe-cf522686966a
+
 Revision-number: 0
 Prop-content-length: 56
 Content-length: 56

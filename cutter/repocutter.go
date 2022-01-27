@@ -195,8 +195,13 @@ revision selection. You may specify multiple properties to be renamed.
 		"Setting revision properties",
 		`propset: usage: repocutter [-r SELECTION] propset PROPNAME=PROPVAL...
 
-Set the property PROPNAME to PROPVAL. May be restricted by a revision
-selection. You may specify multiple property settings.
+Set the property PROPNAME to PROPVAL.
+
+May be restricted by a revision selection. Note that specifying only a revision
+will cause the property  to be seet on the revision properties and on all nodes
+in the rtevision; you'll probably want to specify a node index.
+
+You may specify multiple property settings.
 `},
 	"push": {
 		"Push a first segment onto each path",
@@ -1111,12 +1116,19 @@ func (ds *DumpfileSource) Report(selection SubversionRange,
 		prestash = append(prestash, line...)
 	}
 	passthrough = true
-	if headerhook != nil {
+	if headerhook == nil {
+		ds.say(prestash)
+	} else {
 		out := headerhook(prestash)
 		if out == nil {
 			passthrough = false
 		}
 		ds.say(out)
+	}
+	if debug >= debugLOGIC {
+		fmt.Fprintf(os.Stderr,
+			"<r%s: passthrough = %v>\n",
+			ds.where(), passthrough)
 	}
 
 	if !ds.Lbs.HasLineBuffered() {
