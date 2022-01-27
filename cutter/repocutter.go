@@ -1076,7 +1076,7 @@ func (ds *DumpfileSource) patchMergeinfo(revrange string) string {
 }
 
 // Report - simpler reporting of a filtered portion of content.
-func (ds *DumpfileSource) Report(selection SubversionRange,
+func (ds *DumpfileSource) Report(
 	revhook func(header StreamSection) []byte,
 	prophook func(properties *Properties),
 	headerhook func(header StreamSection) []byte,
@@ -1537,7 +1537,7 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		return nil
 	}
 
-	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Hack paths by applying a specified transformation.
@@ -1561,7 +1561,7 @@ func mutatePaths(source DumpfileSource, selection SubversionRange, pathMutator f
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, headerhook, contentMutator)
+	source.Report(nil, prophook, headerhook, contentMutator)
 }
 
 func segmentize(pattern string) string {
@@ -1588,7 +1588,7 @@ func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 		}
 		return nil
 	}
-	source.Report(selection, nil, nil, headerhook, nil)
+	source.Report(nil, nil, headerhook, nil)
 	s := newStringSet(paths...)
 	for {
 		count := s.Len()
@@ -1639,7 +1639,7 @@ func expungesift(source DumpfileSource, selection SubversionRange, drop bool, fi
 			return path, revrange
 		})
 	}
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Replace file copy operations with explicit add/change operation
@@ -1730,7 +1730,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 		return content
 	}
 
-	source.Report(selection, nil, nil, headerhook, contenthook)
+	source.Report(nil, nil, headerhook, contenthook)
 }
 
 // Hack pathnames to obscure them.
@@ -1777,7 +1777,7 @@ func obscure(seq NameSequence, source DumpfileSource, selection SubversionRange)
 }
 
 // Pop the top segment off each pathname in an input dump
-func pop(source DumpfileSource, patterns []string, fixed bool) {
+func pop(source DumpfileSource, fixed bool, patterns []string) {
 	var matcher SegmentMatcher
 	if len(patterns) > 0 {
 		matcher = NewSegmentMatcher(patterns, fixed)
@@ -1807,7 +1807,7 @@ func pop(source DumpfileSource, patterns []string, fixed bool) {
 		}
 		return []byte(header)
 	}
-	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Push a prefix segment onto each pathname in an input dump
@@ -1825,7 +1825,7 @@ func push(source DumpfileSource, prefix string) {
 		}
 		return []byte(header)
 	}
-	source.Report(NewSubversionRange("0:HEAD"), nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // propdel - Delete properties
@@ -1848,7 +1848,7 @@ func propdel(source DumpfileSource, propnames []string, selection SubversionRang
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Set properties.
@@ -1864,7 +1864,7 @@ func propset(source DumpfileSource, propnames []string, selection SubversionRang
 			}
 		}
 	}
-	source.Report(selection, nil, prophook, nil, nil)
+	source.Report(nil, prophook, nil, nil)
 }
 
 // Turn off property by suffix, defaulting to svn:executable
@@ -1890,7 +1890,7 @@ func propclean(source DumpfileSource, property string, suffixes []string, select
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Rename properties.
@@ -1916,7 +1916,7 @@ func proprename(source DumpfileSource, propnames []string, selection SubversionR
 			}
 		}
 	}
-	source.Report(selection, nil, prophook, nil, nil)
+	source.Report(nil, prophook, nil, nil)
 }
 
 func getAuthor(props map[string]string) string {
@@ -1960,7 +1960,7 @@ func log(source DumpfileSource, selection SubversionRange) {
 		}
 	}
 	headerhook := func(header StreamSection) []byte { return nil }
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 func pathlist(source DumpfileSource, selection SubversionRange) {
@@ -1973,7 +1973,7 @@ func pathlist(source DumpfileSource, selection SubversionRange) {
 		}
 		return nil
 	}
-	source.Report(selection, nil, nil, headerhook, nil)
+	source.Report(nil, nil, headerhook, nil)
 	for _, item := range pathList.Iterate() {
 		os.Stdout.WriteString(item + linesep)
 	}
@@ -2033,7 +2033,7 @@ func reduce(source DumpfileSource, selection SubversionRange) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Renumber all revisions.
@@ -2098,7 +2098,7 @@ func renumber(source DumpfileSource, counter int) {
 		})
 	}
 
-	source.Report(NewSubversionRange("0:HEAD"), revhook, prophook, headerhook, nil)
+	source.Report(revhook, prophook, headerhook, nil)
 }
 
 func replace(source DumpfileSource, selection SubversionRange, transform string) {
@@ -2117,7 +2117,7 @@ func replace(source DumpfileSource, selection SubversionRange, transform string)
 	contenthook := func(content []byte) []byte {
 		return tre.ReplaceAll(content, []byte(patternParts[1]))
 	}
-	source.Report(selection, nil, nil, headerhook, contenthook)
+	source.Report(nil, nil, headerhook, contenthook)
 }
 
 // Strip out ops defined by a revision selection and a path regexp.
@@ -2160,7 +2160,7 @@ func see(source DumpfileSource, selection SubversionRange) {
 			fmt.Printf("%-5s %-8s %s\n", source.where(), "propset", props)
 		}
 	}
-	source.Report(selection, nil, seeprops, seenode, nil)
+	source.Report(nil, seeprops, seenode, nil)
 }
 
 // Mutate log entries.
@@ -2181,7 +2181,7 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 			}
 		}
 	}
-	source.Report(selection, nil, prophook, nil, nil)
+	source.Report(nil, prophook, nil, nil)
 }
 
 // Skip unwanted copies between specified revisions
@@ -2215,7 +2215,7 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 		}
 		return []byte(header)
 	}
-	source.Report(selection, nil, nil, headerhook, nil)
+	source.Report(nil, nil, headerhook, nil)
 }
 
 func strip(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
@@ -2244,7 +2244,7 @@ func strip(source DumpfileSource, selection SubversionRange, fixed bool, pattern
 		}
 		return content
 	}
-	source.Report(selection, nil, nil, headerhook, contenthook)
+	source.Report(nil, nil, headerhook, contenthook)
 }
 
 // Select a portion of the dump file not defined by a revision selection.
@@ -2590,7 +2590,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 		}
 		return all
 	}
-	source.Report(selection, nil, prophook, headerhook, nil)
+	source.Report(nil, prophook, headerhook, nil)
 }
 
 // Neutralize the input test load
@@ -2794,7 +2794,7 @@ func main() {
 		pathrename(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "pop":
 		assertNoSelection()
-		pop(NewDumpfileSource(input, baton), flag.Args()[1:], fixed)
+		pop(NewDumpfileSource(input, baton), fixed, flag.Args()[1:])
 	case "propclean":
 		propclean(NewDumpfileSource(input, baton), property, flag.Args()[1:], selection)
 	case "propdel":
