@@ -2468,10 +2468,10 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 								// Then drop this path - nothing else needs doing.
 								return nil
 							case "change":
-								// FIXME: Someday, handle the case with properties
-								//wildcardKey = string(path)
-								//parts[1] = []byte{wildcardMark}
-								//parts = append(parts, []byte(project))
+								if source.NodeProps.NonEmpty() {
+									croak("r%s: unswappable copy of %s has properties",
+										source.where(), path)
+								}
 								return nil
 							case "copy":
 								if sourcehdr == "Node-copyfrom-path" {
