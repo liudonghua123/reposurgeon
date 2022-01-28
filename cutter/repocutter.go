@@ -288,6 +288,13 @@ Replace the log entries in the input dumpfile with the corresponding entries
 in the LOGFILE, which should be in the format of an svn log output.
 Replacements may be restricted to a specified range.
 `},
+	"setpath": {
+		"Set the node path.",
+		`setcopyfrom: usage: repocutter {-r SELECTION} setpath PATH
+
+In the specified revisions, replace the Node-path with the specified PATH.
+Does not alter mergeinfo properties as a side effect.
+`},
 	"sift": {
 		"Sift for operations by Node-path header",
 		`sift: usage: repocutter [-r SELECTION] [-f|-fixed] sift PATTERN...
@@ -423,6 +430,7 @@ var narrativeOrder []string = []string{
 
 	"pathlist",
 	"pathrename",
+	"setpath",
 	"setcopyfrom",
 	"pop",
 	"push",
@@ -2210,6 +2218,28 @@ func see(source DumpfileSource, selection SubversionRange) {
 	source.Report(nil, seeprops, seenode, nil)
 }
 
+// Set the copyfrom path
+func setcopyfrom(source DumpfileSource, selection SubversionRange, newpath string) {
+	headerhook := func(header StreamSection) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return []byte(header)
+		}
+		if header.payload("Node-copyfrom-path") == nil {
+			croak("setcopyfrom applied to a non-copy node %s", source.where())
+		}
+		header, _, _ = header.replaceHook("Node-copyfrom-path", func(hdr string, in []byte) []byte {
+			return []byte(newpath)
+		})
+		return []byte(header)
+	}
+	source.Report(nil, nil, headerhook, nil)
+}
+
+// Select a portion of the dump file not defined by a revision selection.
+func sselect(source DumpfileSource, selection SubversionRange) {
+	doSelect(source, selection, false)
+}
+
 // Mutate log entries.
 func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 	fd, ok := os.Open(logpath)
@@ -2229,6 +2259,20 @@ func setlog(source DumpfileSource, logpath string, selection SubversionRange) {
 		}
 	}
 	source.Report(nil, prophook, nil, nil)
+}
+
+// Set the node path
+func setpath(source DumpfileSource, selection SubversionRange, newpath string) {
+	headerhook := func(header StreamSection) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return []byte(header)
+		}
+		header, _, _ = header.replaceHook("Node-path", func(hdr string, in []byte) []byte {
+			return []byte(newpath)
+		})
+		return []byte(header)
+	}
+	source.Report(nil, nil, headerhook, nil)
 }
 
 // Skip unwanted copies between specified revisions
@@ -2292,28 +2336,6 @@ func strip(source DumpfileSource, selection SubversionRange, fixed bool, pattern
 		return content
 	}
 	source.Report(nil, nil, headerhook, contenthook)
-}
-
-// Select a portion of the dump file not defined by a revision selection.
-func sselect(source DumpfileSource, selection SubversionRange) {
-	doSelect(source, selection, false)
-}
-
-// Set the copyfrom path
-func setcopyfrom(source DumpfileSource, selection SubversionRange, newpath string) {
-	headerhook := func(header StreamSection) []byte {
-		if !selection.ContainsNode(source.Revision, source.Index) {
-			return []byte(header)
-		}
-		if header.payload("Node-copyfrom-path") == nil {
-			croak("setcopyfrom applied to a non-copy node %s", source.where())
-		}
-		header, _, _ = header.replaceHook("Node-copyfrom-path", func(hdr string, in []byte) []byte {
-			return []byte(newpath)
-		})
-		return []byte(header)
-	}
-	source.Report(nil, nil, headerhook, nil)
 }
 
 // Hack paths by swapping the top two components - if "structural" is on, be Subversion-aware
@@ -2896,6 +2918,8 @@ func main() {
 			os.Exit(1)
 		}
 		setlog(NewDumpfileSource(input, baton), logentries, selection)
+	case "setpath":
+		setpath(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "sift":
 		expungesift(NewDumpfileSource(input, baton), selection, false, fixed, flag.Args()[1:])
 	case "skipcopy":
