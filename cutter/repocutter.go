@@ -261,6 +261,14 @@ The 'select' subcommand selects a range and permits only revisions and
 nodes in that range to pass to standard output.  A range beginning with 0
 includes the dumpfile header.
 `},
+	"setcopyfrom": {
+		"Set the copyfrom path.",
+		`setcopyfrom: usage: repocutter {-r SELECTION} setcopyfrom PATH
+
+In the specified revisions, replace the Node-copyfrom-path with the specified PATH.
+Does not alter mergeinfo properties as a side effect.  Terminates with error if any
+selected node is not a copy.
+`},
 	"setlog": {
 		"Mutating log entries",
 		`setlog: usage: repocutter [-r SELECTION] -logentries=LOGFILE setlog
@@ -399,6 +407,7 @@ var narrativeOrder []string = []string{
 
 	"pathlist",
 	"pathrename",
+	"setcopyfrom",
 	"pop",
 	"push",
 	"filecopy",
@@ -2274,6 +2283,23 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, false)
 }
 
+// Set the copfrom path
+func setcopyfrom(source DumpfileSource, selection SubversionRange, newpath string) {
+	headerhook := func(header StreamSection) []byte {
+		if !selection.ContainsNode(source.Revision, source.Index) {
+			return []byte(header)
+		}
+		if header.payload("Node-copyfrom-path") == nil {
+			croak("setcopyfrom applied to a non-copy node %s", source.where())
+		}
+		header, _, _ = header.replaceHook("Node-copyfrom-path", func(hdr string, in []byte) []byte {
+			return []byte(newpath)
+		})
+		return []byte(header)
+	}
+	source.Report(nil, nil, headerhook, nil)
+}
+
 // Hack paths by swapping the top two components - if "structural" is on, be Subversion-aware
 // and also attempt to merge spans of partial branch creations.
 func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string, structural bool) {
@@ -2846,6 +2872,8 @@ func main() {
 	case "select":
 		assertNoArgs()
 		sselect(NewDumpfileSource(input, baton), selection)
+	case "setcopyfrom":
+		setcopyfrom(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "setlog":
 		if logentries == "" {
 			fmt.Fprintf(os.Stderr, "repocutter: setlog requires a log entries file.\n")

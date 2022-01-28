@@ -9,6 +9,7 @@ Repository Head::
      repocutter push is restructed by pathmatch rather than range.
      repocutter push can be pattern-restricted.
      All repocutter commands with a pattern rsetruction match against segments.
+     Added new repocutter setcopyfrom command.
 
 4.31: 2022-01-08::
      Minor improvements in baton handling.

@@ -1,0 +1,8 @@
+--- Before
++++ After
+@@ -6,4 +6,4 @@
+ 4.1   copy     tags/tag1/ from 3:trunk/
+ 5.1   add      trunk/creation-example
+ 6.1   change   trunk/README
+-7.1   copy     tags/tag2/ from 6:trunk/
++7.1   copy     tags/tag2/ from 6:arglebargle/
