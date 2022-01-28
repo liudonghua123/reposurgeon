@@ -18,7 +18,7 @@ and can be useful for processing Subversion repositories into a form
 suitable for conversion. Also, it supports the version 3 dumpfile
 format, which reposurgeon does not.
 
-In all commands, the -r (or --range) option limits the selection of
+In most commands, the -r (or --range) option limits the selection of
 revisions over which an operation will be performed. Usually other
 revisions will be passed through unaltered, except in the select and
 deselect commands for which the option controls which revisions will be
@@ -54,9 +54,23 @@ program is bounded by the size of the the largest single blob plus its
 metadata.  It does not need to hold the entire repo metadata in
 memory.
 
+The -f/-fixed option disables regexp compilation of PATTERN arguments,
+treating them as literal strings.
+
 The -t option sets a tag to be included in error message.  This will
 be useful for determining which stage of a multistage repocutter
 pipeline failed.
+
+There are a few other command-specific options described under
+individual commands.
+
+In the command descriptions, PATTERN arguments are regular expressions
+to match pathnames, constrained so that each match must be a path
+segment or a sequence of path segments; that is, the left end must be
+either at the start of path or immediately following a /, and the
+right end must precede a / or be at end of string.  With a leading ^
+the match is constrained to be a leading sequence of the pathname;
+with a trailing $, a trailing one.
 
 The following subcommands are available:
 

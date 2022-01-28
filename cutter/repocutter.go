@@ -35,15 +35,15 @@ a revision, the special name HEAD for the head (last) revision, or a node
 specification of the form rev.node where rev is an integer revision number and
 node in a 1-origin node index.
 
-Filename PATTERN arguments are regular expressiuons constrained so that each
-match must be a path segment or a sequence of path segments; that is, the left
-end must be either at the start of path or immediately following a /, and the
-right end must precede a / or be at end of string.  With a leading ^ the match is
-constrained to be a leading sequence of the pathname; with a trailing
-$, a trailing one.
+Filename PATTERN arguments are regular expressions to match pathnames, 
+constrained so that each match must be a path segment or a sequence of path
+segments; that is, the left end must be either at the start of path or
+immediately following a /, and the right end must precede a / or be at end
+of string.  With a leading ^ the match is constrained to be a leading
+sequence of the pathname; with a trailing $, a trailing one.
 
 The -f/-fixed option disables regexp compilation of PATTERN arguments, treating
-them as fixed strings.
+them as literal strings.
 
 Normally, each subcommand produces a progress spinner on standard error; each
 turn means another revision has been filtered. The -q (or --quiet) option
@@ -1091,7 +1091,7 @@ func (ds *DumpfileSource) Report(
 	contenthook func(header []byte) []byte) {
 
 	// The revhook is called once on every revision and can be used
-	// to modify the Revion-number line.
+	// to modify the Revision-number line.
 	//
 	// The prophook is called before the headerhook. It is called on
 	// every property section, both per-node and per-revision.
@@ -1101,7 +1101,7 @@ func (ds *DumpfileSource) Report(
 	//
 	// headerhook is called on each node headers.  If this hook
 	// returns nil, discarding the header, its properties and
-	// content are also duscarded.
+	// content are also discarded.
 	//
 	// contenthook is called on the content to mutate it.
 	//
