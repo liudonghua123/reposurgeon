@@ -1019,6 +1019,7 @@ type DumpfileSource struct {
 	Revision         int
 	Index            int // 1-origin within nodes
 	NodePath         string
+	NodeProps        Properties
 	EmittedRevisions map[string]bool
 	DirTracking      map[string]bool
 }
@@ -1260,13 +1261,8 @@ func (ds *DumpfileSource) Report(
 						break
 					}
 				}
-				properties := ""
 				if bytes.Contains(rawHeader, []byte("Prop-content-length")) {
-					props := NewProperties(ds)
-					if prophook != nil {
-						prophook(&props)
-					}
-					properties = props.Stringer()
+					ds.NodeProps = NewProperties(ds)
 				}
 				// Using a read() here allows us to handle binary content
 				content := []byte{}
@@ -1278,20 +1274,37 @@ func (ds *DumpfileSource) Report(
 				if debug >= debugPARSE {
 					fmt.Fprintf(os.Stderr, "<READ NODE ENDS>\n")
 				}
-				if prophook != nil {
-					rawHeader = SetLength("Prop-content", rawHeader, len(properties))
-					rawHeader = SetLength("Content", rawHeader, len(properties)+len(content))
-				}
+
 				header := StreamSection(rawHeader)
 				if p := header.payload("Node-kind"); p != nil {
 					ds.DirTracking[string(header.payload("Node-path"))] = bytes.Equal(p, []byte("dir"))
 				}
 
 				if debug >= debugPARSE {
-					fmt.Fprintf(os.Stderr, "<header: %q>\n", header)
-					fmt.Fprintf(os.Stderr, "<properties: %q>\n", properties)
-					fmt.Fprintf(os.Stderr, "<content: %q>\n", content)
+					fmt.Fprintf(os.Stderr, "<header before hooks: %q>\n", header)
+					fmt.Fprintf(os.Stderr, "<properties before hooks: %q>\n", ds.NodeProps)
+					fmt.Fprintf(os.Stderr, "<content before hooks: %q>\n", content)
 				}
+
+				// Per-node properties come after the header.  It might be easier to
+				// grok the behavior of this code if the header hook fired before the
+				// per-node property hook, in the same order as those sections are read.
+				// Unfortunately, the propdel and propclean header hooks need access to
+				// the post-property-hook properties in order to know if they have been
+				// emptied.
+
+				properties := ""
+				if bytes.Contains(header, []byte("Prop-content-length")) {
+					if prophook != nil {
+						prophook(&ds.NodeProps)
+					}
+					properties = ds.NodeProps.Stringer()
+					if prophook != nil {
+						header = header.setLength("Prop-content", len(properties))
+						header = header.setLength("Content", len(properties)+len(content))
+					}
+				}
+
 				if headerhook != nil {
 					if debug >= debugPARSE {
 						fmt.Fprintf(os.Stderr, "<r%s: headerhook called>\n",
