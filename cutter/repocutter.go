@@ -83,7 +83,8 @@ that every copy-from source is in the set.
 		`deselect: usage: repocutter [-q] [-r SELECTION] deselect
 
 The 'deselect' subcommand selects a range and permits only revisions and nodes
-NOT in that range to pass to standard output.
+NOT in that range to pass to standard output.  Any mergeinfo properties in other
+revisions are updated so they no longer refer to dropped revisiomns.
 `},
 	"expunge": {
 		"Expunge operations by Node-path header",
@@ -91,7 +92,9 @@ NOT in that range to pass to standard output.
 
 Delete all operations with Node-path or Node-copyfrom-path headers matching 
 specified Golang regular expressions (opposite of 'sift').  Any revision
-left with no Node records after this filtering has its Revision.
+left with no Node records after this filtering has its Revision record dropped as
+well. Mergeinfo properties in all revisions are updated so they no longer refer
+to dropped revisions.
 `},
 	"filecopy": {
 		"Resolve filecopy operations on a stream.",
@@ -153,6 +156,7 @@ $, a trailing one.
 Multiple FROM/TO pairs may be specified and are applied in order.
 This transform can be restricted by a selection set.
 
+All mergeinfo properties are updated in accordance with the path renames,
 `},
 	"pop": {
 		"Pop the first segment off each path",
@@ -167,6 +171,8 @@ form with trunk/tags/branches at the top level.
 This transform cannot be restricted by a selection set, as it is not possible to guarantee 
 that copyfro paths and mergeinfo properties will be modified consistently in the presence of 
 that kind of restriction.
+
+Mergeinfo properties in all revisions are updated, as well as path and copyfrom parts.
 `},
 	"propclean": {
 		"Turn off executable bit on all files with specified suffixes",
@@ -175,7 +181,6 @@ that kind of restriction.
 Every path with a suffix matching one of SUFFIXES gets a property turned
 off.  The default property is svn:executable; some Subversion front ends spam it.
 Another property may be set with the -p option.
-
 `},
 	"propdel": {
 		"Deleting revision properties",
@@ -214,6 +219,9 @@ rton set a different initial segment.
 This transform cannot be restricted by a selection set, as it is not
 possible to guarantee that copyfro paths and mergeinfo properties will
 be modified consistently in the presence of that kind of restriction.
+
+Mergeinfo properties in all revisions are updated toi refer to the
+new pathnames. 
 `},
 	"reduce": {
 		"Topologically reduce a dump.",
@@ -222,6 +230,8 @@ be modified consistently in the presence of that kind of restriction.
 Strip revisions out of a dump so the only parts left those likely to
 be relevant to a conversion problem. This is done by dropping every
 node that consists of a change on a file and has no property settings.
+Mergeinfo properties in all revisions are updated so they no longer refer
+to dropped revisions.
 `},
 	"renumber": {
 		"Renumber revisions so they're contiguous",
@@ -259,7 +269,8 @@ can be restricted by a selection set.
 
 The 'select' subcommand selects a range and permits only revisions and
 nodes in that range to pass to standard output.  A range beginning with 0
-includes the dumpfile header.
+includes the dumpfile header. Mergeinfo properties in all revisions are 
+updated so they no longer refer to omitted revisions.
 `},
 	"setcopyfrom": {
 		"Set the copyfrom path.",
@@ -284,7 +295,10 @@ Replacements may be restricted to a specified range.
 Delete all operations with Node-path or Node-copyfrom-path headers *not*
 matching specified Golang regular expressions (opposite of 'expunge').
 Any revision left with no Node records after this filtering has its Revision record
-removed as well. This transform can be restricted by a selection set.
+removed as well. Mergeinfo properties in all revisions are updated so they no longer refer
+to dropped revisions.
+
+This transform can be restricted by a selection set. 
 `},
 	"skipcopy": {
 		"Skip an intermediate copy chain between specified revisions",
@@ -366,6 +380,8 @@ If a PATTERN argument is given, only paths matching the pattern are swapped.
 Note that the result of swapping does not have initial trunk/branches/tags
 directory creations and can thus not be fed directly to svnload. reposurgeon
 copes with this, but Subversion will not.
+
+Merfeinfo propertied are updated to use the swapped path names.
 
 This transform can be restricted by a selection set.
 `},
@@ -2283,7 +2299,7 @@ func sselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, false)
 }
 
-// Set the copfrom path
+// Set the copyfrom path
 func setcopyfrom(source DumpfileSource, selection SubversionRange, newpath string) {
 	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) {
