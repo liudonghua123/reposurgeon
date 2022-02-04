@@ -2455,7 +2455,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 						if !parsed.isDir {
 							// Probably never happens but let's be safe.
 							parts[1] = []byte(project)
-						} else {
+						} else if under != "trunk" {
 							switch parsed.role {
 							case "add":
 								// Start tracking subbranches/subtags of PROJECT.
