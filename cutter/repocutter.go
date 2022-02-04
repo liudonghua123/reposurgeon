@@ -2514,20 +2514,14 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 					if parsed.isCopy {
 						parts = parts[:len(parts)-1]
 					}
-					if parsed.isDelete {
+					// Only branch and tag deletions should be prpmoted, never trunk ones.
+					if parsed.isDelete && !bytes.HasPrefix(path, []byte("trunk/")) {
 						if debug >= debugLOGIC {
 							fmt.Fprintf(os.Stderr, "<r%s: comparing %s with %s>\n",
 								source.where(), swapped, lastPromotedSource)
 						}
 						if lastPromotedSource == swapped {
 							parts = parts[:len(parts)-1]
-							// Never delete trunk, no matter what the provocation.
-							// we can get here from an attempt to rename the trunk line
-							// of a project. This allows that branch to be created,
-							// but does not let us nuke trunk.
-							if string(bytes.Join(parts, []byte{os.PathSeparator})) == "trunk" {
-								return nil
-							}
 						}
 						if debug >= debugLOGIC {
 							fmt.Fprintf(os.Stderr, "<r%s: deleting %s>\n",
