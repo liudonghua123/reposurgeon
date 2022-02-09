@@ -2514,8 +2514,8 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 					if parsed.isCopy {
 						parts = parts[:len(parts)-1]
 					}
-					// Only branch and tag deletions should be prpmoted, never trunk ones.
-					if parsed.isDelete && !bytes.HasPrefix(path, []byte("trunk/")) {
+					// Only branch and tag deletions should be promoted, never trunk ones.
+					if parsed.isDelete && !bytes.Equal(parts[0], []byte("trunk")) {
 						if debug >= debugLOGIC {
 							fmt.Fprintf(os.Stderr, "<r%s: comparing %s with %s>\n",
 								source.where(), swapped, lastPromotedSource)
@@ -2524,8 +2524,8 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 							parts = parts[:len(parts)-1]
 						}
 						if debug >= debugLOGIC {
-							fmt.Fprintf(os.Stderr, "<r%s: deleting %s>\n",
-								source.where(), bytes.Join(parts, []byte{os.PathSeparator}))
+							fmt.Fprintf(os.Stderr, "<r%s: from %s deleting %s>\n",
+								source.where(), source.NodePath, bytes.Join(parts, []byte{os.PathSeparator}))
 						}
 						lastPromotedSource = ""
 					}
