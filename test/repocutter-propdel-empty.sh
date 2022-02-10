@@ -1,7 +1,6 @@
 #! /bin/sh
 ## Test repocutter propdel on directory
-trap 'rm -f /tmp/propdel-before$$ /tmp/propdel-after$$' EXIT HUP INT QUIT TERM
-cat >/tmp/propdel-before$$ <<EOF
+cat >/tmp/propdel-input$$ <<EOF
 Revision-number: 7952
 Prop-content-length: 147
 Content-length: 147
@@ -91,7 +90,8 @@ Revision is 7954, file path is qa/qa.py.
 
 
 EOF
-${REPOCUTTER:-repocutter} -q propdel svn:externals </tmp/propdel-before$$ >/tmp/propdel-after$$
-diff --label Before --label After -u /tmp/propdel-before$$ /tmp/propdel-after$$
-exit 0
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
+seecompare propdel svn:externals< /tmp/propdel-input$$
 
