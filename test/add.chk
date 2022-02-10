@@ -166,6 +166,7 @@ data 60
 A third spacer commit. We'll start a branch after this one.
 from :17
 M 100644 :18 README
+M 120000 :9 hello
 
 blob
 mark :20

@@ -3444,6 +3444,8 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			perms = "100644"
 		} else if strings.HasSuffix(fields[1], "755") {
 			perms = "100755"
+		} else if fields[1] == "120000" {
+			perms = "120000"
 		}
 		mark = fields[2]
 		if !strings.HasPrefix(mark, ":") {
