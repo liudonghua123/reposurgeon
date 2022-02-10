@@ -1,0 +1,12 @@
+--- Before
++++ After
+@@ -1,5 +1,4 @@
+-13316.1 add      SchedulePlanner/
+-13317.1 add      SchedulePlanner/trunk/
+-14191.1 copy     SchedulePlanner/branches/Aug-10-Save/ from 14190:SchedulePlanner/trunk/
+-14191.2 delete   SchedulePlanner/trunk/
+-14192.1 add      SchedulePlanner/trunk/
++13317.1 add      trunk/SchedulePlanner/
++14191.1 copy     branches/Aug-10-Save/ from 14190:trunk/
++14191.2 delete   trunk/SchedulePlanner/
++14192.1 add      trunk/SchedulePlanner/
