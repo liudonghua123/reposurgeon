@@ -1,3 +1,4 @@
+reposurgeon: invalid mode 100444 in add command
 reposurgeon: :8 already has an op for .gitignore or wibble
 blob
 mark :1
@@ -185,6 +186,7 @@ data 44
 First post-split commit on the main branch.
 from :19
 M 100644 :20 README
+M 100644 :9 hello
 
 blob
 mark :22

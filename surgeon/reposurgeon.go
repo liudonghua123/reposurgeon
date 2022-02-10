@@ -3446,6 +3446,9 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			perms = "100755"
 		} else if fields[1] == "120000" {
 			perms = "120000"
+		} else {
+			croak("invalid mode %s in add command", fields[1])
+			return false
 		}
 		mark = fields[2]
 		if !strings.HasPrefix(mark, ":") {
