@@ -4,5 +4,5 @@
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
-seecompare vanilla.svn proprename 'foo->wibble'
+seecompare proprename 'foo->wibble' <vanilla.svn
 

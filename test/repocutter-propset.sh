@@ -4,5 +4,5 @@
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
-seecompare vanilla.svn -r 5.1 propset foo=qux
+seecompare -r 5.1 propset foo=qux <vanilla.svn
 

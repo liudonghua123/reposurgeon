@@ -121,13 +121,12 @@ svnwrap() {
 }
 
 seecompare () {
-    # $1 is the input file, the rest of the arguments are the command
-    infile=$1
-    shift
-    trap 'rm -f /tmp/seecompare-before$$' EXIT HUP INT QUIT TERM
-    ${REPOCUTTER:-repocutter} -q see <"$infile" >/tmp/seecompare-before$$
+    # Tages a test file on stdin. The arguments the arguments are the command
+    trap 'rm -f /tmp/seecompare-before$$ /tmp/infile$$' EXIT HUP INT QUIT TERM
+    cat >"/tmp/infile$$"
+    ${REPOCUTTER:-repocutter} -q see <"/tmp/infile$$" >/tmp/seecompare-before$$
     # shellcheck disable=SC2086,2048
-    ${REPOCUTTER:-repocutter} -q $* <"$infile"| repocutter -q see >/tmp/seecompare-after$$
+    ${REPOCUTTER:-repocutter} -q $* <"/tmp/infile$$"| repocutter -q see >/tmp/seecompare-after$$
     diff --label Before --label After -u /tmp/seecompare-before$$ /tmp/seecompare-after$$
     exit 0
 }

@@ -4,5 +4,5 @@
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
-seecompare vanilla.svn propdel foo
+seecompare propdel foo <vanilla.svn
 

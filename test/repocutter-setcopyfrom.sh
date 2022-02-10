@@ -4,5 +4,5 @@
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
-seecompare simpletag.svn -r 7.1 setcopyfrom arglebargle
+seecompare -r 7.1 setcopyfrom arglebargle <simpletag.svn
 
