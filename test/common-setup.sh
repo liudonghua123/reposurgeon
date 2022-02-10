@@ -119,5 +119,17 @@ svndump() {
 svnwrap() {
     rm -fr test-repo$$ test-checkout$$
 }
-    
+
+seecompare () {
+    # $1 is the input file, the rest of the arguments are the command
+    infile=$1
+    shift
+    trap 'rm -f /tmp/seecompare-before$$' EXIT HUP INT QUIT TERM
+    ${REPOCUTTER:-repocutter} -q see <"$infile" >/tmp/seecompare-before$$
+    # shellcheck disable=SC2086,2048
+    ${REPOCUTTER:-repocutter} -q $* <"$infile"| repocutter -q see >/tmp/seecompare-after$$
+    diff --label Before --label After -u /tmp/seecompare-before$$ /tmp/seecompare-after$$
+    exit 0
+}
+
 # Boilerplate ends 
