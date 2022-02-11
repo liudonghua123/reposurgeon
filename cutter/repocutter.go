@@ -742,18 +742,27 @@ func (s *SubversionRange) ContainsRevision(rev int) bool {
 
 // ContainsNode - does this range contain a specified revision and node?
 func (s *SubversionRange) ContainsNode(rev int, node int) bool {
+	//fmt.Fprintf(os.Stderr, "XXX -> ContainsNode(%d, %d) in %s\n", rev, node, s.Stringer())
 	var interval [2]SubversionEndpoint
 	for _, interval = range s.intervals {
 		if rev >= interval[0].rev && rev <= interval[1].rev {
-			goto checkNode
+			if rev == interval[0].rev && node < interval[0].node {
+				//fmt.Fprintf(os.Stderr, "XXX    failed at node lower-bound check\n")
+				continue
+			}
+			// Omitting a node part in a specification becomes a zero
+			// index, which matches all nodes *and* (in a property hook)
+			// the revision properties as well.
+			if rev == interval[1].rev && interval[1].node != 0 && node > interval[1].node {
+				//fmt.Fprintf(os.Stderr, "XXX    failed at node upper bound check against %v\n", interval)
+				continue
+			}
+			//fmt.Fprintf(os.Stderr, "XXX    returned true\n")
+			return true
 		}
 	}
+	//fmt.Fprintf(os.Stderr, "XXX    failed at revision check\n")
 	return false
-checkNode:
-	// Omitting a node part in a specification becomes a zero
-	// index, which matches all nodes *and* (in a property hook)
-	// the revision properties as well.
-	return node >= interval[0].node && (interval[1].node == 0 || node <= interval[1].node)
 }
 
 // Lowerbound - what is the lowest revision in the spec?
@@ -785,7 +794,7 @@ func (s *SubversionRange) dump(rangesep string) string {
 }
 
 // Stringer is the texturalization method for Subversion ranges
-func (s *SubversionRange) Stringer() string {
+func (s SubversionRange) Stringer() string {
 	return s.dump(":")
 }
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	//"fmt"
+	//"os"
 	"testing"
 )
 
@@ -29,6 +31,57 @@ func TestNameSequenceLength(t *testing.T) {
 	}
 	for i := range expected {
 		assertEqual(t, names[i], expected[i])
+	}
+}
+
+func TestSubversionRange(t *testing.T) {
+	type revnode struct {
+		rev  int
+		node int
+	}
+	type rangeTestEntry struct {
+		spec       string // The Subversion range sprc
+		nodecounts []int  // Counts of nodes per revision
+		check      []revnode
+	}
+	tests := []rangeTestEntry{
+		{"1", []int{0, 1, 3, 2}, []revnode{{1, 1}}},
+		{"2", []int{0, 1, 3, 2}, []revnode{{2, 1}, {2, 2}, {2, 3}}},
+		{"3", []int{0, 1, 3, 2}, []revnode{{3, 1}, {3, 2}}},
+		{"4", []int{0, 1, 3, 2}, []revnode{}},
+		{"1:2", []int{0, 1, 3, 2}, []revnode{{1, 1}, {2, 1}, {2, 2}, {2, 3}}},
+		{"2.2:3", []int{0, 1, 3, 2}, []revnode{{2, 2}, {2, 3}, {3, 1}, {3, 2}}},
+		{"2.1:2.2", []int{0, 1, 3, 2}, []revnode{{2, 1}, {2, 2}}},
+		{"2.1:3.1", []int{0, 1, 3, 2}, []revnode{{2, 1}, {2, 2}, {2, 3}, {3, 1}}},
+		{"2.2:3.1", []int{0, 1, 3, 2}, []revnode{{2, 2}, {2, 3}, {3, 1}}},
+		{"0:1", []int{0, 1, 3, 2}, []revnode{{1, 1}}},
+		{"2,2.3", []int{0, 1, 3, 2}, []revnode{{2, 1}, {2, 2}, {2, 3}}},
+		{"2.1,2.3", []int{0, 1, 3, 2}, []revnode{{2, 1}, {2, 3}}},
+		{"2.1,3", []int{0, 1, 3, 2}, []revnode{{2, 1}, {3, 1}, {3, 2}}},
+	}
+	for _, item := range tests {
+		s := NewSubversionRange(item.spec)
+		results := make([]revnode, 0)
+		for r, nc := range item.nodecounts {
+			for n := 1; n <= nc; n++ {
+				if s.ContainsNode(r, n) {
+					results = append(results, revnode{r, n})
+				}
+			}
+		}
+		passes := len(results) == len(item.check)
+		if passes {
+			for i := range item.check {
+				if results[i] != item.check[i] {
+					passes = false
+					break
+				}
+			}
+		}
+		if !passes {
+			t.Fatalf("range test of %s in %v: saw %v, expected %v",
+				item.spec, item.nodecounts, results, item.check)
+		}
 	}
 }
 
