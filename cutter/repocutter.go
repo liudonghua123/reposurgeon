@@ -1174,6 +1174,9 @@ func (ds *DumpfileSource) Report(
 	if headerhook == nil {
 		ds.say(prestash)
 	} else {
+		// Tricky bit: to be sure of passing through inter-node
+		// whitespace when 0 is noy selected, have the headerhook
+		// pass back []byte{} rather than nil.
 		out := headerhook(prestash)
 		if out == nil {
 			passthrough = false
@@ -1594,8 +1597,11 @@ func doSelect(source DumpfileSource, selection SubversionRange, invert bool) {
 		})
 	}
 	headerhook := func(header StreamSection) []byte {
-		if selection.ContainsNode(source.Revision, source.Index) != invert {
+		if selected := selection.ContainsNode(source.Revision, source.Index) != invert; selected {
 			return []byte(header)
+		} else if source.Revision == 0 && !selected {
+			// Nasty hack to tell it to pass through newlines
+			return []byte{}
 		}
 		return nil
 	}
