@@ -8698,14 +8698,19 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 				}
 			}
 			if blobs {
+				anychanged := false
 				for _, fileop := range commit.operations() {
 					if len(fileop.inline) > 0 {
 						oldinline := fileop.inline
 						fileop.inline = []byte(hook(string(fileop.inline), nil))
 						if !bytes.Equal(fileop.inline, oldinline) {
-							altered.bump()
+							anychanged = true
 						}
 					}
+				}
+				if anychanged {
+					altered.bump()
+					commit.addColor(colorQSET)
 				}
 			}
 		} else if blob, ok := event.(*Blob); ok {
