@@ -1232,7 +1232,7 @@ const (
 	colorEARLY  colorType = 1 << iota // Used in topological-cut operation
 	colorLATE                         // Used in topological-cut operation
 	colorDELETE                       // Used internally in squash operation
-	colorQSET                         // Set to rerport modified objects after various operations
+	colorQSET                         // Set to report modified objects after various operations
 )
 
 func (c colorSet) Contains(a colorType) bool {

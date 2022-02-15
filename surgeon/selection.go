@@ -529,7 +529,7 @@ func (rs *Reposurgeon) visibilityTypeletters() map[rune]func(int) bool {
 	e := func(i int) Event {
 		return rs.chosen().events[i]
 	}
-	// Available: AEGJKQSVWXY
+	// Available: AEGKSVWXY
 	return map[rune]func(int) bool{
 		'B': func(i int) bool { _, ok := e(i).(*Blob); return ok },
 		'C': func(i int) bool { _, ok := e(i).(*Commit); return ok },
@@ -543,7 +543,7 @@ func (rs *Reposurgeon) visibilityTypeletters() map[rune]func(int) bool {
 		'N': func(i int) bool { return rs.hasReference(e(i)) },
 		'O': func(i int) bool { c, ok := e(i).(*Commit); return ok && !c.hasParents() },
 		'P': func(i int) bool { _, ok := e(i).(*Passthrough); return ok },
-		'Q': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.hasColor(colorQSET) },
+		'Q': func(i int) bool { return e(i).hasColor(colorQSET) },
 		'R': func(i int) bool { _, ok := e(i).(*Reset); return ok },
 		'T': func(i int) bool { _, ok := e(i).(*Tag); return ok },
 		'U': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.hasCallouts() },
