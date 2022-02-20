@@ -1685,6 +1685,9 @@ func expungesift(source DumpfileSource, selection SubversionRange, expunge bool,
 		matched := false
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
+			if debug >= debugLOGIC {
+				fmt.Fprintf(os.Stderr, "<%s: %s is %q>\n", source.where(), hd, nodepath)
+			}
 			if nodepath != nil {
 				matched = matched || matcher.pathmatch(string(nodepath))
 			}
