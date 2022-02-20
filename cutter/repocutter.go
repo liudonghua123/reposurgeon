@@ -1676,7 +1676,7 @@ func deselect(source DumpfileSource, selection SubversionRange) {
 }
 
 // Drop or retain ops defined by a revision selection and a path regexp.
-func expungesift(source DumpfileSource, selection SubversionRange, drop bool, fixed bool, patterns []string) {
+func expungesift(source DumpfileSource, selection SubversionRange, expunge bool, fixed bool, patterns []string) {
 	matcher := NewSegmentMatcher(patterns, fixed)
 	headerhook := func(header StreamSection) []byte {
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
@@ -1689,14 +1689,14 @@ func expungesift(source DumpfileSource, selection SubversionRange, drop bool, fi
 				matched = matched || matcher.pathmatch(string(nodepath))
 			}
 		}
-		if matched != drop {
+		if matched != expunge {
 			return []byte(header)
 		}
 		return nil
 	}
 	prophook := func(props *Properties) {
 		props.MutateMergeinfo(func(path string, revrange string) (string, string) {
-			if matcher.pathmatch(path) == drop {
+			if matcher.pathmatch(path) == expunge {
 				return "", ""
 			}
 			revrange = source.patchMergeinfo(revrange)
