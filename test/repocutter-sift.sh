@@ -1,4 +1,7 @@
 #!/bin/sh
 ## Test path sifting
-${REPOCUTTER:-repocutter} -q sift 'EXIGUOUS' <rootfile.svn
+
+# shellcheck disable=SC1091
+. ./common-setup.sh
+seecompare sift dev <expunge.svn 
 

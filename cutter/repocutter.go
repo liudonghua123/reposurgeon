@@ -299,7 +299,7 @@ Does not alter mergeinfo properties as a side effect.
 		"Sift for operations by Node-path header",
 		`sift: usage: repocutter [-r SELECTION] [-f|-fixed] sift PATTERN...
 
-Delete all operations with Node-path or Node-copyfrom-path headers *not*
+Delete all operations with either Node-path or Node-copyfrom-path headers *not*
 matching specified Golang regular expressions (opposite of 'expunge').
 Any revision left with no Node records after this filtering has its Revision record
 removed as well. Mergeinfo properties in all revisions are updated so they no longer refer
@@ -1682,14 +1682,18 @@ func expungesift(source DumpfileSource, selection SubversionRange, expunge bool,
 		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
 			return []byte(header)
 		}
-		matched := false
+		matched := !expunge
 		for _, hd := range []string{"Node-path", "Node-copyfrom-path"} {
 			nodepath := header.payload(hd)
 			if debug >= debugLOGIC {
 				fmt.Fprintf(os.Stderr, "<%s: %s is %q>\n", source.where(), hd, nodepath)
 			}
 			if nodepath != nil {
-				matched = matched || matcher.pathmatch(string(nodepath))
+				if expunge {
+					matched = matched || matcher.pathmatch(string(nodepath))
+				} else {
+					matched = matched && matcher.pathmatch(string(nodepath))
+				}
 			}
 		}
 		if matched != expunge {
