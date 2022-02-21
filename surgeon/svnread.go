@@ -497,7 +497,6 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 	sp.hashmap = make(map[string]*NodeAction)
 	sp.flat = true
 
-	trackSymlinks := newOrderedStringSet()
 	propertyStash := make(map[string]*OrderedMap)
 
 	baton.startProgress("SVN1: reading stream", uint64(filesize))
@@ -560,26 +559,6 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 							text := sp.sdReadBlob(tlen)
 							node.blob = newBlob(sp.repo)
 							node.blob.setContent(text, start)
-							// Ugh - cope with strange undocumented Subversion
-							// format for storing links.  On a symlink add, the dumper
-							// uses the link source as the node path; the link target
-							// pathname is put in the content blob with "link " in
-							// front of it. What's ugly is that the the link op is
-							// only marked with property svn:special on creation,
-							// not on modification.  So we have to track
-							// which paths are currently symlinks, and take off
-							// that mark when a path is deleted in case it
-							// later gets recreated as a non-sym link.
-							if bytes.HasPrefix(text, []byte("link ")) {
-								if node.hasProperties() && node.props.has("svn:special") {
-									trackSymlinks.Add(node.path)
-								}
-								if trackSymlinks.Contains(node.path) {
-									node.blob.setContent(
-										text[5:], start+5)
-									node.contentHash = ""
-								}
-							}
 						}
 						node.revision = revision
 						// If there are property changes on this node, stash
@@ -669,11 +648,6 @@ func (sp *StreamParser) parseSubversion(ctx context.Context, options *stringSet,
 					}
 					if node.action == sdNONE {
 						sp.error(fmt.Sprintf("unknown action %s", action))
-					}
-					if node.action == sdDELETE {
-						if trackSymlinks.Contains(node.path) {
-							trackSymlinks.Remove(node.path)
-						}
 					}
 				} else if bytes.HasPrefix(line, []byte("Node-copyfrom-rev: ")) {
 					if node == nil {
@@ -1705,6 +1679,18 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 					}
 				} else if node.action == sdADD || node.action == sdCHANGE || node.action == sdREPLACE {
 					if node.blob != nil {
+						// Cope with the undocumented Subversion format for storing symlinks.
+						// The dumper uses the link source as the node path; the link target
+						// pathname is put in the content blob with "link " in front of it.
+						// The link op is only marked with property svn:special on creation,
+						// not on modification - but that's OK, as svn:special is one of the
+						// properties we have arranged to propagate forward.
+						if node.hasProperties() && node.props.has("svn:special") {
+							if text := node.blob.getContent(); bytes.HasPrefix(text, []byte("link ")) {
+								node.blob.setContent(text[5:], node.blob.start+5)
+								node.contentHash = ""
+							}
+						}
 						// It's really ugly that we're modifying node ancestry pointers at this point
 						// rather than back in Phase 4.  Unfortunately, attempts to move this code
 						// back there fall afoul of the way the hashmap is updated (see in particular
