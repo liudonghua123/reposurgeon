@@ -94,15 +94,28 @@ func TestOptimizeRange(t *testing.T) {
 		{"1-1", "1"},
 		{"1-2,4-5", "1-2,4-5"},
 		{"1-2,3-4", "1-4"},
-		{"1-2,2-3", "1-3"},
 		{"1-1,2-2,3-3,5-5", "1-3,5"},
 		{"1-1,2-2,3-3,5-5,7-7,8-8", "1-3,5,7-8"},
 		{"1,2,3,5-5,7,8", "1-3,5,7-8"},
+		{"4*", "4*"},
+		{"3*,4*", "3-4*"},
+		{"1-2*,3-4*", "1-4*"},
+		{"3,4*", "3,4*"},
+		{"3*,4", "3*,4"},
+		{"1-2,3-4*", "1-2,3-4*"},
+		{"1-2*,3-4", "1-2*,3-4"},
+		{"1-2,3-4*,5-6", "1-2,3-4*,5-6"},
+		{"1-2,3-4*,5-6,7", "1-2,3-4*,5-7"},
+		{"1-2,3-4,5-6*,7-7*", "1-4,5-7*"},
+		// overlapping intervals should't occur in a valid stream
+		// and are not optimized
+		{"1-2,2-3", "1-2,2-3"},
+		{"1-10,2-3", "1-10,2-3"},
 	}
 	optimizeRange := func(in string) string {
 		span := parseMergeinfoRange(in)
 		span.Optimize()
-		return span.dump("-")
+		return span.dump()
 	}
 	for _, item := range tests {
 		assertEqual(t, optimizeRange(item.before), item.after)

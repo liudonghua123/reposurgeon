@@ -27,7 +27,7 @@ const linesep = "\n"
 var dochead = `repocutter - stream surgery on SVN dump files
 general usage: repocutter [-q] [-r SELECTION] SUBCOMMAND
 
-In all commands, the -r (or --range) option limits the selection of revisions 
+In all commands, the -r (or --range) option limits the selection of revisions
 and nodes over which an operation will be performed. A selection consists of one
 or more comma-separated ranges.  A range may consist of an endpoint or a colon-
 separated pair of endpoints.  An endpoint may consist of an integer identifying
@@ -35,7 +35,7 @@ a revision, the special name HEAD for the head (last) revision, or a node
 specification of the form rev.node where rev is an integer revision number and
 node in a 1-origin node index.
 
-Filename PATTERN arguments are regular expressions to match pathnames, 
+Filename PATTERN arguments are regular expressions to match pathnames,
 constrained so that each match must be a path segment or a sequence of path
 segments; that is, the left end must be either at the start of path or
 immediately following a /, and the right end must precede a / or be at end
@@ -90,7 +90,7 @@ revisions are updated so they no longer refer to dropped revisiomns.
 		"Expunge operations by Node-path header",
 		`expunge: usage: repocutter [-r SELECTION ] [-f|-fixed] expunge PATTERN...
 
-Delete all operations with Node-path or Node-copyfrom-path headers matching 
+Delete all operations with Node-path or Node-copyfrom-path headers matching
 specified Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision record dropped as
 well. Mergeinfo properties in all revisions are updated so they no longer refer
@@ -100,7 +100,7 @@ to dropped revisions.
 		"Resolve filecopy operations on a stream.",
 		`filecopy: usage: repocutter [-f] [-r SELECTION] filecopy [BASENAME]
 
-For each node in the revision range, stash the current version of the 
+For each node in the revision range, stash the current version of the
 node-path's content.  For each later file copy operation with that source,
 replace the file copy with an explicit add/change using the stashed content.
 
@@ -111,7 +111,7 @@ This may be required in order to extract filecopies from branches.
 
 Restricting the range holds down the memory requirement of this tool,
 which in the worst (and default) 1:$ case will keep a copy of evert blob
-in the repository until it's done processing the stream. 
+in the repository until it's done processing the stream.
 `},
 	"log": {
 		"Extracting log entries",
@@ -134,7 +134,7 @@ transform can be restricted by a selection set.
 		`pathlist: usage: repocutter [-r SELECTION ] pathlist
 
 List all distinct node-paths in the stream, once each, in the order first
-encountered. 
+encountered.
 `},
 	"pathrename": {
 		"Transform path headers with a regexp replace",
@@ -144,7 +144,7 @@ Modify Node-path headers, Node-copyfrom-path headers, and
 svn:mergeinfo properties matching the specified Golang regular
 expression FROM; replace with TO.  TO may contain Golang-style
 backreferences (${1}, ${2} etc - curly brackets not optional) to
-parenthesized portions of FROM. 
+parenthesized portions of FROM.
 
 Matches are constrained so that each match must be a path segment or a
 sequence of path segments; that is, the left end must be either at the
@@ -168,8 +168,8 @@ May be useful after a sift command to turn a dump from a subproject
 stripped from a dump for a multiple-project repository into the normal
 form with trunk/tags/branches at the top level.
 
-This transform cannot be restricted by a selection set, as it is not possible to guarantee 
-that copyfro paths and mergeinfo properties will be modified consistently in the presence of 
+This transform cannot be restricted by a selection set, as it is not possible to guarantee
+that copyfro paths and mergeinfo properties will be modified consistently in the presence of
 that kind of restriction.
 
 Mergeinfo properties in all revisions are updated, as well as path and copyfrom parts.
@@ -213,7 +213,7 @@ You may specify multiple property settings.
 		`push: usage: repocutter push [-s segment] [-f] [PATTERN...]
 
 Push an initial segment onto each matching path. Normally used to add a
-"trunk" prefix to every path in a flat repository.  The -s option can be used 
+"trunk" prefix to every path in a flat repository.  The -s option can be used
 rton set a different initial segment.
 
 This transform cannot be restricted by a selection set, as it is not
@@ -221,7 +221,7 @@ possible to guarantee that copyfro paths and mergeinfo properties will
 be modified consistently in the presence of that kind of restriction.
 
 Mergeinfo properties in all revisions are updated toi refer to the
-new pathnames. 
+new pathnames.
 `},
 	"reduce": {
 		"Topologically reduce a dump.",
@@ -238,7 +238,7 @@ to dropped revisions.
 		`renumber: usage: repocutter renumber
 
 Renumber all revisions, patching Node-copyfrom headers as required.
-Any selection option is ignored. Takes no arguments.  The -b option 
+Any selection option is ignored. Takes no arguments.  The -b option
 can be used to set the base to renumber from, defaulting to 0.
 `},
 	"replace": {
@@ -246,8 +246,8 @@ can be used to set the base to renumber from, defaulting to 0.
 		`replace: usage: repocutter replace /REGEXP/REPLACE/
 
 Perform a regular expression search/replace on blob content. The first
-character of the argument (normally /) is treated as the end delimiter 
-for the regular-expression and replacement parts. This transform can be 
+character of the argument (normally /) is treated as the end delimiter
+for the regular-expression and replacement parts. This transform can be
 restricted by a selection set.
 `},
 	"see": {
@@ -269,7 +269,7 @@ can be restricted by a selection set.
 
 The 'select' subcommand selects a range and permits only revisions and
 nodes in that range to pass to standard output.  A range beginning with 0
-includes the dumpfile header. Mergeinfo properties in all revisions are 
+includes the dumpfile header. Mergeinfo properties in all revisions are
 updated so they no longer refer to omitted revisions.
 `},
 	"setcopyfrom": {
@@ -305,7 +305,7 @@ Any revision left with no Node records after this filtering has its Revision rec
 removed as well. Mergeinfo properties in all revisions are updated so they no longer refer
 to dropped revisions.
 
-This transform can be restricted by a selection set. 
+This transform can be restricted by a selection set.
 `},
 	"skipcopy": {
 		"Skip an intermediate copy chain between specified revisions",
@@ -333,7 +333,7 @@ its metdata, so you can doio test conversions more quickly.
 
 Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
-a common form of multi-project repository.  If a PATTERN argument is given, 
+a common form of multi-project repository.  If a PATTERN argument is given,
 only paths matching it are swapped.
 
 `},
@@ -347,9 +347,9 @@ branches at the top level.
 
 Fires when the second component of a matching path is "trunk", "branches",
 or "tags", or the path consists of a single segment that is a top-level
-project directory; passes through all paths for this is not so unaltered. 
+project directory; passes through all paths for this is not so unaltered.
 
-Top-level project directories with properties or comments make this command 
+Top-level project directories with properties or comments make this command
 die (return status 1) with an error message on stderr; otherwise these
 directories are silently discarded.
 
@@ -971,24 +971,77 @@ func (props *Properties) getAuthor() string {
 }
 
 // Miscellaneous helper functions
+type MergeinfoInterval struct {
+	Lower   int
+	Upper   int
+	NonInheritable bool
+}
 
-func parseMergeinfoRange(txt string) SubversionRange {
-	// Beware: this code is only good for parsing mergeinfo ranges
-	var s SubversionRange
-	s.intervals = make([][2]SubversionEndpoint, 0)
+type MergeinfoRange struct {
+	intervals []MergeinfoInterval
+}
+
+func parseMergeinfoRange(txt string) MergeinfoRange {
+	var s MergeinfoRange
+	s.intervals = make([]MergeinfoInterval, 0)
 	for _, item := range strings.Split(txt, ",") {
-		var parts [2]SubversionEndpoint
+		if item == "" { continue }
+		var interval MergeinfoInterval
+		if strings.HasSuffix(item, "*") {
+			interval.NonInheritable = true
+			item = strings.TrimSuffix(item, "*")
+		}
 		if strings.Contains(item, "-") {
 			fields := strings.Split(item, "-")
-			parts[0].rev, _ = strconv.Atoi(fields[0])
-			parts[1].rev, _ = strconv.Atoi(fields[1])
+			interval.Lower, _ = strconv.Atoi(fields[0])
+			interval.Upper, _ = strconv.Atoi(fields[1])
 		} else {
-			parts[0].rev, _ = strconv.Atoi(item)
-			parts[1].rev, _ = strconv.Atoi(item)
+			interval.Lower, _ = strconv.Atoi(item)
+			interval.Upper, _ = strconv.Atoi(item)
 		}
-		s.intervals = append(s.intervals, parts)
+		s.intervals = append(s.intervals, interval)
 	}
 	return s
+}
+
+// Optimize compacts a range as much as possible
+func (s *MergeinfoRange) Optimize() {
+	i := 0
+	for {
+		// Have we merged enough entries that we've run out of list?
+		if i >= len(s.intervals)-1 {
+			break
+		}
+		// Nope, try to merge the range at i with its right-hand neighbor
+		if s.intervals[i].NonInheritable == s.intervals[i+1].NonInheritable &&
+			s.intervals[i+1].Lower == s.intervals[i].Upper+1 {
+			s.intervals[i].Upper = s.intervals[i+1].Upper
+			s.intervals = append(s.intervals[:i+1],s.intervals[i+2:]...)
+		} else {
+			i++
+		}
+	}
+}
+
+func (interval MergeinfoInterval) Stringer() string {
+	out := ""
+	if interval.Lower == interval.Upper {
+		out = fmt.Sprintf("%d", interval.Lower)
+	} else {
+		out = fmt.Sprintf("%d-%d", interval.Lower, interval.Upper)
+	}
+	if interval.NonInheritable {
+		return out + "*"
+	}
+	return out
+}
+
+func (s MergeinfoRange) dump() string {
+	out := make([]string, 0, len(s.intervals))
+	for _, interval := range s.intervals {
+		out = append(out, interval.Stringer())
+	}
+	return strings.Join(out, ",")
 }
 
 // SetLength - alter the length field of a specified header
@@ -1111,14 +1164,16 @@ func (ds *DumpfileSource) where() string {
 // patchMergeinfo fixes the input mergeinfo range to contain only emitted revisions
 func (ds *DumpfileSource) patchMergeinfo(revrange string) string {
 	inspan := parseMergeinfoRange(revrange)
-	outspan := NewSubversionRange("")
-	for rev := inspan.Lowerbound().rev; rev <= inspan.Upperbound().rev; rev++ {
-		if inspan.ContainsRevision(rev) && ds.EmittedRevisions[fmt.Sprintf("%d", rev)] {
-			outspan.intervals = append(outspan.intervals, [2]SubversionEndpoint{{rev, 0}, {rev, 0}})
+	outspan := parseMergeinfoRange("")
+	for _, interval := range inspan.intervals {
+		for rev := interval.Lower; rev <= interval.Upper; rev++ {
+			if ds.EmittedRevisions[fmt.Sprintf("%d", rev)] {
+				outspan.intervals = append(outspan.intervals, MergeinfoInterval{rev,rev,interval.NonInheritable})
+			}
 		}
 	}
 	outspan.Optimize()
-	return outspan.dump("-")
+	return outspan.dump()
 }
 
 // Report - simpler reporting of a filtered portion of content.
@@ -2166,7 +2221,7 @@ func renumber(source DumpfileSource, counter int) {
 			}
 			span := parseMergeinfoRange(out[:len(out)-1])
 			span.Optimize()
-			return path, span.dump("-")
+			return path, span.dump()
 		})
 	}
 
