@@ -3378,17 +3378,24 @@ func (rs *Reposurgeon) DoCoalesce(line string) bool {
 // HelpAdd says "Shut up, golint!"
 func (rs *Reposurgeon) HelpAdd() {
 	rs.helpOutput(`
-SELECTION add { "D" PATH | "M" PERM MARK PATH | "R" SOURCE TARGET | "C" SOURCE TARGET }
+SELECTION add { "D" PATH | "M" PERM {MARK|SHA1} PATH | "R" SOURCE TARGET | "C" SOURCE TARGET }
 
 In a specified commit, add a specified fileop.
 
 For a D operation to be valid there must be an M operation for the path
 in the commit's ancestry.
 
-For an M operation to be valid, PERM must be a token ending with 755
-or 644 and the MARK must refer to a blob that precedes the commit
-location.  If the MARK is nonexistent or names something other than
-a blob, attempting to rebuild a live repository will throw a fatal error.
+For an M operation to be valid, PERM must either be a token ending with 755
+or 644 indicationg a normal file permission value, or one of the special
+values 120000 or 160000.  
+
+If PERM is a normal file permission value or 120000, it must be followed by
+a MARK field referring to a blob that precedes the commit location. If the
+MARK is nonexistent or names something other than a blob, attempting to 
+rebuild a live repository will throw a fatal error. 
+
+if PERM is 160000, the third field is assumed to be a hash value and
+not checked, as it is expected to refer to a Git submodule link.
 
 For an R or C operation to be valid, there must be an M operation
 for the SOURCE path in the commit's ancestry.
@@ -3446,34 +3453,38 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			perms = "100755"
 		} else if fields[1] == "120000" {
 			perms = "120000"
+		} else if fields[1] == "160000" {
+			perms = "160000"
 		} else {
 			croak("invalid mode %s in add command", fields[1])
 			return false
 		}
 		mark = fields[2]
-		if !strings.HasPrefix(mark, ":") {
-			croak("garbled mark %s in add command", mark)
-			return false
-		}
-		_, err1 := strconv.Atoi(mark[1:])
-		if err1 != nil {
-			croak("non-numeric mark %s in add command", mark)
-			return false
-		}
-		blob, ok := repo.markToEvent(mark).(*Blob)
-		if !ok {
-			croak("mark %s in add command does not refer to a blob", mark)
-			return false
-		} else if repo.eventToIndex(blob) >= rs.selection.Min() {
-			croak("mark %s in add command is after add location", mark)
-			return false
-		}
-		argpath = fields[3]
-		for it := repo.commitIterator(rs.selection); it.Next(); {
-			if it.commit().paths(nil).Contains(argpath) {
-				croak("%s already has an op for %s",
-					blob.mark, argpath)
+		if perms != "160000" {
+			if !strings.HasPrefix(mark, ":") {
+				croak("garbled mark %s in add command", mark)
 				return false
+			}
+			_, err1 := strconv.Atoi(mark[1:])
+			if err1 != nil {
+				croak("non-numeric mark %s in add command", mark)
+				return false
+			}
+			blob, ok := repo.markToEvent(mark).(*Blob)
+			if !ok {
+				croak("mark %s in add command does not refer to a blob", mark)
+				return false
+			} else if repo.eventToIndex(blob) >= rs.selection.Min() {
+				croak("mark %s in add command is after add location", mark)
+				return false
+			}
+			argpath = fields[3]
+			for it := repo.commitIterator(rs.selection); it.Next(); {
+				if it.commit().paths(nil).Contains(argpath) {
+					croak("%s already has an op for %s",
+						blob.mark, argpath)
+					return false
+				}
 			}
 		}
 	} else if optype == opR || optype == opC {
