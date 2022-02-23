@@ -1098,15 +1098,9 @@ func (s SegmentMatcher) pathmatch(path string) bool {
 
 // Dumpfile parsing machinery goes here
 
-var revisionLine *regexp.Regexp
-var textContentLength *regexp.Regexp
-var nodeCopyfrom *regexp.Regexp
-
-func init() {
-	revisionLine = regexp.MustCompile("Revision-number: ([0-9]+)")
-	textContentLength = regexp.MustCompile("Text-content-length: ([1-9][0-9]*)")
-	nodeCopyfrom = regexp.MustCompile("Node-copyfrom-rev: ([1-9][0-9]*)")
-}
+var revisionLine *regexp.Regexp = regexp.MustCompile("Revision-number: ([0-9]+)")
+var textContentLength *regexp.Regexp = regexp.MustCompile("Text-content-length: ([1-9][0-9]*)")
+var nodeCopyfrom *regexp.Regexp = regexp.MustCompile("Node-copyfrom-rev: ([1-9][0-9]*)")
 
 // DumpfileSource - this class knows about Subversion dumpfile format.
 type DumpfileSource struct {
