@@ -971,12 +971,15 @@ func (props *Properties) getAuthor() string {
 }
 
 // Miscellaneous helper functions
+
+// MergeinfoInterval carries both limit information and a heritability flag
 type MergeinfoInterval struct {
-	Lower   int
-	Upper   int
+	Lower          int
+	Upper          int
 	NonInheritable bool
 }
 
+// MergeinfoRange is the direct analog of a SubversionRange
 type MergeinfoRange struct {
 	intervals []MergeinfoInterval
 }
@@ -985,7 +988,9 @@ func parseMergeinfoRange(txt string) MergeinfoRange {
 	var s MergeinfoRange
 	s.intervals = make([]MergeinfoInterval, 0)
 	for _, item := range strings.Split(txt, ",") {
-		if item == "" { continue }
+		if item == "" {
+			continue
+		}
 		var interval MergeinfoInterval
 		if strings.HasSuffix(item, "*") {
 			interval.NonInheritable = true
@@ -1016,13 +1021,14 @@ func (s *MergeinfoRange) Optimize() {
 		if s.intervals[i].NonInheritable == s.intervals[i+1].NonInheritable &&
 			s.intervals[i+1].Lower == s.intervals[i].Upper+1 {
 			s.intervals[i].Upper = s.intervals[i+1].Upper
-			s.intervals = append(s.intervals[:i+1],s.intervals[i+2:]...)
+			s.intervals = append(s.intervals[:i+1], s.intervals[i+2:]...)
 		} else {
 			i++
 		}
 	}
 }
 
+// Stringer is a serializer as usual.
 func (interval MergeinfoInterval) Stringer() string {
 	out := ""
 	if interval.Lower == interval.Upper {
@@ -1168,7 +1174,7 @@ func (ds *DumpfileSource) patchMergeinfo(revrange string) string {
 	for _, interval := range inspan.intervals {
 		for rev := interval.Lower; rev <= interval.Upper; rev++ {
 			if ds.EmittedRevisions[fmt.Sprintf("%d", rev)] {
-				outspan.intervals = append(outspan.intervals, MergeinfoInterval{rev,rev,interval.NonInheritable})
+				outspan.intervals = append(outspan.intervals, MergeinfoInterval{rev, rev, interval.NonInheritable})
 			}
 		}
 	}
