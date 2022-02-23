@@ -3460,6 +3460,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			return false
 		}
 		mark = fields[2]
+		argpath = fields[3]
 		if perms != "160000" {
 			if !strings.HasPrefix(mark, ":") {
 				croak("garbled mark %s in add command", mark)
@@ -3478,13 +3479,17 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 				croak("mark %s in add command is after add location", mark)
 				return false
 			}
-			argpath = fields[3]
 			for it := repo.commitIterator(rs.selection); it.Next(); {
 				if it.commit().paths(nil).Contains(argpath) {
 					croak("%s already has an op for %s",
 						blob.mark, argpath)
 					return false
 				}
+			}
+		} else {
+			if matched, _ := regexp.Match("^[[:xdigit:]]{40}$", []byte(mark)); !matched {
+				croak("garbled sha1 hash %s in add command", mark)
+				return false
 			}
 		}
 	} else if optype == opR || optype == opC {
