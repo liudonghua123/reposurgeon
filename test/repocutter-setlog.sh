@@ -1,4 +1,5 @@
 #! /bin/sh
+## Test repocutter setlog
 trap 'rm -f /tmp/logentries$$' EXIT HUP INT QUIT TERM
 cat >/tmp/logentries$$ <<EOF
 ------------------------------------------------------------------------
