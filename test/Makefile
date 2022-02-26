@@ -298,6 +298,7 @@ TEST_TARGETS = $(LIFTCHECK_TARGETS) $(SVNCHECK_TARGETS) \
 
 # Issue a straight TAP report, no parallelism or filtering
 tap: clean count $(TEST_TARGETS)
+	@echo "# Tests complete"
 count:
 	@echo 1..$(words $(TEST_TARGETS))
 
