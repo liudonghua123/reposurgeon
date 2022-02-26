@@ -306,7 +306,7 @@ count:
 # using a TAP consumer.
 parallel-tap: clean disclose
 	@rm -f $(FAILLOG)
-	@$(call TAPOUT,$(TEST_TARGETS)); if [ -s $(FAILLOG) ]; then ( echo "Tests failed:"; cat $(FAILLOG); exit 1); fi; 
+	@+$(call TAPOUT,$(TEST_TARGETS)); if [ -s $(FAILLOG) ]; then ( echo "Tests failed:"; cat $(FAILLOG); exit 1); fi; 
 
 disclose:
 	@echo "Running with $(CONCURRENT_JOBS) threads."

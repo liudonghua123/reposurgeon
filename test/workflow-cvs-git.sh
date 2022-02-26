@@ -26,6 +26,7 @@ tapcd "${TMPDIR}/cvs-scratch$$"
 repotool initialize -q hack1 cvs git
 
 # Convert the repository
+# Note: Yes, the 2>&1 redirect without preceding >/dev/null is correct. Mess with it at your peril.
 make --silent -e REMOTE_URL="cvs://localhost${here}/hack1.repo#module" VERBOSITY="" 2>&1 | sed "/ no commitids before/"d >"${TMPDIR}/diff$$" ||  ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 
 # Compare the results
