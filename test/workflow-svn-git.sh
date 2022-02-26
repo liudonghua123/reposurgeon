@@ -22,8 +22,7 @@ tapcd "${TMPDIR}/scratch$$"
 repotool initialize -q vanilla-secundus svn git || ( echo "not ok - $0: initialization failed"; exit 1)
 
 # Mirror vanilla-prime into vanilla-secundus and invoke standard workflow
-# Note: Yes, the 2>&1 redirect without preceding >/dev/null is correct. Mess with it at your peril.
-make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" 2>&1 || ( echo "not ok - $0: mirror and conversion failed"; exit 0)
+make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" >/dev/null 2>&1  || ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 
 # Compare the results
 repotool compare-all vanilla-secundus-mirror vanilla-secundus-git >"${TMPDIR}/diff$$" 
