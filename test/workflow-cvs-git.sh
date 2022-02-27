@@ -26,7 +26,8 @@ tapcd "${TMPDIR}/cvs-scratch$$"
 repotool initialize -q hack1 cvs git
 
 # Convert the repository
-make --silent -e REMOTE_URL="cvs://localhost${here}/hack1.repo#module" VERBOSITY="" 2>&1 | sed "/ no commitids before/"d >"${TMPDIR}/diff$$" ||  ( echo "not ok - $0: mirror and conversion failed"; exit 0)
+unset MAKEFLAGS MFLAGS MAKELEVEL MAKE_TERMERR MAKE_TERMOUT
+make --silent -e REMOTE_URL="cvs://localhost${here}/hack1.repo#module" VERBOSITY="" >/dev/null 2>&1 | sed "/ no commitids before/"d >"${TMPDIR}/diff$$" ||  ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 
 # Compare the results
 repotool compare-all hack1-mirror hack1-git >"${TMPDIR}/diff$$"

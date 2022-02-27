@@ -22,6 +22,7 @@ tapcd "${TMPDIR}/scratch$$"
 repotool initialize -q vanilla-secundus svn git || ( echo "not ok - $0: initialization failed"; exit 1)
 
 # Mirror vanilla-prime into vanilla-secundus and invoke standard workflow
+unset MAKEFLAGS MFLAGS MAKELEVEL MAKE_TERMERR MAKE_TERMOUT
 make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" >/dev/null 2>&1  || ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 
 # Compare the results
