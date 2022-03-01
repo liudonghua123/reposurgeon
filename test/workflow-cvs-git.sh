@@ -26,6 +26,9 @@ tapcd "${TMPDIR}/cvs-scratch$$"
 repotool initialize -q hack1 cvs git
 
 # Convert the repository
+# These variables are unset so the following make invocation won't try to
+# use the make server instance set up by the main make invocation.  When the
+# variables remain set, you can get obscure error messages and hangs.
 unset MAKEFLAGS MFLAGS MAKELEVEL MAKE_TERMERR MAKE_TERMOUT
 make --silent -e REMOTE_URL="cvs://localhost${here}/hack1.repo#module" VERBOSITY="" >/dev/null 2>&1 | sed "/ no commitids before/"d >"${TMPDIR}/diff$$" ||  ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 

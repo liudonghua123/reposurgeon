@@ -22,6 +22,9 @@ tapcd "${TMPDIR}/scratch$$"
 repotool initialize -q vanilla-secundus svn git || ( echo "not ok - $0: initialization failed"; exit 1)
 
 # Mirror vanilla-prime into vanilla-secundus and invoke standard workflow
+# These variables are unset so the following make invocation won't try to
+# use the make server instance set up by the main make invocation.  When the
+# variables remain set, you can get obscure error messages and hangs.
 unset MAKEFLAGS MFLAGS MAKELEVEL MAKE_TERMERR MAKE_TERMOUT
 make --silent -e REMOTE_URL="file://${TMPDIR}/scratch$$/vanilla-prime" VERBOSITY="" >/dev/null 2>&1  || ( echo "not ok - $0: mirror and conversion failed"; exit 0)
 
