@@ -17,10 +17,10 @@
 // manual wants or needs to use more elaborate asciidoc markup than
 // we want to put in an embedded help entry.
 //
-// Each inclusion is marged with either TOPIC or COMMAND.  TOPIC
-// is used by the script that generates the broweseable form of
-// the documentation. COMMAND is not crrently used, it's there so
-// all inclusions are marked and it;s easier to check that there
+// Each inclusion is merged with either TOPIC or COMMAND.  TOPIC
+// is used by the script that generates the browsable form of
+// the documentation. COMMAND is not currently used, it's there so
+// all inclusions are marked and it's easier to check that there
 // are no missing markers.
 
 
@@ -2943,11 +2943,11 @@ commands, then apply repocutter swapsvn.
 Paths that swapsvn does not recognize as transformable will be passed
 through unaltered.
 
-Subversion mergeinfos, being file- and dirtectory-oriented rather than
+Subversion mergeinfos, being file- and directory-oriented rather than
 true branch merges, often can't be carried over even in a
 single-project conversion. The global branch coalescence that
 repocutter swapsvn does multiplies the problem; you may simply have to
-discard those poperties to get a clean conversion.
+discard those properties to get a clean conversion.
 
 See the embedded help listed by "repocutter help swapsvn" for some
 details and caveats.

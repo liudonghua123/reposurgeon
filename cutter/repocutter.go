@@ -106,7 +106,7 @@ replace the file copy with an explicit add/change using the stashed content.
 
 With the -f flag and a BASENAME argument, require the source basename
 to be as specified.  Otherwise, with -f and no BASENAME, require a
-match of source to targwt on basename only rather than the full path.
+match of source to target on basename only rather than the full path.
 This may be required in order to extract filecopies from branches.
 
 Restricting the range holds down the memory requirement of this tool,
@@ -176,7 +176,7 @@ Mergeinfo properties in all revisions are updated, as well as path and copyfrom 
 `},
 	"propclean": {
 		"Turn off executable bit on all files with specified suffixes",
-		`ppropclean: usage: repocutter [-r SELECTION ] [-p PROPERTY] propclean [SUFFIXES]
+		`propclean: usage: repocutter [-r SELECTION ] [-p PROPERTY] propclean [SUFFIXES]
 
 Every path with a suffix matching one of SUFFIXES gets a property turned
 off.  The default property is svn:executable; some Subversion front ends spam it.
@@ -290,7 +290,7 @@ Replacements may be restricted to a specified range.
 `},
 	"setpath": {
 		"Set the node path.",
-		`setcopyfrom: usage: repocutter {-r SELECTION} setpath PATH
+		`setpath: usage: repocutter {-r SELECTION} setpath PATH
 
 In the specified revisions, replace the Node-path with the specified PATH.
 Does not alter mergeinfo properties as a side effect.
@@ -325,7 +325,7 @@ the specified regular expressions; if no expressions are given, match all
 paths.
 
 This command is useful for reducing the bulk of a stream without touching
-its metdata, so you can doio test conversions more quickly.
+its metadata, so you can doio test conversions more quickly.
 `},
 	"swap": {
 		"Swap first two components of pathnames",
@@ -2443,7 +2443,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 	//
 	// Things we know:
 	//
-	// 1. We need swapping on every path that is not alreadt in standard layout.
+	// 1. We need swapping on every path that is not already in standard layout.
 	//
 	// 2. We never want to trim paths unless we're doing a structural swap.
 	//
@@ -2750,7 +2750,7 @@ func testify(source DumpfileSource, counter int) {
 	const NeutralUser = "fred"
 	const NeutralUserLen = len(NeutralUser)
 	var p []byte
-	var state, oldAutherLen, oldPropLen, oldContentLen int
+	var state, oldAuthorLen, oldPropLen, oldContentLen int
 	var headerBuf []byte // need buffer to edit Prop-content-length and Content-length
 	var inRevHeader, saveToHeaderBuf bool
 	// since Go doesn't have a ternary operator, we need to create these helper funcs
@@ -2788,10 +2788,10 @@ func testify(source DumpfileSource, counter int) {
 		} else if bytes.HasPrefix(line, []byte("svn:author")) {
 			state = 1
 		} else if state == 1 && bytes.HasPrefix(line, []byte("V ")) {
-			oldAutherLen, _ = strconv.Atoi(string(line[2 : len(line)-1]))
+			oldAuthorLen, _ = strconv.Atoi(string(line[2 : len(line)-1]))
 			headerBuf = append([]byte(fmt.Sprintf("Prop-content-length: %d\nContent-length: %d\n",
-				(oldPropLen+NeutralUserLen-oldAutherLen),
-				(oldContentLen+NeutralUserLen-oldAutherLen))), headerBuf...)
+				(oldPropLen+NeutralUserLen-oldAuthorLen),
+				(oldContentLen+NeutralUserLen-oldAuthorLen))), headerBuf...)
 			line = append(headerBuf, []byte(fmt.Sprintf("V %d\n", NeutralUserLen))...)
 			saveToHeaderBuf = false
 			inRevHeader = false

@@ -445,7 +445,7 @@ timeline of what Reposurgeon was doing:
 
 Reposurgeon surrounds each command executed by the user with a region,
 and each region adds a log entry; the duration of the region is also
-calcuated. The 'elapsed' column shows the time in nanoseconds that has
+calculated. The 'elapsed' column shows the time in nanoseconds that has
 elapsed since the previous log message. These regions can be nested,
 although this is not shown very clearly. In particular, the 'script'
 regions will contain regions of all the commands that were in the

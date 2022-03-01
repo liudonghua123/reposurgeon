@@ -8771,7 +8771,7 @@ func (repo *Repository) accumulateCommits(subarg selectionSet,
 	return result
 }
 
-// pathRename performas batch path renames by regular expression
+// pathRename performs batch path renames by regular expression
 func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)
 	repo.clearColor(colorQSET)

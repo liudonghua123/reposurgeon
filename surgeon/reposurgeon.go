@@ -2328,7 +2328,7 @@ selection set argument being ignored; if that target directory is
 nonempty its contents are backed up to a save directory.
 
 If the argument ends with a '/' and does not exist, that
-directory is created and he repository written into it.
+directory is created and the repository written into it.
 
 Property extensions will be omitted if the importer for the
 preferred repository type cannot digest them.
@@ -3606,7 +3606,7 @@ If the to clause is present, the removed op is appended to the
 commit specified by the following singleton selection set.  This option
 cannot be combined with 'deletes'.
 
-Sets Q bits: trur for each commit modified and blob with altered 
+Sets Q bits: true for each commit modified and blob with altered 
 references, false otherwise.
 `)
 }
