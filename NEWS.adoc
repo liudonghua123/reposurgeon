@@ -6,7 +6,7 @@ Repository Head::
      Fixed mergeinfo handling in repoocutter commands that remove revisions.
      Interactive lint listing is interruptible.
      Significant bugfixes and major code simplification in repocutter swapsvn.
-     repocutter push is restructed by pathmatch rather than range.
+     repocutter push is restricted by pathmatch rather than range.
      repocutter push can be pattern-restricted.
      All repocutter commands with a pattern rsetruction match against segments.
      Added new repocutter setcopyfrom and setpath commands.

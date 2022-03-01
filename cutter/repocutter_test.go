@@ -107,7 +107,7 @@ func TestOptimizeRange(t *testing.T) {
 		{"1-2,3-4*,5-6", "1-2,3-4*,5-6"},
 		{"1-2,3-4*,5-6,7", "1-2,3-4*,5-7"},
 		{"1-2,3-4,5-6*,7-7*", "1-4,5-7*"},
-		// overlapping intervals should't occur in a valid stream
+		// overlapping intervals shouldn't occur in a valid stream
 		// and are not optimized
 		{"1-2,2-3", "1-2,2-3"},
 		{"1-10,2-3", "1-10,2-3"},
