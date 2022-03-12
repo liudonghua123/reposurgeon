@@ -77,6 +77,13 @@ synonyms. If given a -d option, checkout is performed from the directory
 specified; this may be convenient when working with CVS or Subversion in
 order to select the repository directory.
 
+There is one special checkout option:
+
+-o::
+	Pass the following option through to the underlying
+	checkout command. Can be used, for example, to pass
+	in Subversion's --ignore-externals option.
+
 The 'compare' action takes two repository directories. It may
 optionally take a tag-branch-revision spec as for the checkout
 option. You can also pass two revisions separated by a colon to the -r

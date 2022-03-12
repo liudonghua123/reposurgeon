@@ -191,6 +191,7 @@ var refexclude string
 var revision string
 var basedir string
 var tag string
+var passthrough string
 
 func croak(msg string, args ...interface{}) {
 	content := fmt.Sprintf(msg, args...)
@@ -684,10 +685,10 @@ func checkout(outdir string, rev string) string {
 		// By choosing -kb we get binary files right, but won't
 		// suppress any expanded keywords that might be lurking
 		// in masters.
-		runShellProcessOrDie(fmt.Sprintf("cvs -Q -d:local:%s co -P %s %s %s -d %s -kb %s", pwd, branch, tag, rev, outdir, module), "checkout")
+		runShellProcessOrDie(fmt.Sprintf("cvs -Q -d:local:%s co -P %s %s %s -d %s -kb %s %s", pwd, branch, tag, rev, outdir, passthrough, module), "checkout")
 		return outdir
 	} else if vcs.name == "cvs-checkout" {
-		runShellProcessOrDie(fmt.Sprintf("cvs -Q -d:local:%s co -P %s %s %s -kb", pwd, branch, tag, rev), "checkout")
+		runShellProcessOrDie(fmt.Sprintf("cvs -Q -d:local:%s co -P %s %s %s -kb %s", pwd, branch, tag, rev, passthrough), "checkout")
 		return outdir
 	} else if vcs.name == "svn" {
 		if rev != "" {
@@ -712,7 +713,7 @@ func checkout(outdir string, rev string) string {
 		// symlinks to parts in the checkout directory,
 		// updating it only as needed. This is is much faster
 		// than doing a fresh checkout every time.
-		runShellProcessOrDie(fmt.Sprintf("svn co -q %s file://%s %s", rev, pwd, outdir), "checkout")
+		runShellProcessOrDie(fmt.Sprintf("svn co %s -q %s file://%s %s", passthrough, rev, pwd, outdir), "checkout")
 		if nobranch {
 			// flat repository
 		} else if tag != "" {
@@ -726,12 +727,15 @@ func checkout(outdir string, rev string) string {
 	} else if vcs.name == "svn-checkout" {
 		if rev != "" {
 			rev = "-r " + rev
-			// Potentially dangerous assumption: User made a full checkout
-			// of HEAD and the update operation (which is hideously slow on
-			// large repositories) only needs to be done if an explicit rev
-			// was supplied.
-			runShellProcessOrDie("svn up -q "+rev, "checkout")
 		}
+		if passthrough != "" {
+			passthrough += " "
+		}
+		// Potentially dangerous assumption: User made a full checkout
+		// of HEAD and the update operation (which is hideously slow on
+		// large repositories) only needs to be done if an explicit rev
+		// was supplied.
+		runShellProcessOrDie("svn up -q "+passthrough+rev, "checkout")
 		relpath := ""
 		if nobranch {
 			// flat repository
@@ -786,7 +790,7 @@ func checkout(outdir string, rev string) string {
 		if handleMissing {
 			path = pwd + ".git/this/path/does/not/exist"
 		} else {
-			runShellProcessOrDie(fmt.Sprintf("git checkout --quiet %s", rev), "checkout")
+			runShellProcessOrDie(fmt.Sprintf("git checkout --quiet %s %s", passthrough, rev), "checkout")
 			path = pwd
 		}
 		if exists(outdir) {
@@ -813,7 +817,7 @@ func checkout(outdir string, rev string) string {
 		} else if branch != "" {
 			spec = "-r " + branch
 		}
-		runShellProcessOrDie(fmt.Sprintf("hg update -q %s", spec), "checkout")
+		runShellProcessOrDie(fmt.Sprintf("hg update %s -q %s", passthrough, spec), "checkout")
 		if outdir == "." {
 			return pwd
 		} else if exists(outdir) {
@@ -1159,6 +1163,7 @@ func main() {
 	flags.StringVar(&refexclude, "e", "", "exclude pattern for tag and branch names.")
 	flags.StringVar(&revision, "r", "", "select revision for checkout or comparison")
 	flags.StringVar(&tag, "t", "", "select tag for checkout or comparison")
+	flags.StringVar(&passthrough, "o", "", "option passthrough")
 
 	explain := func() {
 		print(`
@@ -1168,7 +1173,7 @@ commands:
   mirror [URL] localdir
                 - create or update a mirror of the source repository
   branches      - list repository branch names
-  checkout [-r rev] [-t tag] [-b branch]
+  checkout [-r rev] [-t tag] [-b branch] [-o option]
                 - check out a working copy of the repo
   compare [-r rev] [-t tag] [-b branch]
                 - compare head content of two repositories

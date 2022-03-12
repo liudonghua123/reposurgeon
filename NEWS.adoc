@@ -10,6 +10,7 @@ Repository Head::
      repocutter push can be pattern-restricted.
      All repocutter commands with a pattern rsetruction match against segments.
      Added new repocutter setcopyfrom and setpath commands.
+     Add -o option to pass raw options into repotool checkout.
 
 4.31: 2022-01-08::
      Minor improvements in baton handling.
