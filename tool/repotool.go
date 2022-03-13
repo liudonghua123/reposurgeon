@@ -101,6 +101,7 @@ CVS_HOST = {{.Project}}.cvs.sourceforge.net
 CVS_MODULE = {{.Project}}
 #REMOTE_URL = cvs://$(CVS_HOST)/{{.Project}}\#$(CVS_MODULE)
 READ_OPTIONS =
+#CHECKOUT_OPTIONS = --ignore-externals
 DUMPFILTER = cat
 VERBOSITY = "set progress"
 REPOSURGEON = reposurgeon
@@ -130,7 +131,7 @@ default: {{.Project}}-{{.TargetVCS}}
 
 # Make a local checkout of the source mirror for inspection
 %-checkout: %-mirror
-	cd %-mirror >/dev/null; repotool checkout $(PWD)/%-checkout
+	cd %-mirror >/dev/null; repotool checkout $(CHECKOUT_OPTIONS) $(PWD)/%-checkout
 
 # Force rebuild of stream from the local mirror on the next make
 local-clobber: clean
