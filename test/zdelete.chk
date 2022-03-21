@@ -1,0 +1,13 @@
+blob
+mark :3
+data 20
+0123456789012345678
+
+commit refs/heads/master
+mark :4
+committer Ralf Schlatterbeck <rsc@runtux.com> 10 +0000
+data 15
+Second commit.
+deleteall
+M 100644 :3 README
+
