@@ -49,3 +49,6 @@ lives at http://www.catb.org/esr/reposurgeon/[www.catb.org/esr/reposurgeon/].
 The files `Dockerfile`, `.dockerignore`, `.gitlab-ci.yml`, and the contents
 of `ci/` and `.github/` are not distributed; they are configuration for test
 builds on GitLab and GitHub CI machinery.
+
+If you find this code useful or amusing, please 
+https://www.patreon.com/esr[support me on Patreon.]
