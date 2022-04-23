@@ -1607,7 +1607,7 @@ func (ss StreamSection) stripChecksums() StreamSection {
 	return StreamSection(header)
 }
 
-// delete - method telete a specified header
+// delete - method to delete a specified header
 func (ss StreamSection) delete(htype string) StreamSection {
 	offs := ss.index(htype)
 	if offs == -1 {
