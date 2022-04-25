@@ -289,7 +289,7 @@ func readFromProcess(command string) (io.ReadCloser, *exec.Cmd, error) {
 		return nil, nil, err
 	}
 	if logEnable(logCOMMANDS) {
-		croak("%s: reading from '%s'\n",
+		speak("%s: reading from '%s'\n",
 			rfc3339(time.Now()), command)
 	}
 	err = cmd.Start()
