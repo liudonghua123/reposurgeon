@@ -727,6 +727,10 @@ func (he *HgExtractor) gatherCommitData(rs *RepoStreamer) error {
 		return nil
 	}
 	return he.byLine(rs,
+		// Note that what hg calls an rfc822 date isn't. it
+		// has a numeric timezone offset and 4-digit year.
+		// Should have been tagged an RFC5322 dare really.
+		// They get RFC3339 wrong, too.
 		[]string{"hg", "log", "--template", `{node|short}|{sub(r"<([^>]*)>", "", author|person)} <{author|email}> {date|rfc822date}\n`},
 		"hg's gatherCommitData: %v",
 		hook)
