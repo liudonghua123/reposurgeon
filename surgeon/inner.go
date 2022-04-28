@@ -289,7 +289,7 @@ func readFromProcess(command string) (io.ReadCloser, *exec.Cmd, error) {
 		return nil, nil, err
 	}
 	if logEnable(logCOMMANDS) {
-		speak("%s: reading from '%s'\n",
+		logit("%s: reading from '%s'\n",
 			rfc3339(time.Now()), command)
 	}
 	err = cmd.Start()
@@ -653,9 +653,10 @@ func (d OrderedMap) Swap(i int, j int) {
 }
 
 /*
- * RFC2822 message blocks
+ * Internet Message Format blocks
  *
  * This is how we serialize comments so they can be modified in an editor.
+ * Strictly conformant to RFC5322 (2008) and thus to RFC2822 (2001).
  */
 
 // MessageBlockDivider is the separator between messages in a message-box.
@@ -713,7 +714,7 @@ func newMessageBlock(bp *bufio.Reader) (*MessageBlock, error) {
 				return nil, err
 			}
 			if !inBody && (line[0] == ' ' || line[0] == '\t') {
-				// RFC2822 continuation
+				// Internet Message Format continuation
 				if len(msg.hdnames) >= 1 {
 					lasthdr := msg.hdnames[len(msg.hdnames)-1]
 					msg.setHeader(lasthdr,
@@ -877,7 +878,7 @@ func locationFromZoneOffset(offset string) (*time.Location, error) {
 	hours, _ := strconv.Atoi(string(m[1]))
 	mins, _ := strconv.Atoi(string(m[2]))
 	if hours < -14 || hours > 13 || mins > 59 {
-		// According to RFC2822/RFC1123 we could put "-0000" in here to
+		// According to RFC1123/RFC2822/RFC5322 we could put "-0000" in here to
 		// indicate invalid zone information.
 		return nil, errors.New("dubious zone offset " + string(offset))
 	}
@@ -962,7 +963,8 @@ func (date Date) gitlog() string {
 }
 
 func (date Date) rfc1123() string {
-	// Alas, the format Go calls RFC822 is archaic
+	// The format Go calls RFC822 is the oldest
+	// variant, with a named timezone and 2-digit year.
 	return date.timestamp.Format(time.RFC1123Z)
 }
 

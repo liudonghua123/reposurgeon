@@ -2596,10 +2596,10 @@ func (rs *Reposurgeon) HelpMsgout() {
 	rs.helpOutput(`
 [SELECTION] msgout [--filter=PATTERN] [--blobs]
 
-Emit a file of messages in RFC822 format representing the contents of
-repository metadata. Takes a selection set; members of the set other
-than commits, annotated tags, and passthroughs are ignored (that is,
-presently, blobs and resets).
+Emit a file of messages in Internet Message Format representing the
+contents of repository metadata. Takes a selection set; members of the
+set other than commits, annotated tags, and passthroughs are ignored
+(that is, presently, blobs and resets).
 
 May have an option --filter, followed by a pattern expression.  If this
 is given, only headers with names matching it are emitted.  In this
@@ -2658,7 +2658,7 @@ func (rs *Reposurgeon) HelpMsgin() {
 	rs.helpOutput(`
 [SELECTION] msgin [--create] [<INFILE]
 
-Accept a file of messages in RFC822 format representing the
+Accept a file of messages in Internet Message Format representing the
 contents of the metadata in selected commits and annotated tags. 
 If there is an argument, it will be taken as the name of a message-box
 file to read from; if no argument, or one of '-', reads from standard
