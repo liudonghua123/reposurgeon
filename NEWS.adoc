@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository Head::
+4.32: 2022-04-28::
      "lint" command no longer accidentally clears most Q bits.
      repocutter renumber no longer mangles mergeinfo properties.
      Fixed mergeinfo handling in repoocutter commands that remove revisions.
