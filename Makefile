@@ -43,6 +43,7 @@ all: build cuttercommands.inc $(MANPAGES) $(HTMLFILES)
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
 build: surgeon/help-index.go
+	-test -f go.mod || go mod init 
 	sh extractversion.sh -g <NEWS.adoc >surgeon/version.go
 	go build $(GOFLAGS) -o repocutter ./cutter
 	go build $(GOFLAGS) -o repomapper ./mapper
