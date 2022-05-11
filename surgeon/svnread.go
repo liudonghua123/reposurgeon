@@ -1920,7 +1920,7 @@ func svnSplitResolve(ctx context.Context, sp *StreamParser, options stringSet, b
 					// A new clique is started:
 					// * at the first op following the commit start or a deleteall
 					// * when the branch changes (in a mixed commit)
-					cliques = append([]clique{clique{j, newbranch}}, cliques...)
+					cliques = append([]clique{{j, newbranch}}, cliques...)
 					oldbranch = newbranch
 				}
 				// If this operation is a deleteall, a new clique should be started

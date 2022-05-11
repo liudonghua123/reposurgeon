@@ -1,4 +1,3 @@
-
 // Functions shared between tools.
 
 package main
@@ -25,3 +24,4 @@ func islink(pathname string) bool {
 	return err == nil && (st.Mode()&os.ModeSymlink) != 0
 }
 
+// end

@@ -3560,7 +3560,7 @@ func (rs *Reposurgeon) DoBlob(line string) bool {
 			if m == "" {
 				continue
 			}
-			v, err := strconv.Atoi(m[1:len(m)])
+			v, err := strconv.Atoi(m[1:])
 			if err == nil && v > markmax {
 				markmax = v
 			}

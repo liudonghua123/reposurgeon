@@ -803,7 +803,7 @@ func (s *SubversionRange) Optimize() {
 		}
 		// Nope, try to merge the endpoint or range at i with its right-hand neighbor
 		if s.intervals[i+1][0] == s.intervals[i][1] || s.intervals[i+1][0].rev == s.intervals[i][1].rev+1 {
-			s.intervals = append(s.intervals[:i], append([][2]SubversionEndpoint{[2]SubversionEndpoint{s.intervals[i][0], s.intervals[i+1][1]}}, s.intervals[i+2:]...)...)
+			s.intervals = append(s.intervals[:i], append([][2]SubversionEndpoint{{s.intervals[i][0], s.intervals[i+1][1]}}, s.intervals[i+2:]...)...)
 		} else {
 			i++
 		}
