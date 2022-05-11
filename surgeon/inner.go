@@ -153,11 +153,10 @@ func relpath(dir string) string {
 }
 
 func abspath(dir string) string {
-	wd, err := os.Getwd()
-	if err != nil {
+	if _, err := os.Getwd(); err != nil {
 		panic(err)
 	}
-	wd, err = filepath.Abs(dir)
+	wd, err := filepath.Abs(dir)
 	if err != nil {
 		panic(err)
 	}
@@ -7899,7 +7898,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 			// repository metadata directory and reposurgeon
 			// scratch directories
 			var allfiles = newOrderedStringSet()
-			err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+			filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					croak("path access failure %q: %v", path, err)
 					return err

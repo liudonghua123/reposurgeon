@@ -3024,7 +3024,7 @@ the attribute are internal field names; in particular, for commits,
 interesting values.
 
 The special fieldnames 'author', 'commitdate' and 'authdate' apply
-only to commits in the range.  The latter two sets attribution
+only to commits in the range.  The latter two set attribution
 dates. The former sets the author's name and email address (assuming
 the value can be parsed for both), copying the committer
 timestamp. The author's timezone may be deduced from the email
@@ -3057,9 +3057,9 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 			}
 		} else if commit, ok := event.(*Commit); ok {
 			if field == "Author" {
-				attr := value
-				attr += " " + commit.committer.date.String()
-				newattr, _ := newAttribution("")
+				// FIXME: Needs unit test
+				attr := value + " " + commit.committer.date.String()
+				newattr, _ := newAttribution(attr)
 				commit.authors = append(commit.authors, *newattr)
 			} else if field == "Commitdate" {
 				newdate, err := newDate(value)
@@ -3810,7 +3810,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 	offsetOf := func(hhmmss string) (int, error) {
 		h := "0"
 		m := "0"
-		s := "0"
+		var s string
 		if strings.Count(hhmmss, ":") == 0 {
 			s = hhmmss
 		} else if strings.Count(hhmmss, ":") == 1 {
@@ -5590,7 +5590,7 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 
 	// We need a new branch name
 	var newname string
-	newname, line = popToken(line)
+	newname, _ = popToken(line)
 	if newname == "" {
 		newname = path.Base(pathprefix[:len(pathprefix)-1])
 	}
