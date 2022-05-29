@@ -1262,12 +1262,6 @@ func TestBranchbase(t *testing.T) {
 }
 
 func TestCapture(t *testing.T) {
-	data, err0 := captureFromProcess("echo stdout; echo 1>&2 stderr", control.baton)
-	if err0 != nil {
-		t.Fatalf("error while spawning process: %v", err0)
-	}
-	assertEqual(t, data, "stdout\nstderr\n")
-
 	r, cmd, err1 := readFromProcess("echo arglebargle")
 	if err1 != nil {
 		t.Fatalf("error while spawning process: %v", err1)

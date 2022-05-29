@@ -280,10 +280,14 @@ func max(a, b int) int {
 }
 
 func readFromProcess(command string) (io.ReadCloser, *exec.Cmd, error) {
-	cmd := exec.Command("sh", "-c", command+" 2>&1")
+	fields, err := shlex.Split(command, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("splitting %q: %s", command, err)
+	}
+	cmd := exec.Command(fields[0], fields[1:]...)
 	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
 	stdout, err := cmd.StdoutPipe()
+	cmd.Stderr = os.Stdout
 	if err != nil {
 		return nil, nil, err
 	}
@@ -300,7 +304,11 @@ func readFromProcess(command string) (io.ReadCloser, *exec.Cmd, error) {
 }
 
 func writeToProcess(command string) (io.WriteCloser, *exec.Cmd, error) {
-	cmd := exec.Command("sh", "-c", command+" 2>&1")
+	fields, err := shlex.Split(command, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("splitting %q: %s", command, err)
+	}
+	cmd := exec.Command(fields[0], fields[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	stdout, err := cmd.StdinPipe()
@@ -4193,7 +4201,11 @@ func captureFromProcess(command string, baton *Baton) (string, error) {
 	if logEnable(logCOMMANDS) {
 		logit("%s: capturing %s", rfc3339(time.Now()), command)
 	}
-	cmd := exec.Command("sh", "-c", command)
+	fields, err := shlex.Split(command, true)
+	if err != nil {
+		return "", fmt.Errorf("splitting %q: %s", command, err)
+	}
+	cmd := exec.Command(fields[0], fields[1:]...)
 	content, err := cmd.CombinedOutput()
 	if logEnable(logCOMMANDS) {
 		baton.printLog(content)
