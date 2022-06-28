@@ -2376,7 +2376,7 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
 	} else {
 		if strings.HasSuffix(parse.line, "/") && !exists(parse.line) {
-			os.Mkdir(parse.line, 0755)
+			os.Mkdir(parse.line, userReadWriteSearchMode)
 		}
 		if isdir(parse.line) {
 			err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
@@ -6806,7 +6806,7 @@ func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 		target := filepath.Join(dst, header.Name)
 		if header.Typeflag == tar.TypeDir {
 			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+				if err := os.MkdirAll(target, userReadWriteSearchMode); err != nil {
 					return nil, err
 				}
 			}
