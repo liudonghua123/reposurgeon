@@ -208,9 +208,9 @@ EXCEPTIONS = \
 	lint \
 	profile \
 	reparent
-# Most of the command descriptions in Repositpory editing are reposurgeon's embedded
-# help, lightly massaged into asciidoc format.
-repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
+# Most of the command descriptions in Repository editing are reposurgeon's embedded
+# help, lightly massaged into asciidoc format. This is how to generate them.
+docincludes: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
 	@rm -fr docinclude; mkdir docinclude
 	@get_help() { \
 		./reposurgeon "set asciidoc" "help $${1}" | awk -f poundsign.awk; \
@@ -230,6 +230,7 @@ repository-editing.html: surgeon/reposurgeon.go reposurgeon repository-editing.a
 		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
 	done
 	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
+repository-editing.html: docincludes
 	@./repository-editing.rb
 
 # Audit for embedded-help entries not used as inclusions (column 1)
