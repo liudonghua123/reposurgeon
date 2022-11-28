@@ -2239,19 +2239,19 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 		for _, option := range parse.options {
 			if strings.HasPrefix(option, "--format=") {
 				_, vcs := splitRuneFirst(option, '=')
+				vcs = vcs[1:]
 				infilter, ok := fileFilters[vcs]
 				if !ok {
-					croak("unrecognized --format")
+					croak("unrecognized --format option %v", vcs)
 					return false
 				}
 				srcname := "unknown-in"
 				if f, ok := parse.stdin.(*os.File); ok {
 					srcname = f.Name()
 				}
-				// parse is redirected so this
-				// must be something besides
-				// os.Stdin, so we can close
-				// it and substitute another
+				// parse is redirected so this must be
+				// something besides os.Stdin, so we
+				// can close it and substitute another
 				// redirect
 				closeOrDie(parse.stdin)
 				command := fmt.Sprintf(infilter.importer, srcname)
@@ -6787,9 +6787,7 @@ func (rs *Reposurgeon) DoChangelogs(line string) bool {
 	return false
 }
 
-//
 // Tarball incorporation
-//
 func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 	files := make([]tar.Header, 0)
 	tr := tar.NewReader(r)

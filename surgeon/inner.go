@@ -261,9 +261,10 @@ func stringEscape(s string) (string, error) {
 	return strconv.Unquote(s)
 }
 
-// splitRuneFirst splits the string on the rune and returns the first
-// substring, but without allocating a slice of all the substrings,
-// and without iterating over the string twice
+// splitRuneFirst splits the string on the rune returning the first
+// substring and the rest of the string, but without allocating a
+// slice of all the substrings, and without iterating over the string
+// twice
 func splitRuneFirst(s string, sep rune) (first string, rest string) {
 	idx := strings.IndexRune(s, sep)
 	if idx == -1 {
@@ -4111,7 +4112,7 @@ func (commit Commit) commonDirectory() string {
 	return prefix
 }
 
-//Passthrough represents a passthrough line.
+// Passthrough represents a passthrough line.
 type Passthrough struct {
 	repo   *Repository
 	text   string
@@ -4167,7 +4168,7 @@ func (p *Passthrough) idMe() string {
 	return fmt.Sprintf("passthrough@%d", p.repo.eventToIndex(p))
 }
 
-//getMark is a stub required for the Event interface
+// getMark is a stub required for the Event interface
 func (p Passthrough) getMark() string {
 	return ""
 }
@@ -6238,7 +6239,6 @@ func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, even
 	}
 }
 
-//
 // Delete machinery begins here
 //
 // Count modifications of a path in this commit && its ancestors.
