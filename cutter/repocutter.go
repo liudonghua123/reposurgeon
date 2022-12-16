@@ -110,7 +110,7 @@ match of source to target on basename only rather than the full path.
 This may be required in order to extract filecopies from branches.
 
 Restricting the range holds down the memory requirement of this tool,
-which in the worst (and default) 1:$ case will keep a copy of evert blob
+which in the worst (and default) 1:$ case will keep a copy of every blob
 in the repository until it's done processing the stream.
 `},
 	"log": {
@@ -1186,19 +1186,21 @@ func (ds *DumpfileSource) Report(
 	// The revhook is called once on every revision and can be used
 	// to modify the Revision-number line.
 	//
-	// The prophook is called before the headerhook. It is called on
-	// every property section, both per-node and per-revision.
-	// When called on the revision properties the value of
-	// ds.Index is zero, and will therefore match a range element
-	// with an unspecified node part.
+	// The other hooks are called once per node, in the order listed.
 	//
-	// headerhook is called on each node headers.  If this hook
+	// The prophook is called before the headerhook on each
+	// node. It is called on every property section, both per-node
+	// and per-revision.  When called on the revision properties
+	// the value of ds.Index is zero, and will therefore match a
+	// range element with an unspecified node part.
+	//
+	// headerhook is called on each node's headers.  If this hook
 	// returns nil, discarding the header, its properties and
 	// content are also discarded.
 	//
-	// contenthook is called on the content to mutate it.
+	// contenthook is called on each node's content to mutate it.
 	//
-	// A nil hook rgument means the section should be passed
+	// A nil hook argument means the section should be passed
 	// through unaltered.
 	//
 	// All hooks can count on the DumpfileSource members to be up to
@@ -1777,6 +1779,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 	values := make(map[string][]trackCopy)
 	var replacement []byte
 	var nodePath string
+	var stashcontent bool
 	headerhook := func(header StreamSection) []byte {
 		nodePath = source.NodePath
 		if debug >= debugLOGIC {
@@ -1799,8 +1802,9 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 		// because for some inexplicable reason Subversion occasionally generates nodes
 		// which have copyfrom information *and* the copy already performed - that is,
 		// the node content is non-nil and should be used.  In that case we want to strip
-		// out the copyfrom information without modifyinmg the content.
-		if !selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0 {
+		// out the copyfrom information without modifying the content.
+		stashcontent = selection.ContainsNode(source.Revision, source.Index) || source.Revision == 0
+		if !stashcontent {
 			return []byte(header)
 		}
 		if copypath := header.payload("Node-copyfrom-path"); copypath != nil {
@@ -1844,7 +1848,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 				fmt.Fprintf(os.Stderr, "  <r%s replacing with %q>\n", source.where(), content)
 			}
 		}
-		if content != nil && len(content) > 0 {
+		if stashcontent && content != nil && len(content) > 0 {
 			trampoline := values[nodePath]
 			trampoline = append(trampoline, trackCopy{source.Revision, content})
 			values[nodePath] = trampoline
