@@ -230,8 +230,11 @@ docincludes: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
 		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
 	done
 	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
+
 repository-editing.html: docincludes
 	@./repository-editing.rb
+repository-editing.pdf: docincludes
+	@asciidoctor-pdf repository-editing.adoc
 
 # Audit for embedded-help entries not used as inclusions (column 1)
 # or inclusions for which there are no corresponding help topics (column 2).
