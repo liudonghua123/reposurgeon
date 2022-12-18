@@ -3343,7 +3343,13 @@ func (commit *Commit) hasCallouts() bool {
 
 // children gets a list of this commit's children (Commits or Callouts)."
 func (commit *Commit) children() []CommitLike {
-	return commit._childNodes
+	var out []CommitLike
+	for _, c := range commit._childNodes {
+		if c != nil {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 type childIt struct {
