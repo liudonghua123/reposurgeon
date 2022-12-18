@@ -3087,7 +3087,13 @@ func (commit *Commit) moveto(repo *Repository) {
 
 // parents gets a list of this commit's parents.
 func (commit *Commit) parents() []CommitLike {
-	return commit._parentNodes
+	var out []CommitLike
+	for _, c := range commit._parentNodes {
+		if c != nil {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 type parentIt struct {
