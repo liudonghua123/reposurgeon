@@ -3936,7 +3936,12 @@ func (commit *Commit) decodable() bool {
 // ascii tells whether this commit is entirely composed of ASCII.
 func (commit *Commit) ascii() bool {
 	valid := func(s string) bool {
-		return utf8.Valid([]byte(s))
+		for i := range s {
+			if s[i] > 127 {
+				return false
+			}
+		}
+		return true
 	}
 	if !(valid(commit.committer.fullname) && valid(commit.committer.email) && valid(commit.Comment)) {
 		return false
