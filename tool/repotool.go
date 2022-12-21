@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	//"sort"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -1148,6 +1148,181 @@ func compareAll(args []string) {
 	}
 }
 
+const dochead = `repotool is a wrapper around repository operations that differ by
+version-control system.  It is little use by itself, existing mainly
+to generate and simplify a conversion makefile usable with
+reposurgeon(1).
+
+Not all actions are supported on all systems.  You will get an
+error message and a return value of 1 when attempting an unsupported
+action.
+
+With the -v option, report the commands executed just before
+they are run. With the -q option, only fatal errors are printed
+instead of non-fatal gripes. The -q and -v options also disable each
+other and only the last one will take effect.
+
+With the -d option, change to a specified directory before performing
+whatever operation was selected. If the directory doesn't exist or
+can't be searched into, that's a fatal error.
+`
+
+var helpdict = map[string]struct {
+	usage    string
+	oneliner string
+	text     string
+}{
+	"initialize": {
+		"initialize",
+		"create Makefile and stub files for standard conversion workflow",
+		`The "initialize" option takes a project name (and, optionally,
+following source and target VCS types) and generates a
+Makefile that will sequence various steps of a repository
+conversion. It also generates stub lift and options files. This is
+meant to be run in an empty work directory, the tool will refuse
+to step on any of these files that already exist.  Afterwards, you
+will need to set some variables in the Makefile; read its header
+comment.
+`},
+	"export": {
+		"export",
+		"export a stream dump of the source repository",
+		`The 'export' action, run from within a repository directory,
+dumps a copy of a CVS, Subversion, git, bzr, hg, or darcs repository
+to a flat history file readable by reposurgeon. The format is usually
+a git-fast-import stream, except that Subversion repositories export
+as Subversion dump files; the point is to be a lossless
+representation, or as close to one as possible.
+`},
+	"mirror": {
+		"mirror [URL] localdir",
+		"create or update a mirror of the source repository",
+		`The 'mirror' action makes or updates a local mirror of a
+Subversion, CVS, git, or hg repo. It requires a single argument,
+either a repository URL or the name of a local mirror directory
+created by a previous run. The first form creates a local mirror of
+the repository in a directory named after the last segment of the URL,
+with the suffix "-mirror" (the local mirror name can be
+overridden by an optional second argument). The second form updates
+the local mirror, doing an incremental fetch; just give the mirror
+directory name.  If the environment variables RUSERNAME and RPASSWORD
+are set, they are used as login/password credentials for Subversion
+mirroring.
+
+Subversion URLs are as specified in the public documentation for
+Subversion.  CVS URLs must specify a host and repository path,
+followed by a '#', followed by a module name.  URLs for git and hg
+should be in the form normally used for clone commands.
+Alternatively, a repository URL may be a "file://" URL, in which
+case the repository type is autodetected from the contents of
+the indicated directory. Note: A Subversion file URL has *three*
+slashes after the "file:" prefix!
+
+The mirror command can also be passed an rsync URL.  This
+will usually be faster than mirroring through an equivalent
+Subversion URL.
+`},
+	"branches": {
+		"branches",
+		"list repository branch names",
+		`The 'branches' option, run from within a repository directory ,
+returns a list of the repository's branch names.
+`},
+	"checkout": {
+		"checkout [-r rev] [-t tag] [-b branch] [-o option]",
+		"check out a working copy of the repo",
+		`The 'checkout' option checks out a working copy of the
+repository. It must be called from within the repository. It takes one
+required argument - the checkout directory location.
+`},
+	"compare": {
+		"compare [-r rev] [-t tag] [-b branch] repo1 repo2",
+		"compare head content of two repositories",
+		`The 'compare' action takes two repository directories. It may
+optionally take a tag-branch-revision spec as for the checkout
+option. You can also pass two revisions separated by a colon to the -r
+option, to have the first one checked out in the first repository and
+the second one in the second repository. That permits one to compare
+two different revisions, or the same revision referenced differently
+in two VCS. You can leave one of the two revisions empty, then the -r
+option will not be passed to the corresponding repository checkout.
+This is useful to compare a git tag or branch to the corresponding tag
+or branch in SVN as seen at a particular revision (specifying both a
+branch and revision makes sense in SVN, but not in git).  The selected
+versions are compared with diff -r, with noise due to SCCS/RCS/CVS
+keyword expansion ignored.  File permissions well as
+content are checked, any mismatches will be shown after the diff
+listing.
+`},
+	"compare-tags": {
+		"compare-tags repo1 repo2",
+		"compare-tags converts content at tags",
+		`The 'compare-tags' action takes two repository directories, extracts a
+list of tags from the first, then compares the repository contents at
+each tag in the list, generating a compare report for each.  Takes
+compare options.  Additionally the -e option sets exclude patterns for
+tag names that should be ignored.
+`},
+	"compare-branches": {
+		"compare-branches repo1 repo2",
+		"compare-branches converts content at branch tips",
+		`The 'compare-branches' action takes two repository directories,
+extracts a list of branches common to both, then compares the
+repository contents at each branch in the list, generating a compare
+report for each. Takes compare options.  Additionally the -e option
+sets exclude patterns for branch names that should be ignored.
+`},
+	"compare-all": {
+		"compare-all repo1 repo2",
+		"run compare, compare-tags, and compare-branches",
+		`The 'compare-all' action takes two repository directories, and runs
+all three above compare actions on them. Even if the same name is a
+tag in one repository and a branch in the other, it will compare them
+against each other. Not distinguishing them is useful as CVS tags that
+are not applied to every file in the repository may get converted to
+branches.  Takes compare options.  Additionally the -e option sets
+exclude patterns for tag and branch names that should be ignored.
+`},
+	"version": {
+		"version",
+		"report repocutter's version",
+		`The "version" command reports the version level of the software.
+`},
+	"help": {
+		"help [command]",
+		"emit help about rrepotool commands",
+		`The "help" command displays a summary of commands and options.
+`},
+}
+
+var narrativeOrder []string = []string{
+	"initialize",
+	"export",
+	"mirror",
+	"branches",
+	"checkout",
+	"compare",
+	"compare-tags",
+	"compare-branches",
+	"compare-all",
+	"version",
+	"help",
+}
+
+func dumpDocs() {
+	if len(narrativeOrder) != len(helpdict) {
+		os.Stderr.WriteString("repotool: documentation sanity check failed.\n")
+		os.Exit(1)
+	}
+	for _, item := range narrativeOrder {
+		os.Stdout.WriteString(item + "::\n")
+		text := helpdict[item].text
+		text = strings.Replace(text, "\n\n", "\n+\n", -1)
+		os.Stdout.WriteString(text)
+		os.Stdout.WriteString("\n")
+	}
+}
+
 func main() {
 	flags := flag.NewFlagSet("repotool", flag.ExitOnError)
 
@@ -1167,33 +1342,9 @@ func main() {
 	flags.StringVar(&tag, "t", "", "select tag for checkout or comparison")
 	flags.StringVar(&passthrough, "o", "", "option passthrough")
 
-	explain := func() {
-		print(`
-commands:
-  initialize    - create Makefile and stub files for standard conversion workflow
-  export        - export a stream dump of the source repository
-  mirror [URL] localdir
-                - create or update a mirror of the source repository
-  branches      - list repository branch names
-  checkout [-r rev] [-t tag] [-b branch] [-o option]
-                - check out a working copy of the repo
-  compare [-r rev] [-t tag] [-b branch]
-                - compare head content of two repositories
-  compare-tags  - compare source and target repo content at all tags
-  compare-branches - compare source and target repo content at all branches
-  compare-all   - compare repositories at head, all tags, and all branches
-  version       - report software version
-
-options:
-`)
-		flags.PrintDefaults()
-		os.Exit(1)
-	}
-
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr,
 			"repotool: requires an operation argument.\n")
-		explain()
 	}
 	operation := os.Args[1]
 
@@ -1219,9 +1370,7 @@ options:
 	}
 
 	args := flags.Args()
-	if operation == "help" {
-		explain()
-	} else if operation == "initialize" {
+	if operation == "initialize" {
 		initialize(args)
 	} else if operation == "export" {
 		export()
@@ -1245,9 +1394,30 @@ options:
 		compareAll(args)
 	} else if operation == "version" {
 		fmt.Println(version)
+	} else if operation == "help" {
+		if len(args) == 0 {
+			os.Stdout.WriteString(dochead)
+			os.Stdout.WriteString("\ncommands:\n")
+			keys := make([]string, 0)
+			for k := range helpdict {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				os.Stdout.WriteString(fmt.Sprintf(" %-16s %s\n", key, helpdict[key].oneliner))
+			}
+			os.Stdout.WriteString("\noptions:\n")
+			flags.PrintDefaults()
+		} else if cdoc, ok := helpdict[args[0]]; ok {
+			os.Stdout.WriteString(fmt.Sprintf("usage: %s\n\n", cdoc.usage))
+			os.Stdout.WriteString(cdoc.text)
+		} else {
+			croak("no such command\n")
+		}
+	} else if operation == "docgen" { // Not documented
+		dumpDocs()
 	} else {
 		fmt.Fprintf(os.Stderr, "repotool: unknown operation %q\n", operation)
-		explain()
 	}
 }
 

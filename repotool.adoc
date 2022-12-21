@@ -29,53 +29,9 @@ With the -d option, change to a specified directory before performing
 whatever operation was selected. If the directory doesn't exist or
 can't be searched into, that's a fatal error.
 
-The "initialize" option takes a project name (and, optionally,
-following source and target VCS types) and generates a
-Makefile that will sequence various steps of a repository
-conversion. It also generates stub lift and options files. This is
-meant to be run in an empty work directory, the tool will refuse
-to step on any of these files that already exist.  Afterwards, you
-will need to set some variables in the Makefile; read its header
-comment.
+The following subcommands are available:
 
-The 'export' action, run from within a repository directory,
-dumps a copy of a CVS, Subversion, git, bzr, hg, or darcs repository
-to a flat history file readable by reposurgeon. The format is usually
-a git-fast-import stream, except that Subversion repositories export
-as Subversion dump files; the point is to be a lossless
-representation, or as close to one as possible.
-
-The 'tags' option, run from within a repository directory,
-returns a list of the repository's release tags.
-
-The 'branches' option, run from within a repository directory ,
-returns a list of the repository's branch names.
-
-The 'checkout' option checks out a working copy of the
-repository. It must be called from within the repository. It takes one
-required argument - the checkout directory location.
-
-The checkout option may take a revision, tag, or branch
-specification, given with the -r, -t, or -b options.
-If you specify multiple conflicting specifications, the revision
-takes precedence, then the tag, then the branch. If the spec is
-omitted, the tip of the main line of the repository will be used; this
-is equivalent to specifying branch 'master' (git terminology, which is
-translated by reposurgeon to 'trunk' or whatever the underlying VCS
-uses). In VCSs like SVN where branches and tags are not part of the
-history model, it is possible to specify both a revision and a branch
-or tag specification to get the contents of the branch or tag as seen
-from the given revision. With these VCS types, you can also use the
--n (nobranch) option to checkout the complete repository instead, where
-all branches and tags are simply subdirectories. You can also use the
--a (accept-missing) option to let 'repotool checkout' return a dangling
-symlink instead of stopping its execution when the asked branch or tag
-has not been found in the SVN namespace (this is currently the default
-for SVN repositories that are yet checked out).
-With most DVCS checkouts, the -r, -t, and -b options are essentially
-synonyms. If given a -d option, checkout is performed from the directory
-specified; this may be convenient when working with CVS or Subversion in
-order to select the repository directory.
+include::toolcommands.inc[]
 
 There is one special checkout option:
 
@@ -83,22 +39,6 @@ There is one special checkout option:
 	Pass the following option through to the underlying
 	checkout command. Can be used, for example, to pass
 	in Subversion's --ignore-externals option.
-
-The 'compare' action takes two repository directories. It may
-optionally take a tag-branch-revision spec as for the checkout
-option. You can also pass two revisions separated by a colon to the -r
-option, to have the first one checked out in the first repository and
-the second one in the second repository. That permits one to compare
-two different revisions, or the same revision referenced differently
-in two VCS. You can leave one of the two revisions empty, then the -r
-option will not be passed to the corresponding repository checkout.
-This is useful to compare a git tag or branch to the corresponding tag
-or branch in SVN as seen at a particular revision (specifying both a
-branch and revision makes sense in SVN, but not in git).  The selected
-versions are compared with diff -r, with noise due to SCCS/RCS/CVS
-keyword expansion ignored.  File permissions well as
-content are checked, any mismatches will be shown after the diff
-listing.
 
 The compare operation accepts the following options:
 
@@ -130,55 +70,6 @@ The compare operation accepts the following options:
 
 -i::
 	Perform comparison of normally ignored dot directories
-
-The 'compare-tags' action takes two repository directories, extracts a
-list of tags from the first, then compares the repository contents at
-each tag in the list, generating a compare report for each.  Takes
-compare options.  Additionally the -e option sets exclude patterns for
-tag names that should be ignored.
-
-The 'compare-branches' action takes two repository directories,
-extracts a list of branches common to both, then compares the
-repository contents at each branch in the list, generating a compare
-report for each. Takes compare options.  Additionally the -e option
-sets exclude patterns for branch names that should be ignored.
-
-The 'compare-all' action takes two repository directories, and runs
-all three above compare actions on them. Even if the same name is a
-tag in one repository and a branch in the other, it will compare them
-against each other. Not distinguishing them is useful as CVS tags that
-are not applied to every file in the repository may get converted to
-branches.  Takes compare options.  Additionally the -e option sets
-exclude patterns for tag and branch names that should be ignored.
-
-The 'mirror' action makes or updates a local mirror of a
-Subversion, CVS, git, or hg repo. It requires a single argument,
-either a repository URL or the name of a local mirror directory
-created by a previous run. The first form creates a local mirror of
-the repository in a directory named after the last segment of the URL,
-with the suffix "-mirror" (the local mirror name can be
-overridden by an optional second argument). The second form updates
-the local mirror, doing an incremental fetch; just give the mirror
-directory name.  If the environment variables RUSERNAME and RPASSWORD
-are set, they are used as login/password credentials for Subversion
-mirroring.
-
-Subversion URLs are as specified in the public documentation for
-Subversion.  CVS URLs must specify a host and repository path,
-followed by a '#', followed by a module name.  URLs for git and hg
-should be in the form normally used for clone commands.
-Alternatively, a repository URL may be a "file://" URL, in which
-case the repository type is autodetected from the contents of
-the indicated directory. Note: A Subversion file URL has *three*
-slashes after the "file:" prefix!
-
-The mirror command can also be passed an rsync URL.  This
-will usually be faster than mirroring through an equivalent
-Subversion URL.
-
-The "version" command reports the version level of the software.
-
-The "help" command displays a summary of commands and options.
 
 [[environment]]
 == ENVIRONMENT VARIABLES ==

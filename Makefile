@@ -38,7 +38,7 @@ AWK = awk
 endif
 
 # Binaries need to be built before generated documentation parts can be made.
-all: build cuttercommands.inc $(MANPAGES) $(HTMLFILES)
+all: build cuttercommands.inc toolcommands.inc $(MANPAGES) $(HTMLFILES)
 
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
@@ -255,6 +255,9 @@ surgeon/help-index.go: help-index.awk repository-editing.adoc
 cuttercommands.inc: build
 	./repocutter -q docgen >cuttercommands.inc
 
+toolcommands.inc: build
+	./repotool docgen >toolcommands.inc
+
 #
 # Auxiliary Go tooling productions
 #
@@ -278,7 +281,7 @@ fmt:
 #
 clean:
 	rm -f $(BINARIES) surgeon/version.go
-	rm -fr docinclude cuttercommands.inc *~ *.1 *.html *.tar.xz MANIFEST *.md5
+	rm -fr docinclude cuttercommands.inc toolcommands.inc *~ *.1 *.html *.tar.xz MANIFEST *.md5
 	rm -fr .rs .rs* test/.rs test/.rs*
 	rm -f typescript test/typescript
 
