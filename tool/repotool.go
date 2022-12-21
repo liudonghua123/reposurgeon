@@ -1290,8 +1290,9 @@ exclude patterns for tag and branch names that should be ignored.
 `},
 	"help": {
 		"help [command]",
-		"emit help about rrepotool commands",
+		"emit help about repotool commands",
 		`The "help" command displays a summary of commands and options.
+With a following argument that is a command name, display detailed help for that command.
 `},
 }
 
@@ -1344,7 +1345,8 @@ func main() {
 
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr,
-			"repotool: requires an operation argument.\n")
+			"repotool: requires a subcommand argument - do 'repotool help' for a subcommand list.\n")
+		os.Exit(1)
 	}
 	operation := os.Args[1]
 
