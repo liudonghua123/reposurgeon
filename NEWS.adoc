@@ -1,5 +1,11 @@
 = reposurgeon project news =
 
+Repository head::
+     Some potentially unsave shellouts have been fixed.
+     Format --fossil is no loinger broken.
+     Fix segfault when listing descendants of orphaned commit.
+     Ensure that repocutter is quieted when output is not stdout.
+
 4.32: 2022-04-28::
      "lint" command no longer accidentally clears most Q bits.
      repocutter renumber no longer mangles mergeinfo properties.
