@@ -26,6 +26,7 @@ import (
 
 	readline "github.com/chzyer/readline"
 	difflib "github.com/ianbruene/go-difflib/difflib"
+	term "golang.org/x/term"
 )
 
 // Define a couplee of partial capability tables for querying
@@ -1197,6 +1198,9 @@ options:
 	operation := os.Args[1]
 
 	flags.Parse(os.Args[2:])
+
+	// Suppress progress indicator if output is redirected, not a terminal
+	quiet = quiet && !term.IsTerminal(int(os.Stdout.Fd()))
 
 	if !strings.HasPrefix(operation, "compare") && (acceptMissing || context || seeignores || same) {
 		croak("compare option with non-compare operation, bailing out.")

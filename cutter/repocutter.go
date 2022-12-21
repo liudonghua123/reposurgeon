@@ -510,7 +510,9 @@ func (baton *Baton) End(msg string) {
 	if msg == "" {
 		msg = baton.endmsg
 	}
-	fmt.Fprintf(baton.stream, "...(%s) %s.\n", time.Since(baton.time), msg)
+	if term.IsTerminal(int(baton.stream.Fd())) {
+		fmt.Fprintf(baton.stream, "...(%s) %s.\n", time.Since(baton.time), msg)
+	}
 }
 
 func croak(msg string, args ...interface{}) {
