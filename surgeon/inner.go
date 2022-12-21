@@ -4439,6 +4439,24 @@ func matchesSubversionHeader(line []byte) bool {
 	return bytes.HasPrefix(line, []byte("SVN-fs-dump-format-version: "))
 }
 
+func matchesFastImportHeader(line []byte) bool {
+	// Not yet used, but there's a unit test.
+	var headerAlternatives = []string{
+		"blob",
+		"commit",
+		"feature",
+		"reset",
+		"#",
+	}
+
+	for _, prefix := range headerAlternatives {
+		if bytes.HasPrefix(line, []byte(prefix)) {
+			return true
+		}
+	}
+	return false
+}
+
 func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesize int64) {
 	// Beginning of fast-import stream parsing
 	commitcount := 0

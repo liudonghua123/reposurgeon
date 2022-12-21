@@ -515,6 +515,27 @@ Magic cookie.
 
 }
 
+func TestFastImportHeaderDetection(t *testing.T) {
+	type headerTestEntry struct {
+		header   string
+		expected bool
+	}
+	tests := []headerTestEntry{
+		// Test lines were derived by mining all the .fi files
+		// in the test suite, plus a deliberate non-match.
+		{"blob", true},
+		{"commit refs/heads/master", true},
+		{"feature commit-properties", true},
+		{"#reposurgeon sourcetype git", true},
+		{"#reposurgeon sourcetype svn", true},
+		{"reset refs/tags/LABEL_2002_11_05_0120", true},
+		{"random cruft", false},
+	}
+	for _, item := range tests {
+		assertBool(t, item.expected, matchesFastImportHeader([]byte(item.header)))
+	}
+}
+
 func TestDateFormats(t *testing.T) {
 	toGitdump := func(from string) string {
 		d, err := newDate(from)
