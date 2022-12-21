@@ -47,7 +47,7 @@ them as literal strings.
 
 Normally, each subcommand produces a progress spinner on standard error; each
 turn means another revision has been filtered. The -q (or --quiet) option
-suppresses this.
+suppresses this. Quiet mode is set when output is redirected to a file or pipe.
 
 Type 'repocutter help <subcommand>' for help on a specific subcommand.
 

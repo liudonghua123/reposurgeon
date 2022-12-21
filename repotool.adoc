@@ -121,7 +121,9 @@ The compare operation accepts the following options:
 	Emit context diff.
 
 -q::
-	Suppress nonfatal errors and progress spinners.
+	Suppress nonfatal errors and progress spinners. The progress
+	sinner is also suppressed when output is redirected to a
+	file or pipe.
 
 -s::
 	List matching files.
