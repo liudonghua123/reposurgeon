@@ -4435,6 +4435,10 @@ func parseInt(s string) int {
 	return n
 }
 
+func matchesSubversionHeader(line []byte) bool {
+	return bytes.HasPrefix(line, []byte("SVN-fs-dump-format-version: "))
+}
+
 func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesize int64) {
 	// Beginning of fast-import stream parsing
 	commitcount := 0
@@ -4706,6 +4710,9 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 			tag.hash = hash
 			tag.legacyID = legacyID
 			sp.repo.addEvent(tag)
+		} else if matchesSubversionHeader(line) {
+			// A Subversion header not inside a data blob is an error
+			sp.error("unexpected Subversion header in fast-import stream")
 		} else {
 			// Simply pass through any line we do not understand.
 			sp.repo.addEvent(newPassthrough(sp.repo, string(line)))
@@ -4795,7 +4802,7 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 		}
 		return ""
 	}
-	if bytes.HasPrefix(line, []byte("SVN-fs-dump-format-version: ")) {
+	if matchesSubversionHeader(line) {
 		body := string(sdBody(line))
 		if body != "1" && body != "2" {
 			sp.error("unsupported dump format version " + body)
