@@ -98,17 +98,17 @@ to dropped revisions.
 `},
 	"filecopy": {
 		"Resolve filecopy operations on a stream.",
-		`filecopy: usage: repocutter [-n|-basename] [-r SELECTION] filecopy [PATH]
+		`filecopy: usage: repocutter [-n|-basename] [-f|-fixed] [-r SELECTION] filecopy [PATTERN]
 
 For each node in the revision range, stash the current version of the
 node-path's content.  For each later file copy operation with that source,
 replace the file copy with an explicit add/change using the stashed content.
 
-If a PATH argument is provided, only replace copies with an explicit
-add/change when the source node path is PATH.
+If a PATTERN argument is provided, only replace copies with an explicit
+add/change when the source node path matches PATTERN.
 
-With the -n flag, only the basename is required to match PATH if it is
-provided. Otherwise, with -n and no PATH, require a match of source to
+With the -n flag, only the basename is required to match PATTERN if it is
+provided. Otherwise, with -n and no PATTERN, require a match of source to
 target on basename only rather than the full path. This may be required
 in order to extract filecopies from branches.
 
@@ -1776,10 +1776,14 @@ func expungesift(source DumpfileSource, selection SubversionRange, expunge bool,
 }
 
 // Replace file copy operations with explicit add/change operation
-func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool, matchpaths []string) {
+func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool, fixed bool, patterns []string) {
 	type trackCopy struct {
 		revision int
 		content  []byte
+	}
+	var matcher SegmentMatcher
+	if len(patterns) > 0 {
+		matcher = NewSegmentMatcher(patterns, fixed)
 	}
 	values := make(map[string][]trackCopy)
 	var replacement []byte
@@ -1850,7 +1854,7 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 			}
 		}
 		if stashcontent && content != nil && len(content) > 0 {
-			if len(matchpaths) > 0 && matchpaths[0] != nodePath {
+			if len(patterns) > 0 && !matcher.pathmatch(string(nodePath)) {
 				return content
 			}
 			trampoline := values[nodePath]
@@ -2928,7 +2932,7 @@ func main() {
 	case "expunge":
 		expungesift(NewDumpfileSource(input, baton), selection, true, fixed, flag.Args()[1:])
 	case "filecopy":
-		filecopy(NewDumpfileSource(input, baton), selection, basename, flag.Args()[1:])
+		filecopy(NewDumpfileSource(input, baton), selection, basename, fixed, flag.Args()[1:])
 	case "help":
 		assertNoSelection()
 		if len(flag.Args()) == 1 {
