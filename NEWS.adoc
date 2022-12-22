@@ -1,5 +1,9 @@
 = reposurgeon project news =
 
+Repository head::
+     Change repoctter -f (basename) option to -n.
+     Default filecopy to matching a regexp; -f now undoes this.
+
 4.33: 2022-12-21::
      Some potentially unsave shellouts have been fixed.
      Format --fossil is no loinger broken.
