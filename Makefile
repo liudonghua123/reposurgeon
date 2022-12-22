@@ -17,7 +17,8 @@ SOURCES += $(META) $(DOCS) COPYING
 .PHONY: all build install uninstall version check release refresh \
 	docker-build docker-check docker-check-noscm get test fmt lint
 
-# Conditionalize building of documentation on wherther our formatter is installed
+# Conditionalize building of documentation on whether our formatter is installed
+# Building the documentation also requires awk and ruby.
 ifneq (, $(shell which asciidoctor))
 HTMLFILES = $(DOCS:.adoc=.html) $(META:.adoc=.html)
 endif
