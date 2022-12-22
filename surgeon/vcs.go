@@ -1,4 +1,4 @@
-// vcs ncapsulates of VCS capabilities
+// vcs - encapsulates of VCS capabilities
 
 // Copyright by Eric S. Raymond
 // SPDX-License-Identifier: BSD-2-Clause
@@ -53,7 +53,7 @@ type VCS struct {
 	authormap    string           // Where importer might drop an authormap
 	ignorename   string           // Where the ignore patterns live
 	dfltignores  string           // Default ignore patterns
-	cookies      []regexp.Regexp  // How to recogbnize a commit reference
+	cookies      []regexp.Regexp  // How to recognize a possible commit reference
 	project      string           // VCS project URL
 	notes        string           // Notes and caveats
 	// Hidden members
