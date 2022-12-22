@@ -2038,8 +2038,7 @@ func TestFilterRegex(t *testing.T) {
 	// committer, and comment, . Replacement tested against repeat
 	// flags 0,1,2,g
 
-	rawdump := `
-blob
+	rawdump := `blob
 mark :1
 data 14
 BLB o123-o123

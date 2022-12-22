@@ -4440,7 +4440,6 @@ func matchesSubversionHeader(line []byte) bool {
 }
 
 func matchesFastImportHeader(line []byte) bool {
-	// Not yet used, but there's a unit test.
 	var headerAlternatives = []string{
 		"blob",
 		"commit",
@@ -4833,7 +4832,7 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 			baton.printLogString(fmt.Sprintf("%d svn revisions%s",
 				sp.repo.legacyCount, rate(sp.repo.legacyCount*1000)))
 		}
-	} else {
+	} else if matchesFastImportHeader(line) {
 		sp.pushback(line)
 		sp.parseFastImport(options, baton, filesize)
 		sp.timeMark("parsing")
@@ -4846,6 +4845,8 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 					len(sp.repo.events), rate(len(sp.repo.events))))
 			}
 		}
+	} else {
+		sp.error(fmt.Sprintf("unexpected header on import stream: %q", line))
 	}
 	//baton.endProcess()
 	baton = nil
