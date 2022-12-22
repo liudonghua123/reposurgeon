@@ -98,16 +98,19 @@ to dropped revisions.
 `},
 	"filecopy": {
 		"Resolve filecopy operations on a stream.",
-		`filecopy: usage: repocutter [-f] [-r SELECTION] filecopy [BASENAME]
+		`filecopy: usage: repocutter [-n|-basename] [-r SELECTION] filecopy [PATH]
 
 For each node in the revision range, stash the current version of the
 node-path's content.  For each later file copy operation with that source,
 replace the file copy with an explicit add/change using the stashed content.
 
-With the -f flag and a BASENAME argument, require the source basename
-to be as specified.  Otherwise, with -f and no BASENAME, require a
-match of source to target on basename only rather than the full path.
-This may be required in order to extract filecopies from branches.
+If a PATH argument is provided, only replace copies with an explicit
+add/change when the source node path is PATH.
+
+With the -n flag, only the basename is required to match PATH if it is
+provided. Otherwise, with -n and no PATH, require a match of source to
+target on basename only rather than the full path. This may be required
+in order to extract filecopies from branches.
 
 Restricting the range holds down the memory requirement of this tool,
 which in the worst (and default) 1:$ case will keep a copy of every blob
@@ -1789,15 +1792,11 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 				"<r%s: filecopy investigates this revision>\n",
 				source.where())
 		}
+		if byBasename {
+			nodePath = filepath.Base(nodePath)
+		}
 		if _, ok := values[nodePath]; !ok {
 			values[nodePath] = make([]trackCopy, 0)
-		}
-		if byBasename {
-			if len(matchpaths) > 0 {
-				nodePath = matchpaths[0]
-			} else {
-				nodePath = filepath.Base(nodePath)
-			}
 		}
 		replacement = nil
 		// The logic here is a bit more complex than might seem necessary
@@ -1851,6 +1850,9 @@ func filecopy(source DumpfileSource, selection SubversionRange, byBasename bool,
 			}
 		}
 		if stashcontent && content != nil && len(content) > 0 {
+			if len(matchpaths) > 0 && matchpaths[0] != nodePath {
+				return content
+			}
 			trampoline := values[nodePath]
 			trampoline = append(trampoline, trackCopy{source.Revision, content})
 			values[nodePath] = trampoline
@@ -2833,6 +2835,7 @@ func testify(source DumpfileSource, counter int) {
 func main() {
 	selection := NewSubversionRange("0:HEAD")
 	var base int
+	var basename bool
 	var fixed bool
 	var logentries string
 	var property string
@@ -2842,6 +2845,8 @@ func main() {
 	input := os.Stdin
 	flag.IntVar(&base, "b", 0, "base value to renumber from")
 	flag.IntVar(&base, "base", 0, "base value to renumber from")
+	flag.BoolVar(&basename, "n", false, "filecopy based on basename")
+	flag.BoolVar(&basename, "basename", false, "filecopy based on basename")
 	flag.IntVar(&debug, "d", 0, "enable debug messages")
 	flag.IntVar(&debug, "debug", 0, "enable debug messages")
 	flag.BoolVar(&fixed, "f", false, "disable regexp interpretation")
@@ -2923,7 +2928,7 @@ func main() {
 	case "expunge":
 		expungesift(NewDumpfileSource(input, baton), selection, true, fixed, flag.Args()[1:])
 	case "filecopy":
-		filecopy(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
+		filecopy(NewDumpfileSource(input, baton), selection, basename, flag.Args()[1:])
 	case "help":
 		assertNoSelection()
 		if len(flag.Args()) == 1 {
