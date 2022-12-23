@@ -29,7 +29,9 @@ MANPAGES  = $(PAGES:.adoc=.1)
 SHARED    = $(META) reposurgeon-git-aliases $(HTMLFILES) COPYING
 
 .PHONY: all fullinstall build stable-golang current-golang helpers test-helpers \
-		get test lint fmt clean install uninstall dist release refresh
+		docincludes get test lint fmt clean install uninstall dist version \
+		check fixme dist docker-build docker-check docker-check-scm release \
+		refresh
 
 awk_supports_posix_arg = $(shell awk --posix "" >/dev/null 2>&1; echo $$?)
 ifeq ($(awk_supports_posix_arg), 0)
@@ -74,7 +76,6 @@ current-golang:
 helpers:
 	command -v asciidoctor >/dev/null 2>&1 || sudo apt-get -y install asciidoctor
 	command -v awk >/dev/null 2>&1 || sudo apt-get -y install gawk
-
 
 test-helpers:
 	sudo apt-get -y install cvs-fast-export subversion cvs mercurial rsync golint shellcheck
