@@ -78,6 +78,14 @@ The 'closure' subcommand computes the transitive closure of a path set under the
 relation 'copies from' - that is, with the smallest set of additional paths such
 that every copy-from source is in the set.
 `},
+	"count": {
+		"List the last revision number in the input stream",
+		`count: usage: repocutter [-q] count
+
+The 'count' subcommand lists the last revision number in the input stream. 
+This is normally the revision count, buut may not if the stream has omitted 
+revisions.
+`},
 	"deselect": {
 		"Deselecting revisions",
 		`deselect: usage: repocutter [-q] [-r SELECTION] deselect
@@ -418,6 +426,7 @@ var narrativeOrder []string = []string{
 	"deselect",
 	"see",
 	"renumber",
+	"count",
 
 	"log",
 	"setlog",
@@ -1732,6 +1741,20 @@ func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	}
 }
 
+func count(source DumpfileSource) {
+	var revision []byte
+	revhook := func(header StreamSection) []byte {
+		revision = header.payload("Revision-number")
+		return header
+	}
+	prophook := func(prop *Properties) {
+	}
+	headerhook := func(header StreamSection) []byte { return nil }
+	source.Report(revhook, prophook, headerhook, nil)
+	os.Stdout.Write(revision)
+	os.Stdout.WriteString("\n")
+}
+
 // Select a portion of the dump file defined by a revision selection.
 func deselect(source DumpfileSource, selection SubversionRange) {
 	doSelect(source, selection, true)
@@ -2922,6 +2945,8 @@ func main() {
 	switch flag.Arg(0) {
 	case "closure":
 		closure(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+	case "count":
+		count(NewDumpfileSource(input, baton))
 	case "deselect":
 		assertNoArgs()
 		deselect(NewDumpfileSource(input, baton), selection)
