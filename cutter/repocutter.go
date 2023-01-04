@@ -483,7 +483,7 @@ func dumpDocs() {
 	}
 }
 
-var tag string
+var errortag string
 
 // Baton - ship progress indications to stderr
 type Baton struct {
@@ -535,7 +535,7 @@ func (baton *Baton) End(msg string) {
 }
 
 func croak(msg string, args ...interface{}) {
-	legend := "repocutter" + tag + ": croaking, " + msg + "\n"
+	legend := "repocutter" + errortag + ": croaking, " + msg + "\n"
 	fmt.Fprintf(os.Stderr, legend, args...)
 	os.Exit(1)
 }
@@ -1332,7 +1332,7 @@ func (ds *DumpfileSource) Report(
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
 				// Putting this check here rather than at the top of the look
-				// guarantees it won't firte on revision 0
+				// guarantees it won't fire on revision 0
 				if revhook != nil {
 					line = revhook(StreamSection(line))
 				}
@@ -2897,13 +2897,13 @@ func main() {
 	flag.StringVar(&rangestr, "range", "", "set selection range")
 	flag.StringVar(&segment, "s", "trunk", "set set segment for push operation")
 	flag.StringVar(&segment, "segment", "trunk", "set set segment for push operation")
-	flag.StringVar(&tag, "t", "", "set error tag")
-	flag.StringVar(&tag, "tag", "", "set error tag")
+	flag.StringVar(&errortag, "t", "", "set error tag")
+	flag.StringVar(&errortag, "tag", "", "set error tag")
 	// Available: aceghjkmopuvwxyz
 	flag.Parse()
 
-	if tag != "" {
-		tag = "(" + tag + ")"
+	if errortag != "" {
+		errortag = "(" + errortag + ")"
 	}
 	if rangestr != "" {
 		selection = NewSubversionRange(rangestr)
