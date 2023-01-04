@@ -66,6 +66,13 @@ const debugPARSE = 2
 
 var quiet bool
 
+const invalidationWarning = `
+Warning: it is not guaranteed that the output of this subcommand will be a
+valid dump that can be read by reposurgeon. In particular, it may delete 
+a revision that is referenced in a later copy-from operation, which will
+crash reposurgeon.
+`
+
 var helpdict = map[string]struct {
 	oneliner string
 	text     string
@@ -92,8 +99,8 @@ revisions.
 
 The 'deselect' subcommand selects a range and permits only revisions and nodes
 NOT in that range to pass to standard output.  Any mergeinfo properties in other
-revisions are updated so they no longer refer to dropped revisiomns.
-`},
+revisions are updated so they no longer refer to dropped revisions.
+` + invalidationWarning},
 	"expunge": {
 		"Expunge operations by Node-path header",
 		`expunge: usage: repocutter [-r SELECTION ] [-f|-fixed] expunge PATTERN...
@@ -103,7 +110,7 @@ specified Golang regular expressions (opposite of 'sift').  Any revision
 left with no Node records after this filtering has its Revision record dropped as
 well. Mergeinfo properties in all revisions are updated so they no longer refer
 to dropped revisions.
-`},
+` + invalidationWarning},
 	"filecopy": {
 		"Resolve filecopy operations on a stream.",
 		`filecopy: usage: repocutter [-n|-basename] [-f|-fixed] [-r SELECTION] filecopy [PATTERN]
@@ -282,7 +289,7 @@ The 'select' subcommand selects a range and permits only revisions and
 nodes in that range to pass to standard output.  A range beginning with 0
 includes the dumpfile header. Mergeinfo properties in all revisions are
 updated so they no longer refer to omitted revisions.
-`},
+` + invalidationWarning},
 	"setcopyfrom": {
 		"Set the copyfrom path.",
 		`setcopyfrom: usage: repocutter {-r SELECTION} setcopyfrom PATH
@@ -317,7 +324,7 @@ removed as well. Mergeinfo properties in all revisions are updated so they no lo
 to dropped revisions.
 
 This transform can be restricted by a selection set.
-`},
+` + invalidationWarning},
 	"skipcopy": {
 		"Skip an intermediate copy chain between specified revisions",
 		`skipcopy: usage: repocutter {-r selection} skipcopy
@@ -2892,6 +2899,7 @@ func main() {
 	flag.StringVar(&segment, "segment", "trunk", "set set segment for push operation")
 	flag.StringVar(&tag, "t", "", "set error tag")
 	flag.StringVar(&tag, "tag", "", "set error tag")
+	// Available: aceghjkmopuvwxyz
 	flag.Parse()
 
 	if tag != "" {
