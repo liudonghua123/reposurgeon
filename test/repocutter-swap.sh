@@ -1,4 +1,5 @@
 #!/bin/sh
 ## Test path-element swapping
-${REPOCUTTER:-repocutter} -q swap <swap.svn
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" swap <swap.svn
 

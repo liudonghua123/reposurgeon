@@ -1,4 +1,5 @@
 #!/bin/sh
 ## Test structural path-element swapping
-${REPOCUTTER:-repocutter} -q swapsvn <multigen.svn | repocutter -q see
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" swapsvn <multigen.svn | repocutter -q see
 

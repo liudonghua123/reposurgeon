@@ -1,6 +1,7 @@
 #!/bin/sh
 ## Test testification
-${REPOCUTTER:-repocutter} -q testify <simpletag.svn
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" testify <simpletag.svn
 
 
 

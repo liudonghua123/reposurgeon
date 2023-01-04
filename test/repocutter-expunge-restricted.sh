@@ -1,3 +1,4 @@
 #!/bin/sh
 ## Test path expunge with range restriction
-${REPOCUTTER:-repocutter} -q -r 3 expunge 'README' <simpletag.svn
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" -r 3 expunge 'README' <simpletag.svn

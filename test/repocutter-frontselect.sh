@@ -1,4 +1,5 @@
 #!/bin/sh
 ## Test front selection
-${REPOCUTTER:-repocutter} -q -r 0:3 select <vanilla.svn
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" -r 0:3 select <vanilla.svn
 

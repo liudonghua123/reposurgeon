@@ -1,7 +1,8 @@
 #!/bin/sh
 ## Test patching of mergeinfo references in renumber
 # There's a gap in the revisioning number at 3.
-${REPOCUTTER:-repocutter} -q renumber <<EOF
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" renumber <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: 7a7f4d26-e363-49a8-afdf-ef5f249c7278

@@ -3,7 +3,8 @@
 # This testload is inlined because it's not really well-formed -
 # git gets upsset when trying to load its conversion because
 # there aren't any fileops.
-${REPOCUTTER:-repocutter} -q expunge '^b' <<EOF
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" expunge '^b' <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: 6e868012-05bc-44e9-9b01-24c952eac42c

@@ -1,4 +1,5 @@
 #!/bin/sh
 ## Test obscuring of filenames
-${REPOCUTTER:-repocutter} -q obscure <nut.svn
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" obscure <nut.svn
 

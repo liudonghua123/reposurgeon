@@ -1,6 +1,7 @@
 #!/bin/sh
 ## Test node deselection
-${REPOCUTTER:-repocutter} -q -r 3339.1,4431.11:4431:16 deselect <<EOF
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" -r 3339.1,4431.11:4431:16 deselect <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: c97812fc-d253-487b-8882-a03e205d4398

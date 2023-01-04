@@ -1,3 +1,4 @@
 #!/bin/sh
 ## Test path-set closure operation
-${REPOCUTTER:-repocutter} -q closure branches/import <cvstag.svn 
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" closure branches/import <cvstag.svn 

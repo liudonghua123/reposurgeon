@@ -1,3 +1,4 @@
 #!/bin/sh
 ## Test strip subcommand to skeletonize a repo
-${REPOCUTTER:-repocutter} -q <vanilla.svn strip
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" <vanilla.svn strip

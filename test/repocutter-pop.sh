@@ -1,6 +1,7 @@
 #!/bin/sh
 ## Test path-seqment popping
-${REPOCUTTER:-repocutter} -q pop <<EOF
+# shellcheck disable=SC2086
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" pop <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: be5bedff-a577-4def-8afe-cf522686966a
