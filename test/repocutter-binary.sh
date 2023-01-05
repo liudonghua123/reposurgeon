@@ -1,7 +1,7 @@
 #!/bin/sh
 ## Test repocutter handling of binary data in a log
 # shellcheck disable=SC2086
-${REPOCUTTER:-repocutter} -q -t "$(basename $0)" log <<EOF
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" log 2>&1 <<EOF
 Revision-number: 3640
 Prop-content-length: 217
 Content-length: 217

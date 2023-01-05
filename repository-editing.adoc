@@ -3198,6 +3198,27 @@ part of the history.
 [[troubleshooting]]
 == Troubleshooting and bug reports
 
+[[reposurgeon-crashes]]
+=== When reposurgeon crashes
+
+If reposurgeon crashes on a Subversion stream dump that has not been
+altered or filtered in any way since being emitted by svnadmin dump,
+that is definitely a bug; please <<reporting-bugs,report it as such>>.
+To speed up the fix, follow the instructions on preparing a reduced
+test case.
+
+You are more likely to see a crash when processing a stream that has
+beem modified by filtering out unwanted commits, e.g. via select or
+expunge or sift commands.  The most common problem is copyfrom
+operations referring to a source revision that has been removed;
+
+repocutter emits warnings on stderr when it writes a stream with
+missing copyfrom sources, but reposurgeon will crash when presented
+with such a stream. If you have a conversion pipeline that uses
+repocutter, the right first step is to review that ipeline carefully.
+Make sure you haven't discarded standard error, and look for
+"unfulfilled" mewssages indicating a missing copyfrom revision.
+
 [[oom]]
 === Dealing with memory exhaustion
 

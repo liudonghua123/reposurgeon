@@ -19,5 +19,5 @@ If you see this in the output, the range restriction failed.
 
 EOF
 # shellcheck disable=SC2086
-${REPOCUTTER:-repocutter} -q -t "$(basename $0)" -r 2:4 -logentries=/tmp/logentries$$ setlog <vanilla.svn
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" -r 2:4 -logentries=/tmp/logentries$$ setlog <vanilla.svn 2>&1
 

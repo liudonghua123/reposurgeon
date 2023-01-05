@@ -19,7 +19,7 @@ then
 fi
 
 # shellcheck disable=SC2086
-${REPOCUTTER:-repocutter} ${DEBUGOPT} -q -t "$(basename $0)" -r 5:6 filecopy <filecopy.svn >/tmp/resolved$$.svn
+${REPOCUTTER:-repocutter} ${DEBUGOPT} -q -t "$(basename $0)" -r 5:6 filecopy <filecopy.svn >/tmp/resolved$$.svn 2>&1
 
 if [ "$stream" = True ]
 then

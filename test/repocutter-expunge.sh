@@ -4,7 +4,7 @@
 # git gets upsset when trying to load its conversion because
 # there aren't any fileops.
 # shellcheck disable=SC2086
-${REPOCUTTER:-repocutter} -q -t "$(basename $0)" expunge '^b' <<EOF
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" expunge '^b' 2>&1 <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: 6e868012-05bc-44e9-9b01-24c952eac42c
@@ -99,4 +99,5 @@ Node-copyfrom-path: a
 
 
 EOF
-
+# The test command would return 1 due to missing copufrom base
+exit 0

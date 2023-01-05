@@ -1,7 +1,7 @@
 #!/bin/sh
 ## Test path-seqment pushing
 # shellcheck disable=SC2086
-${REPOCUTTER:-repocutter} -q -t "$(basename $0)" -s PREFIX push <<EOF
+${REPOCUTTER:-repocutter} -q -t "$(basename $0)" -s PREFIX push 2>&1 <<EOF
 SVN-fs-dump-format-version: 2
 
 UUID: be5bedff-a577-4def-8afe-cf522686966a

@@ -6,5 +6,5 @@
 # The output file should not contain XX
 # because WI is not a segment match.
 # shellcheck disable=SC2086
-${REPOCUTTER:-repocutter} -r 3:5 -q -t "$(basename $0)" pathrename README WOBBLE WOBBLE WIBBLE WI XX <vanilla.svn
+${REPOCUTTER:-repocutter} -r 3:5 -q -t "$(basename $0)" pathrename README WOBBLE WOBBLE WIBBLE WI XX <vanilla.svn 2>&1
 

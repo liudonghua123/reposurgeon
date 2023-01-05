@@ -108,8 +108,8 @@ svnaction() {
 }
 
 svndump() {
-    # shellcheck disable=SC1117,SC1004,SC2006
-    svnadmin dump -q "$1" | repocutter -q testify | sed "1a\
+    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
+    svnadmin dump -q "$1" | repocutter -q -t "$(vasename $0)" testify | sed "1a\
 \ ## $2
 " | sed "2a\
 \ # Generated - do not hand-hack!
@@ -121,12 +121,13 @@ svnwrap() {
 }
 
 seecompare () {
-    # Tages a test file on stdin. The arguments the arguments are the command
+    # Takes a test file on stdin. The arguments the arguments are the command
     trap 'rm -f /tmp/seecompare-before$$ /tmp/infile$$' EXIT HUP INT QUIT TERM
     cat >"/tmp/infile$$"
-    ${REPOCUTTER:-repocutter} -q see <"/tmp/infile$$" >/tmp/seecompare-before$$
+    # shellcheck disable=SC2086
+    ${REPOCUTTER:-repocutter} -q -t "$(basename $0)" see <"/tmp/infile$$" >/tmp/seecompare-before$$ 2>&1
     # shellcheck disable=SC2086,2048
-    ${REPOCUTTER:-repocutter} -q $* <"/tmp/infile$$"| repocutter -q see >/tmp/seecompare-after$$
+    (${REPOCUTTER:-repocutter} -q -t "$(basename $0)" $* <"/tmp/infile$$" | repocutter -q -t "$(basename $0)" see >/tmp/seecompare-after$$) 2>&1
     diff --label Before --label After -u /tmp/seecompare-before$$ /tmp/seecompare-after$$
     exit 0
 }

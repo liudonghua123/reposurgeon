@@ -28,6 +28,10 @@ special name HEAD for the head revision. Or it may be a
 colon-separated pair of integers, or an integer followed by a colon
 followed by HEAD.
 
+If the output stream contains copyfrom references to missing revisions,
+repocutter will contain about each one on standard error and return
+failure at the end of the run
+
 (Older versions of this tool, before 4.30, treated -r as an implied
 selection filter rather than passing through unselected revisions
 unaltered. If you have old scripts using repocutter they may need
@@ -96,7 +100,12 @@ reposurgeon was written, the author learned that it could not
 naturally support some useful operations very specific to Subversion,
 and enhanced repocutter to do those.
 
-[[BUGS]]
+[[return-values]]
+== RETURN VALUES ==
+Normally 0. Can be 1 if repocutter sees an ill-formed dump, or if the
+output stream contains any copyfrom references to missing revisions.
+
+[[bugs]]
 == BUGS ==
 
 There is one regression since the Python version: repocutter no

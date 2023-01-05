@@ -59,6 +59,8 @@ Available subcommands and help topics:
 // which began life as 'svncutter' in 2009.  The obsolete
 // 'squash' command has been omitted.
 
+var exitval int
+
 var debug int
 
 const debugLOGIC = 1
@@ -532,6 +534,12 @@ func (baton *Baton) End(msg string) {
 	if term.IsTerminal(int(baton.stream.Fd())) {
 		fmt.Fprintf(baton.stream, "...(%s) %s.\n", time.Since(baton.time), msg)
 	}
+}
+
+func complain(msg string, args ...interface{}) {
+	legend := "repocutter" + errortag + ": " + msg + "\n"
+	fmt.Fprintf(os.Stderr, legend, args...)
+	exitval = 1
 }
 
 func croak(msg string, args ...interface{}) {
@@ -1204,8 +1212,11 @@ func (ds *DumpfileSource) Report(
 	headerhook func(header StreamSection) []byte,
 	contenthook func(header []byte) []byte) {
 
-	// The revhook is called once on every revision and can be used
-	// to modify the Revision-number line.
+	// The revhook is called once on every revision and can be
+	// used to modify the Revision-number line.  If it is nil the
+	// lines in revision headers are not modified, and the
+	// preamble (file header and UUID line) is passed through
+	// unaltered.
 	//
 	// The other hooks are called once per node, in the order listed.
 	//
@@ -1213,16 +1224,15 @@ func (ds *DumpfileSource) Report(
 	// node. It is called on every property section, both per-node
 	// and per-revision.  When called on the revision properties
 	// the value of ds.Index is zero, and will therefore match a
-	// range element with an unspecified node part.
+	// range element with an unspecified node part.  If this hook
+	// is nill the properties are not altered/
 	//
 	// headerhook is called on each node's headers.  If this hook
 	// returns nil, discarding the header, its properties and
 	// content are also discarded.
 	//
 	// contenthook is called on each node's content to mutate it.
-	//
-	// A nil hook argument means the section should be passed
-	// through unaltered.
+	// If the hook is nil the content is passed through unaltered.
 	//
 	// All hooks can count on the DumpfileSource members to be up to
 	// date, including NodePath and Revision and Index, because those.
@@ -1365,14 +1375,16 @@ func (ds *DumpfileSource) Report(
 						fmt.Fprintf(os.Stderr, "repocutter: unexpected EOF in node header\n")
 						os.Exit(1)
 					}
+					// Require copyfrom-path following copyfrom-rev
 					m := nodeCopyfrom.FindSubmatch(line)
 					if m != nil {
+						rawHeader = append(rawHeader, line...)
+						rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)
 						r := string(m[1])
-						if !ds.EmittedRevisions[r] {
-							rawHeader = append(rawHeader, line...)
-							rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)
-							continue
+						if len(ds.EmittedRevisions) > 0 && !ds.EmittedRevisions[r] {
+							complain("unfilfilled copyfrom %s at revision %d", r, ds.Revision)
 						}
+						continue
 					}
 					rawHeader = append(rawHeader, line...)
 					if string(line) == linesep {
@@ -3058,4 +3070,5 @@ func main() {
 	if baton != nil {
 		baton.End("")
 	}
+	os.Exit(exitval)
 }
