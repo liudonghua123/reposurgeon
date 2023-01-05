@@ -62,9 +62,9 @@ memory.
 The -f/-fixed option disables regexp compilation of PATTERN arguments,
 treating them as literal strings.
 
-The -t option sets a tag to be included in error message.  This will
-be useful for determining which stage of a multistage repocutter
-pipeline failed.
+The -t option sets a tag to be included in error and warning messages.
+This will be useful for determining which stage of a multistage
+repocutter pipeline failed.
 
 There are a few other command-specific options described under
 individual commands.
