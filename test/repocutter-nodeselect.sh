@@ -310,5 +310,3 @@ Node-action: delete
 
 
 EOF
-# FIXME: Repair the repocutter-nodeselect testload rather than ignoring the missing revision
-exit 0

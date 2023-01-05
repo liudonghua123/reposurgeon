@@ -694,6 +694,4 @@ bugfix
 
 
 EOF
-# FIXME: Repair the repocutter-mergeinfo testload rather than ignoring the missing revision
-exit 0
 
