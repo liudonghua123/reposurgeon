@@ -2687,7 +2687,7 @@ This shouldn't be a problem with normal use of reposurgeon, which
 calls svnadmin dump in its default mode generating version 2.
 
 If a stream file has gaps in the revision sequence, branch copy
-references to nonexistent revisions will be patches to refer to the
+references to nonexistent revisions will be patched to refer to the
 most recent existing revision before the missing one.
 
 Certain optional modifiers on the `<<read_cmd>>` command change
@@ -3210,12 +3210,12 @@ test case.
 You are more likely to see a crash when processing a stream that has
 beem modified by filtering out unwanted commits, e.g. via select or
 expunge or sift commands.  The most common problem is copyfrom
-operations referring to a source revision that has been removed;
+operations referring to a source revision that has been removed.
 
 repocutter emits warnings on stderr when it writes a stream with
 missing copyfrom sources, but reposurgeon will crash when presented
 with such a stream. If you have a conversion pipeline that uses
-repocutter, the right first step is to review that ipeline carefully.
+repocutter, the right first step is to review that pipeline carefully.
 Make sure you haven't discarded standard error, and look for
 "missing copyfrom source" mewssages indicating a missing copyfrom revision.
 

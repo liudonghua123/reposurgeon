@@ -1,13 +1,13 @@
 = reposurgeon project news =
 
 Repository head::
-     Change repoctter -f (basename) option to -n.
+     Change repocutter -f (basename) option to -n.
      Default filecopy to matching a regexp; -f now undoes this.
      Add repocutter count command.
-     Repocutter complains visbly on streams with missing copyfrom revsisions.
+     Repocutter complains visibly on streams with missing copyfrom revsisions.
 
 4.33: 2022-12-21::
-     Some potentially unsave shellouts have been fixed.
+     Some potentially unsafe shellouts have been fixed.
      Format --fossil is no loinger broken.
      Fix segfault when listing descendants of orphaned commit.
      Ensure that repocutter is quieted when output is not stdout.
