@@ -91,7 +91,7 @@ PROPS-END
 The quick brown fox jumped over the lazy dog.
 
 
-repocutter(repocutter-expunge-restricted.sh): unfilfilled copyfrom 3 at revision 4, line 147
+repocutter(repocutter-expunge-restricted.sh): missing copyfrom source 3 at revision 4, line 147
 Revision-number: 4
 Prop-content-length: 122
 Content-length: 122

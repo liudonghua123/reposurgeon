@@ -1382,7 +1382,7 @@ func (ds *DumpfileSource) Report(
 						// Can't do this check if there's a revhook, if there is one
 						// it probably messed with the revision number.
 						if revhook == nil && len(ds.EmittedRevisions) > 0 && !ds.EmittedRevisions[r] {
-							complain("unfilfilled copyfrom %s at revision %d, line %d", r, ds.Revision, ds.Lbs.linenumber)
+							complain("missing copyfrom source %s at revision %d, line %d", r, ds.Revision, ds.Lbs.linenumber)
 						}
 						rawHeader = append(rawHeader, line...)
 						rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)

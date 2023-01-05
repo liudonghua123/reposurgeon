@@ -3217,7 +3217,7 @@ missing copyfrom sources, but reposurgeon will crash when presented
 with such a stream. If you have a conversion pipeline that uses
 repocutter, the right first step is to review that ipeline carefully.
 Make sure you haven't discarded standard error, and look for
-"unfulfilled" mewssages indicating a missing copyfrom revision.
+"missing copyfrom source" mewssages indicating a missing copyfrom revision.
 
 [[oom]]
 === Dealing with memory exhaustion

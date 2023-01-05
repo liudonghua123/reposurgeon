@@ -39,7 +39,7 @@ Content-length: 10
 PROPS-END
 
 
-repocutter(repocutter-expunge.sh): unfilfilled copyfrom 2 at revision 3, line 90
+repocutter(repocutter-expunge.sh): missing copyfrom source 2 at revision 3, line 90
 Revision-number: 3
 Prop-content-length: 176
 Content-length: 176
