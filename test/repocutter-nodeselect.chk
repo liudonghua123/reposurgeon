@@ -202,7 +202,7 @@ Content-length: 10
 PROPS-END
 
 
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 217
 Node-path: trunk/HFM/src
 Node-kind: dir
 Node-action: add
@@ -213,7 +213,7 @@ Node-copyfrom-path: branches/HFM1.0/HFM/src
 Node-path: trunk/HFM/src/Apache2
 Node-action: delete
 
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 227
 Node-path: trunk/HFM/src/Apache2
 Node-kind: dir
 Node-action: add
@@ -224,7 +224,7 @@ Node-copyfrom-path: branches/HFM1.0/HFM/src/Apache2
 Node-path: trunk/HFM/src/Apache2/conf
 Node-action: delete
 
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 237
 Node-path: trunk/HFM/src/Apache2/conf
 Node-kind: dir
 Node-action: add
@@ -235,7 +235,7 @@ Node-copyfrom-path: branches/HFM1.0/HFM/src/Apache2/conf
 Node-path: trunk/HFM/src/Apache2/conf/certs
 Node-action: delete
 
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 247
 Node-path: trunk/HFM/src/Apache2/conf/certs
 Node-kind: dir
 Node-action: add
@@ -246,7 +246,7 @@ Node-copyfrom-path: branches/HFM1.0/HFM/src/Apache2/conf/certs
 Node-path: trunk/HFM/src/Apache2/conf/certs/livedata_hfhs_org.crt
 Node-action: delete
 
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 257
 Node-path: trunk/HFM/src/Apache2/conf/certs/livedata_hfhs_org.crt
 Node-kind: file
 Node-action: add
@@ -254,6 +254,6 @@ Node-copyfrom-rev: 4429
 Node-copyfrom-path: branches/HFM1.0/HFM/src/Apache2/conf/certs/livedata_hfhs_org.crt
 
 
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
-repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 267
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 277
+repocutter(repocutter-nodeselect.sh): unfilfilled copyfrom 4429 at revision 4431, line 287

@@ -1378,12 +1378,12 @@ func (ds *DumpfileSource) Report(
 					// Require copyfrom-path following copyfrom-rev
 					m := nodeCopyfrom.FindSubmatch(line)
 					if m != nil {
-						rawHeader = append(rawHeader, line...)
-						rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)
 						r := string(m[1])
 						if len(ds.EmittedRevisions) > 0 && !ds.EmittedRevisions[r] {
-							complain("unfilfilled copyfrom %s at revision %d", r, ds.Revision)
+							complain("unfilfilled copyfrom %s at revision %d, line %d", r, ds.Revision, ds.Lbs.linenumber)
 						}
+						rawHeader = append(rawHeader, line...)
+						rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)
 						continue
 					}
 					rawHeader = append(rawHeader, line...)
