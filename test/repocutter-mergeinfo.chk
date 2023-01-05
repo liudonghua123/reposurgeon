@@ -105,7 +105,6 @@ PROPS-END
 feature development
 
 
-repocutter(repocutter-mergeinfo.sh): unfilfilled copyfrom 3 at revision 3, line 129
 Revision-number: 3
 Prop-content-length: 131
 Content-length: 131
@@ -506,7 +505,6 @@ bugfix
 feature development
 
 
-repocutter(repocutter-mergeinfo.sh): unfilfilled copyfrom 12 at revision 12, line 529
 Revision-number: 12
 Prop-content-length: 131
 Content-length: 131

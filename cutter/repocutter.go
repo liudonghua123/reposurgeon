@@ -1379,7 +1379,9 @@ func (ds *DumpfileSource) Report(
 					m := nodeCopyfrom.FindSubmatch(line)
 					if m != nil {
 						r := string(m[1])
-						if len(ds.EmittedRevisions) > 0 && !ds.EmittedRevisions[r] {
+						// Can't do this check if there's a revhook, if there is one
+						// it probably messed with the revision number.
+						if revhook == nil && len(ds.EmittedRevisions) > 0 && !ds.EmittedRevisions[r] {
 							complain("unfilfilled copyfrom %s at revision %d, line %d", r, ds.Revision, ds.Lbs.linenumber)
 						}
 						rawHeader = append(rawHeader, line...)

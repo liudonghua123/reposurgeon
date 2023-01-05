@@ -234,6 +234,36 @@ Revision is 5, file path is trunk/data/driver.list.
 
 
 Revision-number: 6
+Prop-content-length: 141
+Content-length: 141
+
+K 8
+svn:date
+V 27
+2005-02-28T09:14:07.000000Z
+K 7
+svn:log
+V 67
+This commit was manufactured by cvs2svn to create branch 'Testing'.
+PROPS-END
+
+Node-path: branches/Testing
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 4
+Node-copyfrom-path: branches/INITIAL_IMPORT_AQ
+
+Node-path: branches/Testing/data
+Node-kind: dir
+Node-action: delete
+
+Node-path: branches/Testing/data
+Node-kind: dir
+Node-action: add
+Node-copyfrom-rev: 5
+Node-copyfrom-path: trunk/data
+
+Revision-number: 7
 Prop-content-length: 168
 Content-length: 168
 
@@ -285,7 +315,7 @@ PROPS-END
 Revision is 7, file path is branches/Testing/drivers/libusb.c.
 
 
-Revision-number: 7
+Revision-number: 8
 Prop-content-length: 150
 Content-length: 150
 
@@ -315,7 +345,7 @@ PROPS-END
 Revision is 8, file path is branches/Testing/drivers/libusb.c.
 
 
-Revision-number: 8
+Revision-number: 9
 Prop-content-length: 170
 Content-length: 170
 
@@ -345,7 +375,7 @@ PROPS-END
 Revision is 9, file path is branches/Testing/drivers/libusb.c.
 
 
-Revision-number: 9
+Revision-number: 10
 Prop-content-length: 145
 Content-length: 145
 
@@ -372,7 +402,7 @@ Node-action: delete
 Node-path: branches/Development/drivers/Makefile.drvbuild
 Node-kind: file
 Node-action: add
-Node-copyfrom-rev: 6
+Node-copyfrom-rev: 7
 Node-copyfrom-path: branches/Testing/drivers/Makefile.drvbuild
 
 Node-path: branches/Development/drivers/libusb.c
@@ -382,39 +412,8 @@ Node-action: delete
 Node-path: branches/Development/drivers/libusb.c
 Node-kind: file
 Node-action: add
-Node-copyfrom-rev: 8
+Node-copyfrom-rev: 9
 Node-copyfrom-path: branches/Testing/drivers/libusb.c
-
-
-Revision-number: 10
-Prop-content-length: 173
-Content-length: 173
-
-K 7
-svn:log
-V 64
-
-changed ser_send_char to use "unsigned char" instead of "char"
-
-K 10
-svn:author
-V 13
-adkorte-guest
-K 8
-svn:date
-V 27
-2006-02-11T16:07:25.000000Z
-PROPS-END
-
-Node-path: branches/Development/drivers/serial.c
-Node-kind: file
-Node-action: change
-Prop-content-length: 10
-Text-content-length: 68
-Content-length: 78
-
-PROPS-END
-Revision is 11, file path is branches/Development/drivers/serial.c.
 
 
 Revision-number: 11
@@ -528,7 +527,6 @@ Content-length: 62
 Revision is 15, file path is trunk/drivers/Makefile.drvbuild.
 
 
-repocutter(repocutter-renumber.sh): unfilfilled copyfrom 15 at revision 15, line 553
 Revision-number: 15
 Prop-content-length: 150
 Content-length: 150
