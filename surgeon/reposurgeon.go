@@ -3057,10 +3057,9 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 			}
 		} else if commit, ok := event.(*Commit); ok {
 			if field == "Author" {
-				// FIXME: Needs unit test
 				attr := value + " " + commit.committer.date.String()
 				newattr, _ := newAttribution(attr)
-				commit.authors = append(commit.authors, *newattr)
+				commit.authors[0] = *newattr
 			} else if field == "Commitdate" {
 				newdate, err := newDate(value)
 				if err != nil {
