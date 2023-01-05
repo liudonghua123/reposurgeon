@@ -131,7 +131,7 @@ PROPS-END
 Node-path: branches/v1.0
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 3
+Node-copyfrom-rev: 2
 Node-copyfrom-path: trunk
 
 
