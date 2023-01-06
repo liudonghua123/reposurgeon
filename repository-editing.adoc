@@ -3211,6 +3211,9 @@ You are more likely to see a crash when processing a stream that has
 beem modified by filtering out unwanted commits, e.g. via select or
 expunge or sift commands.  The most common problem is copyfrom
 operations referring to a source revision that has been removed.
+In theory reposurgeon should fakk back to referencing the latest
+revision before the gap, but there are still occasional crashes
+the the reposugeon maintainers have not successfully characterized.
 
 repocutter emits warnings on stderr when it writes a stream with
 missing copyfrom sources, but reposurgeon will crash when presented
