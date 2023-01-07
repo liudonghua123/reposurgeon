@@ -177,11 +177,10 @@ Node-copyfrom-rev: 1
 Node-copyfrom-path: trunk
 
 
-repocutter(repocutter-reduce.sh): missing copyfrom source 6 at revision 7, line 247
 Node-path: branches/alternate/README
 Node-kind: file
 Node-action: add
-Node-copyfrom-rev: 6
+Node-copyfrom-rev: 5
 Node-copyfrom-path: trunk/README
 Text-copy-source-md5: 0a2ae79f65da648d2d2e27afe44b63f2
 Text-copy-source-sha1: fa5bbc64645557f80c5d70ae46306cffc3892c23

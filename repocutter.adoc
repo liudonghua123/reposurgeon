@@ -29,8 +29,8 @@ colon-separated pair of integers, or an integer followed by a colon
 followed by HEAD.
 
 If the output stream contains copyfrom references to missing revisions,
-repocutter will contain about each one on standard error and return
-failure at the end of the run
+repocutter silently patch each copysources by stepping it backwards to
+the most recent previous version that exists.
 
 (Older versions of this tool, before 4.30, treated -r as an implied
 selection filter rather than passing through unselected revisions

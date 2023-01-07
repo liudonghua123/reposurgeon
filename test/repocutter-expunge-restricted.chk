@@ -91,7 +91,6 @@ PROPS-END
 The quick brown fox jumped over the lazy dog.
 
 
-repocutter(repocutter-expunge-restricted.sh): missing copyfrom source 3 at revision 4, line 147
 Revision-number: 4
 Prop-content-length: 122
 Content-length: 122
@@ -114,7 +113,7 @@ PROPS-END
 Node-path: tags/tag1
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 3
+Node-copyfrom-rev: 2
 Node-copyfrom-path: trunk
 
 

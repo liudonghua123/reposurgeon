@@ -4,7 +4,7 @@ Repository head::
      Change repocutter -f (basename) option to -n.
      Default filecopy to matching a regexp; -f now undoes this.
      Add repocutter count command.
-     Repocutter complains visibly on streams with missing copyfrom revsisions.
+     Repocutter opatches missing copyfrom source revisions.
 
 4.33: 2022-12-21::
      Some potentially unsafe shellouts have been fixed.

@@ -59,8 +59,6 @@ Available subcommands and help topics:
 // which began life as 'svncutter' in 2009.  The obsolete
 // 'squash' command has been omitted.
 
-var exitval int
-
 var debug int
 
 const debugLOGIC = 1
@@ -534,12 +532,6 @@ func (baton *Baton) End(msg string) {
 	if term.IsTerminal(int(baton.stream.Fd())) {
 		fmt.Fprintf(baton.stream, "...(%s) %s.\n", time.Since(baton.time), msg)
 	}
-}
-
-func complain(msg string, args ...interface{}) {
-	legend := "repocutter" + errortag + ": " + msg + "\n"
-	fmt.Fprintf(os.Stderr, legend, args...)
-	exitval = 1
 }
 
 func croak(msg string, args ...interface{}) {
@@ -1379,10 +1371,17 @@ func (ds *DumpfileSource) Report(
 					m := nodeCopyfrom.FindSubmatch(line)
 					if m != nil {
 						r := string(m[1])
+						// Patch missing copysources by stepping backard to an existing revision.
 						// Can't do this check if there's a revhook, if there is one
 						// it probably messed with the revision number.
 						if revhook == nil && len(ds.EmittedRevisions) > 0 && !ds.EmittedRevisions[r] {
-							complain("missing copyfrom source %s at revision %d, line %d", r, ds.Revision, ds.Lbs.linenumber)
+							backup, _ := strconv.Atoi(r)
+							for backup = backup - 1; backup > 0; backup-- {
+								if ds.EmittedRevisions[fmt.Sprintf("%d", backup)] {
+									line = []byte(fmt.Sprintf("Node-copyfrom-rev: %d\n", backup))
+									break
+								}
+							}
 						}
 						rawHeader = append(rawHeader, line...)
 						rawHeader = append(rawHeader, ds.Require("Node-copyfrom-path")...)
@@ -3072,5 +3071,4 @@ func main() {
 	if baton != nil {
 		baton.End("")
 	}
-	os.Exit(exitval)
 }

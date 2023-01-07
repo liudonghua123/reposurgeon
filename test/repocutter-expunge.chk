@@ -39,7 +39,6 @@ Content-length: 10
 PROPS-END
 
 
-repocutter(repocutter-expunge.sh): missing copyfrom source 2 at revision 3, line 90
 Revision-number: 3
 Prop-content-length: 176
 Content-length: 176
@@ -61,7 +60,7 @@ PROPS-END
 Node-path: c
 Node-kind: dir
 Node-action: add
-Node-copyfrom-rev: 2
+Node-copyfrom-rev: 1
 Node-copyfrom-path: a
 
 
