@@ -203,7 +203,8 @@ const (
 	parseALLREPO                       // Requires a loaded repo and selection sets defaults to all
 	parseNOSELECT                      // Giving a selection set is an error
 	parseNEEDSELECT                    // Command requires an explicit selection set
-	parseNEEDREDIRECT                  // Command requires aredirect, not a file name argument
+	parseNEEDREDIRECT                  // Command requires a redirect, not a file name argument
+	parseNOREDIRECT                    // Ignore things that look like redirects (e.g email addresses).
 )
 
 func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities orderedStringSet) *LineParse {
@@ -235,66 +236,68 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 	}
 
 	var err error
-	// Input redirection
-	// The reason for the < in the regexp is to prevent false matches
-	// on legacy IDs in singleton-selection literals.
-	match := regexp.MustCompile("<[^> ]+ ").FindStringIndex(lp.line + " ")
-	if match != nil {
-		if !caps["stdin"] {
-			panic(throw("command", "no support for < redirection"))
-		}
-		lp.infile = lp.line[match[0]+1 : match[1]-1]
-		if lp.infile != "" && lp.infile != "-" {
-			lp.stdin, err = os.Open(filepath.Clean(lp.infile))
-			if err != nil {
-				panic(throw("command", "can't open %s for read", lp.infile))
+	if (parseflags & parseNOREDIRECT) == 0 {
+		// Input redirection
+		// The reason for the < in the regexp is to prevent false matches
+		// on legacy IDs in singleton-selection literals.
+		match := regexp.MustCompile("<[^> ]+ ").FindStringIndex(lp.line + " ")
+		if match != nil {
+			if !caps["stdin"] {
+				panic(throw("command", "no support for < redirection"))
 			}
-			lp.closem = append(lp.closem, lp.stdin)
-		}
-		lp.line = lp.line[:match[0]] + lp.line[match[1]-1:]
-		lp.redirected = true
-	}
-	// Output redirection
-	match = regexp.MustCompile("(>>?)([^ ]+)").FindStringSubmatchIndex(lp.line)
-	if match != nil {
-		if !caps["stdout"] {
-			panic(throw("command", "no support for > redirection"))
-		}
-		lp.outfile = lp.line[match[2*2+0]:match[2*2+1]]
-		if lp.outfile != "" && lp.outfile != "-" {
-			info, err := os.Stat(lp.outfile)
-			if err == nil {
-				if info.Mode().IsDir() {
-					panic(throw("command", "can't redirect output to %s, which is a directory", lp.outfile))
+			lp.infile = lp.line[match[0]+1 : match[1]-1]
+			if lp.infile != "" && lp.infile != "-" {
+				lp.stdin, err = os.Open(filepath.Clean(lp.infile))
+				if err != nil {
+					panic(throw("command", "can't open %s for read", lp.infile))
 				}
+				lp.closem = append(lp.closem, lp.stdin)
 			}
-			// flush the outfile, if it happens to be a file
-			// that Reposurgeon has already opened
-			mode := os.O_WRONLY
-			if match[2*1+1]-match[2*1+0] > 1 {
-				mode |= os.O_CREATE | os.O_APPEND
-			} else {
-				mode |= os.O_CREATE
-				// Unix delete doesn't nuke a file
-				// immediately, it (a) removes the
-				// directory reference, and (b)
-				// schedules the file for actual
-				// deletion on it when the last file
-				// descriptor open to it is closed.
-				// Thus, by deleting the file if it
-				// already exists we ennsure that any
-				// seekstreams pointing to it will
-				// continue to get valid data.
-				os.Remove(lp.outfile)
-			}
-			lp.stdout, err = os.OpenFile(filepath.Clean(lp.outfile), mode, userReadWriteMode)
-			if err != nil {
-				panic(throw("command", "can't open %s for writing", lp.outfile))
-			}
-			lp.closem = append(lp.closem, lp.stdout)
+			lp.line = lp.line[:match[0]] + lp.line[match[1]-1:]
+			lp.redirected = true
 		}
-		lp.line = lp.line[:match[2*0+0]] + lp.line[match[2*0+1]:]
-		lp.redirected = true
+		// Output redirection
+		match = regexp.MustCompile("(>>?)([^ ]+)").FindStringSubmatchIndex(lp.line)
+		if match != nil {
+			if !caps["stdout"] {
+				panic(throw("command", "no support for > redirection"))
+			}
+			lp.outfile = lp.line[match[2*2+0]:match[2*2+1]]
+			if lp.outfile != "" && lp.outfile != "-" {
+				info, err := os.Stat(lp.outfile)
+				if err == nil {
+					if info.Mode().IsDir() {
+						panic(throw("command", "can't redirect output to %s, which is a directory", lp.outfile))
+					}
+				}
+				// flush the outfile, if it happens to be a file
+				// that Reposurgeon has already opened
+				mode := os.O_WRONLY
+				if match[2*1+1]-match[2*1+0] > 1 {
+					mode |= os.O_CREATE | os.O_APPEND
+				} else {
+					mode |= os.O_CREATE
+					// Unix delete doesn't nuke a file
+					// immediately, it (a) removes the
+					// directory reference, and (b)
+					// schedules the file for actual
+					// deletion on it when the last file
+					// descriptor open to it is closed.
+					// Thus, by deleting the file if it
+					// already exists we ennsure that any
+					// seekstreams pointing to it will
+					// continue to get valid data.
+					os.Remove(lp.outfile)
+				}
+				lp.stdout, err = os.OpenFile(filepath.Clean(lp.outfile), mode, userReadWriteMode)
+				if err != nil {
+					panic(throw("command", "can't open %s for writing", lp.outfile))
+				}
+				lp.closem = append(lp.closem, lp.stdout)
+			}
+			lp.line = lp.line[:match[2*0+0]] + lp.line[match[2*0+1]:]
+			lp.redirected = true
+		}
 	}
 	// This collides with regexp alternation.  We require a whitespace character
 	// after the pipe bar and that it be either at BOL or have a preceding whitespace,
@@ -3014,7 +3017,7 @@ func (rs *Reposurgeon) HelpSetfield() {
 [SELECTION] setfield FIELD VALUE
 
 In the selected events (defaulting to none) set every instance of a
-named field to a string value.  The string may be quoted to include
+named field to a string value.  The value field may be quoted to include
 whitespace, and use backslash escapes interpreted by Go's C-like
 string-escape codec, such as \s.
 
@@ -3034,7 +3037,7 @@ address.
 
 // DoSetfield sets an event field from a string.
 func (rs *Reposurgeon) DoSetfield(line string) bool {
-	rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
+	rs.newLineParse(line, parseREPO|parseNEEDSELECT|parseNOREDIRECT, nil)
 	repo := rs.chosen()
 	fields, err := shlex.Split(line, true)
 	if err != nil || len(fields) != 2 {

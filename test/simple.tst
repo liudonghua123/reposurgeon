@@ -15,5 +15,5 @@ path list
 116 manifest /^reposurgeon/
 :2 setfield comment "The quick brown fox jumped over the lazy dog.\n"
 :2 setperm 100755 rs
-# Stream enough parts to verify the last two operations
+# Stream enough parts to verify the setfield and setperm operations
 :2 inspect
