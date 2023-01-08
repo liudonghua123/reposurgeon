@@ -470,8 +470,6 @@ FIXME: R and C handling in expunge needs tests
 
 FIXME: Need test for repocutter filecopy with -f, and skipcopy.
 
-FIXME: setfield needs unit tests
-
 == Some references
 
 https://testanything.org/
