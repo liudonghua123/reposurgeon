@@ -520,9 +520,6 @@ func mirror(args []string) {
 				baton.percentProgress(uint64(ind))
 			}
 		})
-		if !quiet {
-			baton.Write([]byte{'\n'})
-		}
 		baton.endProgress()
 	} else if isdir(filepath.Join(operand, "locks")) {
 		if operand[0] == os.PathSeparator {
@@ -557,9 +554,6 @@ func mirror(args []string) {
 					baton.percentProgress(uint64(ind))
 				}
 			})
-			if !quiet {
-				baton.Write([]byte{'\n'})
-			}
 			baton.endProgress()
 		}
 	} else if strings.HasPrefix(operand, "rsync://") {
