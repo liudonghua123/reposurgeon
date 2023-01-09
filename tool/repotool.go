@@ -186,6 +186,7 @@ var quiet bool
 var same bool
 var unified bool
 var verbose bool
+var progress bool
 
 var branch string
 var comparemode string
@@ -509,7 +510,7 @@ func mirror(args []string) {
 		// since rsyncing, or havoc will ensue.
 		runShellProcessOrDie(fmt.Sprintf("chmod a+x %s/hooks/pre-revprop-change", locald), "mirroring")
 		runShellProcessOrDie(fmt.Sprintf("svnsync init -q %s --allow-non-empty file://%s %s", mirrorCredentials, locald, operand), "mirroring")
-		baton := newBaton(!quiet, func(s string) {})
+		baton := newBaton(progress, func(s string) {})
 		baton.startProgress("Mirroring", uint64(reposize(operand)))
 		cmd := fmt.Sprintf("svnsync synchronize %s --steal-lock file://%s", mirrorCredentials, locald)
 		ind := 0
@@ -545,7 +546,7 @@ func mirror(args []string) {
 		} else {
 			// Have remote size, we can progress-meter,
 			// this makes long resyncs more bearable.
-			baton := newBaton(!quiet, func(s string) {})
+			baton := newBaton(progress, func(s string) {})
 			remotesize := reposize(remote)
 			localsize := reposize(locald)
 			baton.startProgress("Mirroring", uint64(remotesize-localsize))
@@ -1353,7 +1354,7 @@ func main() {
 	flags.Parse(os.Args[2:])
 
 	// Suppress progress indicator if output is redirected, not a terminal
-	quiet = quiet || term.IsTerminal(int(os.Stdout.Fd()))
+	progress = !quiet && term.IsTerminal(int(os.Stdout.Fd()))
 
 	if !strings.HasPrefix(operation, "compare") && (acceptMissing || context || seeignores || same) {
 		croak("compare option with non-compare operation, bailing out.")
