@@ -1353,7 +1353,7 @@ func main() {
 	flags.Parse(os.Args[2:])
 
 	// Suppress progress indicator if output is redirected, not a terminal
-	quiet = quiet && !term.IsTerminal(int(os.Stdout.Fd()))
+	quiet = quiet || term.IsTerminal(int(os.Stdout.Fd()))
 
 	if !strings.HasPrefix(operation, "compare") && (acceptMissing || context || seeignores || same) {
 		croak("compare option with non-compare operation, bailing out.")
