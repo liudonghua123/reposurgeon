@@ -538,7 +538,7 @@ Normally reposurgeon will do branch analysis for you.  On most
 Subversion repositories, and in particular anything with a standard
 trunk/tags/branches layout, it will do the right thing. It will also
 cope with adventitious branches in the root directory of the repo,
-such as many projects use for website content.
+such as some projects use for website content.
 
 There is, however, a minor problem around tags, and a slightly
 more significant problem around Subversion merges. Also, some
@@ -2918,30 +2918,99 @@ try to merge a branch that forked off the old A to a branch spun off the new
 [[multiproject]]
 === Multiproject Subversion repositories
 
-Subversion repositories are sometimes organized to hold multiple
-projects, with the root directory containing one subdirectory per
-project and each subdirectory having its own trunk/branches/tags
-layout.
+By convemtion, subversion repository is supposed to have a regular
+structure, what we'll call "standard layout".  This has three
+top-level directories, trunk/ and tags/ and branches/. In standard
+layout, directories beneath tags are never modified after the copy that
+creates them.
 
-==== Whole-repository conversion with repocutter swapsvn
+A repository in standard layout can be converted nearly losslessly into
+Git and other modern DVCSes, with minor exceptions around deleted and
+later recreated branches and some Subversion-specific file properties.
 
-The preferred way to handle multiproject repositories is with the
-repocutter "swapsvn" primitive.  If the multiproject structure is
-perfectly regular - top-level directories are always projects, and
-always have trunk/tags/branches structure immediately underneath -
-swapsvn will transform the repository to a regular Subversion
-structure with trunk/tags/branches at the top level.
+But standard layout is only a convention; the Subversion tools don't
+actually enforce it.  One very simple non-standard layout is a "flat"
+repository.  We'll discuss these in detail in a <<flat,later
+section>>.
 
-Be aware that if you do this, all project-local tags and branches
-will be promoted to become tags and branches across the entire
-repository.
+In a more common non-standard layout, Subversion repositories are
+organized to hold multiple projects, with the root directory
+containing one subdirectory per project and each project subdirectory
+having a standard layout underneath it.
 
-Sometimes you may be able to transform a nearly-regular multiproject
-structure into a perfectly regular one with repocutter pathrename
-commands, then apply repocutter swapsvn.
+We'll call this kind of layout "conformable" when it is perfectly
+regular, not containing any of te following exceptions:
 
-Paths that swapsvn does not recognize as transformable will be passed
-through unaltered.
+* Top-level project directories that _don't_ have a standard
+layout underneath
+
+* Copy operations on top-level subdirectories.
+
+* trunk/tags/branches structure more than one level beneath
+the top level.
+
+These sorts of irregularities do not fit well into reposurgeon's
+internal data model. The fallback behaviors in reposurgewon that
+attempt to handle them are fragile and kludgy.  Attempting to read
+such a stream may confuse or even crash reposurgeon's reader for
+Subversion dumps.
+
+Unfortunately, it is rare for a multiproject repository not to have
+defects of this kind. There's an easy way to check; feed the stream to
+repocutter swapcheck.  If you get an empty report, the stream is
+perfectly conformable; otherwise, each report line flags a defect
+you need to fix or remove.  Look at the output of "repocutter help
+swapcheck" for more details.
+
+Conversions of non-conformable multiproject Subversion repositories
+are messy and tricky.  If you work for an organization with a budget,
+you should seriously consider engaging the author to do yours - that's
+likely to save you time and money relative to what you'd pay someone
+in-house to climb the learning curve.
+
+The general strategy in these cases has three steps:
+
+. Transform a stream dump from the repository into a fully-conformable
+  one.
+
+. Apply repocutter swapsvn to transform that stream to one
+  with standard layout.
+
+. Load the standard-layout stream into reposurgeon and trim out
+  unneeded content inside reposurgeon.
+
+The first step is the tricky one. There are two general tactics you
+can pursue towards this: (1) expunging badly-structured
+content, and/or (2) using repocutter pathrename to massage
+non-conformable directories into conformable ones.
+
+Before you think about doing expunges, be aware that they can be
+complicated by cross-project copy operations.  If you delete a
+directory that's ever a source for a copy into conformable structure,
+havoc will ensue; a very common case of this is copies from obsolete
+branches to trunk.  That's why it's generally best to defer trimming
+unwanted history until you have it inside reposurgeon.
+
+Generally you're going to do the heavy lifting with repocutter
+pathrename operations. The author has seen conversions that literally
+required hundreds of these.  You may also need to do repocutter
+filecopy and skipcopy operations - but here be dragons; by the time
+you need to do those you should reconsider not hiring the author.
+
+It cannot be emphasized enough that conversions of non-conformable
+multi-project repositories are *difficult*; expect your timeframe to
+completion to be measured not in hours or days but months. Improving
+to tools to make these less painful is the reposurgeon project's main
+area of research.
+
+==== Some caveats about repocutter swapsvn
+
+All project-local tags and branches will be promoted to become tags
+and branches across the entire repository.
+
+Paths that swapsvn does not recognize as conformable will be passed
+through unaltered.  Don't try to treat this as a feature;
+reposurgeon's fallbacks for deaking with these are crude and fragile.
 
 Subversion mergeinfos, being file- and directory-oriented rather than
 true branch merges, often can't be carried over even in a

@@ -119,6 +119,11 @@ For each node in the revision range, stash the current version of the
 node-path's content.  For each later file copy operation with that source,
 replace the file copy with an explicit add/change using the stashed content.
 
+You can use this operation to sever links from obsolete branches 
+or non-conformable directories in a multiproject repository so the
+unwanted content can be expunged without changing the content of later
+revisions.
+
 If a PATTERN argument is provided, only replace copies with an explicit
 add/change when the source node path matches PATTERN.
 
@@ -332,7 +337,7 @@ This transform can be restricted by a selection set.
 Replace the source revision and path of a copy at the upper end of the selection
 with the source revisions and path of a copy at the lower end. Fails unless both
 revisions are copies.  Used to remove an unwanted intermediate copy or
-copies.
+copies, cleaning up the history.
 `},
 	"strip": {
 		"Replace content with unique cookies, preserving structure",

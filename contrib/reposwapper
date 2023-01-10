@@ -2,9 +2,9 @@
 """Analyze the graph defined by dependencies in a multiproject
 repository, and generate useful reports on them.
 
-This tool is named for its relationship with repocutter swapsvn
-and should be useful for preparing a multiproject repository
-for that opewration.
+This tool is named for its relationship with repocutter swapsvn and
+should be useful for preparing a multiproject repository for that
+operation.  See also the repocutter swapcheck subcommand.
 
 The big difference between repocutter and this tool is that
 repcutter is optimized for speed and to hold down its working
@@ -33,6 +33,7 @@ reposwapper "read myrepo.see" "graph"
 
 Copyright by Eric S. Raymond
 SPDX-License-Identifier: BSD-2-Clause
+
 """
 # pylint: disable=line-too-long,invalid-name,missing-function-docstring,no-else-return,no-else-break,no-else-continue,raise-missing-from
 
@@ -40,7 +41,7 @@ SPDX-License-Identifier: BSD-2-Clause
 import sys, shlex, subprocess
 
 def coalesce(a, b):
-    "Attempt to coaleesce an endpoint or range at a with a neighbor at b."
+    "Attempt to coalesce an endpoint or range at a with a neighbor at b."
     if ":" in a:
         lo, hi = a.split(":")
         lo_rev, lo_node = lo.split(".")
