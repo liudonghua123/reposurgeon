@@ -2824,6 +2824,7 @@ func swapcheck(source DumpfileSource) {
 	standard := func(path string) bool {
 		return path == "trunk" || path == "tags" || path == "branches"
 	}
+	stdlayout := make(map[string]bool)
 	seen := make(map[string]bool)
 	headerhook := func(header StreamSection) []byte {
 		if source.Revision == 0 {
@@ -2831,16 +2832,27 @@ func swapcheck(source DumpfileSource) {
 		}
 		segments := bytes.Split(header.payload("Node-path"), []byte{'/'})
 		prefix := string(segments[0])
-		if len(segments) == 1 && header.payload("Node-copyfrom-rev") == nil {
+		if len(segments) == 1 && (header.payload("Node-copyfrom-rev") == nil || stdlayout[prefix]) {
 			return nil
 		}
 		if len(segments) > 1 {
 			sub := string(segments[1])
 			if standard(sub) {
+				// The reason we want to capture trunk creations in stdlayout
+				// is so we can tell when a top-level directory copy will be
+				// expanded into conformable copies by repocutter swapsvn.
+				if len(segments) == 2 {
+					stdlayout[prefix] = true
+				}
 				return nil
 			}
 			prefix = prefix + "/" + sub
-
+			for e, subseg := range segments[2:] {
+				if standard(string(subseg)) {
+					prefix = string(bytes.Join(segments[:e+1], []byte{'/'}))
+					break
+				}
+			}
 		}
 		if seen[prefix] {
 			return nil
