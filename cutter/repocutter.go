@@ -81,7 +81,7 @@ var helpdict = map[string]struct {
 		"Compute the transitive closure of a path set",
 		`closure: usage: repocutter [-q] closure PATH...
 
-The 'closure' subcommand computes the transitive closure of a path set under the
+The 'closure' subcswapchommand computes the transitive closure of a path set under the
 relation 'copies from' - that is, with the smallest set of additional paths such
 that every copy-from source is in the set.
 `},
@@ -343,7 +343,7 @@ the specified regular expressions; if no expressions are given, match all
 paths.
 
 This command is useful for reducing the bulk of a stream without touching
-its metadata, so you can doio test conversions more quickly.
+its metadata, so you can do test conversions more quickly.
 `},
 	"swap": {
 		"Swap first two components of pathnames",
@@ -353,7 +353,20 @@ Swap the top two elements of each pathname in every revision in the
 selection set. Useful following a sift operation for straightening out
 a common form of multi-project repository.  If a PATTERN argument is given,
 only paths matching it are swapped.
+`},
+	"swapcheck": {
+		"List prefixes for anomalous paths that would confuse swapsvn.",
+		`swapcheck: usage: repocutter swapcheck
 
+List prefixes of anomalous paths that would confuse swapsvn.  This incluses any path with
+only one segment, and any path with two or more segments in which the second is not 'trunk',
+'branches', or 'tags'. Each report line has two fields; the first is the earliest revision 
+containing a path with the prefix given, and the second is the prefix.
+
+If feeding a Subversion dump to this subcommand doesn't produce an empty report,
+you can expect swapsvn to produce an invalid dump that will confuse and possibly 
+crash reposurgeon. The remedy for this is s set of pathrenames and/or deselections
+that yields paths confpormable to being swapped into a regukar Subversion structure.
 `},
 	"swapsvn": {
 		"Subversion structure-aware swap",
@@ -458,6 +471,7 @@ var narrativeOrder []string = []string{
 
 	"swap",
 	"swapsvn",
+	"swapcheck",
 
 	"replace",
 	"strip",
@@ -2800,6 +2814,39 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 	source.Report(nil, prophook, headerhook, nil)
 }
 
+// Check for unswappable paths
+func swapcheck(source DumpfileSource) {
+	standard := func(path string) bool {
+		return path == "trunk" || path == "tags" || path == "branches"
+	}
+	seen := make(map[string]bool)
+	headerhook := func(header StreamSection) []byte {
+		if source.Revision == 0 {
+			return nil
+		}
+		segments := bytes.Split(header.payload("Node-path"), []byte{'/'})
+		prefix := string(segments[0])
+		if len(segments) == 1 && header.payload("Node-copyfrom-rev") == nil {
+			return nil
+		}
+		if len(segments) > 1 {
+			sub := string(segments[1])
+			if standard(sub) {
+				return nil
+			}
+			prefix = prefix + "/" + sub
+
+		}
+		if seen[prefix] {
+			return nil
+		}
+		fmt.Printf("%d: %s\n", source.Revision, prefix)
+		seen[prefix] = true
+		return nil
+	}
+	source.Report(nil, nil, headerhook, nil)
+}
+
 // Neutralize the input test load
 func testify(source DumpfileSource, counter int) {
 	const NeutralUser = "fred"
@@ -3055,6 +3102,8 @@ func main() {
 		strip(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
 	case "swap":
 		swap(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], false)
+	case "swapcheck":
+		swapcheck(NewDumpfileSource(input, baton))
 	case "swapsvn":
 		swap(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], true)
 	case "testify":
