@@ -94,6 +94,18 @@ The 'count' subcommand lists the last revision number in the input stream.
 This is normally the revision count, buut may not if the stream has omitted 
 revisions.
 `},
+	"debug": {
+		"Set the specified debug level on selected revisions",
+		`count: usage: repocutter [-q] [-r SELECTION ] debug LEVEL
+
+Set the debug level to the specified value on the selected revisions.
+Setting debugging enables diagnostics to standard error, and suppresses
+the progress baton for the entire run in order not to step on any
+diagnostics that might be emitted.
+
+For the meaning of the debug levels, see the source code.  This option
+is probably only of interest to repocutter developers.
+`},
 	"deselect": {
 		"Deselecting revisions",
 		`deselect: usage: repocutter [-q] [-r SELECTION] deselect
@@ -484,6 +496,8 @@ var narrativeOrder []string = []string{
 	"obscure",
 	"reduce",
 	"testify",
+
+	"debug",
 
 	"version",
 }
@@ -1308,6 +1322,11 @@ func (ds *DumpfileSource) Report(
 		}
 		stash = append(stash, ds.Require("Prop-content-length:")...)
 		stash = append(stash, ds.Require("Content-length:")...)
+
+		if revhook != nil && ds.Revision > 0 {
+			stash = StreamSection(revhook(StreamSection(stash)))
+		}
+
 		stash = append(stash, ds.Require(linesep)...)
 
 		// Process per-revision properties
@@ -1353,11 +1372,6 @@ func (ds *DumpfileSource) Report(
 				continue
 			}
 			if strings.HasPrefix(string(line), "Revision-number:") {
-				// Putting this check here rather than at the top of the look
-				// guarantees it won't fire on revision 0
-				if revhook != nil {
-					line = revhook(StreamSection(line))
-				}
 				ds.Lbs.Push(line)
 				if len(stash) != 0 && ds.Index == 0 {
 					if passthrough {
@@ -1649,6 +1663,14 @@ func (ss StreamSection) setLength(header string, val int) []byte {
 	return SetLength(header, ss, val)
 }
 
+// prependHeaderLine() - append a header just after a specified header
+func (ss StreamSection) prependHeaderLine(after string, newheader string) StreamSection {
+	unwrapped := string(ss)
+	where := ss.index(after)
+	return StreamSection(append([]byte(unwrapped[:where]), append([]byte(newheader), []byte(unwrapped[where:])...)...))
+
+}
+
 // stripChecksums - remove checksums from a blob header
 func (ss StreamSection) stripChecksums() StreamSection {
 	header := []byte(ss)
@@ -1793,6 +1815,28 @@ func count(source DumpfileSource) {
 	source.Report(revhook, prophook, headerhook, nil)
 	os.Stdout.Write(revision)
 	os.Stdout.WriteString("\n")
+}
+
+func doDebug(source DumpfileSource, selection SubversionRange, arg string) {
+	if debug >= debugPARSE {
+		fmt.Fprintf(os.Stderr, "<entering doDebug>")
+	}
+	var latch bool
+	revhook := func(header StreamSection) []byte {
+		if source.Revision == selection.Lowerbound().rev {
+			header = header.prependHeaderLine("Prop-content-length", fmt.Sprintf("Debug-level: %s\n", arg))
+		}
+		if source.Revision > selection.Upperbound().rev {
+			if !latch {
+				header = header.prependHeaderLine("Prop-content-length", "Debug-level: 0\n")
+			}
+			latch = true
+		}
+
+		return header
+	}
+
+	source.Report(revhook, nil, nil, nil)
 }
 
 // Select a portion of the dump file defined by a revision selection.
@@ -3040,6 +3084,11 @@ func main() {
 		closure(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
 	case "count":
 		count(NewDumpfileSource(input, baton))
+	case "debug":
+		if len(flag.Args()) != 2 {
+			croak("debug requires exactly one argument, a debug level.")
+		}
+		doDebug(NewDumpfileSource(input, baton), selection, flag.Args()[1])
 	case "deselect":
 		assertNoArgs()
 		deselect(NewDumpfileSource(input, baton), selection)

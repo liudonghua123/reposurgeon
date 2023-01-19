@@ -3,7 +3,7 @@
 Repository head::
      Change repocutter -f (basename) option to -n.
      Default filecopy to matching a regexp; -f now undoes this.
-     Add repocutter count command.
+     Add repocutter count and debug commands.
      Repocutter patches missing copyfrom source revisions.
      Added repocutter swapcheck command for sanity checking.
 
