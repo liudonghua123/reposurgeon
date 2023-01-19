@@ -61,8 +61,9 @@ Available subcommands and help topics:
 
 var debug int
 
-const debugLOGIC = 1
-const debugPARSE = 2
+const debugSWAP = 1
+const debugLOGIC = 2
+const debugPARSE = 3
 
 var quiet bool
 
@@ -2507,7 +2508,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 		return bytes.HasPrefix(payload, []byte("trunk")) || bytes.HasPrefix(payload, []byte("tags")) || bytes.HasPrefix(payload, []byte("branches"))
 	}
 	// This function is called on paths to swap their project and second-level components,
-	// then if necessary truncate them to promote operations on projet=local trunks/tags/branches
+	// then if necessary truncate them to promote operations on project-local trunks/tags/branches
 	// to global ones
 	//
 	// The swap part is tricky because in the structural case the "second component" isn't a
@@ -2719,10 +2720,15 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 		if parsed.isCopy {
 			parsed.role = "copy"
 		}
-		// All operations, includung copies.
+		// All operations, including copies.
 		if len(patterns) == 0 || matcher.pathmatch(string(nodePath)) {
 			// Special handling of operations on bare project directories
 			if structural && bytes.Count(nodePath, []byte{os.PathSeparator}) == 0 {
+				if debug >= debugSWAP {
+					fmt.Fprintf(os.Stderr,
+						"<r%s: copy %q>\n",
+						source.where(), nodePath)
+				}
 				// Top-level copies must be split
 				if parsed.role == "copy" {
 					if header.hasProperties() {
@@ -3011,6 +3017,8 @@ func main() {
 			baton = nil
 		}
 	}
+
+	quiet = quiet || debug > 0
 
 	assertNoArgs := func() {
 		if len(flag.Args()) != 1 {
