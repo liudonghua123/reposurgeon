@@ -2576,7 +2576,8 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 	// 5. Delete operations should only be trimmed as part of branch-rename sequences.
 	//
 	// All the swap and promotion logic lives here. Paths for all operations - adds,
-	// deletes, changes, and copies - go through here.
+	// deletes, changes, and copies - go through here. This function does *not* handle
+	// add/copy/delete of single-component project directories.
 	//
 	swapper := func(sourcehdr string, path []byte, parsed parsedNode) []byte {
 		// mergeinfo paths are rooted - leading slash should
@@ -2765,7 +2766,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 		}
 		// All operations, including copies.
 		if len(patterns) == 0 || matcher.pathmatch(string(nodePath)) {
-			// Special handling of operations on bare project directories
+			// Special handling of operations on bare, single-component project directories
 			if structural && bytes.Count(nodePath, []byte{os.PathSeparator}) == 0 {
 				if debug >= debugLOGIC {
 					fmt.Fprintf(os.Stderr,
@@ -2781,7 +2782,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 						croak("r%s: can't split a top node with nonempty content.", source.where())
 					}
 					if debug >= debugLOGIC {
-						fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
+						fmt.Fprintf(os.Stderr, "<r%s: split firing on %q>\n", source.where(), header)
 					}
 					header.delete("Prop-content-length")
 					prefixer := func(header StreamSection, prefix string) []byte {
@@ -2831,7 +2832,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 					}
 					return nil
 				}
-			}
+			} // End of bare-directory special logic
 
 			wildcardKey = ""
 			header, newval, oldval = header.replaceHook("Node-path", func(hd string, path []byte) []byte {
