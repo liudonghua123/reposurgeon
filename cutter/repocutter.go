@@ -81,7 +81,7 @@ var helpdict = map[string]struct {
 		"Compute the transitive closure of a path set",
 		`closure: usage: repocutter [-q] closure PATH...
 
-The 'closure' subcswapchommand computes the transitive closure of a path set under the
+The 'closure' subcommand computes the transitive closure of a path set under the
 relation 'copies from' - that is, with the smallest set of additional paths such
 that every copy-from source is in the set.
 `},
@@ -375,7 +375,7 @@ only paths matching it are swapped.
 		"List prefixes for anomalous paths that would confuse swapsvn.",
 		`swapcheck: usage: repocutter swapcheck
 
-List prefixes of anomalous paths that would confuse swapsvn.  This incluses any path with
+List prefixes of anomalous paths that would confuse swapsvn.  This includes any path with
 only one segment, and any path with two or more segments in which the second is not 'trunk',
 'branches', or 'tags'. Each report line has two fields; the first is the earliest revision 
 containing a path with the prefix given, and the second is the prefix.
@@ -383,7 +383,9 @@ containing a path with the prefix given, and the second is the prefix.
 If feeding a Subversion dump to this subcommand doesn't produce an empty report,
 you can expect swapsvn to produce an invalid dump that will confuse and possibly 
 crash reposurgeon. The remedy for this is s set of pathrenames and/or deselections
-that yields paths confpormable to being swapped into a regukar Subversion structure.
+that yields paths conformable to being swapped into a regular Subversion structure.
+
+Note: This subcommand is not yet well tested and is under development.
 `},
 	"swapsvn": {
 		"Subversion structure-aware swap",

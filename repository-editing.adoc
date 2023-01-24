@@ -2939,7 +2939,7 @@ containing one subdirectory per project and each project subdirectory
 having a standard layout underneath it.
 
 We'll call this kind of layout "conformable" when it is perfectly
-regular, not containing any of te following exceptions:
+regular, not containing any of the following exceptions:
 
 * Top-level project directories that _don't_ have a standard
 layout underneath
@@ -2950,7 +2950,7 @@ layout underneath
 the top level.
 
 These sorts of irregularities do not fit well into reposurgeon's
-internal data model. The fallback behaviors in reposurgewon that
+internal data model. The fallback behaviors in reposurgeon that
 attempt to handle them are fragile and kludgy.  Attempting to read
 such a stream may confuse or even crash reposurgeon's reader for
 Subversion dumps.
@@ -3001,7 +3001,7 @@ It cannot be emphasized enough that conversions of non-conformable
 multi-project repositories are *difficult*; expect your timeframe to
 completion to be measured not in hours or days but months. Improving
 to tools to make these less painful is the reposurgeon project's main
-area of research.
+area of ongoing research.
 
 ==== Some caveats about repocutter swapsvn
 
