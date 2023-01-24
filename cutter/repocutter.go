@@ -2800,6 +2800,14 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 						}
 						return out
 					}
+					// Shipping header copies to stdout violates the
+					// assumtions of the Report method. The consequence is that
+					// the split operations may (in fact, typically will)
+					// get arttached to the revision *before* the one
+					// we're transforming, because Report never learns
+					// that the current revision header needs to be emitted.
+					// The reason for this clumsy method is that from here
+					// there is no way to insert new headers in the stream.
 					os.Stdout.Write(prefixer(header, "trunk/"))
 					for _, under := range [2]string{"branches", "tags"} {
 						copyfrom := string(header.payload("Node-copyfrom-path"))
