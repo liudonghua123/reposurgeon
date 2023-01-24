@@ -61,9 +61,8 @@ Available subcommands and help topics:
 
 var debug int
 
-const debugSWAP = 1
-const debugLOGIC = 2
-const debugPARSE = 3
+const debugLOGIC = 1
+const debugPARSE = 2
 
 var quiet bool
 
@@ -2768,10 +2767,10 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 		if len(patterns) == 0 || matcher.pathmatch(string(nodePath)) {
 			// Special handling of operations on bare project directories
 			if structural && bytes.Count(nodePath, []byte{os.PathSeparator}) == 0 {
-				if debug >= debugSWAP {
+				if debug >= debugLOGIC {
 					fmt.Fprintf(os.Stderr,
-						"<r%s: copy %q>\n",
-						source.where(), nodePath)
+						"<r%s: top-level operation %q with role %s>\n",
+						source.where(), nodePath, parsed.role)
 				}
 				// Top-level copies must be split
 				if parsed.role == "copy" {
@@ -2781,7 +2780,7 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 					if header.hasContent() {
 						croak("r%s: can't split a top node with nonempty content.", source.where())
 					}
-					if debug >= debugPARSE {
+					if debug >= debugLOGIC {
 						fmt.Fprintf(os.Stderr, "<split firing on %q>\n", header)
 					}
 					header.delete("Prop-content-length")
@@ -2792,7 +2791,13 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 								return append([]byte(prefix), in...)
 							})
 						}
-						return append(out, '\n')
+						out = append(out, '\n')
+						if debug >= debugLOGIC {
+							fmt.Fprintf(os.Stderr,
+								"<r%s: prefixer returns %q>\n",
+								source.where(), out)
+						}
+						return out
 					}
 					os.Stdout.Write(prefixer(header, "trunk/"))
 					for _, under := range [2]string{"branches", "tags"} {
