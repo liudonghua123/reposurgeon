@@ -2800,15 +2800,13 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 						}
 						return out
 					}
-					// Shipping header copies to stdout violates the
-					// assumtions of the Report method. The consequence is that
-					// the split operations may (in fact, typically will)
-					// get arttached to the revision *before* the one
-					// we're transforming, because Report never learns
-					// that the current revision header needs to be emitted.
-					// The reason for this clumsy method is that from here
-					// there is no way to insert new headers in the stream.
-					os.Stdout.Write(prefixer(header, "trunk/"))
+					// Tricky curve here. The Report method expects that a headerhook
+					// will return a byte slice that looks like a sincle Node header.
+					// Here we're returning a byte slice consisting of multiple Node
+					// headers separated by whitespace. Works because thw emission
+					// code doesn't look inside the header. but this feels like an
+					// assumption that could get broken in the future.
+					partial := prefixer(header, "trunk/")
 					for _, under := range [2]string{"branches", "tags"} {
 						copyfrom := string(header.payload("Node-copyfrom-path"))
 						key := copyfrom + string(os.PathSeparator) + under
@@ -2818,10 +2816,12 @@ func swap(source DumpfileSource, selection SubversionRange, fixed bool, patterns
 							trackSet := wildcards[key]
 							trackSet.Add(subpart)
 							wildcards[key] = trackSet
-							os.Stdout.Write(prefixer(header, under+"/"+subpart+"/"))
+							partial = append(partial, byte('\n'))
+							partial = append(partial, byte('\n'))
+							partial = append(partial, prefixer(header, under+"/"+subpart+"/")...)
 						}
 					}
-					return nil
+					return partial
 				}
 				// Non-copy operations - pass through anything that looks like standard layout
 				if !stdlayout(nodePath) {
