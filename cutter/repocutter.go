@@ -375,10 +375,13 @@ only paths matching it are swapped.
 		"List prefixes for anomalous paths that would confuse swapsvn.",
 		`swapcheck: usage: repocutter swapcheck
 
-List prefixes of anomalous paths that would confuse swapsvn.  This includes any path with
-only one segment, and any path with two or more segments in which the second is not 'trunk',
-'branches', or 'tags'. Each report line has two fields; the first is the earliest revision 
-containing a path with the prefix given, and the second is the prefix.
+List directory prefixes of anomalous paths that would confuse swapsvn. This
+includes any path with two or more segments in which the second is not 'trunk',
+'branches', or 'tags', and any path in which 'trunk'/'tags'/'branches' occurs
+more than one segment down from the root.
+
+Each report line has two fields; the first is the  earliest revision containing
+a path with the prefix given, and the second is the prefix.
 
 If feeding a Subversion dump to this subcommand doesn't produce an empty report,
 you can expect swapsvn to produce an invalid dump that will confuse and possibly 
@@ -2898,6 +2901,9 @@ func swapcheck(source DumpfileSource) {
 		}
 		segments := bytes.Split(header.payload("Node-path"), []byte{'/'})
 		prefix := string(segments[0])
+		// Complain about single-segment opertations that aren't on a standard-layout
+		// directory and aren't project copies.  Yes, we want to catch creations of
+		// project directories that are not copies.
 		if len(segments) == 1 && (header.payload("Node-copyfrom-rev") == nil || stdlayout[prefix]) {
 			return nil
 		}
@@ -2912,6 +2918,7 @@ func swapcheck(source DumpfileSource) {
 				}
 				return nil
 			}
+			// Call out buried standard-layout parts.
 			prefix = prefix + "/" + sub
 			for e, subseg := range segments[2:] {
 				if standard(string(subseg)) {
@@ -2923,7 +2930,7 @@ func swapcheck(source DumpfileSource) {
 		if seen[prefix] {
 			return nil
 		}
-		fmt.Printf("%d: %s\n", source.Revision, prefix)
+		fmt.Printf("%s: %s\n", source.where(), prefix)
 		seen[prefix] = true
 		return nil
 	}
