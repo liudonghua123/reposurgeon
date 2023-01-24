@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.34: 2023-01-24::
      Change repocutter -f (basename) option to -n.
      Default filecopy to matching a regexp; -f now undoes this.
      Add repocutter count and debug commands.
