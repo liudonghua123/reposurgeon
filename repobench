@@ -27,7 +27,7 @@ function alphaonly {
     echo -n "${*}" | tr -cs '[:lower:]' '_'
 }
 
-if [ $# = 4 ] && [ $display = no ]
+if [ $# = 4 ] && [ "${display}" = no ]
 then
     function run {
 	datfile="${1}"	# The output benchmark data
@@ -71,20 +71,20 @@ then
     exit 0
 fi
 
-if [ $display = yes ]
+if [ "${display}" = yes ]
 then
-    case $style in
+    case "${style}" in
 	runtime) idx=2; title="running time";;
 	heap) idx=3; title="heap size";;
 	highwater) idx=4; title="total memory";;
 	*)
-	    echo "Unknown plot type $style" >&2
+	    echo "Unknown plot type ${style}" >&2
 	    exit 1
 	    ;;
     esac
 fi
 
-if [ $display = yes ] && [ "$2" = "" ]
+if [ "${display}" = yes ] && [ "$2" = "" ]
 then
     datfile=${datfile:-$1}
     if [ ! -f "$datfile" ]
@@ -96,7 +96,7 @@ then
     cat >/tmp/plotme$$ <<EOF
 set key top lmargin
 set xlabel "number of revisions read in by reposurgeon"
-set ylabel "$style"
+set ylabel "${style}"
 f(x) = a*x + b
 g(x) = c*x**2 + d*x + e
 fit f(x) file using 1:$idx via a,b
@@ -107,7 +107,7 @@ plot file u 1:$idx title "$title" lw 2, \
 EOF
 
     # The actual plotting
-    if [ $svg = yes ]
+    if [ "${svg}" = yes ]
     then
 	# You could use the non-SVG mode to view the graph, and then
 	# use the viewer to save an svg file. However, that has some
@@ -123,7 +123,7 @@ EOF
     exit 0
 fi
 
-if [ $display = yes ] && [ "$2" != "" ]
+if [ "${display}" = yes ] && [ "$2" != "" ]
 then
     # We have: Multiple benchmark-data files corresponding to different
     # revisions.  We want: A merged plot extracting a selected statistic
@@ -136,7 +136,7 @@ set ylabel "${style}"
 plot for [i=1:words(files)] word(files, i) using 1:${idx} title word(files, i) noenhanced lw 2
 EOF
     # The actual plotting
-    if [ $svg = yes ]
+    if [ "${svg}" = yes ]
     then
 	name="comparative_$(alphaonly "${title}")"
 	gnuplot --persist -e "files='$*'; set terminal svg size 1920,1080 dynamic mouse standalone name '${name}'" /tmp/plotme$$
