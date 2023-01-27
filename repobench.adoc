@@ -40,7 +40,7 @@ In generate mode (the default) it runs reposurgeon multiple times with
 different readlimit values and writes out performance statistics for
 each run to a datafile.  The name of that datafile is reported.
 
-In display (-p) mode,, a benchmark-data file is sent to gnuplot to
+In display (-p) mode, a benchmark-data file is sent to gnuplot to
 make a graph. An alternate display mode (with -o) ships the graph to
 standard output as an SVG.
 
