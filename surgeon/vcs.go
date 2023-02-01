@@ -176,7 +176,7 @@ func vcsInit() {
 			checkout:     "git checkout",
 			pathlister:   "git ls-files",
 			taglister:    "git tag -l",
-			branchlister: "git branch -q --list 2>&1 | cut -c 3- | egrep -v 'detached|^master$' || exit 0",
+			branchlister: "git branch -q --list 2>&1 | cut -c 3- | grep -E -v 'detached|^master$' || exit 0",
 			prenuke:      newOrderedStringSet(".git/config", ".git/hooks"),
 			preserve:     newOrderedStringSet(".git/config", ".git/hooks"),
 			authormap:    ".git/cvs-authors",

@@ -102,7 +102,7 @@ and headers so it's in the same format as the rest of the msgbox."
 (defun svn-index ()
   "Show Subversion dump structure by eliding most lines."
   (interactive)
-  (grep (format "egrep -nH -e \"Node-path|Revision-number|Node-copyfrom\" %s " (buffer-file-name))))
+  (grep (format "grep -nHE -e \"Node-path|Revision-number|Node-copyfrom\" %s " (buffer-file-name))))
 
 (defun strip-msgbox-headers ()
   "Strip all headers from a msgbox comment dump except Event-Mark."
