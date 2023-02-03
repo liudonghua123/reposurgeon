@@ -1715,6 +1715,37 @@ func (ss StreamSection) hasContent() bool {
 	return ss.payload("Text-content-length") != nil
 }
 
+// Macinery for copy auditing
+
+type copyTrace struct {
+	revision int
+	isDir    bool
+	path     string
+	fromPath string
+	fromRev  string
+}
+
+func traceCopies(source DumpfileSource) []copyTrace {
+	var copies []copyTrace
+	headerhook := func(header StreamSection) []byte {
+		if fp := header.payload("Node-copyfrom-path"); fp != nil {
+			var newEntry copyTrace
+			newEntry.revision = source.Revision
+			newEntry.isDir = true
+			if p := header.payload("Node-kind"); p != nil && string(p) == "file" {
+				newEntry.isDir = false
+			}
+			newEntry.path = source.NodePath
+			newEntry.fromPath = string(fp)
+			newEntry.fromRev = string(header.payload("Node-copyfrom-rev"))
+			copies = append(copies, newEntry)
+		}
+		return nil
+	}
+	source.Report(nil, nil, headerhook, nil)
+	return copies
+}
+
 // Subcommand implementations begin here
 
 // Helpers
@@ -1804,6 +1835,16 @@ func closure(source DumpfileSource, selection SubversionRange, paths []string) {
 	}
 	for _, path := range s.toOrderedStringSet() {
 		fmt.Println(path)
+	}
+}
+
+func copygraph(source DumpfileSource) {
+	for _, entry := range traceCopies(source) {
+		t := "f"
+		if entry.isDir {
+			t = "d"
+		}
+		fmt.Printf("r%ds %v %s:~%s -> %s\n", entry.revision, t, entry.fromRev, entry.fromPath, entry.path)
 	}
 }
 
@@ -3105,6 +3146,8 @@ func main() {
 	switch flag.Arg(0) {
 	case "closure":
 		closure(NewDumpfileSource(input, baton), selection, flag.Args()[1:])
+	case "copygraph": // Not documented
+		copygraph(NewDumpfileSource(input, baton))
 	case "count":
 		count(NewDumpfileSource(input, baton))
 	case "debug":
