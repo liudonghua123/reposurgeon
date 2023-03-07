@@ -3075,6 +3075,12 @@ can sometimes make it impossible. Bad tools silently propagate such
 damage forward into your translation. Good tools, like cvs-fast-export
 and reposurgeon, warn you of problems and help you recover.
 
+A comman pitfall is to expect CVS tags to become tag objects in
+reposurgeon and expect to be able to rename or delete them with the
+"tag" command. CVS does not have annotated tags, they get mapped to
+lightweight tags by cvs-fast-export, which are actually branchlets;
+you have to manipulate them with the "branch" command instead.
+
 Here are the kinds of conversion glitches to watch for:
 
 1. Failure to coalesce runs of comments with identical attribution
