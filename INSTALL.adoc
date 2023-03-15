@@ -77,6 +77,9 @@ There is an extensive regression-test suite in the `test/` directory.
 To test the correctness of this software once its prerequisites are
 installed, invoke `make check` in the main directory.
 
+You'll need openssh-server or equivalent for the repotool tests
+to work; they use rsync.
+
 == Notes to packagers ==
 
 The package should recommend CVS and Subversion, though not

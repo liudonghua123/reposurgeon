@@ -11,7 +11,7 @@ fi
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-need cvs cvs-fast-export
+need cvs cvs-fast-export rsync
 
 trap 'rm -rf /tmp/mirror$$ /tmp/out$$' EXIT HUP INT QUIT TERM
 
