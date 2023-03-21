@@ -1,7 +1,8 @@
 = reposurgeon project news =
 
-Repository head::
+4.35: 2023-03-21::
      Document an importand gotcha about working with CVS.
+     Clean up some annoyances in the build and test machinery.
 
 4.34: 2023-01-24::
      Change repocutter -f (basename) option to -n.
