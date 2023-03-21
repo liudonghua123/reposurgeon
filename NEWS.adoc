@@ -1,7 +1,7 @@
 = reposurgeon project news =
 
 Repository head::
-     Dccument an importand gotcha about wortking with CVS.
+     Document an importand gotcha about working with CVS.
 
 4.34: 2023-01-24::
      Change repocutter -f (basename) option to -n.

@@ -2604,8 +2604,9 @@ copy of the state of an entire branch at a particular revision. This
 can be losslessly translated to an annotation only if no additional
 commits are added to the tag branch after the copy. But nothing
 prevents this!  Reposurgeon tries to do the right thing, creating a
-DVCS-style annotated tag when it can and otherwise preserving the
-changes as commits, using a lightweight tag to point at the tip.
+DVCS-style annotated tag using the metadata of the copy operation when
+it can and otherwise preserving the changes as commits, using a
+lightweight tag to point at the tip.
 
 There is a subtler problem around branches themselves. In a
 DVCS, deleting a branch removes it from the repository history
@@ -3286,16 +3287,9 @@ You are more likely to see a crash when processing a stream that has
 beem modified by filtering out unwanted commits, e.g. via select or
 expunge or sift commands.  The most common problem is copyfrom
 operations referring to a source revision that has been removed.
-In theory reposurgeon should fakk back to referencing the latest
+In theory reposurgeon should fall back to referencing the latest
 revision before the gap, but there are still occasional crashes
 the the reposugeon maintainers have not successfully characterized.
-
-repocutter emits warnings on stderr when it writes a stream with
-missing copyfrom sources, but reposurgeon will crash when presented
-with such a stream. If you have a conversion pipeline that uses
-repocutter, the right first step is to review that pipeline carefully.
-Make sure you haven't discarded standard error, and look for
-"missing copyfrom source" mewssages indicating a missing copyfrom revision.
 
 [[oom]]
 === Dealing with memory exhaustion
