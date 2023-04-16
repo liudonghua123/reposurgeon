@@ -29,21 +29,21 @@
 
 This is the long-form manual for the reposurgeon tool suite.
 
-Everybody should read the Introduction (immediately after this
+Everybody should read the <<introduction>> (immediately after this
 section) to be sure reposurgeon is the tool you actually want.
 
-Then read the Quick Start section (immediately following the
+Then read the <<quickstart>> section (immediately following the
 Introduction) to get a feeling for the syntax and style of reposurgeon
 commands.
 
 Assuming you're trying to do a repository lift, you should probably
-continue by reading A Guide to Repository Conversion.  It is not
-necessary to read the entire main body of the manual after that (the
-command reference) straight through, but keep it handy for when you
-need to learn more about a particular command or group of commands.
+continue by reading <<conversion>>.  It is not necessary to read the
+entire main body of the manual after that (the command reference)
+straight through, but keep it handy for when you need to learn more
+about a particular command or group of commands.
 
 If you're doing something more unusual than a conversion, you'll
-probably have to read through the command reference until
+Applprobably have to read through the command reference until
 you discover the commands you need.
 
 Help is available within reposurgeon using the "<<help_cmd>>" command.
@@ -400,10 +400,16 @@ at the same repository master directory (service prefix "rsync:").
 Usually rsync mirroring is faster, but it depends on sshd running
 at the server end and may being in complications around its security
 features.  Use a "svn:" URL, which uses mirroring by svnsync, when you
-can't make rsync work.  Note by the way that repotool mirror's "rsync:" URLs
-do *not* have the requirement for a remote rsyncd that an rsync URL fed
-directly to rsync itself does; internally, repotool turns them into a
-single-colon host plus path rsync source specification.
+can't make rsync work.
+
+Note by the way that repotool mirror's "rsync:" URLs do *not* have the
+requirement for a remote rsyncd that an rsync URL fed directly to
+rsync itself does; internally, repotool turns them into a single-colon
+host plus path rsync source specification.
+
+If your first access attempt failed with ssome message abourt access
+control, you may need to uncomment the RUSERNAME and RPASSWORD and
+set them to a valid credential pair.
 
 Later, you will put your custom commands in the lift script
 file. Doing this helps you not lose older steps as you experiment with
@@ -492,8 +498,8 @@ identifications in parallel with the rest of the work.
 
 Install whatever front end reposurgeon needs to read your
 repository.  That will be
-http://www.catb.org/~esr/cvs-fast-export[cvs-fast-export] for CVS, or
-the Subversion tools themselves for Subversion.
+http://www.catb.org/~esr/cvs-fast-export[cvs-fast-export] for CVS, or the
+VCS tool itself for Subversion and other systems.
 
 The generic-workflow Makefile will call reposurgeon
 for you, interpreting your $(PROJECT).lift file, when you type "make".
@@ -760,14 +766,16 @@ You can find empty commits as the =Z visibility set set and clean
 them up with the command `<<tagify_cmd>>`. Consult the
 reposurgeon manual page for usage details.
 
-A good way to spot junk commits is to eyeball the picture of the
-commit DAG created by the reposurgeon 'graph' command - they tend to
-stand out visually as leaf nodes in odd places. Be aware that the
-<<graph_cmd>> command outputs DOT, the language interpreted by the
-http://www.graphviz.org/[graphviz] suite; you will need a DOT
-rendering program and an image viewer.
+If your repository is small, a good way to spot junk commits is to
+eyeball the picture of the commit DAG created by the reposurgeon
+'graph' command - they tend to stand out visually as leaf nodes in odd
+places. Be aware that the <<graph_cmd>> command outputs DOT, the
+language interpreted by the http://www.graphviz.org/[graphviz] suite;
+you will need a DOT rendering program and an image viewer.
+Unfortunately, for large repositoris the sheer size of the graph image
+makes this imoractical.
 
-See the documentation of the `<<references_cmd>>` command, for details
+See the documentation of the `<<references_cmd>>` command for details
 on how fix up Subversion and CVS changeset references in comments so
 they're still meaningful.
 
