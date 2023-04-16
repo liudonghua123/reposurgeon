@@ -1285,7 +1285,7 @@ func (rs *Reposurgeon) DoProfile(line string) bool {
 			}
 		case "save":
 			subject, line := popToken(line)
-			filename, line := popToken(line)
+			filename, _ := popToken(line)
 			if filename == "" {
 				filename = control.profileNames[subject]
 			}
@@ -5007,7 +5007,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		}
 
 		var newname string
-		newname, line = popToken(line)
+		newname, _ = popToken(line)
 		if newname == "" {
 			croak("branch name must be nonempty.")
 			return false
