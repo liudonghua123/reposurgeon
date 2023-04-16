@@ -1,8 +1,8 @@
 #!/bin/sh
 ## Test repocutter swapcheck
 # FIXME: repocutter swapcheck test is incomplete
-# Needs tests for (1) toplevwl copy with stabdard layout
-# undeneath, (2) stanadard layout buried more than one level deep.
+# Needs tests for (1) toplevwl copy with standard layout
+# undeneath, (2) standard layout buried more than one level deep.
 # shellcheck disable=SC2086
 ${REPOCUTTER:-repocutter} -q -t "$(basename $0)" swapcheck 2>&1 <<EOF
 SVN-fs-dump-format-version: 2
