@@ -1,7 +1,8 @@
 = reposurgeon project news =
 
 Repository head::
-     Dovumentation refresh.
+     Documentation refresh.
+     Minor cleanups for code validation.
 
 4.35: 2023-03-21::
      Document an important gotcha about working with CVS.
