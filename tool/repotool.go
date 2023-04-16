@@ -108,7 +108,7 @@ VERBOSITY = "set progress"
 REPOSURGEON = reposurgeon
 LOGFILE = conversion.log
 
-# Set and uncomment these if remote access tio Subversion needs credentials.
+# Set and uncomment these if remote access to Subversion needs credentials.
 #export RUSERNAME=
 #export RPASSWORD=
 
