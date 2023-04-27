@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.36: 2023-04-27::
      Documentation refresh.
      Minor cleanups for code validation.
 
