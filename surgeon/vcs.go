@@ -58,6 +58,7 @@ type VCS struct {
 	notes        string           // Notes and caveats
 	// Hidden members
 	checkignore string // how to tell if directory is a checkout
+	idformat    string // ID display string format
 }
 
 // Constants needed in VCS class methods
@@ -222,8 +223,9 @@ __pycache__
 bzr-orphans
 # Simulated bzr default ignores end here
 `,
-			cookies: reMake(tokenNumeric),
-			notes:   "Requires the bzr-fast-import plugin.",
+			cookies:  reMake(tokenNumeric),
+			notes:    "Requires the bzr-fast-import plugin.",
+			idformat: "%s",
 		},
 		{
 			name:         "brz",
@@ -262,8 +264,9 @@ bzr-orphans
  brz-orphans
  # Simulated brz default ignores end here
  `,
-			cookies: reMake(tokenNumeric),
-			notes:   "Breezy capability is not well tested.",
+			cookies:  reMake(tokenNumeric),
+			notes:    "Breezy capability is not well tested.",
+			idformat: "%s",
 		},
 		{
 			name:         "hg",
@@ -292,6 +295,7 @@ bzr-orphans
 If there is no branch named 'master' in a repo when it is read, the hg 'default'
 branch is renamed to 'master'.
 `,
+			idformat: "%s",
 		},
 		{
 			// Styleflags may need tweaking for round-tripping
@@ -411,9 +415,10 @@ core
 .DS_Store
 # Simulated darcs default ignores end here
 `,
-			cookies: reMake(),
-			project: "http://darcs.net/",
-			notes:   "Assumes no boringfile preference has been set.",
+			cookies:  reMake(),
+			project:  "http://darcs.net/",
+			notes:    "Assumes no boringfile preference has been set.",
+			idformat: "%s",
 		},
 		{
 			name:         "mtn",
@@ -470,9 +475,10 @@ _darcs
 *.bzr
 *.hg
 `,
-			cookies: reMake(),
-			project: "http://www.monotone.ca/",
-			notes:   "Exporter is buggy, occasionally emitting negative timestamps.",
+			cookies:  reMake(),
+			project:  "http://www.monotone.ca/",
+			notes:    "Exporter is buggy, occasionally emitting negative timestamps.",
+			idformat: "%s",
 		},
 		{
 			name:         "svn",
@@ -496,6 +502,7 @@ _darcs
 			project:      "http://subversion.apache.org/",
 			notes:        "Run from the repository, not a checkout directory.",
 			checkignore:  ".svn",
+			idformat:     "r%s",
 		},
 		{
 			name:         "cvs",
@@ -551,6 +558,7 @@ core
 			project:     "http://www.catb.org/~esr/cvs-fast-export",
 			notes:       "Requires cvs-fast-export.",
 			checkignore: "CVS",
+			idformat:    "%s",
 		},
 		{
 			name:         "rcs",
@@ -570,6 +578,7 @@ core
 			cookies:      reMake(dottedNumeric),
 			project:      "http://www.catb.org/~esr/cvs-fast-export",
 			notes:        "Requires cvs-fast-export.",
+			idformat:     "%s",
 		},
 		{
 			name:         "src",
@@ -590,6 +599,7 @@ core
 			cookies:      reMake(tokenNumeric),
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
+			idformat:     "%s",
 		},
 		{
 			// Styleflags may need tweaking for round-tripping
@@ -613,7 +623,8 @@ core
 			cookies:      reMake(dottedNumeric), // Same as SCCS/CVS
 			project:      "https://www.bitkeeper.com/",
 			// No tag support, and a tendency to core-dump
-			notes: "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
+			notes:    "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
+			idformat: "%s",
 		},
 	}
 }

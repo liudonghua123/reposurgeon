@@ -1806,8 +1806,8 @@ func (t *Tag) showlegacy() string {
 		return ""
 	}
 	// Special case for Subversion
-	if t.repo != nil && t.repo.vcs != nil && t.repo.vcs.name == "svn" {
-		return "r" + t.legacyID
+	if t.repo != nil && t.repo.vcs != nil {
+		return fmt.Sprintf(t.repo.vcs.idformat, t.legacyID)
 	}
 	return t.legacyID
 }
@@ -2749,8 +2749,8 @@ func (commit *Commit) showlegacy() string {
 		return ""
 	}
 	// Special case for Subversion
-	if commit.repo != nil && commit.repo.vcs != nil && commit.repo.vcs.name == "svn" {
-		return "r" + commit.legacyID
+	if commit.repo != nil && commit.repo.vcs != nil {
+		return fmt.Sprintf(commit.repo.vcs.idformat, commit.legacyID)
 	}
 	return commit.legacyID
 }
@@ -5886,8 +5886,8 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 			} else {
 				if commit.Branch != "refs/heads/master" {
 					msg := ""
-					if commit.legacyID != "" && repo.vcs != nil && repo.vcs.name == "svn" {
-						msg += fmt.Sprintf(" r%s:", commit.legacyID)
+					if commit.legacyID != "" && repo.vcs != nil {
+						msg += fmt.Sprintf(repo.vcs.idformat, commit.legacyID) + ":"
 					} else if commit.mark != "" {
 						msg += fmt.Sprintf(" '%s':", commit.mark)
 					}
