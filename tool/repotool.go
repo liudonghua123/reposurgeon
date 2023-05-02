@@ -805,6 +805,8 @@ func checkout(outdir string, rev string) string {
 		return outdir
 	} else if vcs.name == "bzr" {
 		croak("checkout is not yet supported in bzr.")
+	} else if vcs.name == "brz" {
+		croak("checkout is not yet supported in bzr.")
 	} else if vcs.name == "hg" {
 		spec := ""
 		if rev != "" {

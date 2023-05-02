@@ -69,8 +69,8 @@ achieved with fully automated converters. Another application is when
 code needs to be removed from a repository for legal or policy reasons.
 
 Fully supported systems (those for which reposurgeon can both read and
-write repositories) include git, hg, bzr, darcs, bk, RCS, and SRC.
-For a complete list, with dependencies and technical notes, type
+write repositories) include git, hg, bzr, brz, darcs, bk, RCS, and
+SRC.  For a complete list, with dependencies and technical notes, type
 "<<prefer_cmd>>" to the reposurgeon prompt.
 
 Writing to the file-oriented systems RCS and SRC has some serious
@@ -2221,7 +2221,7 @@ include::docinclude/authors.adoc[]
 reposurgeon recognizes how supported VCSes represent file ignores (CVS
 _.cvsignore_ files lurking untranslated in older Subversion
 repositories, Subversion ignore properties,
-_.gitignore_/_.hgignore_/_.bzrignore_ file in other systems) and moves
+_.gitignore_/_.hgignore_/_.bzrignore_/.brzignore file in other systems) and moves
 ignore declarations among these containers on repo input and
 output. This will be sufficient if the ignore patterns are exact
 filenames.
@@ -2248,6 +2248,8 @@ included in the table.
 | _to darcs_ | plain    | plain    | plain           | plain   | plain        | all        | all      | all
 |  _to SRC_  | no !     | all      | no !            | all     | no RE:, no ! | plain      | all      | all
 |==============================================================================================================
+
+For bzr (Breezy) see the bzr entries.
 
 The hg rows and columns of the table describe compatibility to
 hg's glob syntax rather than its default regular-expression syntax.
@@ -3724,7 +3726,7 @@ could, for example, say
 Within a commit, a magic comment of the form '```#legacy-id```' declares a
 legacy ID from the stream file's source version-control system.
 
-Also accepted is the bzr syntax for setting per-commit
+Also accepted is the bzr/brz syntax for setting per-commit
 properties. While parsing commit syntax, a line beginning with the
 token '```property```' must continue with a whitespace-separated
 property-name token. If it is then followed by a newline it is taken
@@ -3744,9 +3746,9 @@ property legacy-id 2 r1
 M 644 inline README
 --------
 
-Unlike other extensions, bzr properties are only preserved on
-stream output if the preferred type is bzr, because any importer other
-than bzr's will choke on them.
+Unlike other extensions, bzr/brz properties are only preserved on
+stream output if the preferred type is bzr or brz, because any importer other
+than those will choke on them.
 
 [[limitations]]
 == Limitations and guarantees
@@ -3783,7 +3785,7 @@ Guarantee: All reposurgeon operations either preserve all repository
 state they are not explicitly told to modify or warn you when they
 cannot do so.
 
-Guarantee: reposurgeon handles the bzr commit-properties extension,
+Guarantee: reposurgeon handles the bzr/brz commit-properties extension,
 correctly passing through property items including those with embedded
 newlines. (Such properties are also editable in the message-box
 format.)
@@ -3792,7 +3794,7 @@ Limitation: Because reposurgeon relies on other programs to generate
 and interpret the fast-import command stream, it is subject to bugs in
 those programs.
 
-Limitation: bzr suffers from deep confusion over whether its unit of
+Limitation: bzr/brz suffers from deep confusion over whether its unit of
 work is a repository or a floating branch that might have been cloned
 from a repo or created from scratch, and might or might not be
 destined to be merged to a repo one day. Its exporter only works on

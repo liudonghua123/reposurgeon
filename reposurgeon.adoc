@@ -38,7 +38,7 @@ defines a common language of primitive operations for
 reposurgeon to speak.
 
 Fully supported systems (those for which reposurgeon can both read and
-write repositories) include git, hg, bzr, darcs, bk, RCS, and SRC.
+write repositories) include git, hg, bzr, brz, darcs, bk, RCS, and SRC.
 For a complete list, with dependencies and technical notes, type
 "prefer" to the reposurgeon prompt.
 
@@ -92,6 +92,9 @@ Core git supports both export and import.
 bzr::
 Requires bzr plus the `bzr-fast-import` plugin.
 
+brz::
+Requires brz.
+
 hg::
 Requires core hg and `hg-git-fast-import`.
 
@@ -121,7 +124,7 @@ Returns 1 if the last command executed threw an error, 0 otherwise.
 [[see_also]]
 == SEE ALSO ==
 
-bzr(1), cvs(1), darcs(1), git(1), hg(1), rcs(1), src(1), svn(1), bk(1).
+bzr(1), brz(1), cvs(1), darcs(1), git(1), hg(1), rcs(1), src(1), svn(1), bk(1).
 
 [[author]]
 == AUTHOR ==
