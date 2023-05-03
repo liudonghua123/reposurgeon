@@ -420,6 +420,31 @@ core
 			notes:    "Assumes no boringfile preference has been set.",
 			idformat: "%s",
 		},
+		/*
+			{
+				name:         "pijul",
+				subdirectory: ".pijul",
+				exporter:     "",
+				quieter:      "",
+				styleflags:   newOrderedStringSet(),
+				extensions:   newOrderedStringSet(),
+				initializer:  "pijul init",
+				pathlister:   "pijul ls", // Undocumented
+				taglister:    "",
+				branchlister: "",
+				importer:     "",
+				checkout:     "",
+				prenuke:      newOrderedStringSet(),
+				preserve:     newOrderedStringSet(),
+				authormap:    "",
+				ignorename:   ".ignore",
+				dfltignores:  ``,
+				cookies:      reMake(),
+				project:      "http://pijul.org/",
+				notes:        "No importer/exporter pair yet.",
+				idformat:     "%s",
+			},
+		*/
 		{
 			name:         "mtn",
 			subdirectory: "_MTN",
