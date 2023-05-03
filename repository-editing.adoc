@@ -3299,7 +3299,7 @@ expunge or sift commands.  The most common problem is copyfrom
 operations referring to a source revision that has been removed.
 In theory reposurgeon should fall back to referencing the latest
 revision before the gap, but there are still occasional crashes
-the the reposugeon maintainers have not successfully characterized.
+the the reposurgeon maintainers have not successfully characterized.
 
 [[oom]]
 === Dealing with memory exhaustion
