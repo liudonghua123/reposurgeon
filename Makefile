@@ -96,7 +96,7 @@ test-helpers:
 	asciidoctor -D. -a webfonts! $<
 
 # This is a list of help topics for which the help is in regular format
-# and there is no additional material included in the long-form mnual only.
+# and there is no additional material included in the long-form manual only.
 # This means there's one line of BNF, a blank separator line, and one or
 # more blank-line-separated paragraphs of running text.
 BNF_TOPICS = \
