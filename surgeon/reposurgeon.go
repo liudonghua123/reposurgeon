@@ -46,6 +46,8 @@ import (
 	ianaindex "golang.org/x/text/encoding/ianaindex"
 )
 
+var version string
+
 // Control is global context. Used to be named Context until its global
 // collided with the Go context package.
 type Control struct {

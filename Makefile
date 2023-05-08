@@ -45,9 +45,9 @@ all: build cuttercommands.inc toolcommands.inc $(MANPAGES) $(HTMLFILES)
 
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
+GOFLAGS=-gcflags '-N -l' -ldflags='-X main.version=$(VERS)'
 build: surgeon/help-index.go
 	-test -f go.mod || (go mod init && go get)
-	sh extractversion.sh -g <NEWS.adoc >surgeon/version.go
 	go build $(GOFLAGS) -o repocutter ./cutter
 	go build $(GOFLAGS) -o repomapper ./mapper
 	go build $(GOFLAGS) -o reposurgeon ./surgeon
@@ -273,7 +273,7 @@ test:
 
 lint:
 	golint -set_exit_status ./...
-	shellcheck -f gcc extractversion.sh repobench test/fi-to-fi test/liftcheck test/singlelift test/svn-to-git test/svn-to-svn test/delver test/*.sh test/*test
+	shellcheck -f gcc repobench test/fi-to-fi test/liftcheck test/singlelift test/svn-to-git test/svn-to-svn test/delver test/*.sh test/*test
 
 fmt:
 	gofmt -w .
@@ -282,7 +282,7 @@ fmt:
 # Cleaning
 #
 clean:
-	rm -f $(BINARIES) surgeon/version.go
+	rm -f $(BINARIES)
 	rm -fr docinclude cuttercommands.inc toolcommands.inc *~ *.1 *.html *.tar.xz MANIFEST *.md5
 	rm -fr .rs .rs* test/.rs test/.rs*
 	rm -f typescript test/typescript
@@ -317,7 +317,7 @@ uninstall:
 	rm -f $(INSTALLED_SHARED)
 	rmdir "$(target)/share/doc/reposurgeon"
 
-VERS=$(shell sh ./extractversion.sh <NEWS.adoc)
+VERS=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 
 version:
 	@echo $(VERS)

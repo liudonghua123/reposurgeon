@@ -66,6 +66,8 @@ const debugPARSE = 2
 
 var quiet bool
 
+var version string // Patched by -X option in Makefile
+
 const invalidationWarning = `
 Warning: it is not guaranteed that the output of this subcommand will be a
 valid dump that can be read by reposurgeon. In particular, it may delete 

@@ -29,6 +29,8 @@ import (
 	term "golang.org/x/term"
 )
 
+var version string // Patched by -X option in Makefile
+
 // Define a couplee of partial capability tables for querying
 // checkout directories.
 
