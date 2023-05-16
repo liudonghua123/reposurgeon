@@ -107,6 +107,7 @@ required unless you give an -r option.  Spurious errors will be
 reported if the directory is not a full checkout of HEAD.  To avoid
 this optimization and force updating, do "-r HEAD".
 
+There is no support for RCS or SCCS collections.
 
 [[requirements]]
 == REQUIREMENTS ==
