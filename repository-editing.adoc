@@ -73,7 +73,7 @@ write repositories) include git, hg, bzr, brz, darcs, bk, RCS, and
 SRC.  For a complete list, with dependencies and technical notes, type
 "<<prefer_cmd>>" to the reposurgeon prompt.
 
-Writing to the file-oriented systems RCS and SRC has some serious
+Writing to the file-oriented systems RCS, and SRC has some serious
 limitations because those systems cannot represent all the metadata in
 a git-fast-export stream. They require rcs-fast-import as a back end;
 consult that tool's documentation for details and partial workarounds.
@@ -83,7 +83,7 @@ option of the '```<<read_cmd>>```' command and written out with the
 `--format=fossil` option of the '```<<write_cmd>>```' comment. Ignore
 patterns are not translated in either direction.
 
-SVN and CVS are supported for read only, not write.  For CVS,
+SCCS, SVN and CVS are supported for read only, not write.  For CVS,
 reposurgeon must be run from within a repository directory (one with a
 CVSROOT subdirectory), not a checkout. Each module becomes a
 subdirectory in the reposurgeon representation of the change history.
@@ -560,15 +560,14 @@ multiproject repositories, see <<multiproject>>.
 Mercurial: reposurgeon can read a Mercurial repository using
 either of two methods.  See <<mercurial>> for details.
 
-SCCS: Use http://www.catb.org/esr/sccs2rcs/[sccs2rcs]
-to get to RCS, then follow the directions for RCS. There is a script
-called sccs2git on CPAN which is not recommended, as it is poorly
-documented and makes no attempt to group commits into changesets.
-
 RCS: reposurgeon will read an RCS collection.  It uses
 http://www.catb.org/~esr/cvs-fast-export[cvs-fast-export],
 which despite its name does not actually require CVS metadata other than
 the RCS master files that store the content.
+
+SCCS: reposurgeon will read an SCCS collection. It uses
+http://www.catb.org/esr/sccs2rcs/[sccs2rcs] to get to RCS, then
+cvs-fast-export to convert to a fast-import stream.
 
 Fossil: reposurgeon will read a Fossil repository file. It uses the
 native Fossil exporter, which is pretty good but doesn't export ignore
@@ -4202,6 +4201,15 @@ May be genetically related to the Nyblom svn2git, but if so they
 diverged in 2008.
 
 LINEAR, NO_TAGS, NO_IGNORES, NO_DOCUMENTATION, ABANDONED.
+
+=== sccs2git
+
+There is a script called sccs2git on CPAN which attempts to lift SCCS
+collections direct to Git. It is not recommended, as
+it is poorly documented and makes no attempt to group commits into
+changesets.
+
+NO_DOCUMENTATION, ABANDONED.
 
 === SubGit
 

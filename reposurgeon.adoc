@@ -84,7 +84,7 @@ Conversion With Reposurgeon].
 == REQUIREMENTS ==
 
 reposurgeon relies on importers and exporters
-associated with the VCSes it supports.
+asociated with the VCSes it supports.
 
 git::
 Core git supports both export and import.
@@ -113,6 +113,10 @@ RCS::
 Requires `cvs-fast-export` (yes, that's not a typo; `cvs-fast-export`
 handles RCS collections as well). The caveat for CVS applies.
 
+SCCS::
+Requires `cvs-fast-export` and `sccs2rcs`, the latter to do a
+lossless conversion to RCS. The caveat for CVS applies.
+
 bk::
 Versions 7.3 and after have a fast-export command that reposurgeon can use.
 
@@ -124,7 +128,7 @@ Returns 1 if the last command executed threw an error, 0 otherwise.
 [[see_also]]
 == SEE ALSO ==
 
-bzr(1), brz(1), cvs(1), darcs(1), git(1), hg(1), rcs(1), src(1), svn(1), bk(1).
+bzr(1), brz(1), cvs(1), darcs(1), git(1), hg(1), sscs(1), rcs(1), src(1), svn(1), bk(1).
 
 [[author]]
 == AUTHOR ==
