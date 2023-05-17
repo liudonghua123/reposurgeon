@@ -39,6 +39,7 @@ type VCS struct {
 	name         string           // Name of the VCS
 	subdirectory string           // Name of its metadata subdirectory
 	exporter     string           // Import/export style flags.
+	requires     stringSet        // Required tools
 	quieter      string           // How to make exporter quieter
 	styleflags   orderedStringSet // fast-export style flags
 	extensions   orderedStringSet // Format extension flags
@@ -102,6 +103,7 @@ func (vcs VCS) String() string {
 
 	return fmt.Sprintf("         Name: %s\n", vcs.name) +
 		fmt.Sprintf(" Subdirectory: %s\n", vcs.subdirectory) +
+		fmt.Sprintf("     Requires: %s\n", vcs.requires.String()) +
 		fmt.Sprintf("     Exporter: %s\n", vcs.exporter) +
 		fmt.Sprintf(" Export-Style: %s\n", vcs.styleflags.String()) +
 		fmt.Sprintf("   Extensions: %s\n", vcs.extensions.String()) +
@@ -167,6 +169,7 @@ func vcsInit() {
 			name:         "git",
 			subdirectory: ".git",
 			// Requires git 2.19.2 or later for --show-original-ids
+			requires:     newStringSet("git"),
 			exporter:     "git fast-export --show-original-ids --signed-tags=verbatim --tag-of-filtered-object=drop --use-done-feature --all",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
@@ -189,6 +192,7 @@ func vcsInit() {
 		{
 			name:         "bzr",
 			subdirectory: ".bzr",
+			requires:     newStringSet("bzr"),
 			exporter:     "bzr fast-export --no-plain .",
 			quieter:      "",
 			styleflags: newOrderedStringSet(
@@ -230,6 +234,7 @@ bzr-orphans
 		{
 			name:         "brz",
 			subdirectory: ".brz",
+			requires:     newStringSet("brz"),
 			exporter:     "brz fast-export --no-plain .",
 			quieter:      "",
 			styleflags: newOrderedStringSet(
@@ -271,6 +276,7 @@ bzr-orphans
 		{
 			name:         "hg",
 			subdirectory: ".hg",
+			requires:     newStringSet("hg"),
 			exporter:     "",
 			styleflags: newOrderedStringSet(
 				"import-defaults",
@@ -301,6 +307,7 @@ branch is renamed to 'master'.
 			// Styleflags may need tweaking for round-tripping
 			name:         "darcs",
 			subdirectory: "_darcs",
+			requires:     newStringSet("darcs"),
 			exporter:     "darcs fastconvert export",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
@@ -424,6 +431,7 @@ core
 			{
 				name:         "pijul",
 				subdirectory: ".pijul",
+				requires:     newStringSet("pijul"),
 				exporter:     "",
 				quieter:      "",
 				styleflags:   newOrderedStringSet(),
@@ -448,6 +456,7 @@ core
 		{
 			name:         "mtn",
 			subdirectory: "_MTN",
+			requires:     newStringSet("mtn"),
 			exporter:     "mtn git_export",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
@@ -508,6 +517,7 @@ _darcs
 		{
 			name:         "svn",
 			subdirectory: "locks",
+			requires:     newStringSet("svn"),
 			exporter:     "svnadmin dump  .",
 			quieter:      "--quiet",
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
@@ -532,6 +542,7 @@ _darcs
 		{
 			name:         "cvs",
 			subdirectory: "CVSROOT", // Can't be Attic, that doesn't always exist.
+			requires:     newStringSet("cvs-fast-export"),
 			exporter:     "find . -name '*,v' -print | cvs-fast-export --reposurgeon",
 			quieter:      "",
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
@@ -588,6 +599,7 @@ core
 		{
 			name:         "sccs",
 			subdirectory: "SCCS",
+			requires:     newStringSet("sccs2rcs", "cvs-fast-export"),
 			exporter:     "sccs2rcs && find RCS -name '*,v' -print | cvs-fast-export --reposurgeon && rm -fr RCS",
 			quieter:      "",
 			styleflags:   newOrderedStringSet("export-progress"),
@@ -608,6 +620,7 @@ core
 		{
 			name:         "rcs",
 			subdirectory: "RCS",
+			requires:     newStringSet("cvs-fast-export"),
 			exporter:     "find . -name '*,v' -print | cvs-fast-export --reposurgeon",
 			quieter:      "",
 			styleflags:   newOrderedStringSet("export-progress"),
@@ -628,6 +641,7 @@ core
 		{
 			name:         "src",
 			subdirectory: ".src",
+			requires:     newStringSet("src"),
 			exporter:     "src fast-export",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
@@ -650,6 +664,7 @@ core
 			// Styleflags may need tweaking for round-tripping
 			name:         "bk",
 			subdirectory: ".bk",
+			requires:     newStringSet("bk"),
 			exporter:     "bk fast-export --no-bk-keys",
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet(),

@@ -351,6 +351,21 @@ func runProcess(dcmd string, legend string) error {
 	return nil
 }
 
+// findBinary tells whethere a specified progra, is in our execution path.
+func findBinary(program string) bool {
+	found := false
+	for _, dir := range strings.Split(os.Getenv("PATH"), ":") {
+		if entries, err := ioutil.ReadDir(dir); err == nil {
+			for _, e := range entries {
+				if e.Name() == program {
+					return true
+				}
+			}
+		}
+	}
+	return found
+}
+
 // An assumption about line endings: we presently assume that only
 // commit comments ever need to be corrected for whether crlf is
 // enabled - that is, portions of fast-import streams other than
@@ -7821,7 +7836,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 		if preferred.manages(source) {
 			vcs = preferred // if extractor is non-null it gets picked up below
 		} else {
-			return nil, fmt.Errorf("couldn't find a repo of desiret type %s under %s", preferred.name, abspath(source))
+			return nil, fmt.Errorf("couldn't find a repo of desired type %s under %s", preferred.name, abspath(source))
 		}
 	} else {
 		hitcount := 0
@@ -7883,6 +7898,12 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 	}
 	// We found a matching VCS type
 	if vcs != nil {
+		for program := range vcs.requires.Iterate() {
+			if !findBinary(program) {
+				return nil, fmt.Errorf("%s is required to read %s",
+					program, abspath(source))
+			}
+		}
 		repo.hint("", vcs.name, true)
 		repo.preserveSet = vcs.preserve
 		suppressBaton := control.flagOptions["progress"] && repo.exportStyle().Contains("export-progress")

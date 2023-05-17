@@ -2248,3 +2248,10 @@ TAG o123-o123
 		})
 	}
 }
+
+func TestFindBinary(t *testing.T) {
+	assertTrue(t, findBinary("sh"))
+	assertTrue(t, !findBinary("fubbleboz"))
+}
+
+// end
