@@ -2,7 +2,8 @@
 
 Repository head::
      Add experimental support for brz/Breezy.
-     Support reading SCCS directories.
+     Support reading SCCS repository directories directly.
+     Add repocutter hash command for working with a content-adddressibe annex.
 
 4.36: 2023-04-27::
      Documentation refresh.
