@@ -7,8 +7,12 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/hex"
 	"flag"
 	"fmt"
+	"hash"
 	"io"
 	"math"
 	"os"
@@ -149,6 +153,13 @@ in order to extract filecopies from branches.
 Restricting the range holds down the memory requirement of this tool,
 which in the worst (and default) 1:$ case will keep a copy of every blob
 in the repository until it's done processing the stream.
+`},
+	"hash": {
+		"Replace content with hash, preserving structure",
+		`hash: usage: repocutter [-r SELECTION] hash [-f|-fixed] [-h|-hash HASHTYPE] [PATTERN...]
+
+Replace content with hash on all node paths matching the specified regular
+expressions; if no expressions are given, match all paths.
 `},
 	"log": {
 		"Extracting log entries",
@@ -499,6 +510,7 @@ var narrativeOrder []string = []string{
 
 	"replace",
 	"strip",
+	"hash",
 	"obscure",
 	"reduce",
 	"testify",
@@ -2547,8 +2559,9 @@ func skipcopy(source DumpfileSource, selection SubversionRange) {
 	source.Report(nil, nil, headerhook, nil)
 }
 
-func strip(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string) {
+func striphash(source DumpfileSource, selection SubversionRange, fixed bool, patterns []string, dohash bool, hashtype string, hasher *hash.Hash) {
 	var matcher SegmentMatcher
+	hashtype += string(':')
 	if len(patterns) > 0 {
 		matcher = NewSegmentMatcher(patterns, fixed)
 	}
@@ -2562,12 +2575,28 @@ func strip(source DumpfileSource, selection SubversionRange, fixed bool, pattern
 	}
 	contenthook := func(content []byte) []byte {
 		if stripIt {
-			if len(content) > 0 { //len([]nil == 0)
-				// Avoid replacing symlinks, a reposurgeon sanity check barfs.
-				if !bytes.HasPrefix(content, []byte("link ")) {
-					tell := fmt.Sprintf("Revision is %d, file path is %s.\n",
-						source.Revision, source.NodePath)
-					content = []byte(tell)
+			if !dohash {
+				if len(content) > 0 { //len([]nil == 0)
+					// Avoid replacing symlinks, a reposurgeon sanity check barfs.
+					if !bytes.HasPrefix(content, []byte("link ")) {
+						tell := fmt.Sprintf("Revision is %d, file path is %s.\n",
+							source.Revision, source.NodePath)
+						content = []byte(tell)
+					}
+				}
+			} else {
+				if len(content) > 0 {
+					(*hasher).Reset()
+					if hashtype == "gitblobsha1:" {
+						(*hasher).Write([]byte(fmt.Sprintf("blob %d\x00", len(content))))
+					}
+					(*hasher).Write(content)
+					content = (*hasher).Sum(nil)
+					hexcontent := make([]byte, hex.EncodedLen(len(content)))
+					hex.Encode(hexcontent, content)
+					str := hashtype;
+					str += string(hexcontent[:])
+					return []byte(str)
 				}
 			}
 		}
@@ -3069,6 +3098,7 @@ func main() {
 	var rangestr string
 	var segment string
 	var infile string
+	var hashtype string
 	input := os.Stdin
 	flag.IntVar(&base, "b", 0, "base value to renumber from")
 	flag.IntVar(&base, "base", 0, "base value to renumber from")
@@ -3078,6 +3108,8 @@ func main() {
 	flag.IntVar(&debug, "debug", 0, "enable debug messages")
 	flag.BoolVar(&fixed, "f", false, "disable regexp interpretation")
 	flag.BoolVar(&fixed, "fixed", false, "disable regexp interpretation")
+	flag.StringVar(&hashtype, "h", "sha256", "set hash type")
+	flag.StringVar(&hashtype, "hash", "sha256", "set hash type")
 	flag.StringVar(&infile, "i", "", "set input file")
 	flag.StringVar(&infile, "infile", "", "set input file")
 	flag.StringVar(&logentries, "l", "", "pass in log patch")
@@ -3092,7 +3124,7 @@ func main() {
 	flag.StringVar(&segment, "segment", "trunk", "set set segment for push operation")
 	flag.StringVar(&errortag, "t", "", "set error tag")
 	flag.StringVar(&errortag, "tag", "", "set error tag")
-	// Available: aceghjkmopuvwxyz
+	// Available: acegjkmopuvwxyz
 	flag.Parse()
 
 	if errortag != "" {
@@ -3168,6 +3200,17 @@ func main() {
 		expungesift(NewDumpfileSource(input, baton), selection, true, fixed, flag.Args()[1:])
 	case "filecopy":
 		filecopy(NewDumpfileSource(input, baton), selection, basename, fixed, flag.Args()[1:])
+	case "hash":
+		if hashtype == "sha1" || hashtype == "gitblobsha1" {
+			hasher := sha1.New()
+			striphash(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], true, hashtype, &hasher)
+		} else if hashtype == "sha256" {
+			hasher := sha256.New()
+			striphash(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], true, hashtype, &hasher)
+		} else {
+			fmt.Fprintf(os.Stderr, "unsupported hash type %s\n", hashtype)
+			os.Exit(1)
+		}
 	case "help":
 		assertNoSelection()
 		if len(flag.Args()) == 1 {
@@ -3241,7 +3284,7 @@ func main() {
 	case "skipcopy":
 		skipcopy(NewDumpfileSource(input, baton), selection)
 	case "strip":
-		strip(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:])
+		striphash(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], false, "", nil)
 	case "swap":
 		swap(NewDumpfileSource(input, baton), selection, fixed, flag.Args()[1:], false)
 	case "swapcheck":
