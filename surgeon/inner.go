@@ -65,7 +65,7 @@ type revidx uint32  // Revision indices
 // is not safe for this to be uint16.
 type nodeidx uint32 // Node indices within revisions.
 
-// Use these for distinguished extreme values of indices wuth int type
+// Use these for distinguished extreme values of indices with int type
 const (
 	maxInt  = 1<<(bits.UintSize-1) - 1 // 1<<31 - 1 or 1<<63 - 1
 	minInt  = -maxInt - 1              // -1 << 31 or -1 << 63
