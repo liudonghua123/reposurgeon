@@ -2,7 +2,7 @@
 :doctype: manpage
 
 == NAME ==
-repotool - operate on a CVS, SVN, git, bzr, hg, or darcs repository in a uniform way
+repotool - operate on aany supporteed repository type in a uniform way
 
 == SYNOPSIS ==
 
@@ -43,13 +43,13 @@ There is one special checkout option:
 The compare operation accepts the following options:
 
 -n::
-	Passed to the individual checkout commands which means that
+	Subversion-only. Passed to the individual checkout commands which means that
 	in cases where it makes sense the complete repository will be checked
 	out flatly, treating branch and tag namespaces as simple
 	directories.
 
 -a::
-	Use an empty directory
+	Subversion-obly. Use an empty directory
 	as the checkout if the asked branch or tag cannot be found, instead of
 	erroring out without any comparison. This is useful when if the other
 	repository uses empty content for deleted refs.
