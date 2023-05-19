@@ -470,6 +470,8 @@ FIXME: R and C handling in expunge needs tests
 
 FIXME: Need test for repocutter filecopy with -f, and skipcopy.
 
+FIXME: Meeds tests of bk, brz, bzr, darcs, mtn.
+
 == Some references
 
 https://testanything.org/

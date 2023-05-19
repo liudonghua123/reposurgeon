@@ -12,6 +12,8 @@
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
+need hg
+
 # Required because $PWD seems to be undefined in Gitlab's CI environment
 BIN="${BINDIR:-$(realpath ..)}"
 
