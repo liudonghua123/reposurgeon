@@ -646,7 +646,7 @@ core
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
-			initializer:  "src init",
+			initializer:  "",
 			importer:     "",
 			checkout:     "",
 			pathlister:   "src ls",
