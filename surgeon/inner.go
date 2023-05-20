@@ -8049,7 +8049,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 					stamp := rfc3339(time.Unix(int64(inttime), 0))
 					stamp += "!" + cperson
 					if stampSet[stamp] {
-						croak("more than one commit matches %s (%s)",
+						return nil, fmt.Errorf("more than one commit matches %s (%s)",
 							stamp, hashv)
 
 						delete(hashToAction, hashv)
