@@ -18,7 +18,7 @@ pseudogit() {
     shift
     case "${cmd}" in
 	init)
-	    # Initualize repo in specified temporary directory
+	    # Initialize repo in specified temporary directory
 	    base="$1";
 	    rm -fr "${base}";
 	    mkdir "${base}";
@@ -26,12 +26,12 @@ pseudogit() {
 	    git init -q;
 	    ts=0;
 	    ;;
-	add|commit)
+	commit)
 	    # Add or commit content
 	    file="$1"
 	    text="$2"
 	    cat >"${file}"
-	    if [ "${cmd}" = "add" ]
+	    if [ -f "${file}" ]
 	    then
 		git add "${file}"
 	    fi
@@ -42,13 +42,13 @@ pseudogit() {
 	    export GIT_AUTHOR_DATE="1${ft} +0000" 
 	    git commit -q -a -m "$text" --author "Fred J. Foonly <fered@foonly.org>"
 	    ;;
-	branch)
+	checkout)
+	    # Checkput branch, crearing if necessary
 	    branch="$1"
 	    if [ "$(git branch | grep ${branch})" = "" ]
 	    then
 		git branch "${branch}"
 	    fi
-	    # Switch to specified branch
 	    git checkout -q "$1";;
 	export)
 	    # Dump export stream
@@ -60,7 +60,7 @@ pseudogit() {
 
 pseudogit init /tmp/bubble$$
 
-pseudogit add sample "First commit (master)" <<EOF
+pseudogit commit sample "First commit (master)" <<EOF
 First line of sample content.
 EOF
 
@@ -69,13 +69,13 @@ First line of sample content.
 Second line of sample content.
 EOF
 
-pseudogit branch foobar
+pseudogit checkout foobar
 
-pseudogit add sample2 "Third commit (foobar)" <<EOF
+pseudogit commit sample2 "Third commit (foobar)" <<EOF
 First line of sample2 content.
 EOF
 
-pseudogit branch master
+pseudogit checkout master
 
 pseudogit commit sample "Fourth commit (master)" <<EOF
 First line of sample content.
@@ -85,7 +85,7 @@ EOF
 
 pseudogit merge foobar
 
-pseudogit add sample2 "Fifth commit" <<EOF
+pseudogit commit sample2 "Fifth commit" <<EOF
 First line of sample2 content.
 Second line of sample2 content.
 EOF
