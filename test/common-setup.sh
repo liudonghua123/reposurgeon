@@ -50,7 +50,7 @@ tapcd () {
     cd "$1" >/dev/null || ( echo "not ok: $0: cd failed"; exit 1 )
 }
 
-# Initialize a Subversion test repository with standard kayout
+# Initialize a Subversion test repository with standard layout
 svninit() {
         echo "Starting at ${PWD}"
  	# Note: this leaves you with the checkout directory current
@@ -66,7 +66,7 @@ svninit() {
 	    echo "Initial README content." | svn commit -F -
 }
 
-# Initialize a Subversion test repository with flat kayout
+# Initialize a Subversion test repository with flat layout
 svnflat() {
 	svnadmin create test-repo
 	svn co "file://$(pwd)/test-repo" test-checkout
@@ -133,6 +133,7 @@ seecompare () {
 }
 
 repository() {
+    # Generic repository constructor
     cmd="$1"
     shift
     case "${cmd}" in
@@ -145,8 +146,11 @@ repository() {
 	    mkdir "${base}";
 	    # shellcheck disable=SC2164
 	    cd "${base}" >/dev/null;
-	    git init -q;
-	    ts=0;
+	    case "${repotype}" in
+		git|bzr|brz) "${repotype}" init -q;;
+		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+	    esac
+	    ts=0
 	    ;;
 	commit)
 	    # Add or commit content
@@ -159,35 +163,57 @@ repository() {
 	    fi
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
-	    # Git seems to reject timestamps with a leading zero
-	    export GIT_COMMITTER_DATE="1${ft} +0000" 
-	    export GIT_AUTHOR_DATE="1${ft} +0000" 
-	    git commit -q -a -m "$text" --author "Fred J. Foonly <fered@foonly.org>"
+	    case "${repotype}" in
+		git)
+		    # Git seems to reject timestamps with a leading zero
+		    export GIT_COMMITTER_DATE="1${ft} +0000" 
+		    export GIT_AUTHOR_DATE="1${ft} +0000" 
+		    git commit -q -a -m "$text" --author "Fred J. Foonly <fered@foonly.org>";;
+		bzr|brz)
+		    # Doesn't force timestamps.
+		    "${repotype}" commit -q -m "$text" --author "Fred J. Foonly <fered@foonly.org>";;
+		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+	    esac
 	    ;;
 	checkout)
-	    # Checkput branch, crearing if necessary
+	    # Checkout branch, crearing if necessary
 	    branch="$1"
 	    # shellcheck disable=SC2086
 	    if [ "$(git branch | grep ${branch})" = "" ]
 	    then
 		git branch "${branch}"
 	    fi
-	    git checkout -q "$1";;
+	    case "${repotype}" in
+		git) git checkout -q "$1";;
+		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+	    esac
+	    ;;
 	merge)
 	    # Perform merge with controlled clock tick.
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
-	    export GIT_COMMITTER_DATE="1${ft} +0000" 
-	    export GIT_AUTHOR_DATE="1${ft} +0000"
-	    git merge -q "$@"
+	    case "${repotype}" in
+		git)
+		    export GIT_COMMITTER_DATE="1${ft} +0000" 
+		    export GIT_AUTHOR_DATE="1${ft} +0000" 
+		    git merge -q "$@";;
+		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+	    esac
 	    ;;
 	export)
 	    # Dump export stream
-	    git fast-export --all | sed "1i\
+	    if [ "${repotype}" = "git" ]
+	    then
+		selector="-all"
+	    fi
+	    case "${repotype}" in
+		git|bzr|brz) "${repotype}" fast-export ${selector} | sed "1i\
 \## $1
 " | sed "2i\
 \ # Generated - do not hand-hack!
-"
+";;
+		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+	    esac
 	    ;;
     esac
 }
