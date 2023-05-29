@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.37: 2023-05-28::
      Add experimental support for brz/Breezy.
      Support reading SCCS repository directories directly.
      Add repocutter hash command for working with a content-addressible annex.
