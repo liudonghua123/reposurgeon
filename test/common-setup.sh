@@ -109,7 +109,7 @@ svnaction() {
 
 svndump() {
     # shellcheck disable=SC1117,SC1004,SC2006,SC2086
-    svnadmin dump -q "$1" | repocutter -q -t "$(vasename $0)" testify | sed "1a\
+    svnadmin dump -q "$1" | repocutter -q -t "$(basename $0)" testify | sed "1a\
 \ ## $2
 " | sed "2a\
 \ # Generated - do not hand-hack!
@@ -130,6 +130,60 @@ seecompare () {
     (${REPOCUTTER:-repocutter} -q -t "$(basename $0)" $* <"/tmp/infile$$" | repocutter -q -t "$(basename $0)" see >/tmp/seecompare-after$$) 2>&1
     diff --label Before --label After -u /tmp/seecompare-before$$ /tmp/seecompare-after$$
     exit 0
+}
+
+repository() {
+    cmd="$1"
+    shift
+    case "${cmd}" in
+	init)
+	    # Initialize repo in specified temporary directory
+	    repotype="$1"	# Not yet nontrivially used
+	    base="$2";
+	    need "${repotype}"
+	    rm -fr "${base}";
+	    mkdir "${base}";
+	    cd "${base}" >/dev/null;
+	    git init -q;
+	    ts=0;
+	    ;;
+	commit)
+	    # Add or commit content
+	    file="$1"
+	    text="$2"
+	    cat >"${file}"
+	    if [ -f "${file}" ]
+	    then
+		git add "${file}"
+	    fi
+	    ts=$((ts + 60))
+	    ft=$(printf "%09d" ${ts})
+	    # Git seems to reject timestamps with a leading zero
+	    export GIT_COMMITTER_DATE="1${ft} +0000" 
+	    export GIT_AUTHOR_DATE="1${ft} +0000" 
+	    git commit -q -a -m "$text" --author "Fred J. Foonly <fered@foonly.org>"
+	    ;;
+	checkout)
+	    # Checkput branch, crearing if necessary
+	    branch="$1"
+	    # shellcheck disable=SC2086
+	    if [ "$(git branch | grep ${branch})" = "" ]
+	    then
+		git branch "${branch}"
+	    fi
+	    git checkout -q "$1";;
+	merge)
+	    # Perform merge with controlled clock tick.
+	    ts=$((ts + 60))
+	    ft=$(printf "%09d" ${ts})
+	    export GIT_COMMITTER_DATE="1${ft} +0000" 
+	    export GIT_AUTHOR_DATE="1${ft} +0000"
+	    git merge -q "$@"
+	    ;;
+	export)
+	    # Dump export stream
+	    git fast-export --all;;
+    esac
 }
 
 # Boilerplate ends 
