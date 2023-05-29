@@ -67,6 +67,6 @@ repository merge iss53 -m "Second merge."
 
 #gitk --all
 
-repository export
+repository export "A repository with a merge bubble"
 
 #end

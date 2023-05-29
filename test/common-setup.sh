@@ -143,6 +143,7 @@ repository() {
 	    need "${repotype}"
 	    rm -fr "${base}";
 	    mkdir "${base}";
+	    # shellcheck disable=SC2164
 	    cd "${base}" >/dev/null;
 	    git init -q;
 	    ts=0;
@@ -182,7 +183,12 @@ repository() {
 	    ;;
 	export)
 	    # Dump export stream
-	    git fast-export --all;;
+	    git fast-export --all | sed "1i\
+\## $1
+" | sed "2i\
+\ # Generated - do not hand-hack!
+"
+	    ;;
     esac
 }
 
