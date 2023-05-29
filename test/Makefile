@@ -63,6 +63,8 @@ check:
 	sh $< -d >$@
 .svn.see:
 	@repocutter -q see <$< >$@
+.sh.fi:
+	sh $< >$@
 
 clean:
 	@rm -fr .rs* test=repo test-checkout test-repo* test-checkout* git-repo left-repo right-repo *~
@@ -100,6 +102,7 @@ $(MESSAGEBOX_TARGETS): messagebox-%: %
 GENERATEDSVN=multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-ignores-copy.svn tagdoublet.svn \
 	mixedbranchlift.svn tagwithcommits.svn branchtagdoublet.svn multiprojectmerge.svn branchrenametipdelete.svn \
 	branchcreateempty.svn
+GENERATEDGIT=bubblegen.fi
 ignore.svn: ignoregen.sh
 	sh $< ignore >$@
 global-ignores.svn: ignoregen.sh
@@ -115,7 +118,7 @@ COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
 COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
 $(COMMAND_TARGETS): command-regress-%: %.tst
 	@singletest -a testing123 $< || echo "$@" >>$(FAILLOG);
-command-buildregress: $(GENERATEDSVN)
+command-buildregress: $(GENERATEDSVN) $(GENERATEDGIT)
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
