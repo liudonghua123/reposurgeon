@@ -163,6 +163,8 @@ repository() {
 	    fi
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
+	    LF='
+'
 	    case "${repotype}" in
 		git)
 		    # Git seems to reject timestamps with a leading zero
@@ -171,7 +173,7 @@ repository() {
 		    git commit -q -a -m "$text" --author "Fred J. Foonly <fered@foonly.org>";;
 		bzr|brz)
 		    # Doesn't force timestamps.
-		    "${repotype}" commit -q -m "$text" --author "Fred J. Foonly <fered@foonly.org>";;
+		    "${repotype}" commit -q -m "$text${LF}" --author "Fred J. Foonly <fered@foonly.org>";;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
