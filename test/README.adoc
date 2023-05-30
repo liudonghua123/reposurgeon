@@ -464,15 +464,13 @@ but this feature is not yet exploited.
 
 == Missing tests
 
-FIXME: Needs some tests of hg import with hg-git-fast-import.
-
 FIXME: reposurgeon expunge with --notagify needs a test
 
 FIXME: R and C handling in expunge needs tests
 
 FIXME: Need test for repocutter filecopy with -f, and skipcopy.
 
-FIXME: Meeds tests of bk, brz, bzr, darcs, mtn.
+FIXME: Meeds tests of bk, darcs, mtn.
 
 == Some references
 
