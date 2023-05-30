@@ -10,6 +10,9 @@ unset CDPATH	# See https://bosker.wordpress.com/2012/02/12/bash-scripters-beware
 command -v realpath >/dev/null 2>&1 ||
     realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
 
+# Necessary so we can see reposurgeon and repocutter
+PATH=$(realpath ..):$(realpath .):${PATH}
+
 toolmeta() {
     stem=$(echo "$0" | sed -e 's/.sh//')
     case $1 in
@@ -150,7 +153,7 @@ repository() {
 		git|bzr|brz) "${repotype}" init -q;;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
-	    ts=0
+	    ts=10
 	    ;;
 	commit)
 	    # Add or commit content
@@ -170,15 +173,15 @@ repository() {
 		    # Git seems to reject timestamps with a leading zero
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git commit -q -a -m "$text" --author "Fred J. Foonly <fered@foonly.org>";;
+		    git commit -q -a -m "$text" --author "Fred J. Foonly <fred@foonly.org>";;
 		bzr|brz)
 		    # Doesn't force timestamps.
-		    "${repotype}" commit -q -m "$text${LF}" --author "Fred J. Foonly <fered@foonly.org>";;
+		    "${repotype}" commit -q -m "$text${LF}" --author "Fred J. Foonly <fred@foonly.org>";;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
 	checkout)
-	    # Checkout branch, crearing if necessary
+	    # Checkout branch, creating if necessary
 	    branch="$1"
 	    # shellcheck disable=SC2086
 	    if [ "$(git branch | grep ${branch})" = "" ]
@@ -211,24 +214,14 @@ repository() {
 	    esac
 	    ;;
 	export)
-	    # Dump export stream
-	    if [ "${repotype}" = "git" ]
-	    then
-		selector="-all"
-	    else
-		# This is a cop-out.  Ideally we want to replace the timestamp
-		# part with a unique timestamp generarted by a monotonic-increasing
-		# clock.
-		filter='s/> [0-9][0-9]* [-+][0-9][0-9][0-9][0-9]/> 123456789 +0000/'
-	    fi
+	    # Dump export stream.  Clock-neutralize it if we were unable to force timestamps at commit time
+	    trap 'rm -f /tmp/stream$$' EXIT HUP INT QUIT TERM
 	    case "${repotype}" in
-		git|bzr|brz) "${repotype}" fast-export -q ${selector} | sed -e "${filter}" -e "1i\
-\## $1
-" | sed "2i\
-\# Generated - do not hand-hack!
-";;
+		git) git fast-export -q --all >/tmp/streamm$$;;
+		bzr|brz) "${repotype}" fast-export -q | reposurgeon "read -" "timequake --tick" "write >/tmp/stream$$";;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
+	    echo "## $1"; echo "# Generated - do not hand-hack!"; cat /tmp/stream$$
 	    ;;
     esac
 }

@@ -26,9 +26,6 @@ fi
 command -v realpath >/dev/null 2>&1 ||
     realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
 
-# Necessary so we can see repocutter
-PATH=$(realpath ..):$(realpath .):${PATH}
-
 trap 'rm -fr test-repo-$$ test-checkout-$$ test-checkout2-$$' EXIT HUP INT QUIT TERM
 
 svnadmin create test-repo-$$
