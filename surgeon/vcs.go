@@ -295,10 +295,8 @@ bzr-orphans
 			ignorename:   ".hgignore",
 			dfltignores:  "",
 			cookies:      reMake(`\b[0-9a-f]{40}\b`, `\b[0-9a-f]{12}\b`),
-			project:      "https://github.com/kilork/hg-git-fast-import",
-			notes: `The hg-git-fast-import method is not part of stock Mercurial.
-
-If there is no branch named 'master' in a repo when it is read, the hg 'default'
+			project:      "https://www.mercurial-scm.org/",
+			notes: `If there is no branch named 'master' in a repo when it is read, the hg 'default'
 branch is renamed to 'master'.
 `,
 			idformat: "%s",
