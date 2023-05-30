@@ -6688,7 +6688,7 @@ func (rs *Reposurgeon) DoUndefine(line string) bool {
 // HelpTimequake says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTimequake() {
 	rs.helpOutput(`
-[SELECTION] timequake
+[SELECTION] timequake [--tick]
 
 Attempt to hack committer and author time stamps to make all action
 stamps in the selection set (defaulting to all commits in the
@@ -6709,13 +6709,37 @@ action-stamp ID for each commit.
 
 This command sets Q bits: true on each event with a timestamp bumped, false on
 all other events.
+
+With --tick, instead set all commit and tag timestamps in accordance
+with a monotonic clock that ticks once per repository object in
+sequence. This option can be used to make reproducible streams for
+testing; no use of it should rely on the timestamp values for
+anything but distinctness.
 `)
 }
 
 // DoTimequake is the handler for the "timequake" command.
 func (rs *Reposurgeon) DoTimequake(line string) bool {
-	rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseALLREPO, nil)
 	repo := rs.chosen()
+
+	if parse.options.Contains("--tick") {
+		const tickBase = 10
+		const tickInterval = 60
+		for index, event := range repo.events {
+			when := time.Unix(tickBase+int64(index*tickInterval), 0)
+			if commit, ok := event.(*Commit); ok {
+				commit.committer.date.timestamp = when
+				for _, author := range commit.authors {
+					author.date.timestamp = when
+				}
+			}
+			if tag, ok := event.(*Tag); ok {
+				tag.tagger.date.timestamp = when
+			}
+		}
+		return false
+	}
 	//baton.startProcess("reposurgeon: disambiguating", "")
 	modified := 0
 	repo.clearColor(colorQSET)
