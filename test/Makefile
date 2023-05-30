@@ -6,7 +6,7 @@ REPOCUTTER := repocutter
 REPOTOOL := repotool
 REPOMAPPER := repomapper
 
-# Setting this to 1 suppresses detail sections in most TAP reportts.
+# Setting this to 1 suppresses detail sections in most TAP reports.
 QUIET=0
 
 # The TAP filter. Only affects presentation of the test suite messages
@@ -29,7 +29,7 @@ export TZ=UTC
 BUILDOPT="set serial"
 
 # See https://stackoverflow.com/questions/6481005/how-to-obtain-the-number-of-cpus-cores-in-linux-from-the-command-line
-CONCURRENT_JOBS=$(shell getconf _NPROCESSORS_ONLN || getconf NPROCESSORS_ONLN || echo 4)
+#CONCURRENT_JOBS=$(shell getconf _NPROCESSORS_ONLN || getconf NPROCESSORS_ONLN || echo 4)
 
 # Fall back to safety if our declared TAP consumer does not exist.
 # This is helpful in the CI environment, where it wiuld be better for
@@ -47,7 +47,8 @@ AVAILABLE=command -v $(1) >/dev/null 2>&1
 # to hand a real status back. This is important for CI/CD.  
 FAILLOG=/tmp/reposurgeon-make.log
 
-# parallel-tap must not be run in parallel.
+# The default, run all tests.
+# parallel-tap must not itself be run in parallel.
 check:
 	@$(MAKE) -j1 --no-print-directory parallel-tap
 
@@ -115,10 +116,10 @@ global-ignores-copy.svn: ignoregen.sh
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
 COMMAND_LOADS := $(shell ls -1 *.tst | sed '/.tst/s///')
-COMMAND_TARGETS=$(COMMAND_LOADS:%=command-regress-%)
-$(COMMAND_TARGETS): command-regress-%: %.tst
+COMMAND_TARGETS=$(COMMAND_LOADS:%=command-check-%)
+$(COMMAND_TARGETS): command-check-%: %.tst
 	@singletest -a testing123 $< || echo "$@" >>$(FAILLOG);
-command-buildregress: $(GENERATEDSVN) $(GENERATEDGIT)
+command-buildcheck: $(GENERATEDSVN) $(GENERATEDGIT)
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
@@ -128,7 +129,7 @@ command-buildregress: $(GENERATEDSVN) $(GENERATEDGIT)
 # Regression-yest loading from Subversion
 SVN_AND_TST_FILES := $(sort $(wildcard *.svn *.tst))
 SVNLOAD_LOADS := $(shell echo $(SVN_AND_TST_FILES) | sed 's/\([^ ]*\)\.svn \1.tst//g; s/[^ ]*\.tst//g; s/\.svn//g')
-svnload-buildregress:
+svnload-buildcheck:
 	@for test in $(SVNLOAD_LOADS); do \
 	    if [ -f $${test}.tst ] ; \
 	    then \
@@ -138,15 +139,15 @@ svnload-buildregress:
 		echo "Remaking $${test}.chk"; \
 		rm -f $${test}.chk && $(MAKE) --quiet $${test}.chk || exit 1; \
 	done
-SVNLOAD_TARGETS=$(SVNLOAD_LOADS:%=svnload-regress-%)
-$(SVNLOAD_TARGETS): svnload-regress-%: %.svn
+SVNLOAD_TARGETS=$(SVNLOAD_LOADS:%=svnload-check-%)
+$(SVNLOAD_TARGETS): svnload-check-%: %.svn
 	@(test=$(<:.svn=); legend=$$(sed -n '/^ ## /s///p' <"$<" 2>/dev/null || echo "(no description)"); \
 	$(REPOSURGEON) "$(TESTOPT)" "$(TESTOPT)" "read <$${test}.svn" "prefer git" "write -"  >/tmp/stream$$$$ 2>&1; \
 	tapdiffer "$<: $${legend}" $${test}.chk </tmp/stream$$$$ ) || echo "$@" >>$(FAILLOG);
 
 # Regression-testing of repocutter
 REPOCUTTER_LOADS := $(shell ls -1 repocutter*.sh | sed '/.sh$$/s///')
-repocutter-buildregress:
+repocutter-buildcheck:
 	@for file in $(REPOCUTTER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh >$${file}.chk || exit 1; \
@@ -159,7 +160,7 @@ $(REPOCUTTER_TARGETS): repocutter-test-%:
 # Regression-testing of repomapper; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
 REPOMAPPER_LOADS := $(shell ls -1 repomapper*.sh | sed '/.sh/s///')
-repomapper-buildregress:
+repomapper-buildcheck:
 	@for file in $(REPOMAPPER_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh >$${file}.chk || exit 1; \
@@ -171,7 +172,7 @@ $(REPOMAPPER_TARGETS): mapper-test-%:
 
 # Test legacy-map generation
 LEGACY_LOADS=nut mergeinfo-with-split
-legacy-buildregress:
+legacy-buildcheck:
 	@for test in $(LEGACY_LOADS); \
 	do \
 	    echo "Remaking $${test}.map"; \
@@ -193,7 +194,7 @@ ifneq ($(call AVAILABLE svn),)
 # These tests are actually here to check Subversion's behavior, in case something
 # poorly documented changes.
 SVNCHECK_LOADS := $(shell ls -1 svncheck*.sh | sed '/.sh/s///')
-svncheck-buildregress:
+svncheck-buildcheck:
 	@for file in $(SVNCHECK_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' >$${file}.chk || exit 1; \
@@ -218,8 +219,8 @@ ifneq ($(call AVAILABLE svn),)
 
 # Test Subversion conversion correctness
 LIFTCHECK_LOADS = $(wildcard *.svn)
-LIFTCHECK_TARGETS = $(LIFTCHECK_LOADS:%=liftcheck-regress-full-%)
-$(LIFTCHECK_TARGETS): liftcheck-regress-full-%: %
+LIFTCHECK_TARGETS = $(LIFTCHECK_LOADS:%=liftcheck-check-full-%)
+$(LIFTCHECK_TARGETS): liftcheck-check-full-%: %
 	@liftcheck -q -r all $< || echo "$@" >>$(FAILLOG);
 
 endif # if svn
@@ -248,7 +249,7 @@ $(HGSTREAMS_EXTRACTOR_TARGETS): hg-extractor-test-%: %.fi
 	@(./hg-to-fi <$< | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon/d' \
 	| tapdiffer "$<: hg extractor" $<) || echo "$@" >>$(FAILLOG);
 HGSCRIPTS = $(subst -test,,$(subst hg-,,$(wildcard hg-*-test)))
-hg-buildregress:
+hg-buildcheck:
 	@for item in $(HGSCRIPTS); do \
 	    echo "Remaking $${item}.fi"; \
 	    ./hg-$${item}-test | sed -e 1d -e '/^#legacy-id/d' | sed -e '/^#reposurgeon sourcetype/d' >$${item}.fi \
@@ -269,10 +270,10 @@ endif # if git
 
 ifneq ($(call AVAILABLE bzr),)
 
-BZR_TARGETS=bzr-test-regress
-bzr-test-regress:
+BZR_TARGETS=bzr-test-check
+bzr-test-check:
 	@(./bzrtest.sh bzr | tapdiffer "bzr export test" bzrtest.chk) || echo "$@" >>$(FAILLOG)
-bzr-buildregress:
+bzr-buildcheck:
 	@./bzrtest.sh bzr >bzrtest.chk
 
 endif # if bzr
@@ -283,10 +284,10 @@ endif # if bzr
 
 ifneq ($(call AVAILABLE brz),)
 
-BRZ_TARGETS=brz-test-regress
-brz-test-regress:
+BRZ_TARGETS=brz-test-check
+brz-test-check:
 	@(./bzrtest.sh brz | tapdiffer "brz export test" brztest.chk) || echo "$@" >>$(FAILLOG)
-brz-buildregress:
+brz-buildcheck:
 	@./bzrtest.sh brz >brztest.chk
 
 endif # if brz
@@ -299,7 +300,7 @@ endif # if brz
 # Regression-testing of repotool; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
 REPOTOOL_LOADS := $(shell ls -1 repotool*.sh | sed '/.sh/s///')
-repotool-buildregress:
+repotool-buildcheck:
 	@for file in $(REPOTOOL_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
 	    $(SHELL) $${file}.sh --rebuild || exit 1; \
@@ -336,16 +337,18 @@ count:
 
 # This is the normal way to run the tests interactively,
 # using a TAP consumer.
-parallel-tap: clean disclose
+parallel-tap: clean
 	@rm -f $(FAILLOG)
 	@$(call TAPOUT,$(TEST_TARGETS)); if [ -s $(FAILLOG) ]; then ( echo "Tests failed:"; cat $(FAILLOG); exit 1); fi; 
 
-disclose:
-	@echo "Running with $(CONCURRENT_JOBS) threads."
-
-buildregress: command-buildregress svnload-buildregress legacy-buildregress \
-	hg-buildregress bzr-buildregress brz-buildregress repomapper-buildregress \
-	repotool-buildregress repocutter-buildregress svncheck-buildregress 
+# This is how to rebuild all the check files.  It will crap out with
+# a complaint about an undefined production if any of the sectioned
+# conditioned on rtools being available is not included.  We want
+# noisy failure here because the alternative is that checkfiles might
+# silently not get updated, leadin to vast confusion later.
+buildcheck: command-buildcheck svnload-buildcheck legacy-buildcheck \
+	hg-buildcheck bzr-buildcheck brz-buildcheck repomapper-buildcheck \
+	repotool-buildcheck repocutter-buildcheck svncheck-buildcheck 
 
 # Test productions end here.
 
