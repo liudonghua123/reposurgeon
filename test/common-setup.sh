@@ -159,7 +159,7 @@ repository() {
 	    cat >"${file}"
 	    if [ -f "${file}" ]
 	    then
-		git add "${file}"
+		"${repotype}" add -q "${file}"
 	    fi
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
@@ -200,6 +200,14 @@ repository() {
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
+	tag)
+	    # Create a (lightweight) tag
+	    tagname="$1"
+	    case "${repotype}" in
+		git|bzr|brz) "${repotype}" tag -q "${tagname}";;
+		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+	    esac
+	    ;;
 	export)
 	    # Dump export stream
 	    if [ "${repotype}" = "git" ]
@@ -207,10 +215,10 @@ repository() {
 		selector="-all"
 	    fi
 	    case "${repotype}" in
-		git|bzr|brz) "${repotype}" fast-export ${selector} | sed "1i\
+		git|bzr|brz) "${repotype}" fast-export -q ${selector} | sed "1i\
 \## $1
 " | sed "2i\
-\ # Generated - do not hand-hack!
+\# Generated - do not hand-hack!
 ";;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
