@@ -169,7 +169,7 @@ func vcsInit() {
 			name:         "git",
 			subdirectory: ".git",
 			// Requires git 2.19.2 or later for --show-original-ids
-			requires:     newStringSet("git"),
+			requires:     newStringSet("git", "cut"),
 			exporter:     "git fast-export --show-original-ids --signed-tags=verbatim --tag-of-filtered-object=drop --use-done-feature --all",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
@@ -192,7 +192,7 @@ func vcsInit() {
 		{
 			name:         "bzr",
 			subdirectory: ".bzr",
-			requires:     newStringSet("bzr"),
+			requires:     newStringSet("bzr", "cut"),
 			exporter:     "bzr fast-export --no-plain .",
 			quieter:      "",
 			styleflags: newOrderedStringSet(
@@ -234,7 +234,7 @@ bzr-orphans
 		{
 			name:         "brz",
 			subdirectory: ".brz",
-			requires:     newStringSet("brz"),
+			requires:     newStringSet("brz", "cut"),
 			exporter:     "brz fast-export --no-plain .",
 			quieter:      "",
 			styleflags: newOrderedStringSet(
@@ -515,7 +515,7 @@ _darcs
 		{
 			name:         "svn",
 			subdirectory: "locks",
-			requires:     newStringSet("svn"),
+			requires:     newStringSet("svn", "sed"),
 			exporter:     "svnadmin dump  .",
 			quieter:      "--quiet",
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
@@ -540,7 +540,7 @@ _darcs
 		{
 			name:         "cvs",
 			subdirectory: "CVSROOT", // Can't be Attic, that doesn't always exist.
-			requires:     newStringSet("cvs-fast-export"),
+			requires:     newStringSet("cvs-fast-export", "find", "grep", "awk"),
 			exporter:     "find . -name '*,v' -print | cvs-fast-export --reposurgeon",
 			quieter:      "",
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
