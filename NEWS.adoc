@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Experimental Perforce (p4) mirroring support in repotool.
+
 4.37: 2023-05-28::
      Add experimental support for brz/Breezy.
      Support reading SCCS repository directories directly.

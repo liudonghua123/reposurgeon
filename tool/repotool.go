@@ -523,6 +523,29 @@ func mirror(args []string) {
 			}
 		})
 		baton.endProgress()
+	} else if strings.HasPrefix("p4://", operand) {
+		// According to
+		// https://stackoverflow.com/questions/31051732/perforce-to-git-migration,
+		// the clone operation will create a live Git repository capturing the
+		// Perforce history.
+		operand = operand[3:]
+		if mirrordir == "" {
+			locald = filepath.Join(pwd, filepath.Base(operand)+"-mirror")
+		} else if mirrordir[0] == os.PathSeparator {
+			locald = mirrordir
+		} else {
+			locald = filepath.Join(pwd, mirrordir)
+		}
+		cmd := ""
+		legend := ""
+		if isdir(mirrordir) {
+			cmd = "git p4 sync --import-labels --detect-branches --destination %s %s@all"
+			legend = "p4 syncing"
+		} else {
+			cmd = fmt.Sprintf("git p4 clone --import-labels --detect-branches --destination %s %s@all")
+			legend = "p4 cloning"
+		}
+		runShellProcessOrDie(fmt.Sprintf(cmd, mirrordir, operand), legend)
 	} else if isdir(filepath.Join(operand, "locks")) {
 		if operand[0] == os.PathSeparator {
 			locald = operand
@@ -1194,10 +1217,10 @@ as Subversion dump files; the point is to be a lossless
 representation, or as close to one as possible.
 `},
 	"mirror": {
-		"mirror [URL] localdir",
+		"mirror {URL|localdir} [localname]",
 		"create or update a mirror of the source repository",
 		`The 'mirror' action makes or updates a local mirror of a
-Subversion, CVS, git, or hg repo. It requires a single argument,
+Subversion, CVS, git, hg, or p4 repo. It requires a  argument,
 either a repository URL or the name of a local mirror directory
 created by a previous run. The first form creates a local mirror of
 the repository in a directory named after the last segment of the URL,
@@ -1211,15 +1234,17 @@ mirroring.
 Subversion URLs are as specified in the public documentation for
 Subversion.  CVS URLs must specify a host and repository path,
 followed by a '#', followed by a module name.  URLs for git and hg
-should be in the form normally used for clone commands.
-Alternatively, a repository URL may be a "file://" URL, in which
+should be in the form normally used for clone commands.  Perforce
+(p4) URLs must specify host, path, and depot (project).
+
+The mirror command can also be passed an rsync URL (service prefix
+"rsync://").  This will usually be faster than mirroring through an
+equivalent Subversion URL.
+
+Finally, a repository URL may be a "file://" URL, in which
 case the repository type is autodetected from the contents of
 the indicated directory. Note: A Subversion file URL has *three*
 slashes after the "file:" prefix!
-
-The mirror command can also be passed an rsync URL.  This
-will usually be faster than mirroring through an equivalent
-Subversion URL.
 `},
 	"branches": {
 		"branches",
