@@ -269,10 +269,11 @@ endif # if git
 
 ifneq ($(call AVAILABLE bzr),)
 
+BZR_TARGETS=bzr-test-regress
 bzr-test-regress:
 	@(./bzrtest.sh bzr | tapdiffer "bzr export test" bzrtest.chk) || echo "$@" >>$(FAILLOG)
 bzr-buildregress:
-	@./bzrtest.sh bzr >bzr-test.chk
+	@./bzrtest.sh bzr >bzrtest.chk
 
 endif # if bzr
 
@@ -282,10 +283,11 @@ endif # if bzr
 
 ifneq ($(call AVAILABLE brz),)
 
+BRZ_TARGETS=brz-test-regress
 brz-test-regress:
-	@(./bzr-test.sh brz | tapdiffer "brz export test" brztest.chk) || echo "$@" >>$(FAILLOG)
+	@(./bzrtest.sh brz | tapdiffer "brz export test" brztest.chk) || echo "$@" >>$(FAILLOG)
 brz-buildregress:
-	@./bzr-test.sh brz >brz-test.chk
+	@./bzrtest.sh brz >brztest.chk
 
 endif # if brz
 
@@ -318,6 +320,7 @@ $(SPORADIC_TARGETS): sporadic-test-%:
 # so those tests start first.
 TEST_TARGETS = $(LIFTCHECK_TARGETS) $(SVNCHECK_TARGETS) \
 		$(GIT_EXTRACTOR_TARGETS) $(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_TARGETS) \
+		$(BZR_TARGETS) $(BRZ_TARGETS) \
 		$(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_TARGETS) \
 		$(COMMAND_TARGETS) $(SVNLOAD_TARGETS) $(LEGACY_TARGETS) \
 		$(REPOMAPPER_TARGETS) $(REPOTOOL_TARGETS) $(REPOCUTTER_TARGETS) \
@@ -341,8 +344,8 @@ disclose:
 	@echo "Running with $(CONCURRENT_JOBS) threads."
 
 buildregress: command-buildregress svnload-buildregress legacy-buildregress \
-	hg-buildregress repomapper-buildregress repotool-buildregress repocutter-buildregress \
-	svncheck-buildregress 
+	hg-buildregress bzr-buildregress brz-buildregress repomapper-buildregress \
+	repotool-buildregress repocutter-buildregress svncheck-buildregress 
 
 # Test productions end here.
 

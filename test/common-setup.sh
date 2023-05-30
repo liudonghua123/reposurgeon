@@ -218,7 +218,7 @@ repository() {
 	    trap 'rm -f /tmp/stream$$' EXIT HUP INT QUIT TERM
 	    case "${repotype}" in
 		git) git fast-export -q --all >/tmp/streamm$$;;
-		bzr|brz) "${repotype}" fast-export -q | reposurgeon "read -" "timequake --tick" "write >/tmp/stream$$";;
+		bzr|brz) "${repotype}" fast-export -q | reposurgeon "read -" "timequake --tick Fred J. Foonly <fred@foonly.org>" "write >/tmp/stream$$";;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    echo "## $1"; echo "# Generated - do not hand-hack!"; cat /tmp/stream$$

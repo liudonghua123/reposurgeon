@@ -1051,6 +1051,18 @@ func parseAttributionLine(line string) (string, string, string, error) {
 	return "", "", "", err
 }
 
+var emailRE = regexp.MustCompile(`([^<]*\s*)<([^>]*)>+`)
+
+func (attr *Attribution) updateName(line string) error {
+	m := emailRE.FindSubmatch(bytes.TrimSpace([]byte(line)))
+	if m != nil {
+		attr.fullname = string(bytes.TrimSpace(m[1]))
+		attr.email = string(bytes.TrimSpace(m[2]))
+		return nil
+	}
+	return fmt.Errorf("malformed ID on '%s'", line)
+}
+
 func (attr *Attribution) address() (string, string) {
 	return attr.fullname, attr.email
 }
