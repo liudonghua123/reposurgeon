@@ -213,9 +213,14 @@ repository() {
 	    if [ "${repotype}" = "git" ]
 	    then
 		selector="-all"
+	    else
+		# This is a cop-out.  Ideally we want to replace the timestamp
+		# part with a unique timestamp generarted by a monotonic-increasing
+		# clock.
+		filter='s/> [0-9][0-9]* [-+][0-9][0-9][0-9][0-9]/> 123456789 +0000/'
 	    fi
 	    case "${repotype}" in
-		git|bzr|brz) "${repotype}" fast-export -q ${selector} | sed "1i\
+		git|bzr|brz) "${repotype}" fast-export -q ${selector} | sed -e "${filter}" -e "1i\
 \## $1
 " | sed "2i\
 \# Generated - do not hand-hack!
