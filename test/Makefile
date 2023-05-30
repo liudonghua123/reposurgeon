@@ -265,6 +265,32 @@ endif # if hg
 
 endif # if git
 
+# BEGINS: Tests requiring bzr
+
+ifneq ($(call AVAILABLE bzr),)
+
+bzr-test-regress:
+	@(./bzrtest.sh bzr | tapdiffer "bzr export test" bzrtest.chk) || echo "$@" >>$(FAILLOG)
+bzr-buildregress:
+	@./bzrtest.sh bzr >bzr-test.chk
+
+endif # if bzr
+
+# ENDS: Tests requiring bzr
+
+# BEGINS: Tests requiring brz
+
+ifneq ($(call AVAILABLE brz),)
+
+brz-test-regress:
+	@(./bzr-test.sh brz | tapdiffer "brz export test" brztest.chk) || echo "$@" >>$(FAILLOG)
+brz-buildregress:
+	@./bzr-test.sh brz >brz-test.chk
+
+endif # if brz
+
+# ENDS: Tests requiring brz
+
 # Test past this point may depend on any VCS and are expected
 # to die cleanly wuth a TAP complaint if they can't find what they need.
 
