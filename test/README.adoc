@@ -9,7 +9,7 @@ far less noisy, passing though only error indications. You can get the
 raw TAP report at any time with "make tap".
 
 On the 64-core 2.2GHz AMD Ryzen machine I use for development, a full
-make check runs in about 10 seconds. Scale expectations appropriately
+make check runs in about 14 seconds. Scale expectations appropriately
 for your hardware.
 
 If you get a failure on the repotool-initialize-cvs-git test, but
