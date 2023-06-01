@@ -598,7 +598,7 @@ core
 		{
 			name:         "sccs",
 			subdirectory: "SCCS",
-			requires:     newStringSet("sccs2rcs", "cvs-fast-export"),
+			requires:     newStringSet("sccs", "rcs", "sccs2rcs", "cvs-fast-export"),
 			exporter:     "sccs2rcs && find RCS -name '*,v' -print | cvs-fast-export --reposurgeon && rm -fr RCS",
 			quieter:      "",
 			styleflags:   newOrderedStringSet("export-progress"),
@@ -619,7 +619,7 @@ core
 		{
 			name:         "rcs",
 			subdirectory: "RCS",
-			requires:     newStringSet("cvs-fast-export"),
+			requires:     newStringSet("rcs", "cvs-fast-export"),
 			exporter:     "find . -name '*,v' -print | cvs-fast-export --reposurgeon",
 			quieter:      "",
 			styleflags:   newOrderedStringSet("export-progress"),
@@ -640,7 +640,7 @@ core
 		{
 			name:         "src",
 			subdirectory: ".src",
-			requires:     newStringSet("src"),
+			requires:     newStringSet("src", "rcs"),
 			exporter:     "src fast-export",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
@@ -663,7 +663,7 @@ core
 			// Styleflags may need tweaking for round-tripping
 			name:         "bk",
 			subdirectory: ".bk",
-			requires:     newStringSet("bk"),
+			requires:     newStringSet("bk", "sed"),
 			exporter:     "bk fast-export --no-bk-keys",
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet(),
@@ -681,9 +681,8 @@ core
 			dfltignores:  "",                    // Has none
 			cookies:      reMake(dottedNumeric), // Same as SCCS/CVS
 			project:      "https://www.bitkeeper.com/",
-			// No tag support, and a tendency to core-dump
-			notes:    "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
-			idformat: "%s",
+			notes:        "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
+			idformat:     "%s",
 		},
 	}
 }
