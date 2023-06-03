@@ -893,9 +893,6 @@ var cvs2svnTagBranchRE = regexp.MustCompile("This commit was manufactured by cvs
 
 var blankline = regexp.MustCompile(`(?m:^\s*\n)`)
 
-// Separator used for split part in a processed Subversion ID.
-const splitSep = "."
-
 func nodePermissions(node NodeAction) string {
 	// Fileop permissions from node properties
 	if node.hasProperties() {
