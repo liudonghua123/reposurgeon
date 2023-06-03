@@ -430,7 +430,7 @@ core
 			{
 				name:         "pijul",
 				subdirectory: ".pijul",
-				requires:     newStringSet("pijul"),
+				requires:     newStringSet("pijul", "cut"),
 				exporter:     "",
 				quieter:      "",
 				styleflags:   newOrderedStringSet(),
@@ -438,7 +438,7 @@ core
 				initializer:  "pijul init",
 				pathlister:   "pijul ls", // Undocumented
 				taglister:    "",
-				branchlister: "",
+				branchlister: "pijul channels 2>&1 | cut -c 3-",
 				importer:     "",
 				checkout:     "",
 				prenuke:      newOrderedStringSet(),
