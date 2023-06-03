@@ -170,7 +170,7 @@ func vcsInit() {
 			name:         "git",
 			subdirectory: ".git",
 			// Requires git 2.19.2 or later for --show-original-ids
-			requires:     newStringSet("git", "cut"),
+			requires:     newStringSet("git", "cut", "grep"),
 			exporter:     "git fast-export --show-original-ids --signed-tags=verbatim --tag-of-filtered-object=drop --use-done-feature --all",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
