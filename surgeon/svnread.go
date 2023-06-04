@@ -403,13 +403,13 @@ func (sp *StreamParser) sdReadProps(target string, checklength int) *OrderedMap 
 			//
 			// 1. off-by-ones from dumpfiles on the test suite;
 			// one is global-ignores.svn. These can be prevented by changing
-			// the compatison to <.
+			// the comparison to <.
 			//
 			// 2. off-by-ones when the tests are run under Go 1.14 7 under
 			// Fedora; Daniel Brooks reported this as reproducible.
 			//
 			// We could chase these down, but this test isn't actually necessary
-			// since it only fires when we see a legal end elimiter for the
+			// since it only fires when we see a legal end delimiter for the
 			// comment section.
 			//
 			//if sp.ccount-start != int64(checklength) {
