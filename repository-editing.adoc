@@ -2928,7 +2928,7 @@ try to merge a branch that forked off the old A to a branch spun off the new
 [[multiproject]]
 === Multiproject Subversion repositories
 
-By convemtion, subversion repository is supposed to have a regular
+By convention, subversion repository is supposed to have a regular
 structure, what we'll call "standard layout".  This has three
 top-level directories, trunk/ and tags/ and branches/. In standard
 layout, directories beneath tags are never modified after the copy that
@@ -3020,7 +3020,7 @@ and branches across the entire repository.
 
 Paths that swapsvn does not recognize as conformable will be passed
 through unaltered.  Don't try to treat this as a feature;
-reposurgeon's fallbacks for deaking with these are crude and fragile.
+reposurgeon's fallbacks for dealing with these are crude and fragile.
 
 Subversion mergeinfos, being file- and directory-oriented rather than
 true branch merges, often can't be carried over even in a
@@ -3054,6 +3054,11 @@ This method has the disadvantage that you have to enumerate all
 branches you want to lift. Still, it may be useful on repositories
 that consist of one big unbranched file tree not conforming to a
 standard layout.
+
+If for some reason you want to treat a branchy repository as though
+it's flat, using repocutter to rename the "trunk" directory to
+something else first (like, say, "main") will foil the logic in the
+reposurheonm stream reader that wants to do branch and tag analysis.
 
 [[CVS]]
 == Working with CVS
