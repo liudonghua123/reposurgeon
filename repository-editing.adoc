@@ -3058,7 +3058,7 @@ standard layout.
 If for some reason you want to treat a branchy repository as though
 it's flat, using repocutter to rename the "trunk" directory to
 something else first (like, say, "main") will foil the logic in the
-reposurheonm stream reader that wants to do branch and tag analysis.
+reposurgeon stream reader that wants to do branch and tag analysis.
 
 [[CVS]]
 == Working with CVS
