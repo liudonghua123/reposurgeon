@@ -45,11 +45,11 @@ The compare operation accepts the following options:
 -n::
 	Subversion-only. Passed to the individual checkout commands which means that
 	in cases where it makes sense the complete repository will be checked
-	out flatly, treating branch and tag namespaces as simple
+	out as a flat one, treating branch and tag namespaces as simple
 	directories.
 
 -a::
-	Subversion-obly. Use an empty directory
+	Subversion-only. Use an empty directory
 	as the checkout if the asked branch or tag cannot be found, instead of
 	erroring out without any comparison. This is useful when if the other
 	repository uses empty content for deleted refs.

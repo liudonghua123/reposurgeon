@@ -1220,7 +1220,7 @@ representation, or as close to one as possible.
 		"mirror {URL|localdir} [localname]",
 		"create or update a mirror of the source repository",
 		`The 'mirror' action makes or updates a local mirror of a
-Subversion, CVS, git, hg, or p4 repo. It requires a  argument,
+Subversion, CVS, git, hg, or p4 repo. It requires an argument,
 either a repository URL or the name of a local mirror directory
 created by a previous run. The first form creates a local mirror of
 the repository in a directory named after the last segment of the URL,
