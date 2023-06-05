@@ -1,0 +1,44 @@
+## brz test repository
+# Generated - do not hand-hack!
+reset refs/heads/master
+commit refs/heads/master
+mark :1
+author Fred J. Foonly <fred@foonly.org> 70 +0000
+committer Fred J. Foonly <fred@foonly.org> 70 +0000
+data 13
+First commit
+M 644 inline sample
+data 30
+First line of sample content.
+
+
+commit refs/heads/master
+mark :2
+author Fred J. Foonly <fred@foonly.org> 130 +0000
+committer Fred J. Foonly <fred@foonly.org> 130 +0000
+data 14
+Second commit
+from :1
+M 644 inline sample
+data 61
+First line of sample content.
+Second line of sample content.
+
+
+commit refs/heads/master
+mark :3
+author Fred J. Foonly <fred@foonly.org> 190 +0000
+committer Fred J. Foonly <fred@foonly.org> 190 +0000
+data 13
+Third commit
+from :2
+M 644 inline sample
+data 91
+First line of sample content.
+Second line of sample content.
+Third line of sample content.
+
+
+reset refs/tags/foobar
+from :3
+

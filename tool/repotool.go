@@ -67,7 +67,7 @@ var makefileTemplate = `# Makefile for {{.Project}} conversion using reposurgeon
 # 1. Make sure reposurgeon and repotool are on your $PATH.
 # 2. (Skip this step if you're starting from a stream file.) For svn, set
 #    REMOTE_URL to point at the remote repository you want to convert;
-#    you can use either an svn: URL or an rsync: URL for this.
+#    you can use either an svn: URL, an rsync: URL, or a p4: URL for this.
 #    If the repository is already in a DVCS such as hg or git,
 #    set REMOTE_URL to either the normal cloning URL (starting with hg://,
 #    git://, etc.) or to the path of a local clone.
@@ -98,8 +98,7 @@ var makefileTemplate = `# Makefile for {{.Project}} conversion using reposurgeon
 
 EXTRAS = 
 REMOTE_URL = svn://svn.debian.org/{{.Project}}
-#REMOTE_URL = https://{{.Project}}.googlecode.com/svn/
-CVS_HOST = {{.Project}}.cvs.sourceforge.net
+CVS_HOST = cvs.sourceforge.net
 #CVS_HOST = cvs.savannah.gnu.org
 CVS_MODULE = {{.Project}}
 #REMOTE_URL = cvs://$(CVS_HOST)/{{.Project}}\#$(CVS_MODULE)
