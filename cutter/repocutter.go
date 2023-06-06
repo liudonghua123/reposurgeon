@@ -388,17 +388,19 @@ only paths matching it are swapped.
 		"List prefixes for anomalous paths that would confuse swapsvn.",
 		`swapcheck: usage: repocutter swapcheck
 
-List directory prefixes of anomalous paths that would confuse swapsvn. This
-includes any path with two or more segments in which the second is not 'trunk',
-'branches', or 'tags', and any path in which 'trunk'/'tags'/'branches' occurs
-more than one segment down from the root.
+List directory prefixes of anomalous paths that would confuse swapsvn. This includes
+any single-segment path other than trunk/tags/branches or a project copy operation,
+any path with two or more segments in which the second is not trunk/tags/branches, and
+any path in which trunk/tags/branches occurs more than one segment down from the root.
 
-Each report line has two fields; the first is the  earliest revision containing
-a path with the prefix given, and the second is the prefix.
+Each report line has two fields; the first is the earliest revision containing
+a path with the prefix given, and the second is the prefix.  Once a particular path 
+prefix has been recognized and reported as anomalous, later paths with that prefix
+are not reported.
 
 If feeding a Subversion dump to this subcommand doesn't produce an empty report,
 you can expect swapsvn to produce an invalid dump that will confuse and possibly 
-crash reposurgeon. The remedy for this is s set of pathrenames and/or deselections
+crash reposurgeon. The remedy for this is a set of pathrenames and/or deselections
 that yields paths conformable to being swapped into a regular Subversion structure.
 
 Note: This subcommand is not yet well tested and is under development.
@@ -2594,7 +2596,7 @@ func striphash(source DumpfileSource, selection SubversionRange, fixed bool, pat
 					content = (*hasher).Sum(nil)
 					hexcontent := make([]byte, hex.EncodedLen(len(content)))
 					hex.Encode(hexcontent, content)
-					str := hashtype;
+					str := hashtype
 					str += string(hexcontent[:])
 					return []byte(str)
 				}
@@ -2973,7 +2975,7 @@ func swapcheck(source DumpfileSource) {
 		}
 		segments := bytes.Split(header.payload("Node-path"), []byte{'/'})
 		prefix := string(segments[0])
-		// Complain about single-segment opertations that aren't on a standard-layout
+		// Complain about single-segment operations that aren't on a standard-layout
 		// directory and aren't project copies.  Yes, we want to catch creations of
 		// project directories that are not copies.
 		if len(segments) == 1 && (header.payload("Node-copyfrom-rev") == nil || stdlayout[prefix]) {
