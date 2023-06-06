@@ -148,9 +148,10 @@ repository() {
 	    rm -fr "${base}";
 	    mkdir "${base}";
 	    # shellcheck disable=SC2164
-	    cd "${base}" >/dev/null;
+	    cd "${base}" >/dev/null || exit 1;
 	    case "${repotype}" in
 		git|bzr|brz) "${repotype}" init -q;;
+		svn) svnadmin create .; svn co -q "file://$(pwd)" checkout ;;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    ts=10
@@ -159,11 +160,11 @@ repository() {
 	    # Add or commit content
 	    file="$1"
 	    text="$2"
+	    if [ -d "checkout" ]; then cd checkout >/dev/null || exit 1; fi
 	    cat >"${file}"
-	    if [ -f "${file}" ]
-	    then
-		"${repotype}" add -q "${file}"
-	    fi
+	    # Always do the add, ignore errors. Otherwise we'd have to check to see if
+	    # the file is registered each time.
+	    "${repotype}" add -q "${file}" >/dev/null 2>&1 || :
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
 	    LF='
@@ -173,23 +174,29 @@ repository() {
 		    # Git seems to reject timestamps with a leading zero
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git commit -q -a -m "$text" --author "Fred J. Foonly <fred@foonly.org>";;
+		    git commit -q -a -m "${text}" --author "Fred J. Foonly <fred@foonly.org>";;
 		bzr|brz)
 		    # Doesn't force timestamps.
-		    "${repotype}" commit -q -m "$text${LF}" --author "Fred J. Foonly <fred@foonly.org>";;
+		    "${repotype}" commit -q -m "${text}${LF}" --author "Fred J. Foonly <fred@foonly.org>";;
+		svn)
+		    # Doesn't force timestamp or author.
+		    svn commit -q -m "${text}";;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
+	    # shellcheck disable=SC2046,2086
+	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
 	    ;;
 	checkout)
 	    # Checkout branch, creating if necessary
 	    branch="$1"
-	    # shellcheck disable=SC2086
-	    if [ "$(git branch | grep ${branch})" = "" ]
-	    then
-		git branch "${branch}"
-	    fi
 	    case "${repotype}" in
-		git) git checkout -q "$1";;
+		git)
+		    # shellcheck disable=SC2086
+		    if [ "$(git branch | grep ${branch})" = "" ]
+		    then
+			git branch "${branch}"
+		    fi
+		    git checkout -q "$1";;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
@@ -205,6 +212,19 @@ repository() {
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
+	mkdir)
+	    # Make a directory or directories in the checkout
+	    if [ -d "checkout" ]; then cd checkout >/dev/null || exit 1; fi
+	    for d in "$@"
+	    do
+		mkdir -p "${d}"
+		case "${repotype}" in
+		    svn) svn add -q "${d}"; svn commit -q -m "${d} creation";;
+		esac
+	    done
+	    # shellcheck disable=SC2046,2086
+	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
+	    ;;
 	tag)
 	    # Create a (lightweight) tag
 	    tagname="$1"
@@ -219,9 +239,14 @@ repository() {
 	    case "${repotype}" in
 		git) git fast-export -q --all >/tmp/streamm$$;;
 		bzr|brz) "${repotype}" fast-export -q | reposurgeon "read -" "timequake --tick Fred J. Foonly <fred@foonly.org>" "write >/tmp/stream$$";;
+		svn)
+		    spacer=' '
+		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
+		    svnadmin dump -q "." | repocutter -q -t "${base}" testify >/tmp/stream$$
+		    ;;
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
-	    echo "## $1"; echo "# Generated - do not hand-hack!"; cat /tmp/stream$$
+	    echo "${spacer}## $1"; echo "${spacer}# Generated - do not hand-hack!"; cat /tmp/stream$$
 	    ;;
     esac
 }
