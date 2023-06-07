@@ -32,7 +32,7 @@ repobench [-h] [-c cmd] [-p datafiles] [-o datafiles] [-s runtime|heap|highwater
 
 This script has two modes; generate or display.  They're
 separated so that the expensive result from generate mode
-can be capt around for repeated visualization.
+can be kept around for repeated visualization.
 
 === GENERATE MODE
 
