@@ -402,8 +402,6 @@ If feeding a Subversion dump to this subcommand doesn't produce an empty report,
 you can expect swapsvn to produce an invalid dump that will confuse and possibly 
 crash reposurgeon. The remedy for this is a set of pathrenames and/or deselections
 that yields paths conformable to being swapped into a regular Subversion structure.
-
-Note: This subcommand is not yet well tested and is under development.
 `},
 	"swapsvn": {
 		"Subversion structure-aware swap",
