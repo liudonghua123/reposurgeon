@@ -6,7 +6,7 @@ if the same update occurs in two different
 streams.
 
 The -r option sets the field to key on; it
-must be converible to a float. The default is
+must be convertible to a float. The default is
 Legacy-ID.
 
 The -s option enables lifting of Subversion
