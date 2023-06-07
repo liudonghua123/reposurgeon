@@ -6,10 +6,6 @@ engine="${1:-bzr}"
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-set -e
-
-trap 'rm -fr /tmp/testbranch$$' EXIT HUP INT QUIT TERM
-
 repository init "${engine}" /tmp/testbranch$$
 
 #C1

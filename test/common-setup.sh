@@ -144,6 +144,8 @@ repository() {
 	    # Initialize repo in specified temporary directory
 	    repotype="$1"	# Not yet nontrivially used
 	    base="$2";
+	    set -e
+	    trap 'rm -fr ${base}' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
 	    rm -fr "${base}";
 	    mkdir "${base}";
