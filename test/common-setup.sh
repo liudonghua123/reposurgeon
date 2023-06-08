@@ -235,6 +235,16 @@ repository() {
 		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
+	up)
+	    # Update a checkout. Sometimes required to force a commit boundary
+	    if [ -d "checkout" ]; then cd checkout >/dev/null || exit 1; fi
+	    case "${repotype}" in
+		svn) svn -q up;;
+		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+	    esac
+	    # shellcheck disable=SC2046,2086
+	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
+	    ;;
 	export)
 	    # Dump export stream.  Clock-neutralize it if we were unable to force timestamps at commit time
 	    trap 'rm -f /tmp/stream$$' EXIT HUP INT QUIT TERM
