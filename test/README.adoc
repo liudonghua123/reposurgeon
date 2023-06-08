@@ -464,8 +464,6 @@ but this feature is not yet exploited.
 
 == Missing tests
 
-FIXME: reposurgeon expunge with --notagify needs a test
-
 FIXME: R and C handling in expunge needs tests
 
 FIXME: Need test for repocutter filecopy with -f, and skipcopy.

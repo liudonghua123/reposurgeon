@@ -1,0 +1,42 @@
+blob
+mark :1
+data 11
+Blob at :1
+
+reset refs/heads/master
+commit refs/heads/master
+mark :3
+author Eric S. Raymond <esr@thyrsus.com> 1324910393 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1324910393 +0000
+data 17
+Initial revision
+M 100755 :1 gitpacker
+
+blob
+mark :4
+data 11
+Blob at :4
+
+commit refs/heads/master
+mark :5
+author Eric S. Raymond <esr@thyrsus.com> 1352732083 -0600
+committer Eric S. Raymond <esr@thyrsus.com> 1352732100 -0600
+data 32
+Initialize the right directory.
+from :3
+M 100755 :4 gitpacker
+
+blob
+mark :7
+data 11
+Blob at :7
+
+commit refs/tags/foobar
+mark :8
+author Eric S. Raymond <esr@thyrsus.com> 1353009454 -0500
+committer Eric S. Raymond <esr@thyrsus.com> 1353009454 -0500
+data 38
+cpio is required to get a clean copy.
+from :5
+M 100755 :7 gitpacker
+
