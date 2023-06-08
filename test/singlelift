@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# singlelift - run a single Subversion conversion test
+# singlelift - run a single Subversion-to-Git conversion test
 
 # shellcheck disable=SC1091
 . ./common-setup.sh

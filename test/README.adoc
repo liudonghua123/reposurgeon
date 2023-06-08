@@ -106,8 +106,9 @@ read the source code.
 === singlelift
 
 The "singlelift" script normally takes the stem of a .svn file name,
-captures stdout and stderr, and diffs the result against the
-corresponding check (.chk) file. It emits a TAP report.
+captures stdout and stderr, converts the result tio Git fast-import
+stream, and diffs the result against the corresponding check (.chk)
+file. It emits a TAP report.
 
 There are options for other behaviors; do "singlelift -h" or read
 the source code.
@@ -301,7 +302,7 @@ test.
 This demonstrates what happens when a Subversion branch is created
 as an empty directory and filled in with file copies in later revisions.
 
-This sequence odf options ought to be turned into a branch copy, but
+This sequence of options ought to be turned into a branch copy, but
 every attempt to do so has created more problems than it solved.
 
 == Generated ignore tests
