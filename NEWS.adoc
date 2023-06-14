@@ -1,6 +1,6 @@
 = reposurgeon project news =
 
-Repository head::
+4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
      Added timequake --tick option.
 
