@@ -80,6 +80,10 @@ installed, invoke `make check` in the main directory.
 You'll need openssh-server or equivalent for the repotool tests
 to work; they use rsync.
 
+If your version of cvs-fast-export is older than 1.61, you will
+probably see some trivial test failures with diffs removing blank
+lines.
+
 == Notes to packagers ==
 
 The package should recommend CVS and Subversion, though not
