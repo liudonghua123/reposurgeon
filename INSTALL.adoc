@@ -58,9 +58,7 @@ GNU make is required for the regression tests, but not for running the
 code.  golint, shellcheck, mercurial, and cvs are required for
 the full regression tests; only a subset of the tests will be run in
 their absence.  The cvs-fast-export and Subversion svnadmin importer
-are also required for testing. Very old versions of Subversion
-(certainly 1.6 or earlier, but not 1.9 or later) will cause one
-spurious test failure.
+are also required for testing.
 
 gnuplot is only required if you're planning to try performance-tuning
 with repobench.
@@ -79,6 +77,9 @@ installed, invoke `make check` in the main directory.
 
 You'll need openssh-server or equivalent for the repotool tests
 to work; they use rsync.
+
+Very old versions of Subversion (certainly 1.6 or earlier, but not 1.9
+or later) will cause one spurious test failure.
 
 If your version of cvs-fast-export is older than 1.61, you will
 probably see some trivial test failures with diffs removing blank
