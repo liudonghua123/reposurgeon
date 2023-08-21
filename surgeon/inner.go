@@ -281,11 +281,16 @@ func max(a, b int) int {
 }
 
 func readFromProcess(command string) (io.ReadCloser, *exec.Cmd, error) {
-	fields, err := shlex.Split(command, true)
-	if err != nil {
-		return nil, nil, fmt.Errorf("splitting %q: %s", command, err)
-	}
-	cmd := exec.Command(fields[0], fields[1:]...)
+	// This used to be
+	//	fields, err := shlex.Split(command, true)
+	//	if err != nil {
+	//		return nil, nil, fmt.Errorf("splitting %q: %s", command, err)
+	//	}
+	//	cmd := exec.Command(fields[0], fields[1:]...)
+	// which eliminates possible mischief from shell expamsition.
+	// Alas, the commands for reading CVS erepositories are pipelines,
+	// so we need shell expamsion to work.
+	cmd := exec.Command("sh", "-c", command)
 	cmd.Stdin = os.Stdin
 	stdout, err := cmd.StdoutPipe()
 	cmd.Stderr = os.Stdout
