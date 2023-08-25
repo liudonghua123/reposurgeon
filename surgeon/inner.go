@@ -7933,8 +7933,8 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 			return sub
 		}
 		cmd := os.Expand(repo.vcs.exporter, mapper)
-		if preferred != nil && preferred.quieter != "" {
-			cmd += " " + preferred.quieter
+		if quiet && repo.vcs.quieter != "" {
+			cmd += " " + repo.vcs.quieter
 		}
 		tp, _, err := readFromProcess(cmd)
 		if err != nil {
