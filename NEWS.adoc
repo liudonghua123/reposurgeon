@@ -1,5 +1,8 @@
 = reposurgeon project news =
 
+Repository head::
+     Make --quiet an effective option when reading repositories.
+
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
      Added timequake --tick option.
