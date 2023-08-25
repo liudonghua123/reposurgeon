@@ -2279,14 +2279,14 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 			croak(err2.Error())
 			return false
 		}
-		repo, err2 = readRepo(cdir, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"], control.baton)
+		repo, err2 = readRepo(cdir, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"] || parse.options.Contains("--quiet"), control.baton)
 		if err2 != nil {
 			croak(err2.Error())
 			return false
 		}
 	} else if isdir(parse.line) {
 		var err2 error
-		repo, err2 = readRepo(parse.line, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"], control.baton)
+		repo, err2 = readRepo(parse.line, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"] || parse.options.Contains("--quiet"), control.baton)
 		if err2 != nil {
 			croak(err2.Error())
 			return false
