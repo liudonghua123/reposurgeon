@@ -8097,20 +8097,11 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 	return repo, nil
 }
 
-func (repo *Repository) innerRebuildRepo(vcs *VCS, target string, options stringSet, baton *Baton) error {
+func (repo *Repository) innerRebuildRepo(vcs *VCS, options stringSet, baton *Baton) error {
 	if vcs.initializer != "" {
 		runProcess(vcs.initializer, "repository initialization")
 	}
-	params := map[string]string{"basename": filepath.Base(target)}
-	mapper := func(sub string) string {
-		for k, v := range params {
-			from := "${" + k + "}"
-			sub = strings.Replace(sub, from, v, -1)
-		}
-		return sub
-	}
-	cmd := os.Expand(vcs.importer, mapper)
-	tp, cls, err := writeToProcess(cmd)
+	tp, cls, err := writeToProcess(vcs.importer)
 	if err != nil {
 		return err
 	}
@@ -8184,7 +8175,7 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 		}
 	}()
 
-	if err := repo.innerRebuildRepo(vcs, target, options, baton); err != nil {
+	if err := repo.innerRebuildRepo(vcs, options, baton); err != nil {
 		return err
 	}
 
