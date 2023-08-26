@@ -2452,9 +2452,44 @@ reposurgeon's timestamp syntax.
 
 // DoGui runs a GUI on the selected repo.
 func (rs *Reposurgeon) DoGui(line string) bool {
-	//parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
-	//defer parse.Closem()
-	//repo := rs.chosen()
+	var repo *Repository
+	if nargs := len(strings.Fields(line)); nargs == 0 {
+		// View currently selected repository
+		parse := rs.newLineParse(line, parseREPO, nil)
+		defer parse.Closem()
+		repo = rs.chosen()
+		if repo.vcs == nil {
+			croak("no preferred type to use for viewing.")
+		} else if repo.vcs.importer == "" {
+			croak("can't view because can't rebuild in %s", repo.vcs.name)
+		}
+		// MORE...
+	} else if nargs == 1 {
+		// View a repository directory
+		cwd, _ := os.Getwd()
+		if err := os.Chdir(line); err != nil {
+			respond(err.Error())
+		} else {
+			defer os.Chdir(cwd)
+			var vcs *VCS
+			hitcount := 0
+			for i, possible := range vcstypes {
+				if possible.manages(".") {
+					vcs = &vcstypes[i]
+					hitcount++
+				}
+			}
+			if hitcount == 0 {
+				croak("couldn't find a repo under %s", line)
+			} else if hitcount > 1 {
+				croak("too many repos (%d) under %s", hitcount, line)
+			}
+			cmd := exec.Command("sh", "-c", vcs.gui)
+			cmd.Run()
+		}
+	} else {
+		croak("gui command requires zero or one arguments.")
+	}
 
 	return false
 }
