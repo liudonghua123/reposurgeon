@@ -2212,7 +2212,7 @@ func (rs *Reposurgeon) DoUnpreserve(line string) bool {
 // HelpRead says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRead() {
 	rs.helpOutput(`
-read [--OPTION...] [<INFILE | DIRECTORY]
+read [--quiet] [ --format=fossil ] [ --no-implicit ] [<INFILE | DIRECTORY | -]
 
 A read command with no arguments is treated as 'read .', operating on the
 current directory.
@@ -2229,7 +2229,9 @@ Subversion dump from standard input (this will be useful in filters
 constructed with command-line arguments).
 
 Various options and special features of this command are described in
-the long-form manual.
+the long-form manual.  Only the general options are included in the synopsis
+above; others related specifically to reading Subversion repositories
+have been omitted.
 `)
 }
 
