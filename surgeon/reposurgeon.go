@@ -2463,12 +2463,30 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 		} else if repo.vcs.importer == "" {
 			croak("can't view because can't rebuild in %s", repo.vcs.name)
 		}
+		if dname, err := os.MkdirTemp("", "guitemp"); err != nil {
+			croak(err.Error())
+		} else {
+			defer os.RemoveAll(dname)
+			if cwd, err := os.Getwd(); err != nil {
+				croak("gui is disoriented: %v", err)
+			} else {
+				// FIXME
+				//innerRebuild(repo, dname)
+				if err := os.Chdir(dname); err != nil {
+					croak(err.Error())
+				} else {
+					defer os.Chdir(cwd)
+					cmd := exec.Command("sh", "-c", findVCS("git").gui)
+					cmd.Run()
+				}
+			}
+		}
 		// MORE...
 	} else if nargs == 1 {
 		// View a repository directory
 		cwd, _ := os.Getwd()
 		if err := os.Chdir(line); err != nil {
-			respond(err.Error())
+			croak(err.Error())
 		} else {
 			defer os.Chdir(cwd)
 			var vcs *VCS
