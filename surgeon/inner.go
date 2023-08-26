@@ -8097,6 +8097,29 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 	return repo, nil
 }
 
+func (repo *Repository) innerRebuildRepo(vcs *VCS, target string, options stringSet, baton *Baton) error {
+	if vcs.initializer != "" {
+		runProcess(vcs.initializer, "repository initialization")
+	}
+	params := map[string]string{"basename": filepath.Base(target)}
+	mapper := func(sub string) string {
+		for k, v := range params {
+			from := "${" + k + "}"
+			sub = strings.Replace(sub, from, v, -1)
+		}
+		return sub
+	}
+	cmd := os.Expand(vcs.importer, mapper)
+	tp, cls, err := writeToProcess(cmd)
+	if err != nil {
+		return err
+	}
+	repo.fastExport(undefinedSelectionSet, tp, options, vcs, baton)
+	tp.Close()
+	cls.Wait()
+	return nil
+}
+
 // Rebuild a repository from the captured state.
 func (repo *Repository) rebuildRepo(target string, options stringSet,
 	preferred *VCS, baton *Baton) error {
@@ -8161,25 +8184,10 @@ func (repo *Repository) rebuildRepo(target string, options stringSet,
 		}
 	}()
 
-	if vcs.initializer != "" {
-		runProcess(vcs.initializer, "repository initialization")
-	}
-	params := map[string]string{"basename": filepath.Base(target)}
-	mapper := func(sub string) string {
-		for k, v := range params {
-			from := "${" + k + "}"
-			sub = strings.Replace(sub, from, v, -1)
-		}
-		return sub
-	}
-	cmd := os.Expand(vcs.importer, mapper)
-	tp, cls, err := writeToProcess(cmd)
-	if err != nil {
+	if err := repo.innerRebuildRepo(vcs, target, options, baton); err != nil {
 		return err
 	}
-	repo.fastExport(undefinedSelectionSet, tp, options, preferred, baton)
-	tp.Close()
-	cls.Wait()
+
 	if repo.writeLegacy {
 		legacyfile := filepath.FromSlash(vcs.subdirectory + "/legacy-map")
 		wfp, err := os.OpenFile(filepath.Clean(legacyfile),
