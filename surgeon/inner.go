@@ -287,8 +287,9 @@ func readFromProcess(command string) (io.ReadCloser, *exec.Cmd, error) {
 	//		return nil, nil, fmt.Errorf("splitting %q: %s", command, err)
 	//	}
 	//	cmd := exec.Command(fields[0], fields[1:]...)
-	// which eliminates possible mischief from shell expamsition.
-	// Alas, the commands for reading CVS erepositories are pipelines,
+	// which eliminates possible mischief from shell expansion.
+	// Alas, the commands for reading CVS repositories are pipelines,
+	// and the GUI method may need to be able to set TZ, so
 	// so we need shell expamsion to work.
 	cmd := exec.Command("sh", "-c", command)
 	cmd.Stdin = os.Stdin

@@ -1816,6 +1816,9 @@ include::docinclude/inspect.adoc[]
 include::docinclude/graph.adoc[]
 
 // COMMAND
+include::docinclude/gui.adoc[]
+
+// COMMAND
 include::docinclude/lint.adoc[]
 
 // COMMAND

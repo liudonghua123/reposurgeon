@@ -129,6 +129,7 @@ BNF_TOPICS = \
 	gitify \
 	graft \
 	graph \
+	gui \
 	hash \
 	help \
 	history \

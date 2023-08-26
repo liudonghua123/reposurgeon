@@ -2432,6 +2432,33 @@ func (rs *Reposurgeon) DoInspect(line string) bool {
 	return false
 }
 
+// HelpGui says "Shut up, golint!"
+func (rs *Reposurgeon) HelpGui() {
+	rs.helpOutput(`
+gui [repodir]
+
+With an argument directory that is a live repository, run whatever GUI tool
+may be appropriate for that repository to browse it. 
+
+Without an argument directory, rebuild from the state of the currently
+selected repository to a temporary directory, then browse that;
+afterwards, delete the temporary directory.  Because it requires a
+rebuild it can be laggy on large ones.
+
+In bpth cases, timestamps are displayed in UTC - not local time - to match
+reposurgeon's timestamp syntax.
+`)
+}
+
+// DoGui runs a GUI on the selected repo.
+func (rs *Reposurgeon) DoGui(line string) bool {
+	//parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	//defer parse.Closem()
+	//repo := rs.chosen()
+
+	return false
+}
+
 // HelpStrip says "Shut up, golint!"
 func (rs *Reposurgeon) HelpStrip() {
 	rs.helpOutput(`
