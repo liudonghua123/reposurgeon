@@ -16,7 +16,8 @@ import (
 
 // Most knowledge about specific version-control systems lives in the
 // following class list. Exception; there's a git-specific hook in the
-// rpo reader; also see the extractor classes; also see the branch rename
+// repo reader, and another small one in the repo0revuild logic; also
+// see the extractor classes; also see the branch rename
 // implementation (has amn svn special case).
 //
 // Import/export style flags are as follows:
