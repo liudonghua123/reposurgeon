@@ -2439,13 +2439,15 @@ func (rs *Reposurgeon) HelpGui() {
 	rs.helpOutput(`
 gui [repodir]
 
-With an argument directory that is a live repository, run whatever
-native GUI tool may be appropriate for that repository to browse it.
+With an argument directory that is a live repository, browse the
+repository using whatever native GUI tool may be appropriate for the
+version-control system managing that repository.
 
 Without an argument directory, build a live Git repository from the
 state of the currently selected repository to a temporary directory,
-then browse that; afterwards, delete the temporary directory.  Because
-it requires a rebuild, this command can be laggy on large histories.
+then browse that with gitk; afterwards, delete the temporary
+directory.  Because it requires a rebuild, this command can be laggy
+on large histories.
 
 In both cases, timestamps are displayed in UTC - not local time - to match
 reposurgeon's timestamp syntax.
@@ -2478,9 +2480,8 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 				}
 			}
 		}
-		// MORE...
 	} else if nargs == 1 {
-		// View a repository directory
+		// View an existing repository directory using its native tool, if any
 		cwd, _ := os.Getwd()
 		if err := os.Chdir(line); err != nil {
 			croak(err.Error())
@@ -2498,6 +2499,8 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 				croak("couldn't find a repo under %s", line)
 			} else if hitcount > 1 {
 				croak("too many repos (%d) under %s", hitcount, line)
+			} else if vcs.gui == "" {
+				croak("no GUI browaer is reistered for %s", vcs.name)
 			}
 			cmd := exec.Command("sh", "-c", vcs.gui)
 			cmd.Run()
