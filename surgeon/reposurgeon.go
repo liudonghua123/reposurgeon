@@ -2702,7 +2702,7 @@ The following example produces a mailbox of commit comments in a
 decluttered form that is convenient for editing:
 
 ----
-=C msgout --filter=/Event-Mark:|Check-Text:/
+=C msgout --filter=/Committer-Date:|Check-Text:/
 ----
 
 This is the filter set by the --id option.
@@ -2719,7 +2719,7 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 
 	var filterRegexp *regexp.Regexp
 	if _, haveID := parse.OptVal("--id"); haveID {
-		filterRegexp = regexp.MustCompile("Event-Mark:|Check-Text:")
+		filterRegexp = regexp.MustCompile("Committer-Date:|Check-Text:")
 	} else if s, present := parse.OptVal("--filter"); present {
 		filterRegexp = getPattern(s)
 	}
