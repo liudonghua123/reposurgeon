@@ -2,6 +2,7 @@
 
 Repository head::
      Make --quiet an effective option when reading repositories.
+     Added "gui" command for GUI browsing of repositories.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.

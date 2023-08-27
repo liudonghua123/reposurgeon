@@ -2439,15 +2439,15 @@ func (rs *Reposurgeon) HelpGui() {
 	rs.helpOutput(`
 gui [repodir]
 
-With an argument directory that is a live repository, run whatever GUI tool
-may be appropriate for that repository to browse it. 
+With an argument directory that is a live repository, run whatever
+native GUI tool may be appropriate for that repository to browse it.
 
-Without an argument directory, rebuild from the state of the currently
-selected repository to a temporary directory, then browse that;
-afterwards, delete the temporary directory.  Because it requires a
-rebuild it can be laggy on large ones.
+Without an argument directory, build a live Git repository from the
+state of the currently selected repository to a temporary directory,
+then browse that; afterwards, delete the temporary directory.  Because
+it requires a rebuild, this command can be laggy on large histories.
 
-In bpth cases, timestamps are displayed in UTC - not local time - to match
+In both cases, timestamps are displayed in UTC - not local time - to match
 reposurgeon's timestamp syntax.
 `)
 }
@@ -2460,11 +2460,6 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 		parse := rs.newLineParse(line, parseREPO, nil)
 		defer parse.Closem()
 		repo = rs.chosen()
-		if repo.vcs == nil {
-			croak("no preferred type to use for viewing.")
-		} else if repo.vcs.importer == "" {
-			croak("can't view because can't rebuild in %s", repo.vcs.name)
-		}
 		if dname, err := os.MkdirTemp("", "guitemp"); err != nil {
 			croak(err.Error())
 		} else {
@@ -2472,14 +2467,14 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 			if cwd, err := os.Getwd(); err != nil {
 				croak("gui is disoriented: %v", err)
 			} else {
-				// FIXME
-				//innerRebuild(repo, dname)
 				if err := os.Chdir(dname); err != nil {
 					croak(err.Error())
 				} else {
 					defer os.Chdir(cwd)
-					cmd := exec.Command("sh", "-c", findVCS("git").gui)
-					cmd.Run()
+					git := findVCS("git")
+					repo.innerRebuildRepo(git, nullStringSet, control.baton)
+					runProcess(git.checkout, "gui checkout")
+					runShellProcess(git.gui, "gui viewer")
 				}
 			}
 		}

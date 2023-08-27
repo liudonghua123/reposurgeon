@@ -357,6 +357,24 @@ func runProcess(dcmd string, legend string) error {
 	return nil
 }
 
+// Either execute a shell command or raise a fatal exception.
+func runShellProcess(dcmd string, legend string) error {
+	if legend != "" {
+		legend = " " + legend
+	}
+	if logEnable(logCOMMANDS) {
+		logit("executing '%s'%s", dcmd, legend)
+	}
+	cmd := exec.Command("sh", "-c", dcmd)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("executing %q: %v", dcmd, err)
+	}
+	return nil
+}
+
 // findBinary tells whethere a specified progra, is in our execution path.
 func findBinary(program string) bool {
 	found := false
