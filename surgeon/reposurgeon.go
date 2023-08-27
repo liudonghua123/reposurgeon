@@ -372,14 +372,13 @@ func (lp *LineParse) Tokens() []string {
 // OptVal looks for an option flag on the line, returns value and presence
 func (lp *LineParse) OptVal(opt string) (val string, present bool) {
 	for _, option := range lp.options {
-		if strings.Contains(option, "=") {
+		if option == opt {
+			return "", true
+		} else if strings.HasPrefix(option, opt+"=") {
 			parts := strings.SplitN(option, "=", 3)
 			if len(parts) > 1 && parts[0] == opt {
 				return parts[1], true
 			}
-			return "", true
-
-		} else if option == opt {
 			return "", true
 		}
 	}
@@ -2684,7 +2683,7 @@ func (rs *Reposurgeon) DoRebuild(line string) bool {
 // HelpMsgout says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgout() {
 	rs.helpOutput(`
-[SELECTION] msgout [--filter=PATTERN] [--blobs]
+[SELECTION] msgout [--id] [--filter=PATTERN] [--blobs]
 
 Emit a file of messages in Internet Message Format representing the
 contents of repository metadata. Takes a selection set; members of the
@@ -2703,8 +2702,10 @@ The following example produces a mailbox of commit comments in a
 decluttered form that is convenient for editing:
 
 ----
-=C msgout --filter=/Event-Number:|Committer:|Author:|Check-Text:/
+=C msgout --filter=/Event-Mark:|Check-Text:/
 ----
+
+This is the filter set by the --id option.
 
 This command can be safely interrupted with ^C, returning you to the
 prompt.
@@ -2717,8 +2718,9 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 	defer parse.Closem()
 
 	var filterRegexp *regexp.Regexp
-	s, present := parse.OptVal("--filter")
-	if present {
+	if _, haveID := parse.OptVal("--id"); haveID {
+		filterRegexp = regexp.MustCompile("Event-Mark:|Check-Text:")
+	} else if s, present := parse.OptVal("--filter"); present {
 		filterRegexp = getPattern(s)
 	}
 	f := func(p *LineParse, i int, e Event) string {
