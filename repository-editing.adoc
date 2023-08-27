@@ -3293,6 +3293,17 @@ garbled copy nodes along with every other modification to matching
 path, without affecting anything in the actual native Subversion
 part of the history.
 
+=== Prevent timestamp collisions with timequake
+
+If you're going to use msgout/msgin to batch-edit commit metadata,
+consider running the timequake command first to ensure that all commit
+timestamps are unique. This way it will be guaranteed that you can feed
+the output of msgout --id to msgin without problems due to matching
+multiple commits.
+
+After running timequake it's a good idea to do "=Q list" to check
+that it hasn't had surprising effects.
+
 [[troubleshooting]]
 == Troubleshooting and bug reports
 
