@@ -2515,7 +2515,7 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 // HelpStrip says "Shut up, golint!"
 func (rs *Reposurgeon) HelpStrip() {
 	rs.helpOutput(`
-[SELECTION] strip {--blobs|--reduce [--fileops]}
+[SELECTION] strip {--blobs|--reduce [--fileops]|--obscure}
 
 This is intended for producing reduced test cases from large repositories.
 
@@ -2536,12 +2536,17 @@ repository's branching/tagging history.  To be fully
 boring, the commit must also not be referred to by any tag or reset.
 Interesting commits are not boring, or have a non-boring parent or
 non-boring child.
+
+With the modifier --obscure, map all file paths to nonce strings,
+preserving directory structure and distinctness.  This can be used
+in extreme cases where even the file paths might unacceptably
+leak information about the repository content.
 `)
 }
 
 // CompleteStrip is a completion hook across strip's modifiers.
 func (rs *Reposurgeon) CompleteStrip(text string) []string {
-	return []string{"--blobs", "--reduce", "--fileops"}
+	return []string{"--blobs", "--reduce", "--fileops", "--obscure"}
 }
 
 // DoStrip strips out content to produce a reduced test case.
