@@ -1,0 +1,218 @@
+------------------------------------------------------------------------
+Event-Number: 3
+Event-Mark: :2
+Branch: refs/tags/annotated
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:37:55 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:37:55 -0500
+Check-Text: A start on a test repository for the Subversion dumper
+
+A start on a test repository for the Subversion dumper.
+------------------------------------------------------------------------
+Event-Number: 5
+Event-Mark: :4
+Branch: refs/tags/annotated
+Parents: :2
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:39:18 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:39:18 -0500
+Check-Text: Create a .gitignore in order to test whether this spec
+
+Create a .gitignore in order to test whether this special case is OK.
+------------------------------------------------------------------------
+Event-Number: 7
+Event-Mark: :6
+Branch: refs/tags/annotated
+Parents: :4
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:40:58 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:40:58 -0500
+Check-Text: Test deep directory creation.
+
+Test deep directory creation.
+------------------------------------------------------------------------
+Event-Number: 9
+Event-Mark: :8
+Branch: refs/tags/annotated
+Parents: :6
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:42:08 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:42:08 -0500
+Check-Text: Test a .gitignore modification for causing the right p
+
+Test a .gitignore modification for causing the right property change.
+------------------------------------------------------------------------
+Event-Number: 11
+Event-Mark: :10
+Branch: refs/tags/annotated
+Parents: :8
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:43:44 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:43:44 -0500
+Check-Text: A script without its executable bit.
+
+A script without its executable bit.
+------------------------------------------------------------------------
+Event-Number: 12
+Event-Mark: :11
+Branch: refs/tags/annotated
+Parents: :10
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:44:01 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:44:01 -0500
+Check-Text: Delete the deep directory.
+
+Delete the deep directory.
+------------------------------------------------------------------------
+Event-Number: 13
+Event-Mark: :12
+Branch: refs/tags/annotated
+Parents: :11
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:46:11 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:46:11 -0500
+Check-Text: Turn on the script's executable bit.
+
+Turn on the script's executable bit.
+------------------------------------------------------------------------
+Event-Number: 15
+Event-Mark: :14
+Branch: refs/tags/annotated
+Parents: :12
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:48:20 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:48:20 -0500
+Check-Text: Just a spacer commit.
+
+Just a spacer commit.
+------------------------------------------------------------------------
+Event-Number: 16
+Event-Mark: :15
+Branch: refs/tags/annotated
+Parents: :14
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 00:48:32 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 00:48:32 -0500
+Check-Text: Turn off the executable bit.
+
+Turn off the executable bit.
+------------------------------------------------------------------------
+Event-Number: 18
+Event-Mark: :17
+Branch: refs/tags/annotated
+Parents: :15
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 01:02:42 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 01:02:42 -0500
+Check-Text: Spacer commit with a tag attached.
+
+Spacer commit with a tag attached.
+------------------------------------------------------------------------
+Event-Number: 20
+Event-Mark: :19
+Branch: refs/heads/master
+Parents: :17
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 01:05:11 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 01:05:11 -0500
+Check-Text: A third spacer commit. We'll start a branch after this
+
+A third spacer commit. We'll start a branch after this one.
+------------------------------------------------------------------------
+Event-Number: 22
+Event-Mark: :21
+Branch: refs/heads/master
+Parents: :19
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 01:08:27 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 01:08:27 -0500
+Check-Text: First post-split commit on the main branch.
+
+First post-split commit on the main branch.
+------------------------------------------------------------------------
+Event-Number: 24
+Event-Mark: :23
+Branch: refs/heads/master
+Parents: :21
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 01:15:01 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 01:14:22 -0500
+Check-Text: Second commit on the main branch.
+
+Second commit on the main branch.
+------------------------------------------------------------------------
+Event-Number: 25
+Event-Mark: :24
+Branch: refs/heads/master
+Parents: :23
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 17:52:52 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 17:52:52 -0500
+Check-Text: Attempt to generate a copy.
+
+Attempt to generate a copy.
+------------------------------------------------------------------------
+Event-Number: 26
+Event-Mark: :25
+Branch: refs/heads/master
+Parents: :24
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 20:03:59 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 20:03:59 -0500
+Check-Text: Attempt to generate a copy op.
+
+Attempt to generate a copy op.
+------------------------------------------------------------------------
+Event-Number: 28
+Event-Mark: :27
+Branch: refs/heads/alternate
+Parents: :19
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 01:06:53 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 01:06:53 -0500
+Check-Text: First commit on the alternate branch.
+
+First commit on the alternate branch.
+------------------------------------------------------------------------
+Event-Number: 30
+Event-Mark: :29
+Branch: refs/heads/alternate
+Parents: :27
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 01:12:55 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 01:12:55 -0500
+Check-Text: Second commit on the alternate branch.
+
+Second commit on the alternate branch.
+------------------------------------------------------------------------
+Event-Number: 32
+Event-Mark: :31
+Branch: refs/heads/master
+Parents: :25 :29
+Committer: Eric S. Raymond <esr@thyrsus.com>
+Committer-Date: Sun, 02 Dec 2012 20:24:14 -0500
+Author: Eric S. Raymond <esr@thyrsus.com>
+Author-Date: Sun, 02 Dec 2012 20:24:14 -0500
+Check-Text: Merge branch 'alternate'
+
+Merge branch 'alternate'
+
+Conflicts:
+	README
