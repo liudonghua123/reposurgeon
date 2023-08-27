@@ -181,7 +181,7 @@ func vcsInit() {
 			initializer:  "git init --quiet",
 			importer:     "git fast-import --quiet --export-marks=.git/marks",
 			checkout:     "git checkout",
-			gui:          "TZ=UTC gitk",
+			gui:          "TZ=UTC gitk --all",
 			pathlister:   "git ls-files",
 			taglister:    "git tag -l",
 			branchlister: "git branch -q --list 2>&1 | cut -c 3- | grep -E -v 'detached|^master$' || exit 0",
