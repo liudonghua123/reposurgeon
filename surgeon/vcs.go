@@ -553,7 +553,7 @@ _darcs
 			name:         "cvs",
 			subdirectory: "CVSROOT", // Can't be Attic, that doesn't always exist.
 			requires:     newStringSet("cvs-fast-export", "find", "grep", "awk"),
-			exporter:     "find . -name '*,v' -print | cvs-fast-export --reposurgeon",
+			exporter:     "find . -print | cvs-fast-export --reposurgeon",
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
 			extensions:   newOrderedStringSet(),
