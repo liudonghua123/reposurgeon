@@ -529,6 +529,11 @@ screen width, and the ID of the invoking user. Use in regression-test loads.
 	{"interactive",
 		`Enable interactive responses even when not on a tty.
 `},
+	{"materialize",
+		`Force creation of content blobs on disk when reading a stream file,
+even when it is randomly accessible and the metadata could point at extents in the file.
+Use in regression-test loads to exercise handling of materialized blobs.
+`},
 	{"progress",
 		`Enable fancy progress messages even when not on a tty.
 `},
@@ -4530,7 +4535,11 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 				sp.pushback(line)
 			}
 			blobcontent, blobstart := sp.fiReadData([]byte{})
-			blob.setContent(blobcontent, blobstart)
+			if control.flagOptions["materialize"] {
+				blob.setContent(blobcontent, noOffset)
+			} else {
+				blob.setContent(blobcontent, blobstart)
+			}
 			if cookie := blob.parseCookie(string(blobcontent)); cookie != nil {
 				sp.lastcookie = *cookie
 			}
