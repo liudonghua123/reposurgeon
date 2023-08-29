@@ -528,6 +528,9 @@ anything up to and including making demons fly out of your nose.
 	{"progress",
 		`Enable fancy progress messages even when not on a tty.
 `},
+	{"quiet",
+		`Suppress time-varying parts of reports.
+`},
 	{"relax",
 		`Continue script execution on error, do not bail out.
 `},
@@ -537,9 +540,6 @@ anything up to and including making demons fly out of your nose.
 	{"testmode",
 		`Disable some features that cause output to be vary depending on wall time,
 screen width, and the ID of the invoking user. Use in regression-test loads.
-`},
-	{"quiet",
-		`Suppress time-varying parts of reports.
 `},
 }
 
