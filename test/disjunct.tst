@@ -1,7 +1,7 @@
 ## Test errors parsing and evaluating disjunctions
 set echo
 
-set testmode
+set faketime
 
 read <sample1.fi
 

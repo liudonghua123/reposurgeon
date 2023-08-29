@@ -1,5 +1,5 @@
 ## Test incorporate command with input redirect
-set testmode
+set faketime
 read <min.fi
 @min(=C) incorporate <<EOF
 sample.tar

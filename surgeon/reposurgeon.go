@@ -173,7 +173,7 @@ func respond(msg string, args ...interface{}) {
 // screenwidth returns the current width of the terminal window.
 func screenwidth() int {
 	width := 80
-	if !control.flagOptions["testmode"] && term.IsTerminal(int(os.Stdin.Fd())) {
+	if !control.flagOptions["faketime"] && term.IsTerminal(int(os.Stdin.Fd())) {
 		var err error
 		width, _, err = term.GetSize(0)
 		if err != nil {
@@ -6475,7 +6475,7 @@ func (rs *Reposurgeon) HelpOptions() {
 // HelpSet says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSet() {
 	rs.helpOutput(`
-set [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]+
+set [canonicalize|crlf|compress|echo|experimental|faketime|interactive|progress|quiet|serial|testmode]+
 
 Set a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
@@ -6535,7 +6535,7 @@ func (rs *Reposurgeon) DoSet(line string) bool {
 // HelpClear says "Shut up, golint!"
 func (rs *Reposurgeon) HelpClear() {
 	rs.helpOutput(`
-clear [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|testmode|quiet]+
+clear [canonicalize|crlf|compress|echo|experimental|faketime|interactive|progress|quiet|serial]+
 
 Clear a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.

@@ -1,5 +1,5 @@
 
-set testmode
+set faketime
 
 read <sample1.fi
 

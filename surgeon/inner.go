@@ -522,6 +522,10 @@ make the output easier to read.
 		`This flag is reserved for developer use.  If you set it, it could do
 anything up to and including making demons fly out of your nose.
 `},
+	{"faketime",
+		`Disable some features that cause output to vary depending on wall time,
+screen width, and the ID of the invoking user. Use in regression-test loads.
+`},
 	{"interactive",
 		`Enable interactive responses even when not on a tty.
 `},
@@ -537,10 +541,6 @@ anything up to and including making demons fly out of your nose.
 	{"serial",
 		`Disable parallelism in code. Use for generating test loads.
 `},
-	{"testmode",
-		`Disable some features that cause output to be vary depending on wall time,
-screen width, and the ID of the invoking user. Use in regression-test loads.
-`},
 }
 
 // innerControl is all the control-block stuff used by this module.
@@ -553,7 +553,7 @@ type innerControl struct {
 
 // whoami - ask various programs that keep track of who you are
 func whoami() (string, string) {
-	if control.flagOptions["testmode"] {
+	if control.flagOptions["faketime"] {
 		return "Fred J. Foonly", "foonly@foo.com"
 	}
 

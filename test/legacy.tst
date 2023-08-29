@@ -1,5 +1,5 @@
 ## Legacy-ID pattern-matching
-set testmode
+set faketime
 read <<EOF
 blob
 mark :1

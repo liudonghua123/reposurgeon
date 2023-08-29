@@ -197,12 +197,12 @@ SVNCHECK_LOADS := $(shell ls -1 svncheck*.sh | sed '/.sh/s///')
 svncheck-buildcheck:
 	@for file in $(SVNCHECK_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' >$${file}.chk || exit 1; \
+	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set faketime" 'read -' 'prefer git' 'write -' >$${file}.chk || exit 1; \
 	done
 SVNCHECK_TARGETS = $(SVNCHECK_LOADS:%=svncheck-test-%)
 $(SVNCHECK_TARGETS): svncheck-test-%:
 	@(legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set testmode" 'read -' 'prefer git' 'write -' \
+	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set faketime" 'read -' 'prefer git' 'write -' \
 	| tapdiffer "$*: $${legend}" $*.chk) || echo "$@" >>$(FAILLOG);
 
 endif # if svn

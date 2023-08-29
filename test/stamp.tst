@@ -1,4 +1,4 @@
 ## stamp command shouldn't fail while trimming text lines
-set testmode
+set faketime
 read <simple.fi
 stamp

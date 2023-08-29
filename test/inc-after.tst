@@ -1,5 +1,5 @@
 ## Test incorporate command - after case
-set testmode
+set faketime
 read <min.fi
 @min(=C) incorporate --after sample.tar
 write -

@@ -1,5 +1,5 @@
 ## Test recovery from malformed search
-set testmode
+set faketime
 set relax
 read <simple.fi
 list

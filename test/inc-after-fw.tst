@@ -1,5 +1,5 @@
 ## Test incorporate command - after case with --firewall
-set testmode
+set faketime
 read <min.fi
 @min(=C) incorporate --after --firewall sample.tar
 write -

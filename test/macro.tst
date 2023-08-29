@@ -1,6 +1,6 @@
 ## Test the macro facility
 set echo
-set testmode
+set faketime
 read <simple.fi
 set interactive
 print Test that we can define and see macro definitions

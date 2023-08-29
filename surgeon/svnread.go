@@ -1528,7 +1528,7 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 		commit.committer = *newattr
 		// Use this with just-generated input streams
 		// that have wall times in them.
-		if control.flagOptions["testmode"] {
+		if control.flagOptions["faketime"] {
 			commit.committer.fullname = "Fred J. Foonly"
 			commit.committer.email = "foonly@foo.com"
 			commit.committer.date.timestamp = time.Unix(int64(ri*360), 0)
