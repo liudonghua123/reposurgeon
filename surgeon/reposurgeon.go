@@ -6472,15 +6472,23 @@ func (rs *Reposurgeon) HelpOptions() {
 	}
 }
 
+func getOptionNames() []string {
+	names := make([]string, len(optionFlags))
+	for i, pair := range optionFlags {
+		names[i] = pair[0]
+	}
+	return names
+}
+
 // HelpSet says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSet() {
-	rs.helpOutput(`
-set [canonicalize|crlf|compress|echo|experimental|faketime|interactive|progress|quiet|serial|testmode]+
+	rs.helpOutput(fmt.Sprintf(`
+set [%s]+
 
 Set a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
 Do "help options" to see the available options.
-`)
+`, strings.Join(getOptionNames(), "|")))
 }
 
 // CompleteSet is a completion hook across the set of flag options that are not set.
@@ -6534,13 +6542,13 @@ func (rs *Reposurgeon) DoSet(line string) bool {
 
 // HelpClear says "Shut up, golint!"
 func (rs *Reposurgeon) HelpClear() {
-	rs.helpOutput(`
-clear [canonicalize|crlf|compress|echo|experimental|faketime|interactive|progress|quiet|serial]+
+	rs.helpOutput(fmt.Sprintf(`
+clear [%s]+
 
 Clear a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
 Do "help options" to see the available options.
-`)
+`, strings.Join(getOptionNames(), "|")))
 }
 
 // CompleteClear is a completion hook across flag opsions that are set
