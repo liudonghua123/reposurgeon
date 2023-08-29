@@ -1602,20 +1602,19 @@ func (b Blob) isCommit() bool {
 
 // moveto changes the repo this blob is associated with."
 func (b *Blob) moveto(repo *Repository) {
-	if b.hasfile() {
-		// the relpath calls are fir readabiliyu if we error out
-		oldloc := relpath(b.getBlobfile(false))
-		b.repo = repo
-		newloc := relpath(b.getBlobfile(true))
-		if logEnable(logSHUFFLE) {
-			logit("blob moveto calls os.rename(%s, %s)", oldloc, newloc)
-		}
-		err := os.Rename(oldloc, newloc)
-		if err != nil {
-			panic(err)
-		}
-		b.hash.invalidate()
+	b.materialize()
+	oldloc := b.getBlobfile(false)
+	b.repo = repo
+	newloc := b.getBlobfile(true)
+	if logEnable(logSHUFFLE) {
+		// the relpath calls are for readability if we error out
+		logit("blob %s moveto calls os.rename(%s, %s)", b.idMe(), relpath(oldloc), relpath(newloc))
 	}
+	err := os.Rename(oldloc, newloc)
+	if err != nil {
+		panic(err)
+	}
+	b.hash.invalidate()
 }
 
 // clone makes a fresh (uncolored) copy of this blob, pointing at the same file."
