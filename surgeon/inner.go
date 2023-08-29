@@ -1537,8 +1537,6 @@ func (b *Blob) setContent(text []byte, tell int64) {
 
 // setContentFromStream sets the content of the blob from a reader stream.
 func (b *Blob) setContentFromStream(s io.ReadCloser) {
-	// maybe the caller should close it?
-	defer closeOrDie(s)
 	b.start = noOffset
 	file, err := os.OpenFile(filepath.Clean(b.getBlobfile(true)),
 		os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
@@ -1549,7 +1547,6 @@ func (b *Blob) setContentFromStream(s io.ReadCloser) {
 	var nBytes int64
 	if control.flagOptions["compress"] {
 		output := gzip.NewWriter(file)
-
 		defer output.Close()
 		nBytes, err = io.Copy(output, s)
 	} else {
@@ -1566,8 +1563,8 @@ func (b *Blob) setContentFromStream(s io.ReadCloser) {
 func (b *Blob) materialize() string {
 	if b.start != noOffset {
 		content := b.getContentStream()
-		defer closeOrDie(content)
 		b.setContentFromStream(content)
+		closeOrDie(content)
 	}
 	return b.getBlobfile(false)
 }
