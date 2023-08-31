@@ -5123,6 +5123,8 @@ func (repo *Repository) subdir(name string) string {
 	if name == "" {
 		name = repo.name
 	}
+	// Beware of removing the getpid randomization - you get name
+	// collisions leading to crashes in parallelized testing.
 	head := fmt.Sprintf("%s/.rs%d", repo.basedir, os.Getpid())
 	if name != "" {
 		head += "-" + name
