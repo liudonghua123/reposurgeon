@@ -1101,6 +1101,10 @@ func (rs *Reposurgeon) DoIndex(lineIn string) bool {
 		switch e := event.(type) {
 		case *Blob:
 			fmt.Fprintf(parse.stdout, "%6d blob   %6s    %s\n", eventid+1, e.mark, strings.Join(e.paths(nil), " "))
+			if logEnable(logSHUFFLE) {
+				where := e.getBlobfile(false)
+				fmt.Fprintf(parse.stdout, "                        %v %6d %d %s\n", e.hasfile(), e.size, getsize(where), where)
+			}
 		case *Commit:
 			mark := e.mark
 			if mark == "" {
