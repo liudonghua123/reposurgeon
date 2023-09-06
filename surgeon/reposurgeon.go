@@ -273,7 +273,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 					}
 				}
 				// flush the outfile, if it happens to be a file
-				// that Reposurgeon has already opened
+				// that reposurgeon has already opened
 				mode := os.O_WRONLY
 				if match[2*1+1]-match[2*1+0] > 1 {
 					mode |= os.O_CREATE | os.O_APPEND
@@ -286,7 +286,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 					// deletion on it when the last file
 					// descriptor open to it is closed.
 					// Thus, by deleting the file if it
-					// already exists we ennsure that any
+					// already exists we ensure that any
 					// seekstreams pointing to it will
 					// continue to get valid data.
 					os.Remove(lp.outfile)
@@ -775,18 +775,19 @@ func (commit *Commit) findSuccessors(path string) []string {
 // Selection expressions have their own lexical rules and grammar,
 // not described in this comment.
 //
-// Lexically, almost every command line is processed as a sequence
-// of tokens. There are only two exceptions to this: "shell" and "print",
-// which consume the entire untokenized remainder of the input line other
-// than its leading space.
+// Lexically, almost every command line is processed as a sequence of
+// tokens. There are only two exceptions to this: "shell" and "print",
+// which consume the entire untokenized remainder of the input line
+// other than its leading space.
 //
-// There are three kinds of tokens: barewords (including syntax keywords),
-// strings (bounded by double quotes, may contain whitespace)
-// and pattern expressions.  A pattern expression is interpreted as (1) a regexp
-// if its first and last characters matchm are punctuation, and are anything other
-// than an ASCII single quote, (2) a literal string if its first and last characters
-// are ASCII single quotes, or (3) a literal string, otherwise. Pattern expressions
-// may not contain whitespace, unlike the regular expressions in selections.
+// There are three kinds of tokens: barewords (including syntax
+// keywords), strings (bounded by double quotes, may contain
+// whitespace) and pattern expressions.  A pattern expression is
+// interpreted as (1) a regexp if its first and last characters match
+// and are punctuation other than an ASCII single quote, (2) a literal
+// string if its first and last characters are ASCII single quotes, or
+// (3) a literal string, otherwise. Pattern expressions may not
+// contain whitespace, unlike the regular expressions in selections.
 //
 // If a command has a pattern-expression argument, it has exactly one
 // and it is the first (it may be optional).  There is a half-exception to
