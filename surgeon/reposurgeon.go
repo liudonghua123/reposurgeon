@@ -6156,8 +6156,12 @@ func (rs *Reposurgeon) HelpReferences() {
 [SELECTION] references [list|lift]
 
 With the 'list' modifier, produces a listing of events that may have
-Subversion or CVS commit references in them.  This version
-of the command supports > redirection.  Equivalent to '=N list'.
+commit references in them. How a commit reference is recognized depends on the
+repository source type; the code knows, for example, that in a Subversion
+repository an 'r' followed by digits is a likely commit reference. This version
+of the command supports > redirection.  The things you find this way should be
+patched into reference cookies before running
+"references lift". Equivalent to '=N list'. 
 
 With the modifier 'lift', transform commit-reference cookies from CVS
 and Subversion into action stamps.  This command expects cookies
