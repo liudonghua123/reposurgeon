@@ -6204,10 +6204,24 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 			{`\[\[CVS:[^:\]]+:[0-9.]+\]\]`,
 				func(p string) *Commit {
 					p = p[2 : len(p)-2]
-					if c := repo.legacyMap[p]; c != nil {
+					key := ""
+					ccount := 0
+					for _, c := range p {
+						if c == ':' {
+							if ccount > 0 {
+								key += " "
+							} else {
+								key += ":"
+							}
+							ccount++
+						} else {
+							key += string(c)
+						}
+					}
+					if c := repo.legacyMap[key]; c != nil {
 						return c
 					}
-					c, ok := repo.dollarMap.Load(p)
+					c, ok := repo.dollarMap.Load(key)
 					if ok {
 						return c.(*Commit)
 					}
