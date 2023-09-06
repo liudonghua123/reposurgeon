@@ -1566,7 +1566,10 @@ func (b *Blob) setContentFromStream(s io.ReadCloser) {
 
 // materialize stores this content as a separate file, if it isn't already.
 func (b *Blob) materialize() string {
-	if b.start != noOffset {
+	if !b.hasfile() {
+		if logEnable(logSHUFFLE) {
+			logit("materializing %s", b.idMe())
+		}
 		content := b.getContentStream()
 		b.setContentFromStream(content)
 		closeOrDie(content)
@@ -1607,10 +1610,11 @@ func (b *Blob) moveto(repo *Repository) {
 	b.materialize()
 	oldloc := b.getBlobfile(false)
 	b.repo = repo
-	newloc := b.getBlobfile(true)
+	newloc := b.getBlobfile(true) // true to force directory creation
 	if logEnable(logSHUFFLE) {
 		// the relpath calls are for readability if we error out
-		logit("blob %s moveto calls os.rename(%s, %s)", b.idMe(), relpath(oldloc), relpath(newloc))
+		logit("moveto of blob %s: os.rename(%s, %s) sizes %d %d",
+			b.idMe(), relpath(oldloc), relpath(newloc), getsize(oldloc), getsize(newloc))
 	}
 	err := os.Rename(oldloc, newloc)
 	if err != nil {
@@ -5170,7 +5174,7 @@ type MarkSettable interface {
 	setMark(string)
 }
 
-// gets an object index from its mark, or -1 if not found
+// gets an object index from its mark, or -1 if not found
 func (repo *Repository) markToIndex(mark string) int {
 	if mark == "" {
 		return -1
