@@ -336,7 +336,7 @@ func (rs *Reposurgeon) parseTerm() selEvaluator {
 	return term
 }
 
-// Parse a path name to evaluate the set of commits that refer to it.
+// Parse a path name to evaluate the set of commits and blobs that refer to it.
 func (rs *Reposurgeon) parsePathset() selEvaluator {
 	rs.eatWS()
 	if rs.peek() != '[' {
@@ -345,6 +345,7 @@ func (rs *Reposurgeon) parsePathset() selEvaluator {
 	rs.pop()
 	var matcher string
 	depth := 1
+	complement := false
 	for i, c := range rs.line {
 		if c == '[' {
 			depth++
@@ -359,6 +360,10 @@ func (rs *Reposurgeon) parsePathset() selEvaluator {
 	}
 	if depth != 0 {
 		panic(throw("command", "malformed path matcher; unbalanced [ and ]"))
+	}
+	if strings.HasPrefix(matcher, "~") {
+		complement = true
+		matcher = matcher[1:len(matcher)]
 	}
 	if strings.HasPrefix(matcher, "/") {
 		end := strings.LastIndexByte(matcher, '/')
@@ -380,20 +385,20 @@ func (rs *Reposurgeon) parsePathset() selEvaluator {
 			panic(throw("command", "invalid regular expression %s", matcher))
 		}
 		return func(x selEvalState, s selectionSet) selectionSet {
-			return rs.evalPathsetRegex(x, s, search, flags)
+			return rs.evalPathsetRegex(x, s, complement, search, flags)
 		}
 	}
 	return func(x selEvalState, s selectionSet) selectionSet {
-		return rs.evalPathset(x, s, matcher)
+		return rs.evalPathset(x, s, complement, matcher)
 	}
 }
 
 // Resolve a path regex to the set of commits that refer to it.
 func (rs *Reposurgeon) evalPathsetRegex(state selEvalState,
-	preselection selectionSet, search *regexp.Regexp,
+	preselection selectionSet, complement bool, search *regexp.Regexp,
 	flags orderedStringSet) selectionSet {
 	if flags.Contains("c") {
-		return rs.evalPathsetFull(state, preselection,
+		return rs.evalPathsetFull(state, preselection, complement,
 			search, flags.Contains("a"))
 	}
 	all := flags.Contains("a")
@@ -419,7 +424,7 @@ func (rs *Reposurgeon) evalPathsetRegex(state selEvalState,
 					}
 				}
 			}
-			if matches > 0 && (!all || matches == len(paths)) {
+			if (matches > 0 && (!all || matches == len(paths))) != complement {
 				hits.Add(it.Value())
 			}
 		}
@@ -429,7 +434,7 @@ func (rs *Reposurgeon) evalPathsetRegex(state selEvalState,
 
 // Resolve a path name to the set of commits that refer to it.
 func (rs *Reposurgeon) evalPathset(state selEvalState,
-	preselection selectionSet, matcher string) selectionSet {
+	preselection selectionSet, complement bool, matcher string) selectionSet {
 	type vendPaths interface {
 		paths(orderedStringSet) orderedStringSet
 	}
@@ -438,7 +443,7 @@ func (rs *Reposurgeon) evalPathset(state selEvalState,
 	it := preselection.Iterator()
 	for it.Next() {
 		if e, ok := events[it.Value()].(vendPaths); ok &&
-			e.paths(nil).Contains(matcher) {
+			e.paths(nil).Contains(matcher) != complement {
 			hits.Add(it.Value())
 		}
 	}
@@ -446,7 +451,7 @@ func (rs *Reposurgeon) evalPathset(state selEvalState,
 }
 
 func (rs *Reposurgeon) evalPathsetFull(state selEvalState,
-	preselection selectionSet, matchCond *regexp.Regexp,
+	preselection selectionSet, complement bool, matchCond *regexp.Regexp,
 	matchAll bool) selectionSet {
 	// Try to match a regex in the trees. For each commit we remember
 	// only the part of the tree that matches the regex. In most cases
@@ -493,7 +498,7 @@ func (rs *Reposurgeon) evalPathsetFull(state selEvalState,
 			}
 		}
 		matchTrees[c.mark] = tree
-		if tree.isEmpty() == matchAll {
+		if (tree.isEmpty() == matchAll) != complement {
 			result.Add(i)
 		}
 	}

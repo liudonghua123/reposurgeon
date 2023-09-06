@@ -7213,10 +7213,12 @@ More ways to construct event sets:
            A 'b' search also finds blobs and tags attached to commits on
            matching branches.
 [foo]      all commits and blobs touching the file named 'foo'.
+[~foo]     all commits and blobs other than those for the file named 'foo'.
 [/bar/]    all commits and blobs touching a file matching the regexp 'bar'.
            Suffix flags: a=all fileops must match other selectors, not just
            any one; c=match against checkout paths, DMRCN=match only against
            given fileop types (no-op when used with 'c').
+[~/bar/]   all commits and blobs touching any file not matching bar
 =B         all blobs
 =C         all commits
 =D         all commits in which every fileop is a D or deleteall

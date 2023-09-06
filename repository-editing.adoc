@@ -1469,6 +1469,10 @@ paths::
    characters which act as flags: '```a```', '```c```', '```D```', '```M```',
    '```R```', '```C```', '```N```'.
 +
+If the first character in a path expression is '```~```', the path
+expression is negated; that is, it is evaluated for "not matching"
+rather than "matching".
++
 By default, a path is related to a commit if the latter has a
 fileop that touches that file path - modifies that change it, deletes
 that remove it, renames and copies that have it as a source or

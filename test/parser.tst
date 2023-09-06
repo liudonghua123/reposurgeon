@@ -72,3 +72,6 @@ resolve
 &\
 =C \
 resolve
+# Test pathset negation
+[~rs] resolve
+[~/rs/] resolve
