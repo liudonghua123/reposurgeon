@@ -68,6 +68,13 @@ func TestRegexp(t *testing.T) {
 		{"aaa(/|$)", "aaa/", true},
 		{"aaa(/|$)", "aaab/", false},
 		{"aaa(/|$)", "aaab", false},
+		// Following cases check the ability to derect
+		// reference cookies.  Could be screwed up if the
+		// regexp engine makes \ and [ interact in
+		// unexpected ways.
+		{`\[\[CVS:[^:\]]+:[0-9.]+\]\]`, "xxx [[CVS:foo:1.1]] yyyy ", true},
+		{`\[\[SVN:[0-9]+\]\]`, "xxx [[SVN:23]] yyyy", true},
+		{`\[\[SVN:[0-9]+\]\]`, "xxx [[SVN:abba]] yyyy", false},
 	}
 	for _, item := range tests {
 		re := regexp.MustCompile(item.pattern)
