@@ -1519,7 +1519,7 @@ func (b *Blob) setContent(text []byte, tell int64) {
 	b.start = tell
 	b.size = int64(len(text))
 	if b.hasfile() {
-		b.start = noOffset
+		b.start = noOffset // Hell's to pay if you remove this!
 		file, err := os.OpenFile(filepath.Clean(b.getBlobfile(true)),
 			os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 		if err != nil {

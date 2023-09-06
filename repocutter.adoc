@@ -18,6 +18,9 @@ and can be useful for processing Subversion repositories into a form
 suitable for conversion. Also, it supports the version 3 dumpfile
 format, which reposurgeon does not.
 
+The "help" subcommand lists help topics.  With a following argument
+that is a topic name it lists the help for that topic.
+
 In most commands, the -r (or --range) option limits the selection of
 revisions over which an operation will be performed. Usually other
 revisions will be passed through unaltered, except in the select and
@@ -39,8 +42,8 @@ modification.)
 
 Normally, each subcommand produces a progress spinner on standard
 error; each turn means another revision has been filtered. The -q (or
---quiet) option suppresses this. Quiet mode is set when output is
-redirected to a file or pipe.
+--quiet) option suppresses this. Quiet mode is set automatically when
+output is redirected to a file or pipe.
 
 The -d option enables debug messages on standard error. It takes an
 integer debug level. These messages are probably only of interest to
