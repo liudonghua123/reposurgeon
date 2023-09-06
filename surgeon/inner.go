@@ -1514,12 +1514,12 @@ func (b *Blob) getContentStream() io.ReadCloser {
 
 // setContent sets the content of the blob from a string.
 // tell is the start offset of the data in the input source;
-// if it is noOffset, there is no seek stream and creation of
-// an on-disk blob is forced.
+// if it is noOffset, creation of an on-disk blob is forced.
 func (b *Blob) setContent(text []byte, tell int64) {
 	b.start = tell
 	b.size = int64(len(text))
 	if b.hasfile() {
+		b.start = noOffset
 		file, err := os.OpenFile(filepath.Clean(b.getBlobfile(true)),
 			os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 		if err != nil {
