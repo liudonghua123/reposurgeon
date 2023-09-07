@@ -1,0 +1,28 @@
+blob
+mark :2
+data 14
+Alpha content
+
+commit refs/heads/master
+mark :1
+committer Eric S. Raymond <esr@thyrsus.com> 1694113549 +0000
+data 54
+Make an example commit using the synthetic alpha file
+M 100644 :2 alpha
+
+blob
+mark :4
+data 13
+Beta content
+
+reset refs/heads/master
+commit refs/heads/master
+mark :3
+committer Eric S. Raymond <esr@thyrsus.com> 1694113609 +0000
+data 53
+Make an example commit using the synthetic beta file
+M 100644 :4 beta
+
+reset refs/heads/master
+from :3
+

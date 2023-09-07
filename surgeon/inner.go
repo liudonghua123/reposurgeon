@@ -712,7 +712,7 @@ func (d OrderedMap) Swap(i int, j int) {
  */
 
 // MessageBlockDivider is the separator between messages in a message-box.
-// The 72 is so we can tewll when a body line is too long according to Git convention.
+// The 72 is so we can tell when a body line is too long according to Git convention.
 var MessageBlockDivider = bytes.Repeat([]byte("-"), 72)
 
 // MessageBlock is similar to net/mail's type, but the body is pulled inboard
@@ -9104,6 +9104,32 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				if blank.Branch == "" {
 					// Avoids crapping out on name lookup.
 					blank.Branch = "generated-" + blank.mark[1:]
+				}
+				// Grumble. Would be nice to allow multiple Content-Path headers
+				// producing a fileop each, but UpdateBlock doesn't allow it.
+				if path := operation.update.getHeader("Content-Path"); path != "" {
+					path = filepath.Clean(path)
+					if cfp, err := os.Open(path); err != nil {
+						panic(throw("command", fmt.Sprintf("invalid content path %q in update", path)))
+					} else {
+						blob := newBlob(repo)
+						blob.mark = repo.newmark()
+						blob.setContentFromStream(cfp)
+						closeOrDie(cfp)
+						repo.addEvent(blob)
+
+						fileop := newFileOp(repo)
+						info, err := os.Stat(path)
+						if err != nil {
+							panic(throw("command", fmt.Sprintf("can't stat path %q in update", path)))
+						}
+						perms := "100644"
+						if info.Mode()&0111 != 0 {
+							perms = "100755"
+						}
+						fileop.construct(opM, perms, blob.mark, path)
+						blank.appendOperation(fileop)
+					}
 				}
 				if !selection.isDefined() || selection.Size() != 1 {
 					repo.addEvent(blank)

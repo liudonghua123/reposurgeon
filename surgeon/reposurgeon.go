@@ -2779,6 +2779,12 @@ to deduce the user's git-style identity and fill it in. If a singleton
 commit set was specified for commit creations, the new commits are
 made children of that commit.
 
+If the --create modifier is present and a commit-creation block has a
+Content-Path headers, the header is interpreted as a file path to be
+appended to the commit and an appropriate blob is prepended containing
+the file contents. Fileop permissions are set depending on the file's
+executable bit.
+
 Otherwise, if the Event-Number and Event-Mark fields are absent, the
 msgin logic will attempt to match the commit or tag first by Legacy-ID,
 then by a unique committer ID and timestamp pair.
