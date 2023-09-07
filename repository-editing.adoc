@@ -1766,6 +1766,9 @@ insert those releases at the front of the repository history.
 Do do this, use this command:
 
 // COMMAND
+include::docinclude/create.adoc[]
+
+// COMMAND
 include::docinclude/incorporate.adoc[]
 
 [[lists]]

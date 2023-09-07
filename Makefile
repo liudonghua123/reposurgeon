@@ -113,6 +113,7 @@ BNF_TOPICS = \
 	clear \
 	coalesce \
 	count \
+	create \
 	debranch \
 	dedup \
 	define \

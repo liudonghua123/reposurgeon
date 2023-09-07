@@ -2753,7 +2753,7 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 // HelpMsgin says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgin() {
 	rs.helpOutput(`
-[SELECTION] msgin [--create] [<INFILE]
+[SELECTION] msgin [--create] [--empty-only] [--relax] [<INFILE]
 
 Accept a file of messages in Internet Message Format representing the
 contents of the metadata in selected commits and annotated tags. 
@@ -6992,6 +6992,33 @@ func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 }
 
 // Commits from tarballs
+
+// HelpCreate says "Shut up, golint!"
+func (rs *Reposurgeon) HelpCreate() {
+	rs.helpOutput(`
+create {NAME}
+
+Create an empty repository with a specified name in memory. The new repository becomes chosen.
+It has no eveents and no sourcetype or preferred type.
+
+This command an be used to begin scripted creation of a repository
+from scratch with incorporate, msgin --create, reset create, and tag
+create commands.
+`)
+}
+
+// DoCreate makes a repository with a specified name.
+func (rs *Reposurgeon) DoCreate(line string) bool {
+	rs.newLineParse(line, parseNOSELECT, nil)
+	if rs.reponames().Contains(line) {
+		croak("there is already a repo named %s.", line)
+	} else {
+		repo := newRepository(line)
+		rs.repolist = append(rs.repolist, repo)
+		rs.choose(repo)
+	}
+	return false
+}
 
 // HelpIncorporate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpIncorporate() {

@@ -8,7 +8,7 @@
 # * Asciidoc section headers
 # * Asciidoc file inclusions (each one becomes a topic)
 # * Asciidoc hanging-definition syntax (each one becomes a topic)
-# * START-TOC/END-TOC begfins or ends a span in which topic should be s anned for
+# * START-TOC/END-TOC begfins or ends a span in which topic should be scanned for
 # * TOPIC marks a following topic that is not a reposurgeon command.
 
 function flush_chapter_toc() {
