@@ -9436,6 +9436,54 @@ func (repo *Repository) doCoalesce(selection selectionSet, timefuzz int, changel
 	return len(squashes)
 }
 
+// Tarball incorporation
+func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
+	files := make([]tar.Header, 0)
+	tr := tar.NewReader(r)
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			return files, nil
+		} else if err != nil {
+			return nil, err
+		} else if header == nil {
+			continue
+		}
+
+		target := filepath.Join(dst, header.Name)
+		if header.Typeflag == tar.TypeDir {
+			if _, err := os.Stat(target); err != nil {
+				if err := os.MkdirAll(target, userReadWriteSearchMode); err != nil {
+					return nil, err
+				}
+			}
+		} else if header.Typeflag == tar.TypeReg {
+			files = append(files, *header)
+			f, err := os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				return nil, err
+			}
+			defer closeOrDie(f)
+			if _, err := io.Copy(f, tr); err != nil {
+				return nil, err
+			}
+		} else if header.Typeflag == tar.TypeSymlink {
+			files = append(files, *header)
+			//os.Symlink(header.Linkname, filepath.Clean(target))
+			f, err := os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				return nil, err
+			}
+			defer closeOrDie(f)
+			if _, err := f.WriteString(header.Linkname); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, fmt.Errorf("unexpected header type %x of %s", header.Typeflag, header.Name)
+		}
+	}
+}
+
 func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip int, firewall bool, after bool, date string) {
 	// The extra three slots are for the previous commit,
 	// the firewall commit (if any) and the following commit.
