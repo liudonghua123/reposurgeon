@@ -4993,7 +4993,7 @@ however, the lowest numbered commit being re-ordered may have multiple
 parents, and the highest numbered may have multiple children.
 
 Re-ordered commits and their immediate descendants are inspected for
-rudimentary fileops inconsistencies. Warns if re-ordering results in a commit
+elementary fileops inconsistencies. Warns if re-ordering results in a commit
 trying to delete, rename, or copy a file before it was ever created. Likewise,
 warns if all of a commit's fileops become no-ops after re-ordering. Other
 fileops inconsistencies may arise from re-ordering, both within the range of
@@ -6990,6 +6990,8 @@ func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 		}
 	}
 }
+
+// Commits from tarballs
 
 // HelpIncorporate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpIncorporate() {
