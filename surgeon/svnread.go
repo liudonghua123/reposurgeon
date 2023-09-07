@@ -1516,8 +1516,6 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 				au, ah := parts[0], parts[1]
 				attribution = au + " <" + au + "@" + ah + "> " + ad
 			}
-		} else if options.Contains("--use-uuid") {
-			attribution = fmt.Sprintf("%s <%s@%s> %s", au, au, sp.repo.uuid, ad)
 		} else {
 			attribution = fmt.Sprintf("%s <%s> %s", au, au, ad)
 		}

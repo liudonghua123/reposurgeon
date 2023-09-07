@@ -2723,12 +2723,6 @@ keep the content of these files and merge them with
 the _.gitignore_ files generated from `svn:ignore` and `svn:global-ignores`
 properties, if any.
 
---use-uuid::
-If the `--use-uuid` read option is set, the repository's
-UUID will be used as the hostname when faking up email addresses, a la
-`git-svn`.  Otherwise, addresses will be generated the way `git cvs-import` does
-it, simply copying the username into the address field.
-
 --no-automatic-ignores::
 Do not generate _.gitignore_ files from `svn:ignore` and
 `svn:global-ignores` properties. If `--user-ignores` is also used
@@ -2867,13 +2861,11 @@ Because fast-import format cannot represent an empty directory,
 empty directories in Subversion repositories will be lost in
 translation.
 
-Normally, Subversion local usernames are mapped in the style of
-`git cvs-import`; thus user '```foo```' becomes '```foo <foo>```', which is
+Subversion local usernames are mapped in the style of `git
+cvs-import`; user '```foo```' becomes '```foo <foo>```', which is
 sufficient to pacify git and other systems that require email
-addresses.  With the option `--use-uuid`, usernames are mapped in the
-`git-svn` style, with the repository's UUID used as a fake domain in the
-email address. Both forms can be remapped to real addresses using
-the `<<authors_cmd>> read` command.
+addresses. You can remap thwaw to real addresses using the
+`<<authors_cmd>> read` command.
 
 Reading a Subversion stream enables writing of the legacy map as
 'legacy-id' passthroughs when the repo is written to a stream
