@@ -9127,7 +9127,11 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 						if info.Mode()&0111 != 0 {
 							perms = "100755"
 						}
-						fileop.construct(opM, perms, blob.mark, path)
+						name := operation.update.getHeader("Content-Name")
+						if name == "" {
+							name = path
+						}
+						fileop.construct(opM, perms, blob.mark, name)
 						blank.appendOperation(fileop)
 					}
 				}

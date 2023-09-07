@@ -2783,7 +2783,8 @@ If the --create modifier is present and a commit-creation block has a
 Content-Path headers, the header is interpreted as a file path to be
 appended to the commit and an appropriate blob is prepended containing
 the file contents. Fileop permissions are set depending on the file's
-executable bit.
+executable bit. If there is a Content-Name header it overrides the path
+put in the fileop.
 
 Otherwise, if the Event-Number and Event-Mark fields are absent, the
 msgin logic will attempt to match the commit or tag first by Legacy-ID,

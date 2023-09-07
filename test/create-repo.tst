@@ -8,6 +8,7 @@ Committer: Eric S. Raymond <esr@thyrsus.com>
 Committer-Date: Thu, 07 Sep 2023 19:05:49 +0000
 Branch: refs/heads/master
 Content-Path: alpha
+Content-Name: fubble
 
 Make an example commit using the synthetic alpha file
 ------------------------------------------------------------------------

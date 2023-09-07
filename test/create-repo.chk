@@ -8,7 +8,7 @@ mark :1
 committer Eric S. Raymond <esr@thyrsus.com> 1694113549 +0000
 data 54
 Make an example commit using the synthetic alpha file
-M 100644 :2 alpha
+M 100644 :2 fubble
 
 blob
 mark :4
