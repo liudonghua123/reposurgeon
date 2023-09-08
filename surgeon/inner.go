@@ -5326,8 +5326,8 @@ func (repo *Repository) branchset() orderedStringSet {
 	return branches
 }
 
-func (repo *Repository) branchmap() map[string]string {
-	// Return a map of branchnames to terminal marks in this repo.
+func (repo *Repository) branchtipmap() map[string]string {
+	// Return a map of branchnames to tip marks in this repo.
 	brmap := make(map[string]string)
 	for _, e := range repo.events {
 		switch e.(type) {
@@ -5339,6 +5339,20 @@ func (repo *Repository) branchmap() map[string]string {
 			}
 		case *Commit:
 			brmap[e.(*Commit).Branch] = e.(*Commit).mark
+		}
+	}
+	return brmap
+}
+
+func (repo *Repository) branchrootmap() map[string]string {
+	// Return a map of branchnames to root marks in this repo.
+	brmap := make(map[string]string)
+	for _, e := range repo.events {
+		switch e.(type) {
+		case *Commit:
+			if _, ok := brmap[e.(*Commit).Branch]; !ok {
+				brmap[e.(*Commit).Branch] = e.(*Commit).mark
+			}
 		}
 	}
 	return brmap
@@ -6630,9 +6644,9 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 		}
 	}
 	altered := make([]*Commit, 0)
-	var branchmap map[string]string
+	var branchtipmap map[string]string
 	if preserveRefs {
-		branchmap = repo.branchmap()
+		branchtipmap = repo.branchtipmap()
 	}
 	// Here are the deletions
 	repo.clearColor(colorDELETE)
@@ -6874,7 +6888,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				// ref, it will have been moved already to newTarget. Otherwise, we need
 				// to create one now.
 				if preserveRefs && needReset && newTarget.Branch != commit.Branch &&
-					commit.mark == branchmap[commit.Branch] {
+					commit.mark == branchtipmap[commit.Branch] {
 					repo.addEvent(newReset(repo, commit.Branch,
 						newTarget.mark, commit.legacyID))
 				}

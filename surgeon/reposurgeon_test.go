@@ -1387,10 +1387,15 @@ M 100644 :3 README
 	if !stringSliceEqual(saw2, exp2) {
 		t.Errorf("saw branchset %v, expected %v", saw2, exp2)
 	}
-	saw3 := repo.branchmap()
+	saw3 := repo.branchtipmap()
 	exp3 := map[string]string{"refs/heads/master": ":4"}
 	if !reflect.DeepEqual(saw3, exp3) {
-		t.Errorf("saw branchmap %v, expected %v", saw3, exp3)
+		t.Errorf("saw branchtipmap %v, expected %v", saw3, exp3)
+	}
+	saw4 := repo.branchrootmap()
+	exp4 := map[string]string{"refs/heads/master": ":2"}
+	if !reflect.DeepEqual(saw4, exp4) {
+		t.Errorf("saw branchrootmap %v, expected %v", saw4, exp4)
 	}
 }
 

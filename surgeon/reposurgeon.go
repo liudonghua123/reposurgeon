@@ -4445,7 +4445,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 		target = args[1]
 	}
 	repo := rs.chosen()
-	branches := repo.branchmap()
+	branches := repo.branchtipmap()
 	if branches[source] == "" {
 		for candidate := range branches {
 			if strings.HasSuffix(candidate, string(os.PathSeparator)+source) {

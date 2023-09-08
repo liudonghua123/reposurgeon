@@ -2935,7 +2935,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 	// branch for tagification purposes.
 	baton.startProgress("SVN12a: purge deleted refs", uint64(len(sp.repo.events)))
 	// compute a map from original branches to their tip
-	branchtips := sp.repo.branchmap()
+	branchtips := sp.repo.branchtipmap()
 	// Parallelize, and use a concurrent-map implometation that has per-bucket locking,
 	// because this phase has been observed to blow up in the wild. (GitLab issue #259.)
 	origBranches := new(sync.Map)
