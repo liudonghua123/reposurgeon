@@ -1607,18 +1607,26 @@ func (b Blob) isCommit() bool {
 
 // moveto changes the repo this blob is associated with."
 func (b *Blob) moveto(repo *Repository) {
-	b.materialize()
-	oldloc := b.getBlobfile(false)
-	b.repo = repo
-	newloc := b.getBlobfile(true) // true to force directory creation
-	if logEnable(logSHUFFLE) {
-		// the relpath calls are for readability if we error out
-		logit("moveto of blob %s: os.rename(%s, %s) sizes %d %d",
-			b.idMe(), relpath(oldloc), relpath(newloc), getsize(oldloc), getsize(newloc))
-	}
-	err := os.Rename(oldloc, newloc)
-	if err != nil {
-		panic(err)
+	if b.hasfile() {
+		oldloc := b.getBlobfile(false)
+		b.repo = repo
+		newloc := b.getBlobfile(true) // true to force directory creation
+		if logEnable(logSHUFFLE) {
+			// the relpath calls are for readability if we error out
+			logit("moveto of blob %s: os.rename(%s, %s) sizes %d %d",
+				b.idMe(), relpath(oldloc), relpath(newloc), getsize(oldloc), getsize(newloc))
+		}
+		err := os.Rename(oldloc, newloc)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		// We could do both cases this way, but a rename call
+		// is faster than copying from the seekstream span.
+		content := b.getContentStream()
+		b.repo = repo
+		b.setContentFromStream(content)
+		closeOrDie(content)
 	}
 	b.hash.invalidate()
 }
@@ -1634,7 +1642,7 @@ func (b *Blob) clone(repo *Repository) *Blob {
 	c.opsetLock.Unlock()
 	c.colors.Clear()
 	if b.hasfile() {
-		// the relpath calls are fir readabiliyu if we error out
+		// the relpath calls are for readability if we error out
 		bpath := relpath(b.getBlobfile(false))
 		cpath := relpath(c.getBlobfile(false))
 		if logEnable(logSHUFFLE) {
