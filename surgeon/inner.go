@@ -4100,13 +4100,12 @@ func (commit *Commit) Save(w io.Writer) {
 		w.Write([]byte{'\n'})
 	}
 	doCallouts := commit.repo.writeOptions.Contains("--callout")
-	noImplicit := commit.repo.writeOptions.Contains("--no-implicit")
 	if commit.hasParents() {
 		it := commit.parentIterator()
 		it.Next()
 		ancestor := it.Value()
 		if (commit.repo.internals == nil && !incrementalStart) || commit.repo.internals.Contains(ancestor.getMark()) {
-			if noImplicit || !(commit.implicitParent &&
+			if !(commit.implicitParent &&
 				previousOnBranch == ancestor && commit.parentCount() == 1) {
 				fmt.Fprintf(w, "from %s\n", ancestor.getMark())
 			}

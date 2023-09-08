@@ -1568,7 +1568,7 @@ probably read <<mercurial>> after this section.
 === Reading and writing repositories
 
 [[read_cmd,read]]
-read [--quiet] [ --format=fossil ] [ --no-implicit ] [ DIRECTORY | - | <INFILE ]::
+read [--quiet] [ --format=fossil ] [ DIRECTORY | - | <INFILE ]::
     With a directory-name argument, this command attempts
     to read in the contents of a repository in any supported
     version-control system under that directory; read with no arguments
@@ -1604,12 +1604,6 @@ repositories and becomes the current one, selected for surgery. If it
 was read from a plain file and the file name ends with one of the
 extensions '```.fi```' or '```.svn```', that
 extension is removed from the load list name.
-+
-Normally, missing '```from```' links in input streams are defaulted to the
-previous commit.  The `--no-implicit` option disables this and may
-enable round-tripping of some streams on which it would fail (note
-however that `git fast-export` generates explicit '```from```' links). This
-option will mainly be useful for testing and debugging.
 +
 The '```--quiet```' option suppresses warnings from the front end
 used to read in the repository, notably the warning fronm the CVS

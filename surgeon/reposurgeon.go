@@ -2215,7 +2215,7 @@ func (rs *Reposurgeon) DoUnpreserve(line string) bool {
 // HelpRead says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRead() {
 	rs.helpOutput(`
-read [--quiet] [ --format=fossil ] [ --no-implicit ] [<INFILE | DIRECTORY | -]
+read [--quiet] [ --format=fossil ] [<INFILE | DIRECTORY | -]
 
 A read command with no arguments is treated as 'read .', operating on the
 current directory.
