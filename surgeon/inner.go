@@ -9110,7 +9110,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				blank.mark = repo.newmark()
 				if blank.Branch == "" {
 					// Avoids crapping out on name lookup.
-					blank.Branch = "generated-" + blank.mark[1:]
+					blank.Branch = "refs/heads/master"
 				}
 				// Grumble. Would be nice to allow multiple Content-Path headers
 				// producing a fileop each, but UpdateBlock doesn't allow it.
