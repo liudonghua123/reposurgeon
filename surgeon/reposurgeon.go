@@ -5121,20 +5121,20 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			if !sourceRE.MatchString(branch) {
 				continue
 			}
-			subst := GoReplacer(sourceRE, branch, newname)
-			if repo.branchset().Contains(addBranchPrefix(subst)) {
+			subst := addBranchPrefix(GoReplacer(sourceRE, branch, newname))
+			if repo.branchset().Contains(subst) {
 				croak("there is already a branch named 'refs/heads/%s'.", subst)
 				return false
 			}
 			for _, event := range repo.events {
 				if commit, ok := event.(*Commit); ok {
 					if commit.Branch == addBranchPrefix(branch) {
-						commit.setBranch(addBranchPrefix(subst))
+						commit.setBranch(subst)
 						commit.addColor(colorQSET)
 					}
 				} else if reset, ok := event.(*Reset); ok {
 					if reset.ref == addBranchPrefix(branch) {
-						reset.ref = addBranchPrefix(subst)
+						reset.ref = subst
 						reset.addColor(colorQSET)
 					}
 				}
