@@ -9106,6 +9106,9 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				blank := newCommit(repo)
 				attrib, _ := newAttribution("")
 				blank.committer = *attrib
+				if commits := repo.commits(undefinedSelectionSet); len(commits) > 0 {
+					blank.addParentByMark(commits[len(commits)-1].mark)
+				}
 				blank.emailIn(operation.update, true)
 				blank.mark = repo.newmark()
 				if blank.Branch == "" {
