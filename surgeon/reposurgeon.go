@@ -5062,7 +5062,8 @@ For a rename, the third argument may be any token that is a syntactically
 valid branch name (but not the name of an existing branch).  If it does not
 begin with "refs/", then "refs/" is prepended; you should supply "heads/"
 or "tags/" yourself.  In it, references to match parts in BRANCH-PATTERN will
-be expanded.
+be expanded. You cannot rename a branch to the name of an existing branch
+unless they are joined root to tip, making the operation effectively a merge.
 
 Branch rename has some special behavior when the repository source type is
 Subversion. It recognizes tags and resets made from branch-copy commits
@@ -5112,6 +5113,11 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			croak("branch name must be nonempty.")
 			return false
 		}
+		rootmap := repo.branchrootmap()
+		tipmap := repo.branchtipmap()
+		tipjoin := func(branch1, branch2 string) bool {
+			return (rootmap[branch1] == tipmap[branch2]) || (tipmap[branch1] == rootmap[branch2])
+		}
 		newname = removeBranchPrefix(newname)
 		sourcepattern = removeBranchPrefix(sourcepattern)
 		sourceRE := getPattern(sourcepattern)
@@ -5122,8 +5128,11 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 				continue
 			}
 			subst := addBranchPrefix(GoReplacer(sourceRE, branch, newname))
-			if repo.branchset().Contains(subst) {
-				croak("there is already a branch named 'refs/heads/%s'.", subst)
+			// Intent of this code is to nope out on branch rename target collisions
+			// unlees the branch to be renamed and its target are joined root to tip,
+			// in which case this is effectively a branch merge.
+			if repo.branchset().Contains(subst) && !tipjoin(subst, addBranchPrefix(branch)) {
+				croak("there is already a branch named '%s'.", subst)
 				return false
 			}
 			for _, event := range repo.events {
