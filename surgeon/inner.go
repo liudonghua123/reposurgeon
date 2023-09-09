@@ -3488,7 +3488,7 @@ func (commit *Commit) childMarks() []string {
 	return out
 }
 
-// firstChild gets the first child of this commit, or None if not hasChildren()."
+// firstChild gets the first child of this commit, or None if not hasChildren().
 func (commit *Commit) firstChild() *Commit {
 	it := commit.childIterator()
 	exists := it.Next()
@@ -5347,12 +5347,9 @@ func (repo *Repository) branchtipmap() map[string]string {
 func (repo *Repository) branchrootmap() map[string]string {
 	// Return a map of branchnames to root marks in this repo.
 	brmap := make(map[string]string)
-	for _, e := range repo.events {
-		switch e.(type) {
-		case *Commit:
-			if _, ok := brmap[e.(*Commit).Branch]; !ok {
-				brmap[e.(*Commit).Branch] = e.(*Commit).mark
-			}
+	for _, commit := range repo.commits(undefinedSelectionSet) {
+		if _, ok := brmap[commit.Branch]; !ok {
+			brmap[commit.Branch] = commit.mark
 		}
 	}
 	return brmap
