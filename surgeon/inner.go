@@ -5326,21 +5326,21 @@ func (repo *Repository) branchset() orderedStringSet {
 	return branches
 }
 
-func (repo *Repository) branchtipmap() map[string]string {
+func (repo *Repository) branchtipmap() map[string]*Commit {
 	// Return a map of branchnames to tip marks in this repo.
-	brmap := make(map[string]string)
+	brmap := make(map[string]*Commit)
 	for _, commit := range repo.commits(undefinedSelectionSet) {
-		brmap[commit.Branch] = commit.mark
+		brmap[commit.Branch] = commit
 	}
 	return brmap
 }
 
-func (repo *Repository) branchrootmap() map[string]string {
+func (repo *Repository) branchrootmap() map[string]*Commit {
 	// Return a map of branchnames to root marks in this repo.
-	brmap := make(map[string]string)
+	brmap := make(map[string]*Commit)
 	for _, commit := range repo.commits(undefinedSelectionSet) {
 		if _, ok := brmap[commit.Branch]; !ok {
-			brmap[commit.Branch] = commit.mark
+			brmap[commit.Branch] = commit
 		}
 	}
 	return brmap
@@ -6632,7 +6632,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 		}
 	}
 	altered := make([]*Commit, 0)
-	var branchtipmap map[string]string
+	var branchtipmap map[string]*Commit
 	if preserveRefs {
 		branchtipmap = repo.branchtipmap()
 	}
@@ -6876,7 +6876,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				// ref, it will have been moved already to newTarget. Otherwise, we need
 				// to create one now.
 				if preserveRefs && needReset && newTarget.Branch != commit.Branch &&
-					commit.mark == branchtipmap[commit.Branch] {
+					commit.mark == branchtipmap[commit.Branch].mark {
 					repo.addEvent(newReset(repo, commit.Branch,
 						newTarget.mark, commit.legacyID))
 				}

@@ -4446,7 +4446,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 	}
 	repo := rs.chosen()
 	branches := repo.branchtipmap()
-	if branches[source] == "" {
+	if branches[source] == nil {
 		for candidate := range branches {
 			if strings.HasSuffix(candidate, string(os.PathSeparator)+source) {
 				source = candidate
@@ -4457,7 +4457,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 		return false
 	found1:
 	}
-	if branches[target] == "" {
+	if branches[target] == nil {
 		for candidate := range branches {
 			if strings.HasSuffix(candidate, string(os.PathSeparator)+target) {
 				target = candidate
@@ -4470,11 +4470,11 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 	}
 	// Now that the arguments are in proper form, implement
 	// Now that the arguments are in proper form, implement
-	stip := repo.markToIndex(branches[source])
+	stip := repo.markToIndex(branches[source].mark)
 	scommits := repo.ancestors(stip)
 	scommits.Add(stip)
 	scommits.Sort()
-	ttip := repo.markToIndex(branches[target])
+	ttip := repo.markToIndex(branches[target].mark)
 	tcommits := repo.ancestors(ttip)
 	tcommits.Add(ttip)
 	tcommits.Sort()

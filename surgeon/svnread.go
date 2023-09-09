@@ -3001,7 +3001,7 @@ func svnProcessJunk(ctx context.Context, sp *StreamParser, options stringSet, ba
 			branch = "refs/" + branch[split:]
 		}
 		name := prefix + branchbase(branch)
-		tip, _ := sp.repo.markToEvent(branchtips[origbranch]).(*Commit)
+		tip := branchtips[origbranch]
 		tipIsDelete := (tip != nil && len(tip.operations()) == 1 &&
 			tip.operations()[0].op == deleteall)
 		if (!tipIsDelete && tip == commit) ||

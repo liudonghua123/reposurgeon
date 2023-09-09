@@ -1388,12 +1388,12 @@ M 100644 :3 README
 		t.Errorf("saw branchset %v, expected %v", saw2, exp2)
 	}
 	saw3 := repo.branchtipmap()
-	exp3 := map[string]string{"refs/heads/master": ":4"}
+	exp3 := map[string]*Commit{"refs/heads/master": repo.markToEvent(":4").(*Commit)}
 	if !reflect.DeepEqual(saw3, exp3) {
 		t.Errorf("saw branchtipmap %v, expected %v", saw3, exp3)
 	}
 	saw4 := repo.branchrootmap()
-	exp4 := map[string]string{"refs/heads/master": ":2"}
+	exp4 := map[string]*Commit{"refs/heads/master": repo.markToEvent(":2").(*Commit)}
 	if !reflect.DeepEqual(saw4, exp4) {
 		t.Errorf("saw branchrootmap %v, expected %v", saw4, exp4)
 	}
