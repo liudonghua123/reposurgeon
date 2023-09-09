@@ -5329,17 +5329,8 @@ func (repo *Repository) branchset() orderedStringSet {
 func (repo *Repository) branchtipmap() map[string]string {
 	// Return a map of branchnames to tip marks in this repo.
 	brmap := make(map[string]string)
-	for _, e := range repo.events {
-		switch e.(type) {
-		case *Reset:
-			if e.(*Reset).committish == "" {
-				delete(brmap, e.(*Reset).ref)
-			} else {
-				brmap[e.(*Reset).ref] = e.(*Reset).committish
-			}
-		case *Commit:
-			brmap[e.(*Commit).Branch] = e.(*Commit).mark
-		}
+	for _, commit := range repo.commits(undefinedSelectionSet) {
+		brmap[commit.Branch] = commit.mark
 	}
 	return brmap
 }
