@@ -5116,7 +5116,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		rootmap := repo.branchrootmap()
 		tipmap := repo.branchtipmap()
 		tipjoin := func(branch1, branch2 string) bool {
-			return (rootmap[branch1] == tipmap[branch2]) || (tipmap[branch1] == rootmap[branch2])
+			return (rootmap[branch1] == tipmap[branch2].firstChild()) || (tipmap[branch1].firstChild() == rootmap[branch2])
 		}
 		newname = removeBranchPrefix(newname)
 		sourcepattern = removeBranchPrefix(sourcepattern)
