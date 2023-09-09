@@ -7237,8 +7237,9 @@ More ways to construct event sets:
 =B         all blobs
 =C         all commits
 =D         all commits in which every fileop is a D or deleteall
+=E         all branch root commits (earliest on branch)
 =F         all fork (multiple-child) commits
-=H         all head (branch tip) commits
+=H         all head (childless branch tip) commits
 =I         all commits not decodable to UTF-8
 =J         all commits with non=ASCII (possible ISO 8859) characters
 =L         all commits with unclean multi-line comments

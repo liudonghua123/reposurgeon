@@ -534,11 +534,23 @@ func (rs *Reposurgeon) visibilityTypeletters() map[rune]func(int) bool {
 	e := func(i int) Event {
 		return rs.chosen().events[i]
 	}
-	// Available: AEGKSVWXY
+	isBranchroot := func(c *Commit) bool {
+		if !c.hasParents() {
+			return true
+		} else if c.parentCount() > 1 {
+			return false // Don't count merge commits as roots
+		} else if parent, ok := c.parents()[0].(*Commit); !ok {
+			return false // nor callouts
+		} else {
+			return parent.Branch != c.Branch
+		}
+	}
+	// Available: AGKSVWXY
 	return map[rune]func(int) bool{
 		'B': func(i int) bool { _, ok := e(i).(*Blob); return ok },
 		'C': func(i int) bool { _, ok := e(i).(*Commit); return ok },
 		'D': func(i int) bool { p, ok := e(i).(alldel); return ok && p.alldeletes() },
+		'E': func(i int) bool { p, ok := e(i).(*Commit); return ok && isBranchroot(p) },
 		'F': func(i int) bool { c, ok := e(i).(*Commit); return ok && c.childCount() > 1 },
 		'H': func(i int) bool { c, ok := e(i).(*Commit); return ok && !c.hasChildren() },
 		'I': func(i int) bool { p, ok := e(i).(decodable); return ok && !p.decodable() },

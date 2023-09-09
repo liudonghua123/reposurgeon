@@ -8,6 +8,7 @@ Repository head::
      Repaired a bug in CVS reference lifting.
      Removed read ---use-uuid option.
      Added Content-Path and Content-Name support to msgin --create.
+     Added =E selector for branch root commits.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
