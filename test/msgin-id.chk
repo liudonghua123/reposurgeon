@@ -1,10 +1,3 @@
-reposurgeon: no commit matches update 1:
-------------------------------------------------------------------------
-Committer-Date: Sun, 02 Dec 2012 00:37:55 -0500
-Check-Text: A start on a test repository for the Subversion dumper
-
-THIS LINE SHOULD BE VISBLY MODIFIED.
-
 blob
 mark :1
 data 120
@@ -20,8 +13,8 @@ commit refs/tags/annotated
 mark :2
 author Eric S. Raymond <esr@thyrsus.com> 1354426675 -0500
 committer Eric S. Raymond <esr@thyrsus.com> 1354426675 -0500
-data 56
-A start on a test repository for the Subversion dumper.
+data 37
+THIS LINE SHOULD BE VISBLY MODIFIED.
 M 100644 :1 README
 
 blob
