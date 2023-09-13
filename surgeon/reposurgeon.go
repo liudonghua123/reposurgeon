@@ -7399,6 +7399,27 @@ functions are defined:
 `)
 }
 
+// HelpOperators says "Shut up, golint!"
+func (rs *Reposurgeon) HelpOperators() {
+	rs.helpOutputMisc(`
+Set expressions may be combined with the operators "|" and "&"
+which are, respectively, set union and intersection. The "|" has lower
+precedence than intersection, but you may use parentheses "(" and
+")" to group expressions in case there is ambiguity.
+
+Any set operation may be followed by "?" to add the set
+members' neighbors and referents.  This extends the set to include the
+parents and children of all commits in the set, and the referents of
+any tags and resets in the set. Each blob reference in the set is
+replaced by all commit events that refer to it. The "?" can be repeated
+to extend the neighborhood depth.  The result of a "?" extension is
+sorted so the result is in ascending order.
+
+Do set negation with prefix "~"; it has higher precedence than
+"&" and "|" but lower than "?".
+`)
+}
+
 // HelpRegexp says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRegexp() {
 	rs.helpOutputMisc(`

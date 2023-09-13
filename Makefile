@@ -149,6 +149,7 @@ BNF_TOPICS = \
 	msgin \
 	msgout \
 	names \
+	operators \
 	path \
 	prefer \
 	prepend \
