@@ -3176,6 +3176,26 @@ commits and other objects actually modified get their Q bits set. You
 can use this as a selection with "list" or "inspect" commands to check
 your work.
 
+=== Pushing and popping pathname segments
+
+Because "/" is the default delimiter for regular expressions, it may
+not be obvious how to write commands that have to manipulate
+pathnames by segment.  Here is how to handle some common cases:
+
+-----------------------------------
+# Push a pathname segment onto filenames
+path rename /^(.*)/ foo/\1
+
+# Pop a pathname segment off filenames
+path rename :foo/(.*): \1
+-----------------------------------
+
+The second recipe uses the fact that almost any delimiter character
+will actually do. But note that you can't use single quote (that is
+interpreted as instruction to match a literal string rather than a
+regexp) and the command-line parser may be confused by angle brackets
+or pipe bars, confusing them with redirects.
+
 === Use macros to avoid repeating boilerplate
 
 In CVS repositories of projects that use the GNU ChangeLog convention,
