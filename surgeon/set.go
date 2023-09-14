@@ -128,6 +128,15 @@ func newOrderedStringSet(elements ...string) orderedStringSet {
 	return set
 }
 
+func (s stringSet) Clone() stringSet {
+	var clone stringSet
+	clone.store = make(map[string]bool)
+	for key, value := range s.store {
+		clone.store[key] = value
+	}
+	return clone
+}
+
 // Iterate bares the underlying map so we can iterate over its keys
 func (s orderedStringSet) Iterate() []string {
 	return s
@@ -234,6 +243,10 @@ func (s orderedStringSet) Empty() bool {
 	return len(s) == 0
 }
 
+func (s orderedStringSet) Clone() orderedStringSet {
+	return append([]string(nil), s...)
+}
+
 func (s orderedStringSet) toStringSet() stringSet {
 	out := newStringSet()
 	for _, item := range s {
@@ -265,7 +278,7 @@ func (s stringSet) String() string {
 	if len(s.store) == 0 {
 		return "[]"
 	}
-	// Need a stable outxput order because
+	// Need a stable output order because
 	// this is used in regression tests.
 	// It doesn't need to be fast.
 	return s.toOrderedStringSet().String()

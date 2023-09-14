@@ -162,7 +162,13 @@ func TestOrderedStringSet(t *testing.T) {
 	if sum[0] != "a" || sum[1] != "b" || sum[2] != "c" || sum[4] != "e" || len(sum) != 5 {
 		t.Errorf("unexpected result of set union: %v", sum)
 	}
+
+	ts10 := ts8.Clone()
+	if !ts10.Equal(ts8) {
+		t.Error("Set cloning failed.")
+	}
 }
+
 func TestStringSet(t *testing.T) {
 	ts := newStringSet("a", "b", "c")
 
@@ -231,6 +237,11 @@ func TestStringSet(t *testing.T) {
 	sum := ts8.Union(ts9)
 	if !(sum.Contains("a") && sum.Contains("b") && sum.Contains("c") && sum.Contains("e") && sum.Len() == 5) {
 		t.Errorf("unexpected result of set union: %v", sum)
+	}
+
+	ts10 := ts8.Clone()
+	if !ts10.Equal(ts8) {
+		t.Error("Set cloning failed.")
 	}
 }
 
