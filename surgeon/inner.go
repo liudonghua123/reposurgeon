@@ -5122,9 +5122,19 @@ func newRepository(name string) *Repository {
 // clone an exact copy of the repository
 func (repo *Repository) clone() *Repository {
 	newRepo := *repo
-	newRepo.name = repo.name + "-clone"
+	newRepo.name += "-clone"
+	newRepo.readtime = time.Now()
 	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
-	// seekstream is shared
+	newRepo.preserveSet = repo.preserveSet.Clone()
+	// Not cloning assignments or timings yet
+
+	// FIXME: More goes here. Cloning doesn't really work yet.
+	//repo.events = nil
+	//for _, event := range repo.events {
+	//	repo.appendEvent(event.clone())
+	//}
+	newRepo.cleanLegacyMap()
+	newRepo.declareSequenceMutation("cloning")
 	return &newRepo
 }
 
