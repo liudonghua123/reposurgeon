@@ -5091,7 +5091,6 @@ type Repository struct {
 	authormap        map[string]Contributor
 	tzmap            map[string]*time.Location // most recent email address to timezone
 	aliases          map[ContributorID]ContributorID
-	maplock          sync.Mutex
 	// Write control - set, if required, before each dump
 	preferred      *VCS               // overrides vcs slot for writes
 	realized       map[string]bool    // clear and remake this before each dump
@@ -5126,7 +5125,6 @@ func (repo *Repository) clone() *Repository {
 	newRepo.name = repo.name + "-clone"
 	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
 	// seekstream is shared
-	newRepo.maplock = *new(sync.Mutex)
 	return &newRepo
 }
 
