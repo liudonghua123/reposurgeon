@@ -43,9 +43,11 @@ endif
 # Binaries need to be built before generated documentation parts can be made.
 all: build cuttercommands.inc toolcommands.inc $(MANPAGES) $(HTMLFILES)
 
+GOFLAGS=-ldflags='-X main.version=$(VERS)'
 # The following would produce reproducible builds, but it breaks Gitlab CI.
 #GOFLAGS=-gcflags 'all=-N -l -trimpath $(GOPATH)/src' -asmflags 'all=-trimpath $(GOPATH)/src'
-GOFLAGS=-ldflags='-X main.version=$(VERS)'
+# The following could be used for escape analysis
+#GOFLAGS+="-gcflags=-m"
 build: surgeon/help-index.go
 	-test -f go.mod || (go mod init && go get)
 	go build $(GOFLAGS) -o repocutter ./cutter
