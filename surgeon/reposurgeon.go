@@ -6233,7 +6233,7 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 							key += string(c)
 						}
 					}
-					if c := repo.legacyMap[key]; c != nil {
+					if c, ok := repo.legacyMap[key]; ok {
 						return c
 					}
 					if c, ok := dollarMap[key]; ok {
@@ -6244,7 +6244,7 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 			{`\[\[SVN:[0-9]+\]\]`,
 				func(p string) *Commit {
 					p = p[2 : len(p)-2]
-					if c := repo.legacyMap[p]; c != nil {
+					if c, ok := repo.legacyMap[p]; ok {
 						return c
 					}
 					if c, ok := dollarMap[p]; ok {
