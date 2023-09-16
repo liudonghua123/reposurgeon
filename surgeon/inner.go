@@ -5063,40 +5063,41 @@ type TimeMark struct {
 
 // Repository is the entire state of a version-control repository
 type Repository struct {
-	name             string
-	readtime         time.Time
-	vcs              *VCS
-	stronghint       bool
-	hintlist         []Hint
-	sourcedir        string
-	seekstream       *os.File
-	events           []Event // A list of the events encountered, in order
-	_markToIndex     map[string]int
-	_markToIndexLen  int  // Cache is valid for events[:_markToIndexLen]
-	_markToIndexSawN bool // whether we saw a null mark blob/commit when caching
-	_markToIndexLock sync.Mutex
-	_namecache       map[string]selectionSet
-	preserveSet      orderedStringSet
-	basedir          string
-	uuid             string
-	writeLegacy      bool
-	dollarMap        sync.Map // From dollar cookies in files
-	dollarOnce       sync.Once
-	legacyMap        map[string]*Commit // From anything that doesn't survive rebuild
-	legacyCount      int
-	timings          []TimeMark
-	assignments      map[string]selectionSet
-	inlines          int
-	markseq          int
-	authormap        map[string]Contributor
-	tzmap            map[string]*time.Location // most recent email address to timezone
-	aliases          map[ContributorID]ContributorID
+	name        string
+	readtime    time.Time
+	vcs         *VCS
+	stronghint  bool
+	hintlist    []Hint
+	sourcedir   string
+	seekstream  *os.File
+	basedir     string
+	uuid        string
+	writeLegacy bool
+	preserveSet orderedStringSet
+	dollarMap   sync.Map // From dollar cookies in files
+	dollarOnce  sync.Once
+	legacyMap   map[string]*Commit // From anything that doesn't survive rebuild
+	legacyCount int
+	timings     []TimeMark
+	assignments map[string]selectionSet
+	inlines     int
+	markseq     int
+	authormap   map[string]Contributor
+	tzmap       map[string]*time.Location // most recent email address to timezone
+	aliases     map[ContributorID]ContributorID
+	events      []Event // A list of the events encountered, in order
 	// Write control - set, if required, before each dump
 	preferred      *VCS               // overrides vcs slot for writes
 	realized       map[string]bool    // clear and remake this before each dump
 	branchPosition map[string]*Commit // clear and remake this before each dump
 	writeOptions   stringSet          // options requested on this write
 	internals      orderedStringSet   // export code computes this itself
+	// These are rebuilt on demand */
+	_markToIndex     map[string]int
+	_markToIndexLen  int  // Cache is valid for events[:_markToIndexLen]
+	_markToIndexSawN bool // whether we saw a null mark blob/commit when caching
+	_markToIndexLock sync.Mutex
+	_namecache       map[string]selectionSet
 }
 
 func newRepository(name string) *Repository {
@@ -5124,8 +5125,11 @@ func (repo *Repository) clone() *Repository {
 	newRepo := *repo
 	newRepo.name += "-clone"
 	newRepo.readtime = time.Now()
+	/* vcs and stronghint got copied */
 	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
+	/* sourcedir, seekstream, basedir, uuid, and writeLegacy got copied */
 	newRepo.preserveSet = repo.preserveSet.Clone()
+	/* dollarMap and dollarSync */
 	// Not cloning assignments or timings yet
 
 	// FIXME: More goes here. Cloning doesn't really work yet.
