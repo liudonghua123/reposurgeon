@@ -5074,8 +5074,6 @@ type Repository struct {
 	uuid        string
 	writeLegacy bool
 	preserveSet orderedStringSet
-	dollarMap   sync.Map // From dollar cookies in files
-	dollarOnce  sync.Once
 	legacyMap   map[string]*Commit // From anything that doesn't survive rebuild
 	legacyCount int
 	timings     []TimeMark
@@ -5129,7 +5127,6 @@ func (repo *Repository) clone() *Repository {
 	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
 	/* sourcedir, seekstream, basedir, uuid, and writeLegacy got copied */
 	newRepo.preserveSet = repo.preserveSet.Clone()
-	/* dollarMap and dollarSync */
 	// Not cloning assignments or timings yet
 
 	// FIXME: More goes here. Cloning doesn't really work yet.
@@ -6006,7 +6003,9 @@ func (repo *Repository) fastImport(ctx context.Context, fp io.Reader, options st
 }
 
 // Extract info about legacy references from CVS/SVN header cookies.
-func (repo *Repository) parseDollarCookies() {
+func (repo *Repository) parseDollarCookies() map[string]*Commit {
+	var dollarMap map[string]*Commit
+	var maplock sync.Mutex
 	// Set commit legacy properties from $Id$ && $Subversion$
 	// cookies in blobs. In order to throw away stale headers from
 	// after, e.g., a CVS-to-SVN or SVN-to-git conversion, we
@@ -6034,7 +6033,9 @@ func (repo *Repository) parseDollarCookies() {
 			}
 			if blob.cookie != nil && blob.cookie.implies() == "SVN" {
 				svnkey := "SVN:" + blob.cookie.rev
-				repo.dollarMap.LoadOrStore(svnkey, commit)
+				maplock.Lock()
+				dollarMap[svnkey] = commit
+				maplock.Unlock()
 			} else if blob.cookie != nil {
 				if filepath.Base(fileop.Path) != blob.cookie.path {
 					// Usually the
@@ -6047,11 +6048,14 @@ func (repo *Repository) parseDollarCookies() {
 						fileop.Path, commit.mark, blob.cookie.path, blob.mark)
 				}
 				cvskey := fmt.Sprintf("CVS:%s:%s", fileop.Path, blob.cookie.path)
-				repo.dollarMap.LoadOrStore(cvskey, commit)
+				maplock.Lock()
+				dollarMap[cvskey] = commit
+				maplock.Unlock()
 			}
 		}
 		return true
 	})
+	return dollarMap
 }
 
 // Audit the repository for uniqueness properties.

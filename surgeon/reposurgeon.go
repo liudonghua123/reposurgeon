@@ -6196,7 +6196,7 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 	repo := rs.chosen()
 	if strings.Contains(line, "lift") {
 		repo.clearColor(colorQSET)
-		rs.chosen().parseDollarCookies()
+		dollarMap := repo.parseDollarCookies()
 		hits := 0
 		substitute := func(getter func(string) *Commit, legend string) string {
 			// legend was matchobj.group(0) in Python
@@ -6236,9 +6236,8 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 					if c := repo.legacyMap[key]; c != nil {
 						return c
 					}
-					c, ok := repo.dollarMap.Load(key)
-					if ok {
-						return c.(*Commit)
+					if c, ok := dollarMap[key]; ok {
+						return c
 					}
 					return nil
 				}},
@@ -6248,9 +6247,8 @@ func (rs *Reposurgeon) DoReferences(line string) bool {
 					if c := repo.legacyMap[p]; c != nil {
 						return c
 					}
-					c, ok := repo.dollarMap.Load(p)
-					if ok {
-						return c.(*Commit)
+					if c, ok := dollarMap[p]; ok {
+						return c
 					}
 					return nil
 				}},

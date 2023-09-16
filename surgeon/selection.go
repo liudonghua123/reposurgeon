@@ -508,7 +508,6 @@ func (rs *Reposurgeon) evalPathsetFull(state selEvalState,
 // Does an event contain something that looks like a legacy reference?
 func (rs *Reposurgeon) hasReference(event Event) bool {
 	repo := rs.chosen()
-	repo.dollarOnce.Do(func() { repo.parseDollarCookies() })
 	var text string
 	type commentGetter interface{ getComment() string }
 	if g, ok := event.(commentGetter); ok {
