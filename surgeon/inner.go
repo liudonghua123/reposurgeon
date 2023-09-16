@@ -8014,10 +8014,10 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 			repo.readAuthorMap(repo.all(), fp)
 			closeOrDie(fp)
 		}
-		legacyMap := vcs.subdirectory + "/legacy_map"
-		legacyMap = filepath.FromSlash(legacyMap)
-		if exists(legacyMap) {
-			rfp, err := os.Open(filepath.Clean(legacyMap))
+		legacyPath := vcs.subdirectory + "/legacy_map"
+		legacyPath = filepath.FromSlash(legacyPath)
+		if exists(legacyPath) {
+			rfp, err := os.Open(filepath.Clean(legacyPath))
 			if err != nil {
 				return nil, err
 			}
@@ -9100,10 +9100,10 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			}
 		}
 	}
-	legacyMap := make(map[string]*Commit)
+	lagacyIDMap := make(map[string]*Commit)
 	for _, commit := range repo.commits(undefinedSelectionSet) {
 		if commit.legacyID != "" {
-			legacyMap[commit.legacyID] = commit
+			lagacyIDMap[commit.legacyID] = commit
 		}
 	}
 	// Special case - event creation
@@ -9200,7 +9200,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				}
 			}
 		} else if updateList[i].update.getHeader("Legacy-ID") != "" {
-			trialEvent, ok = legacyMap[updateList[i].update.getHeader("Legacy-ID")]
+			trialEvent, ok = lagacyIDMap[updateList[i].update.getHeader("Legacy-ID")]
 			if ok {
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
