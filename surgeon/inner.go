@@ -5127,7 +5127,14 @@ func (repo *Repository) clone() *Repository {
 	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
 	/* sourcedir, seekstream, basedir, uuid, and writeLegacy got copied */
 	newRepo.preserveSet = repo.preserveSet.Clone()
-	// Not cloning assignments or timings yet
+	newRepo.legacyMap = make(map[string]*Commit) // temporary
+	newRepo.legacyCount = 0
+	newRepo.timings = make([]TimeMark, len(repo.timings))
+	copy(newRepo.timings, repo.timings)
+	repo.assignments = make(map[string]selectionSet)
+	for key, value := range repo.assignments {
+		newRepo.assignments[key] = value.Clone()
+	}
 
 	// FIXME: More goes here. Cloning doesn't really work yet.
 	//repo.events = nil

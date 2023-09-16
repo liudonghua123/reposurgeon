@@ -326,6 +326,11 @@ func TestSelectionSet(t *testing.T) {
 	if sum.Fetch(0) != 1 || sum.Fetch(1) != 2 || sum.Fetch(2) != 3 || sum.Fetch(4) != 5 || sum.Size() != 5 {
 		t.Errorf("unexpected result of set union: %v", sum)
 	}
+
+	ts10 := ts8.Clone()
+	if ts8.String() != ts10.String() {
+		t.Error("Selection set cloning failed.")
+	}
 }
 
 func TestOrderedMap(t *testing.T) {

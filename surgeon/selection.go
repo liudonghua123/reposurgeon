@@ -77,6 +77,15 @@ func (s selectionSet) Values() []int {
 	return v
 }
 
+func (s selectionSet) Clone() selectionSet {
+	var clone selectionSet
+	it := s.Iterator()
+	for it.Next() {
+		clone.Add(it.Value())
+	}
+	return clone
+}
+
 func (s selectionSet) Contains(x int) bool {
 	return s.set != nil && s.set.Contains(x)
 }
