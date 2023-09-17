@@ -5123,11 +5123,11 @@ func (repo *Repository) clone() *Repository {
 	newRepo := *repo
 	newRepo.name += "-clone"
 	newRepo.readtime = time.Now()
-	/* vcs and stronghint got copied */
+	// vcs and stronghint got copied
 	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
-	/* sourcedir, seekstream, basedir, uuid, and writeLegacy got copied */
+	// sourcedir, seekstream, basedir, uuid, and writeLegacy got copied
 	newRepo.preserveSet = repo.preserveSet.Clone()
-	newRepo.legacyMap = make(map[string]*Commit) // temporary
+	newRepo.legacyMap = make(map[string]*Commit) // temporary - do a copy someday
 	newRepo.legacyCount = 0
 	newRepo.timings = make([]TimeMark, len(repo.timings))
 	copy(newRepo.timings, repo.timings)
@@ -5135,13 +5135,24 @@ func (repo *Repository) clone() *Repository {
 	for key, value := range repo.assignments {
 		newRepo.assignments[key] = value.Clone()
 	}
-
+	// inlines and markseq can just be copied
+	newRepo.authormap = make(map[string]Contributor)
+	for key, value := range repo.authormap {
+		newRepo.authormap[key] = value
+	}
+	newRepo.tzmap = make(map[string]*time.Location)
+	for key, value := range repo.tzmap {
+		newRepo.tzmap[key] = value
+	}
+	newRepo.aliases = make(map[ContributorID]ContributorID)
+	for key, value := range repo.aliases {
+		newRepo.aliases[key] = value
+	}
 	// FIXME: More goes here. Cloning doesn't really work yet.
 	//repo.events = nil
 	//for _, event := range repo.events {
 	//	repo.appendEvent(event.clone())
 	//}
-	newRepo.cleanLegacyMap()
 	newRepo.declareSequenceMutation("cloning")
 	return &newRepo
 }
