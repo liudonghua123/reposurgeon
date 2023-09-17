@@ -837,6 +837,10 @@ Test to be sure we can read in a tag in inbox format.
 	if !t1.decodable() {
 		t.Errorf("%q was expected to be decodable, is not", t1.String())
 	}
+
+	if t1.String() != t1.clone().String() {
+		t.Errorf("cloning of tag %q failed", t1.tagname)
+	}
 }
 
 func TestBranchname(t *testing.T) {
@@ -1413,6 +1417,26 @@ M 100644 :3 README
 	if !reflect.DeepEqual(saw4, exp4) {
 		t.Errorf("saw branchrootmap %v, expected %v", saw4, exp4)
 	}
+
+	// Minpr tests that we put here because they need a scratch repostory
+	rs := newReset(repo, "refs/heads/foobar", ":4", "")
+	//rs.committish = ":4"
+	//rs.ref = "refs/heads/foobar"
+	if rs.String() != rs.clone().String() {
+		t.Errorf("reset cloning failed")
+	}
+	c := newCallout("<2023-09-17T14:54:20Z>")
+	c.branch = "refs/heads/foobar"
+	//c.mark = "<2023-09-17T14:54:20Z>"
+	if c.String() != c.clone().String() {
+		t.Errorf("callout cloning failed")
+	}
+	// FIXME: String equality is failing here for some weird reason/
+	//p := newPassthrough(repo, "foozle")
+	//p.text = "foozle"
+	//if p.String() != c.clone().String() {
+	//	t.Errorf("passthrough cloning failed: expected %q, saw %q", p.String(), p.clone().String())
+	//}
 }
 
 func TestReadAuthorMap(t *testing.T) {

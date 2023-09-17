@@ -1792,6 +1792,15 @@ func newTag(repo *Repository,
 	return t
 }
 
+func (t Tag) clone() *Tag {
+	var newtag Tag
+	attrib := *t.tagger
+	newtag = t
+	newtag.tagger = &attrib
+	newtag.colors.Clear()
+	return &newtag
+}
+
 func (t Tag) getColor() colorSet {
 	return t.colors
 }
@@ -2098,6 +2107,13 @@ func newReset(repo *Repository, ref string, committish string, legacy string) *R
 		reset.remember(repo, committish)
 	}
 	return reset
+}
+
+func (reset Reset) clone() *Reset {
+	newreset := new(Reset)
+	*newreset = reset
+	newreset.colors.Clear()
+	return newreset
 }
 
 func (reset Reset) getColor() colorSet {
@@ -2509,6 +2525,13 @@ func newCallout(mark string) *Callout {
 	callout := new(Callout)
 	callout.mark = mark
 	return callout
+}
+
+func (callout Callout) clone() *Callout {
+	newcallout := new(Callout)
+	*newcallout = callout
+	newcallout.colors.Clear()
+	return newcallout
 }
 
 func (callout *Callout) children() []CommitLike {
@@ -4227,6 +4250,12 @@ func newPassthrough(repo *Repository, line string) *Passthrough {
 	return p
 }
 
+func (p *Passthrough) clone() *Passthrough {
+	newpassthrough := new(Passthrough)
+	*newpassthrough = *p
+	return newpassthrough
+}
+
 // emailOut enables DoMsgout() to report these.
 func (p *Passthrough) emailOut(_modifiers orderedStringSet,
 	eventnum int, _filterRegexp *regexp.Regexp) string {
@@ -4924,6 +4953,9 @@ func (sp *StreamParser) fastImport(ctx context.Context, fp io.Reader, options st
 // Generic repository-manipulation code begins here
 
 // Event is an operation in a repository's time sequence of modifications.
+// All its types also have a clone() method, but that's not declared as part
+// of the interface because we want it to return the specific type rather
+// than Event.
 type Event interface {
 	idMe() string
 	getMark() string
