@@ -2783,27 +2783,24 @@ func (commit *Commit) bump(i int) {
 	commit.hash.invalidate()
 }
 
-// clone replicates this commit, without its fileops, color, children, or tags.
+// clone replicates this commit, copying everything that can be pulled by value
 func (commit *Commit) clone(repo *Repository) *Commit {
-	var c = *commit // Was a Python deepcopy
-	c.authors = make([]Attribution, len(commit.authors))
-	copy(c.authors, commit.authors)
-	// DO NOT USE setOperations because it would call forget
-	// on each operation of the commit we are cloning from.
-	c.fileops = nil
-	//c.filemap = nil
-	c.colors.Clear()
+	// What we get to pull over is: repo, mark, attributions, comment, branch
+	var c = *commit
 	if repo != nil {
 		c.repo = repo
 	}
+	c.authors = make([]Attribution, len(commit.authors))
+	copy(c.authors, commit.authors)
+	// Do NOT use setOperations because it would call forget
+	// on each operation of the commit we are cloning from.
+	c.fileops = nil
+	c.colors.Clear()
 	c._childNodes = nil
-	// use the encapsulation to set parents instead of relying
-	// on the copy, so that Commit can do its bookkeeping.
 	c._parentNodes = nil // avoid confusing setParents()
-	// Now that parents & children are correct, invalidate the manifest
-	c.invalidateManifests()
-	c.setParents(commit.parents())
+	c._manifest = nil
 	c.attachments = nil
+	c.hash.invalidate()
 	return &c
 }
 
@@ -7791,7 +7788,12 @@ func (repo *Repository) splitCommit(where int, splitfunc func([]*FileOp) ([]*Fil
 	if len(fileops) == 0 || len(fileops2) == 0 {
 		return errors.New("no-op commit split, repo unchanged")
 	}
-	repo.insertEvent(commit.clone(repo), where+1, "commit split")
+	newclone := commit.clone(repo)
+	newclone.setParents(commit.parents())
+	// Now that parents & children are correct, invalidate the manifest
+	newclone.invalidateManifests()
+
+	repo.insertEvent(newclone, where+1, "commit split")
 	repo.declareSequenceMutation("commit split")
 	commit2 := repo.events[where+1].(*Commit)
 	// need a new mark
