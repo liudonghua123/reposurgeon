@@ -6985,6 +6985,30 @@ func (rs *Reposurgeon) DoCreate(line string) bool {
 	return false
 }
 
+// HelpClone says "Shut up, golint!"
+func (rs *Reposurgeon) HelpClone() {
+	rs.helpOutput(`
+clone
+
+Clone the in-memory representation of the selected repository. All
+metdata is copied. Any blobs on disk are shared until modified.
+The name of the clone gets the added suffix "clone".  The clone is
+selected. Q bits in the clone are cleared.
+
+Useful if you need to set up for expunge commands to partition a
+repository by cliques of filepaths.
+`)
+}
+
+// DoClone makes a repository with a specified name.
+func (rs *Reposurgeon) DoClone(line string) bool {
+	rs.newLineParse(line, parseNOSELECT|parseREPO, nil)
+	repo := rs.chosen().clone()
+	rs.repolist = append(rs.repolist, repo)
+	rs.choose(repo)
+	return false
+}
+
 // HelpIncorporate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpIncorporate() {
 	rs.helpOutput(`

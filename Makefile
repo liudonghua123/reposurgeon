@@ -113,6 +113,7 @@ BNF_TOPICS = \
 	checkout \
 	choose \
 	clear \
+	clone \
 	coalesce \
 	count \
 	create \
