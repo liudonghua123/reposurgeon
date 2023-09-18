@@ -6,7 +6,7 @@ Repository head::
      Fixed a deep bug in the graft and unite commands.
      Add prefix negation operator ~ for pathsets.
      Repaired a bug in CVS reference lifting.
-     Removed read ---use-uuid option.
+     Removed read --use-uuid option.
      Added Content-Path and Content-Name support to msgin --create.
      Added =E selector for branch root commits.
      Added "clone" command.
