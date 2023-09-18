@@ -5177,11 +5177,40 @@ func (repo *Repository) clone() *Repository {
 	for key, value := range repo.aliases {
 		newRepo.aliases[key] = value
 	}
-	// FIXME: More goes here. Cloning doesn't really work yet.
-	//repo.events = nil
-	//for _, event := range repo.events {
-	//	repo.appendEvent(event.clone())
-	//}
+	newRepo.events = make([]Event, len(repo.events))
+	for i, event := range repo.events {
+		switch event.(type) {
+		case *Passthrough:
+			passthrough := *event.(*Passthrough)
+			newRepo.events[i] = passthrough.clone()
+		case *Blob:
+			blob := *event.(*Blob)
+			newblob := blob.clone(&newRepo)
+			// FIXME
+			newRepo.events[i] = newblob
+		case *Commit:
+			commit := *event.(*Commit)
+			newcommit := commit.clone(&newRepo)
+			// FIXME
+			newRepo.events[i] = newcommit
+		case *Callout:
+			callout := *event.(*Callout)
+			newRepo.events[i] = callout.clone()
+		case *Tag:
+			tag := *event.(*Tag)
+			newtag := tag.clone()
+			newtag.remember(&newRepo, tag.committish)
+			newRepo.events[i] = newtag
+		case *Reset:
+			reset := *event.(*Reset)
+			newreset := reset.clone()
+			newreset.remember(&newRepo, reset.committish)
+			newRepo.events[i] = newreset
+		default:
+			// This should never happen
+			panic("unknown event type while cloning")
+		}
+	}
 	newRepo.declareSequenceMutation("cloning")
 	return &newRepo
 }
