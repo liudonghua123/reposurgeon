@@ -6991,7 +6991,7 @@ func (rs *Reposurgeon) HelpClone() {
 clone
 
 Clone the in-memory representation of the selected repository. All
-metdata is copied. Any blobs on disk are shared until modified.
+metadata is copied. Any blobs on disk are shared until modified.
 The name of the clone gets the added suffix "clone".  The clone is
 selected. Q bits in the clone are cleared.
 
