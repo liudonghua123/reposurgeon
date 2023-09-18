@@ -5195,6 +5195,7 @@ func (repo *Repository) clone() *Repository {
 	for key, value := range repo.aliases {
 		newRepo.aliases[key] = value
 	}
+	branchPosition := make(map[string]*Commit)
 	newRepo.events = make([]Event, len(repo.events))
 	for i, event := range repo.events {
 		switch event.(type) {
@@ -5204,12 +5205,32 @@ func (repo *Repository) clone() *Repository {
 		case *Blob:
 			blob := *event.(*Blob)
 			newblob := blob.clone(&newRepo)
-			// FIXME
 			newRepo.events[i] = newblob
 		case *Commit:
 			commit := *event.(*Commit)
 			newcommit := commit.clone(&newRepo)
-			// FIXME
+			// We need to clone the commit's
+			// fileops, and recreate the opset pointers in
+			// its blobs. Then we need to set relevant
+			// parent-child links.
+			newcommit.fileops = make([]*FileOp, len(commit.operations()))
+			for i, op := range commit.operations() {
+				newcommit.fileops[i] = op.clone(&newRepo)
+			}
+			// Explicit parent links from marks
+			for _, mark := range commit.parentMarks() {
+				if isCallout(mark) {
+					newcommit.addCallout(mark)
+				} else {
+					newcommit.addParentByMark(mark)
+				}
+			}
+			// If no explicit parent marks, make implicit ones.
+			if p, ok := branchPosition[newcommit.Branch]; ok && !newcommit.hasParents() {
+				newcommit.addParentCommit(p)
+				newcommit.implicitParent = true
+			}
+			branchPosition[newcommit.Branch] = newcommit
 			newRepo.events[i] = newcommit
 		case *Callout:
 			callout := *event.(*Callout)
