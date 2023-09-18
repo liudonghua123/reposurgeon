@@ -1424,18 +1424,26 @@ func (b *Blob) setBlobfile(argpath string) {
 	b.hash.invalidate()
 }
 
-// getBloobfile returns the path where the blob's content lives.
+// getBlobfile returns the path where the blob's content lives.
 func (b *Blob) getBlobfile(create bool) string {
 	if b.abspath != "" {
 		return b.abspath
 	}
 	stem := fmt.Sprintf("%09d", b.blobseq)
-	// The point of the breaking up the ID into multiple sections is to use
-	// the filesystem to speed up lookup time.
+	// The point of the breaking up the ID into multiple sections
+	// is to use the filesystem to speed up lookup time.
 	parts := strings.Split(filepath.FromSlash(b.repo.subdir("")), "/")
 	parts = append(parts,
 		[]string{"blobs", stem[0:3], stem[3:6], stem[6:]}...)
 	if create {
+		// If we're about to nuke a blob that already exists
+		// by setting new content there, delete the old
+		// content file first in case a blob clone operation
+		// created multiple links to the file.  Otherwise we
+		// might change what other sharers see.
+		if oc := filepath.FromSlash(strings.Join(parts, "/")); exists(oc) {
+			os.Remove(oc)
+		}
 		dir := strings.Join(parts[0:len(parts)-1], "/")
 		err := os.MkdirAll(filepath.FromSlash(dir), userReadWriteSearchMode)
 		if err != nil {
@@ -1518,6 +1526,7 @@ func (b *Blob) getContentStream() io.ReadCloser {
 func (b *Blob) setContent(text []byte, tell int64) {
 	b.start = tell
 	b.size = int64(len(text))
+	b.cookie = nil
 	if b.hasfile() {
 		b.start = noOffset // Hell's to pay if you remove this!
 		file, err := os.OpenFile(filepath.Clean(b.getBlobfile(true)),
@@ -1634,10 +1643,19 @@ func (b *Blob) moveto(repo *Repository) {
 // clone makes a fresh (uncolored) copy of this blob, pointing at the same file."
 func (b *Blob) clone(repo *Repository) *Blob {
 	c := b // copy scalar fields
+	c.repo = repo
+	c.blobseq = control.blobseq
+	control.blobseq++
 	c.opsetLock.Lock()
-	c.opset = make(map[*FileOp]bool, len(b.opset))
-	for op := range b.opset {
-		c.opset[op] = true
+	// Different repo?  Then we can't copy the old fileop references,
+	// as they belong in a different event sequence.
+	if c.repo != b.repo {
+		c.opset = nil
+	} else {
+		c.opset = make(map[*FileOp]bool, len(b.opset))
+		for op := range b.opset {
+			c.opset[op] = true
+		}
 	}
 	c.opsetLock.Unlock()
 	c.colors.Clear()
