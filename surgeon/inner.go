@@ -2514,8 +2514,8 @@ func (fileop FileOp) String() string {
 }
 
 // Copy returns a clone of the FileOp that calls it
-func (fileop *FileOp) Copy() *FileOp {
-	newop := newFileOp(fileop.repo)
+func (fileop *FileOp) clone(newRepo *Repository) *FileOp {
+	newop := newFileOp(newRepo)
 	newop.committish = stringCopy(fileop.committish)
 	newop.Source = stringCopy(fileop.Source)
 	newop.mode = stringCopy(fileop.mode)
@@ -3891,7 +3891,7 @@ func (commit *Commit) canonicalize() {
 		oe, _ := ioe.(*FileOp)
 		ne, _ := ine.(*FileOp)
 		if newok && !(oldok && oe.Equals(ne)) {
-			newops.set(cpath, ne.Copy())
+			newops.set(cpath, ne.clone(commit.repo))
 		}
 	}
 	// Now replace the Commit fileops, not passing through any deleteall
@@ -6526,7 +6526,7 @@ func (commit *Commit) applyFileOps(presentOps PathMapLike,
 	}
 	doCopy := func(fileop *FileOp) bool {
 		if prevop, ok := presentOps.get(fileop.Source); ok {
-			newop := prevop.(*FileOp).Copy()
+			newop := prevop.(*FileOp).clone(commit.repo)
 			newop.Path = fileop.Path
 			presentOps.set(fileop.Path, newop)
 			return true
@@ -6842,7 +6842,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				if pushforward && child.firstParent() == commit {
 					myOperations := make([]*FileOp, len(commit.operations()))
 					for i, op := range commit.operations() {
-						myOperations[i] = op.Copy()
+						myOperations[i] = op.clone(commit.repo)
 					}
 					child.fileops = append(myOperations, child.fileops...)
 					fileopsWerePushed = true
@@ -6910,7 +6910,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				}
 				myOperations := make([]*FileOp, len(commit.operations()))
 				for i, op := range commit.operations() {
-					myOperations[i] = op.Copy()
+					myOperations[i] = op.clone(commit.repo)
 				}
 				parent.fileops = append(parent.fileops, myOperations...)
 				fileopsWerePushed = true
