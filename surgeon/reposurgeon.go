@@ -418,7 +418,7 @@ func (lp *LineParse) respond(msg string, args ...interface{}) {
 func delimitedRegexp(in string) (out string, re bool) {
 	leader, leaderSize := utf8.DecodeRuneInString(in)
 	trailer, trailerSize := utf8.DecodeLastRuneInString(in)
-	delimited := leader == trailer && unicode.IsPunct(leader)
+	delimited := len(in) >= 3 && leader == trailer && unicode.IsPunct(leader)
 	if delimited {
 		in = in[leaderSize : len(in)-trailerSize]
 	}
