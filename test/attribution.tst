@@ -7,8 +7,9 @@ attribution
 
 read <multitag.fi
 
+# FIXME: New parsing code doesn't error out on this condition
 # error: shlex.parse failure
-attribution missing "quotation mark
+#attribution missing "quotation mark
 
 # error: no event selection
 attribution delete

@@ -37,7 +37,6 @@ import (
 	"unicode/utf8"
 	"unsafe" // Actually safe - only uses Sizeof
 
-	shlex "github.com/anmitsu/go-shlex"
 	difflib "github.com/ianbruene/go-difflib/difflib"
 	terminfo "github.com/xo/terminfo"
 	kommandant "gitlab.com/ianbruene/kommandant"
@@ -195,6 +194,7 @@ type LineParse struct {
 	options      orderedStringSet
 	closem       []io.Closer
 	proc         *exec.Cmd
+	args         []string
 }
 
 // Parse precondition flags
@@ -234,6 +234,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		redirected:   false,
 		options:      make([]string, 0),
 		closem:       make([]io.Closer, 0),
+		args:         make([]string, 0),
 	}
 
 	var err error
@@ -334,7 +335,7 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		}
 		lp.redirected = true
 	}
-	// Options
+	// Options - these are removed from the line before the command handler sees it
 	for true {
 		match := regexp.MustCompile("--([^ ]+)").FindStringSubmatchIndex(lp.line)
 		if match == nil {
@@ -360,6 +361,17 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		panic(throw("command", "command does not take a filename argument - use redirection instead"))
 	}
 
+	// Parse (possibly double-quoted) tokens
+	argline := lp.line
+	for true {
+		var tok string
+		tok, argline = popToken(argline)
+		if tok == "" {
+			break
+		}
+		lp.args = append(lp.args, tok)
+	}
+
 	return &lp
 }
 
@@ -373,19 +385,6 @@ func (lp *LineParse) popToken() string {
 	var tok string
 	tok, lp.line = popToken(lp.line)
 	return tok
-}
-
-// ShellTokens returns the argument token list after the parse for redirects.
-func (lp *LineParse) ShellTokens() []string {
-	// Parse tokens, accepting ' or " as quotes that can enclose spaces.
-	// Also treat \ followed by space as a non-breaking space, \' and
-	// \" as non-enclosing quotes. We can't use this everywhere yet
-	// because it collides with backslash use in our regexp syntax.
-	fields, err := shlex.Split(lp.line, true)
-	if err != nil {
-		croak("malformed command line: %s", err)
-	}
-	return fields
 }
 
 // OptVal looks for an option flag on the line, returns value and presence
@@ -3136,10 +3135,8 @@ func (rs *Reposurgeon) HelpSetfield() {
 	rs.helpOutput(`
 [SELECTION] setfield FIELD VALUE
 
-This command does shell-like tokenizing. Single and double quotes
-around arguments allow them to contain whitespace. Backslash before
-whitespace stops it from being an argument separator. Backslash before
-quotes or backslash undoes their specialness.
+The FIELD and VALUE arguments can be double-quoted strings containing
+whitespace.
 
 In the selected events (defaulting to none) set every instance of a
 named field to a string value.  The value field may be quoted to include
@@ -3164,14 +3161,13 @@ address.
 func (rs *Reposurgeon) DoSetfield(line string) bool {
 	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT|parseNOREDIRECT, nil)
 	repo := rs.chosen()
-	fields := parse.ShellTokens()
-	if len(fields) != 2 {
+	if len(parse.args) != 2 {
 		croak("malformed setfield line")
 	}
 	// Calling strings.Title so that Python-style (uncapitalized)
 	// fieldnames will still work.
-	field := strings.Title(fields[0])
-	value, err := stringEscape(fields[1])
+	field := strings.Title(parse.args[0])
+	value, err := stringEscape(parse.args[1])
 	if err != nil {
 		croak("while setting field: %v", err)
 		return false
@@ -3214,10 +3210,8 @@ func (rs *Reposurgeon) HelpSetperm() {
 	rs.helpOutput(`
 SELECTION setperm PERM [PATH...]
 
-This command does shell-like tokenizing. Single and double quotes
-around arguments allow them to contain whitespace. Backslash before
-whitespace stops it from being an argument separator. Backslash before
-quotes or backslash undoes their specialness.
+The PERM and PATH arguments can be double-quoted strings containing
+whitespace. This is only likely to be useful in PATH.
 
 For the selected events (defaulting to none) take the first argument as an
 octal literal describing permissions.  All subsequent arguments are paths.
@@ -3232,13 +3226,12 @@ false otherwise.
 // DoSetperm alters permissions on M fileops matching a path list.
 func (rs *Reposurgeon) DoSetperm(line string) bool {
 	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
-	fields := parse.ShellTokens()
-	if len(fields) < 2 {
+	if len(parse.args) < 2 {
 		croak("missing or malformed setperm line")
 		return false
 	}
-	perm := fields[0]
-	paths := newOrderedStringSet(fields[1:]...)
+	perm := parse.args[0]
+	paths := newOrderedStringSet(parse.args[1:]...)
 	if !newOrderedStringSet("100644", "100755", "120000").Contains(perm) {
 		croak("unexpected permission literal %s", perm)
 		return false
@@ -3268,15 +3261,11 @@ func (rs *Reposurgeon) HelpAppend() {
 	rs.helpOutput(`
 SELECTION append [--rstrip] [--legacy] TEXT
 
-This command does shell-like tokenizing. Single and double quotes
-around arguments allow them to contain whitespace. Backslash before
-whitespace stops it from being an argument separator. Backslash before
-quotes or backslash undoes their specialness.
-
 Append text to the comments of commits and tags in the specified
-selection set. The text is the first token of the command and may
-be a quoted string. C-style escape sequences in the string are
-interpreted using Go's Quote/Unquote codec from the strconv library.
+selection set. The text is the first token of the command and may be a
+double-quoted string contauing whitespace. C-style escape sequences in
+the string are interpreted using Go's Quote/Unquote codec from the
+strconv library.
 
 If the option --rstrip is given, the comment is right-stripped before
 the new text is appended. If the option --legacy is given, the string
@@ -3296,12 +3285,11 @@ Example:
 func (rs *Reposurgeon) DoAppend(line string) bool {
 	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	defer parse.Closem()
-	fields := parse.ShellTokens()
-	if len(fields) == 0 {
-		croak("missing append line")
+	if len(parse.args) == 0 {
+		croak("missing append text")
 		return false
 	}
-	line, err := stringEscape(fields[0])
+	text, err := stringEscape(parse.args[0])
 	if err != nil {
 		croak(err.Error())
 		return false
@@ -3316,9 +3304,9 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 				commit.Comment = strings.TrimRight(commit.Comment, " \n\t")
 			}
 			if parse.options.Contains("--legacy") {
-				commit.Comment += strings.Replace(line, "%LEGACY%", commit.legacyID, -1)
+				commit.Comment += strings.Replace(text, "%LEGACY%", commit.legacyID, -1)
 			} else {
-				commit.Comment += line
+				commit.Comment += text
 			}
 			commit.addColor(colorQSET)
 		case *Tag:
@@ -3326,7 +3314,7 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 			if parse.options.Contains("--rstrip") {
 				tag.Comment = strings.TrimRight(tag.Comment, " \n\t")
 			}
-			tag.Comment += line
+			tag.Comment += text
 			tag.addColor(colorQSET)
 		}
 	}
@@ -3338,15 +3326,11 @@ func (rs *Reposurgeon) HelpPrepend() {
 	rs.helpOutput(`
 SELECTION prepend [--lstrip] [--legacy] TEXT
 
-This command does shell-like tokenizing. Single and double quotes
-around arguments allow them to contain whitespace. Backslash before
-whitespace stops it from being an argument separator. Backslash before
-quotes or backslash undoes their specialness.
-
 Prepend text to the comments of commits and tags in the specified
-selection set. The text is the first token of the command and may
-be a quoted string. C-style escape sequences in the string are
-interpreted using Go's Quote/Unquote codec from the strconv library.
+selection set. The text is the first token of the command and may be a
+double-quoted string containing whitespace. C-style escape sequences
+in the string are interpreted using Go's Quote/Unquote codec from the
+strconv library.
 
 If the option --lstrip is given, the comment is left-stripped before
 the new text is prepended. If the option --legacy is given, the string
@@ -3366,12 +3350,11 @@ Example:
 func (rs *Reposurgeon) DoPrepend(line string) bool {
 	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
 	defer parse.Closem()
-	fields := parse.ShellTokens()
-	if len(fields) == 0 {
+	if len(parse.args) == 0 {
 		croak("missing prepend line")
 		return false
 	}
-	line, err := stringEscape(fields[0])
+	text, err := stringEscape(parse.args[0])
 	if err != nil {
 		croak(err.Error())
 		return false
@@ -3386,9 +3369,9 @@ func (rs *Reposurgeon) DoPrepend(line string) bool {
 				commit.Comment = strings.TrimLeft(commit.Comment, " \n\t")
 			}
 			if parse.options.Contains("--legacy") {
-				commit.Comment = strings.Replace(line, "%LEGACY%", commit.legacyID, -1) + commit.Comment
+				commit.Comment = strings.Replace(text, "%LEGACY%", commit.legacyID, -1) + commit.Comment
 			} else {
-				commit.Comment = line + commit.Comment
+				commit.Comment = text + commit.Comment
 			}
 			commit.addColor(colorQSET)
 		case *Tag:
@@ -3396,7 +3379,7 @@ func (rs *Reposurgeon) DoPrepend(line string) bool {
 			if parse.options.Contains("--lstrip") {
 				tag.Comment = strings.TrimLeft(tag.Comment, " \n\t")
 			}
-			tag.Comment = line + tag.Comment
+			tag.Comment = text + tag.Comment
 			tag.addColor(colorQSET)
 		}
 	}
@@ -3510,10 +3493,7 @@ func (rs *Reposurgeon) HelpAdd() {
 	rs.helpOutput(`
 SELECTION add { "D" PATH | "M" PERM {MARK|SHA1} PATH | "R" SOURCE TARGET | "C" SOURCE TARGET }
 
-This command does shell-like tokenizing. Single and double quotes
-around arguments allow them to contain whitespace. Backslash before
-whitespace stops it from being an argument separator. Backslash before
-quotes or backslash undoes their specialness.
+PATH, SOURCE and TARGET athuments may b double-quoted strings contining whitespace.
 
 In a specified commit, add a specified fileop.
 
@@ -3558,15 +3538,14 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, nil)
 	defer parse.Closem()
 	repo := rs.chosen()
-	fields := parse.ShellTokens()
-	if len(fields) < 2 {
+	if len(parse.args) < 2 {
 		croak("add requires an operation type and arguments")
 		return false
 	}
-	optype := optype(fields[0][0])
+	optype := optype(parse.args[0][0])
 	var perms, argpath, mark, source, target string
 	if optype == opD {
-		argpath = fields[1]
+		argpath = parse.args[1]
 		for it := repo.commitIterator(rs.selection); it.Next(); {
 			if it.commit().paths(nil).Contains(argpath) {
 				croak("%s already has an op for %s",
@@ -3579,23 +3558,23 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			}
 		}
 	} else if optype == opM {
-		if len(fields) != 4 {
+		if len(parse.args) != 4 {
 			croak("wrong field count in add command")
 			return false
-		} else if strings.HasSuffix(fields[1], "644") {
+		} else if strings.HasSuffix(parse.args[1], "644") {
 			perms = "100644"
-		} else if strings.HasSuffix(fields[1], "755") {
+		} else if strings.HasSuffix(parse.args[1], "755") {
 			perms = "100755"
-		} else if fields[1] == "120000" {
+		} else if parse.args[1] == "120000" {
 			perms = "120000"
-		} else if fields[1] == "160000" {
+		} else if parse.args[1] == "160000" {
 			perms = "160000"
 		} else {
-			croak("invalid mode %s in add command", fields[1])
+			croak("invalid mode %s in add command", parse.args[1])
 			return false
 		}
-		mark = fields[2]
-		argpath = fields[3]
+		mark = parse.args[2]
+		argpath = parse.args[3]
 		if perms != "160000" {
 			if !strings.HasPrefix(mark, ":") {
 				croak("garbled mark %s in add command", mark)
@@ -3628,12 +3607,12 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			}
 		}
 	} else if optype == opR || optype == opC {
-		if len(fields) < 3 {
+		if len(parse.args) < 3 {
 			croak("too few arguments in add %c", optype)
 			return false
 		}
-		source = fields[1]
-		target = fields[2]
+		source = parse.args[1]
+		target = parse.args[2]
 		for it := repo.commitIterator(rs.selection); it.Next(); {
 			if it.commit().paths(nil).Contains(source) || it.commit().paths(nil).Contains(target) {
 				croak("%s already has an op for %s or %s",
@@ -5897,12 +5876,11 @@ func (rs *Reposurgeon) HelpAttribution() {
 	rs.helpOutput(`
 [SELECTION] attribution {SUBCOMMAND}
 
-This command does shell-like tokenizing. Single and double quotes
-around arguments allow them to contain whitespace. Backslash before
-whitespace stops it from being an argument separator. Backslash before
-quotes or backslash undoes their specialness.
-
 Inspect, modify, add, and remove commit and tag attributions.
+
+Arguments of this command (including attribution-field values) can
+be double-quoted srrings containing whitespace; the string quotes 
+are stripped before interpretation.
 
 Attributions upon which to operate are selected in much the same way as events
 are selected. The ATTR-SELECTION argument of each action is an expression
@@ -6002,14 +5980,13 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 	machine, rest := selparser.compile(line)
 	parse := rs.newLineParse(rest, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	fields := parse.ShellTokens()
 	var action string
 	args := []string{}
-	if len(fields) == 0 {
+	if len(parse.args) == 0 {
 		action = "show"
 	} else {
-		action = fields[0]
-		args = fields[1:]
+		action = parse.args[0]
+		args = parse.args[1:]
 	}
 	selection := rs.selection
 	if !rs.selection.isDefined() {
@@ -6745,15 +6722,10 @@ func (rs *Reposurgeon) HelpDo() {
 	rs.helpOutput(`
 do MACRO-NAME [ARG...]
 
-This command does shell-like tokenizing. Single and double quotes
-around arguments allow them to contain whitespace. Backslash before
-whitespace stops it from being an argument separator. Backslash before
-quotes or backslash undoes their specialness.
-
-Expand and perform a macro.  The first whitespace-separated token is
-the name of the macro to be called; remaining tokens replace {0},
-{1}... in the macro definition. Tokens may contain whitespace if they
-are string-quoted; string quotes are stripped. Macros can call macros.
+Expand and perform a macro.  The first argument is the name of the
+macro to be called;  remaining argumentd replace {0}, {1}... in the macro
+definition. Arguments may contain whitespace if they are string-quoted; 
+string quotes are stripped. Macros can call macros.
 
 If the macro expansion does not itself begin with a selection set,
 whatever set was specified before the 'do' keyword is available to
@@ -6765,18 +6737,17 @@ the command generated by the expansion.
 func (rs *Reposurgeon) DoDo(ctx context.Context, line string) bool {
 	parse := rs.newLineParse(line, parseNONE, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	words := parse.ShellTokens()
-	if len(words) == 0 {
+	if len(parse.args) == 0 {
 		croak("no macro name was given.")
 		return false
 	}
-	name := words[0]
+	name := parse.args[0]
 	macro, present := rs.definitions[name]
 	if !present {
 		croak("'%s' is not a defined macro", name)
 		return false
 	}
-	args := words[1:]
+	args := parse.args[1:]
 	replacements := make([]string, 2*len(args))
 	for i, arg := range args {
 		replacements = append(replacements, fmt.Sprintf("{%d}", i), arg)
