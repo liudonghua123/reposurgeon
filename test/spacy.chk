@@ -1,0 +1,22 @@
+blob
+mark :1
+data 0
+
+reset refs/heads/master
+commit refs/heads/master
+mark :2
+author User 0 <user0@example.com> 1698220771 +0200
+committer User 0 <user0@example.com> 698220771 +0200
+data 5
+test
+M 100644 :1 "new file1.txt"
+
+commit refs/heads/master
+mark :3
+author User 0 <user0@example.com> 1698223314 +0200
+committer User 0 <user0@example.com> 1698223314 +0200
+data 7
+Commit
+from :2
+M 100644 :1 "new folder/file2.txt"
+
