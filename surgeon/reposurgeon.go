@@ -729,7 +729,7 @@ func (rs *Reposurgeon) reportSelect(parse *LineParse, display func(*LineParse, i
 }
 
 // Grab a whitespace-delimited token from the front of the line.
-// Interpret double quotes to protect spaces
+// Interpret double quotes to protect spaces.
 func popToken(line string) (string, string) {
 	tok := ""
 	line = strings.TrimLeftFunc(line, unicode.IsSpace)
@@ -4562,7 +4562,9 @@ With the verb "rename", rename a path in every fileop of every selected
 commit.  The default selection set is all commits. The first argument is
 interpreted as a pattern expression to match against paths; the second may
 contain back-reference syntax (\1 etc.). See "help regexp" for more
-information about regular expressions.
+information about regular expressions.  If PATTERN or TARGET are wrapped
+by double quotes they may contain whitespace; the quotes are stripped 
+before futher interprepretation as a delimited regexp or literal string.
 
 Ordinarily, if the target path already exists in the fileops, or is visible
 in the ancestry of the commit, this command throws an error.  With the
@@ -4603,25 +4605,28 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	fields := parse.Tokens()
-	if len(fields) == 0 {
+	var verb string
+	verb, parse.line = popToken(parse.line)
+	if len(verb) == 0 {
 		croak("path command requires a verb.")
 		return false
 	}
-	if fields[0] == "rename" {
-		if len(fields) != 3 {
-			croak("wrong number of fields in path rename command")
+	if verb == "rename" {
+		var sourcePattern, targetPattern string
+		sourcePattern, parse.line = popToken(parse.line)
+		if sourcePattern == "" {
+			croak("missing source pattern in path rename command")
 			return false
 		}
-		sourceRE := getPattern(fields[1])
+		sourceRE := getPattern(sourcePattern)
 		force := parse.options.Contains("--force")
-		targetPattern := fields[2]
+		targetPattern, parse.line = popToken(parse.line)
 		if targetPattern == "" {
 			croak("no target specified in path rename")
 			return false
 		}
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
-	} else if fields[0] == "list" {
+	} else if verb == "list" {
 		allpaths := newOrderedStringSet()
 		for it := repo.commitIterator(rs.selection); it.Next(); {
 			allpaths = allpaths.Union(it.commit().paths(nil))
@@ -4629,7 +4634,7 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		sort.Strings(allpaths)
 		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
 	} else {
-		croak("unknown verb '%s' in path command.", fields[0])
+		croak("unknown verb '%s' in path command.", verb)
 	}
 	return false
 }
