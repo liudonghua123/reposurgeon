@@ -4155,7 +4155,9 @@ func (rs *Reposurgeon) HelpExpunge() {
 
 Expunge files from the selected portion of the repo history; the
 default is the entire history.  The argument to this command is a
-pattern expression matching paths.
+pattern expression matching paths. If the pattern is enclosed by
+double quotes it may contain spaces; the double quotes are stripped
+off before it is interpreted as a delimited regexp or literal string.
 
 The option --not inverts this; all file paths other than those
 selected by the remaining arguments to be expunged.  You may use
@@ -4194,13 +4196,13 @@ expunge /[.]pdf$/
 func (rs *Reposurgeon) DoExpunge(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, nil)
 	defer parse.Closem()
-	fields := parse.Tokens()
-	if len(fields) == 0 {
-		croak("required argument is missing.")
+	var expungePattern string
+	expungePattern, _ = popToken(parse.line)
+	if len(expungePattern) == 0 {
+		croak("required expunge pattern argument is missing.")
 		return false
 	}
-	expunge := getPattern(fields[0])
-	err := rs.chosen().expunge(rs.selection, expunge,
+	err := rs.chosen().expunge(rs.selection, getPattern(expungePattern),
 		!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
 	if err != nil {
 		respond(err.Error())
