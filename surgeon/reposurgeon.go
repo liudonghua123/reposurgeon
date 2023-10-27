@@ -3129,6 +3129,11 @@ func (rs *Reposurgeon) HelpSetfield() {
 	rs.helpOutput(`
 [SELECTION] setfield FIELD VALUE
 
+This command does shell-like tokenizing. Single and double quotes
+around arguments allow them to contain whitespace. Backslash before
+whitespace stops it from being an argument separator. Backslash before
+quotes or backslash undoes their specialness.
+
 In the selected events (defaulting to none) set every instance of a
 named field to a string value.  The value field may be quoted to include
 whitespace, and use backslash escapes interpreted by Go's C-like
@@ -3202,6 +3207,11 @@ func (rs *Reposurgeon) HelpSetperm() {
 	rs.helpOutput(`
 SELECTION setperm PERM [PATH...]
 
+This command does shell-like tokenizing. Single and double quotes
+around arguments allow them to contain whitespace. Backslash before
+whitespace stops it from being an argument separator. Backslash before
+quotes or backslash undoes their specialness.
+
 For the selected events (defaulting to none) take the first argument as an
 octal literal describing permissions.  All subsequent arguments are paths.
 For each M fileop in the selection set and exactly matching one of the
@@ -3250,6 +3260,11 @@ func (rs *Reposurgeon) DoSetperm(line string) bool {
 func (rs *Reposurgeon) HelpAppend() {
 	rs.helpOutput(`
 SELECTION append [--rstrip] [--legacy] TEXT
+
+This command does shell-like tokenizing. Single and double quotes
+around arguments allow them to contain whitespace. Backslash before
+whitespace stops it from being an argument separator. Backslash before
+quotes or backslash undoes their specialness.
 
 Append text to the comments of commits and tags in the specified
 selection set. The text is the first token of the command and may
@@ -3315,6 +3330,11 @@ func (rs *Reposurgeon) DoAppend(line string) bool {
 func (rs *Reposurgeon) HelpPrepend() {
 	rs.helpOutput(`
 SELECTION prepend [--lstrip] [--legacy] TEXT
+
+This command does shell-like tokenizing. Single and double quotes
+around arguments allow them to contain whitespace. Backslash before
+whitespace stops it from being an argument separator. Backslash before
+quotes or backslash undoes their specialness.
 
 Prepend text to the comments of commits and tags in the specified
 selection set. The text is the first token of the command and may
@@ -3482,6 +3502,11 @@ func (rs *Reposurgeon) DoCoalesce(line string) bool {
 func (rs *Reposurgeon) HelpAdd() {
 	rs.helpOutput(`
 SELECTION add { "D" PATH | "M" PERM {MARK|SHA1} PATH | "R" SOURCE TARGET | "C" SOURCE TARGET }
+
+This command does shell-like tokenizing. Single and double quotes
+around arguments allow them to contain whitespace. Backslash before
+whitespace stops it from being an argument separator. Backslash before
+quotes or backslash undoes their specialness.
 
 In a specified commit, add a specified fileop.
 
@@ -5870,6 +5895,11 @@ func (rs *Reposurgeon) HelpAttribution() {
 	rs.helpOutput(`
 [SELECTION] attribution {SUBCOMMAND}
 
+This command does shell-like tokenizing. Single and double quotes
+around arguments allow them to contain whitespace. Backslash before
+whitespace stops it from being an argument separator. Backslash before
+quotes or backslash undoes their specialness.
+
 Inspect, modify, add, and remove commit and tag attributions.
 
 Attributions upon which to operate are selected in much the same way as events
@@ -6712,6 +6742,11 @@ func (rs *Reposurgeon) DoDefine(line string) bool {
 func (rs *Reposurgeon) HelpDo() {
 	rs.helpOutput(`
 do MACRO-NAME [ARG...]
+
+This command does shell-like tokenizing. Single and double quotes
+around arguments allow them to contain whitespace. Backslash before
+whitespace stops it from being an argument separator. Backslash before
+quotes or backslash undoes their specialness.
 
 Expand and perform a macro.  The first whitespace-separated token is
 the name of the macro to be called; remaining tokens replace {0},
