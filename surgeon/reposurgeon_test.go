@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	shlex "github.com/anmitsu/go-shlex"
 )
 
 func TestMain(m *testing.M) {
@@ -79,6 +81,40 @@ func TestRegexp(t *testing.T) {
 	for _, item := range tests {
 		re := regexp.MustCompile(item.pattern)
 		assertBool(t, re.MatchString(item.text), item.match)
+	}
+}
+
+func TestShlex(t *testing.T) {
+	type testEntry struct {
+		text  string
+		check []string
+	}
+	tests := []testEntry{
+		// Smoke test from the shlex readme
+		{`cp -Rdp "file name" 'file name2' dir\ name`,
+			[]string{"cp", "-Rdp", "file name", "file name2", "dir name"}},
+		// Check that escaping escapes works
+		{`dir\\name`, []string{`dir\name`}},
+		// Check that effect on alphabetics
+		{`dir\xname`, []string{`dirxname`}},
+		// Check effect on our regular-expression backreferences either
+		{`dir\1name`, []string{`dir1name`}},
+	}
+	for testnum, item := range tests {
+		tokens, err := shlex.Split(item.text, true)
+		if err != nil {
+			t.Errorf("TestShlex %d: tokenization failed: %s", testnum, err)
+			continue
+		}
+		if len(item.check) != len(tokens) {
+			t.Errorf("TestShlex %d: expecting %d tokens (%s) but saw %d (%s)", testnum, len(item.check), item.check, len(tokens), tokens)
+			continue
+		}
+		for n, tok := range tokens {
+			if tok != item.check[n] {
+				t.Errorf("TestShlex %d: token %d, expected %s, saw %s", testnum, n+1, item.check[n], tok)
+			}
+		}
 	}
 }
 
