@@ -10,6 +10,7 @@ Repository head::
      Added Content-Path and Content-Name support to msgin --create.
      Added =E selector for branch root commits.
      Added "clone" command.
+     Pattern args in path rename & expunge can be "-quoted to capture spaces.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
