@@ -5286,26 +5286,31 @@ rename, get their Q bit set.
 func (rs *Reposurgeon) DoTag(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, nil)
 	repo := rs.chosen()
-	verb := parse.popToken()
-	if verb == "" {
+	if len(parse.args) == 0 {
 		croak("tag command requires a verb.")
 		return false
 	}
+	verb := parse.args[0]
 
 	repo.clearColor(colorQSET)
 	if verb == "create" {
-		tagname := parse.popToken()
-		if len(tagname) == 0 {
+		if len(parse.args) < 2 {
 			croak("missing tag name")
 			return false
 		}
-		var ok bool
-		var target *Commit
+		tagname := parse.args[1]
 		if repo.named(tagname).isDefined() {
 			croak("something is already named %s", tagname)
 			return false
 		}
-		rs.setSelectionSet(parse.line) // This is why we have to do our own parsing.
+		if len(parse.args) < 3 {
+			croak("missing location")
+			return false
+		}
+		rs.setSelectionSet(parse.args[2])
+
+		var ok bool
+		var target *Commit
 		if !rs.selection.isDefined() {
 			croak("usage: tag create <name> <singleton-selection>")
 			return false
@@ -5339,11 +5344,11 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 		return false
 	}
 
-	sourcepattern := parse.popToken()
-	if len(sourcepattern) == 0 {
+	if len(parse.args) < 2 {
 		croak("missing tag pattern")
 		return false
 	}
+	sourcepattern := parse.args[1]
 	sourcepattern, isRe := delimitedRegexp(sourcepattern)
 	if !isRe {
 		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
@@ -5374,8 +5379,15 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	var target *Commit
 	var newname string
 	if verb == "move" {
+		if len(parse.args) < 3 {
+			croak("missing tag pattern")
+			return false
+		} else if len(parse.args) >= 4 {
+			croak("too many arguments - whitespace in singleton selection?")
+		}
+		rs.setSelectionSet(parse.args[2])
+
 		var ok bool
-		rs.setSelectionSet(parse.line) // This is why we have to do our own parsing.
 		if rs.selection.Size() != 1 {
 			croak("tag move requires a singleton commit set.")
 			return false
@@ -5384,11 +5396,12 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			return false
 		}
 	} else if verb == "rename" {
-		newname = parse.popToken()
-		if newname == "" {
-			croak("new tag name must be nonempty.")
+		if len(parse.args) < 3 {
+			croak("missing new tag name.")
 			return false
 		}
+		newname = parse.args[2]
+
 		if repo.named(newname).isDefined() {
 			croak("something is already named %s", newname)
 			return false
