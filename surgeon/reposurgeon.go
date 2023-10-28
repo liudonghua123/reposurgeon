@@ -5673,7 +5673,7 @@ branch already exists, this command errors out without modifying the repository.
 
 The PATHPREFIX is removed from the paths of all fileops in modified commits.
 
-Backslash escapes are processed in all three names.
+All three names may be bare tokens or double-quoted strings.
 
 Sets Q bits: commits on the source branch modified by having fileops lifted to the 
 new branch true, all others false.
@@ -5693,12 +5693,6 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 
 	// We need a source branch
 	sourcebranch := parse.args[0]
-	var err error
-	sourcebranch, err = stringEscape(sourcebranch)
-	if err != nil {
-		croak("while selecting branch: %v", err)
-		return false
-	}
 	if !strings.HasPrefix(sourcebranch, "refs/heads/") {
 		sourcebranch = "refs/heads/" + sourcebranch
 	}
@@ -5731,7 +5725,7 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	}
 
 	if splitcount := repo.branchlift(sourcebranch, pathprefix, newname); splitcount == -1 {
-		croak("branchlift internal error %q - repo may be garbled!", err)
+		croak("branchlift internal error - repo may be garbled!")
 		return false
 	} else if splitcount > 0 {
 		respond("%d commits were split while lifting %s", splitcount, pathprefix)
