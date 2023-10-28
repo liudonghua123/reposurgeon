@@ -2191,15 +2191,17 @@ preserve [PATH...]
 
 Add (presumably untracked) files or directories to the repo's list of
 paths to be restored from the backup directory after a rebuild. Each
-argument, if any, is interpreted as a pathname.  The current preserve
-list is displayed afterwards.
+argument, if any, is interpreted as a pathname. Pathname arguments may be
+bare tokens or double-quoted strings, which may contain whitespace;
+the double quotes are stripped before interpretation. The current
+preserve list is displayed afterwards.
 `)
 }
 
 // DoPreserve adds files and subdirectories to the preserve set.
 func (rs *Reposurgeon) DoPreserve(line string) bool {
-	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
-	for _, filename := range strings.Fields(line) {
+	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
+	for _, filename := range parse.args {
 		rs.chosen().preserve(filename)
 	}
 	respond("preserving %s.", rs.chosen().preservable())
@@ -2213,15 +2215,17 @@ unpreserve [PATH...]
 
 Remove (presumably untracked) files or directories to the repo's list
 of paths to be restored from the backup directory after a
-rebuild. Each argument, if any, is interpreted as a pathname.  The
-current preserve list is displayed afterwards.
+rebuild. Each argument, if any, is interpreted as a pathname.Pathname
+arguments may be bare tokens or double-quoted strings, which may
+contain whitespace; the double quotes are stripped before
+interpretation.  The current preserve list is displayed afterwards.
 `)
 }
 
 // DoUnpreserve removes files and subdirectories from the preserve set.
 func (rs *Reposurgeon) DoUnpreserve(line string) bool {
-	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
-	for _, filename := range strings.Fields(line) {
+	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
+	for _, filename := range parse.args {
 		rs.chosen().unpreserve(filename)
 	}
 	respond("preserving %s.", rs.chosen().preservable())
