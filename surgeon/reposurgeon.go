@@ -3273,8 +3273,8 @@ SELECTION append [--rstrip] [--legacy] TEXT
 
 Append text to the comments of commits and tags in the specified
 selection set. The text is the first token of the command and may be a
-double-quoted string contauing whitespace. C-style escape sequences in
-TEXT are interpreted.
+double-quoted string containing whitespace. C-style escape sequences
+in TEXT are interpreted.
 
 If the option --rstrip is given, the comment is right-stripped before
 the new text is appended. If the option --legacy is given, the string
@@ -3285,7 +3285,7 @@ Sets Q bits: true for each commit and tag modified, false otherwise.
 
 Example:
 ---------
-=C append "\nLegacy-Id: %LEGACY%" --legacy
+=C append --legacy "\nLegacy-Id: %LEGACY%"
 ---------
 `)
 }
@@ -3349,7 +3349,7 @@ Sets Q bits: true for each commit and tag modified, false otherwise.
 
 Example:
 ---------
-=C prepend "Legacy-Id: %LEGACY%\n" --legacy
+=C prepend --legacy "Legacy-Id: %LEGACY%\n"
 ---------
 `)
 }
@@ -7313,30 +7313,29 @@ Each command description begins with a syntax summary.  Mandatory parts are
 in {}, optional in [], and ... says the element just before it may be repeated.
 Parts in ALL-CAPS are expected to be filled in by the user.
 
-Commands are distinguished by a command keyword.  Most take a selection set
-immediately before it; see "help selection" for details.  Some commands
-have a following subcommand verb. Many commands take additional modifier
-arguments after the command keyword(s).
+Commands are distinguished by a command keyword.  Most take a
+selection set immediately before it; see "help selection" for details.
+Some commands have a following subcommand verb. Many commands take
+additional arguments after the command keyword(s).
 
 The syntax of following arguments is variable according to the
 requirements of individual commands, but there are a mumber of general
 rules.
-
-* The embedded help for some commands reminds you that pathname arguments
-  can be either bare tokens or string liyerals enclosed by double quotes;
-  the latter is in case you need to embed whitespace in a pathname.
 
 * You can have comments in a script, led by the character "#".  Both
   whole-line and "winged" comments following command arguments are
   supported.  Note that reposurgeon's command parser is fairly
   primitive and will be confused by a literal # in a command argument.
 
+* The embedded help for some commands reminds you that pathname arguments
+  can be either bare tokens or string literals enclosed by double quotes;
+  the latter is in case you need to embed whitespace in a pathname.
+
 * The embedded help for some commands tells you that they interpret
   C/Go style backslash escapes like \n in arguments. Interpretation
   uses sing Go's Quote/Unquote codec from the strconv library.  In
   such arguments you can, for example, get around having to include a
-  literal # in an argument by writing "\x23".  The embedded help for
-  such a
+  literal # in an argument by writing "\x23".
  
 * Some commands support option flags.  These are led with a --, so if
   there is an option flag named "foo" you would write it as "--foo".
@@ -7368,13 +7367,19 @@ rules.
   delimiters as they do when used in a selection prefix, but if you
   need to have a / in the expression the delimiters can be any
   punctuation character other than an ASCII single quote.  As a
-  reminder, these are described in the embedded help as pattern
-  expressions.
+  reminder, these are described in the embedded help as delimited
+  regular expressions.
 
-* Also note that following-argument regular expressions may not contain
-  whitespace; if you need to specify whitespace or a non-printable
-  character use one of the escapes that Go regular expession syntax
-  allows such as \s or \t. 
+* Following-argument regular expressions may not contain whitespace;
+  if you need to specify whitespace or a non-printable character use
+  one of the escapes that Go regular expession syntax allows, such as
+  \s or \t.
+
+* A command argumend with a name containing PATTERN may be either a
+  delimited regular expression or a literal string; if it is not recognized 
+  as the former it will be treated as the latter.  If the delimited regular 
+  wxpression starts and ends with ASCII single quotes, those will be stripped
+  off and the result treated as a literal string.
 `)
 }
 
