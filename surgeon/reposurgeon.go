@@ -7023,11 +7023,12 @@ func (rs *Reposurgeon) HelpIncorporate() {
 {SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 
 Insert the contents of specified tarballs as commits.  The tarball
-names are given as arguments; if no arguments, a list is read from
-stdin.  Tarballs may be gzipped or bzipped.  The initial segment of
-each path is assumed to be a version directory and stripped off.  The
-number of segments stripped off can be set with the option
---strip=<n>, n defaulting to 1.
+names are given as argumentsm which may be either bare tokens or
+double-quoted strings possibly containing whitespace; if no arguments,
+a list is read from stdin.  Tarballs may be gzipped or bzipped.  The
+initial segment of each path is assumed to be a version directory and
+stripped off.  The number of segments stripped off can be set with the
+option --strip=<n>, n defaulting to 1.
 
 Takes a singleton selection set.  Normally inserts before that commit; with
 the option --after, insert after it.  The default selection set is the very
@@ -7088,7 +7089,7 @@ func (rs *Reposurgeon) DoIncorporate(line string) bool {
 	}
 
 	// Tarballs are any arguments on the line, plus any on redirected stdin.
-	tarballs := strings.Fields(parse.line)
+	tarballs := parse.args
 	if parse.redirected {
 		scanner := bufio.NewScanner(parse.stdin)
 		for scanner.Scan() {
