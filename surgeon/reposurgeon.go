@@ -3146,7 +3146,7 @@ func (rs *Reposurgeon) HelpSetfield() {
 [SELECTION] setfield FIELD VALUE
 
 The FIELD and VALUE arguments can be double-quoted strings containing
-whitespace.
+whitespace. C-style backslash escapes are interpreted in VALUE.
 
 In the selected events (defaulting to none) set every instance of a
 named field to a string value.  The value field may be quoted to include
@@ -3274,8 +3274,7 @@ SELECTION append [--rstrip] [--legacy] TEXT
 Append text to the comments of commits and tags in the specified
 selection set. The text is the first token of the command and may be a
 double-quoted string contauing whitespace. C-style escape sequences in
-the string are interpreted using Go's Quote/Unquote codec from the
-strconv library.
+TEXT are interpreted.
 
 If the option --rstrip is given, the comment is right-stripped before
 the new text is appended. If the option --legacy is given, the string
@@ -3339,8 +3338,7 @@ SELECTION prepend [--lstrip] [--legacy] TEXT
 Prepend text to the comments of commits and tags in the specified
 selection set. The text is the first token of the command and may be a
 double-quoted string containing whitespace. C-style escape sequences
-in the string are interpreted using Go's Quote/Unquote codec from the
-strconv library.
+in TEXT are interpreted.
 
 If the option --lstrip is given, the comment is left-stripped before
 the new text is prepended. If the option --legacy is given, the string
@@ -7327,18 +7325,25 @@ have a following subcommand verb. Many commands take additional modifier
 arguments after the command keyword(s).
 
 The syntax of following arguments is variable according to the
-requirements of individual commands, but there are a couple of general
+requirements of individual commands, but there are a mumber of general
 rules.
+
+* The embedded help for some commands reminds you that pathname arguments
+  can be either bare tokens or string liyerals enclosed by double quotes;
+  the latter is in case you need to embed whitespace in a pathname.
 
 * You can have comments in a script, led by the character "#".  Both
   whole-line and "winged" comments following command arguments are
   supported.  Note that reposurgeon's command parser is fairly
   primitive and will be confused by a literal # in a command argument.
 
-* Many commands interpret C/Go style backslash escapes like \n in
-  arguments.  You can usually, for example, get around having to
-  include a literal # in an argument by writing "\x23".
-
+* The embedded help for some commands tells you that they interpret
+  C/Go style backslash escapes like \n in arguments. Interpretation
+  uses sing Go's Quote/Unquote codec from the strconv library.  In
+  such arguments you can, for example, get around having to include a
+  literal # in an argument by writing "\x23".  The embedded help for
+  such a
+ 
 * Some commands support option flags.  These are led with a --, so if
   there is an option flag named "foo" you would write it as "--foo".
   Option flags are parsed out of the command line before any other
@@ -7374,7 +7379,8 @@ rules.
 
 * Also note that following-argument regular expressions may not contain
   whitespace; if you need to specify whitespace or a non-printable
-  character use a standard C-style escape such as "\s" for space.
+  character use one of the escapes that Go regular expession syntax
+  allows such as \s or \t. 
 `)
 }
 
