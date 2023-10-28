@@ -7582,17 +7582,20 @@ func (rs *Reposurgeon) HelpLogfile() {
 	rs.helpOutput(`
 logfile [PATH]
 
-Error, warning, and diagnostic messages are normally emitted to standard
-error.  This command, with a nonempty _path_ argument, directs them to
-the specified file instead.  Without an argument, reports what logfile is
-set.
+Error, warning, and diagnostic messages are normally emitted to
+standard error.  This command, with a nonempty PATH argument, directs
+them to the specified file instead. The PATH may be a bare token or a
+double-quoted string.
+
+Without an argument, reports what logfile is set.
 `)
 }
 
 // DoLogfile is the handler for the "logfile" command.
 func (rs *Reposurgeon) DoLogfile(line string) bool {
-	if len(line) != 0 {
-		fp, err := os.OpenFile(filepath.Clean(line), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
+	parse := rs.newLineParse(line, parseNOSELECT, nil)
+	if len(parse.args) > 0 {
+		fp, err := os.OpenFile(filepath.Clean(parse.args[0]), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
 		if err != nil {
 			respond("log file open failed: %v", err)
 		} else {
@@ -7600,7 +7603,7 @@ func (rs *Reposurgeon) DoLogfile(line string) bool {
 			control.logfp = i.(io.Writer)
 		}
 	}
-	if len(line) == 0 || control.isInteractive() {
+	if len(parse.args) == 0 || control.isInteractive() {
 		switch v := control.logfp.(type) {
 		case *os.File:
 			respond("logfile %s", v.Name())
@@ -7635,8 +7638,10 @@ func (rs *Reposurgeon) HelpScript() {
 	rs.helpOutput(`
 script PATH [ARG...]
 
-Takes a filename and optional following arguments.
-Reads each line from the file and executes it as a command.
+Takes a filename PATH and optional following arguments.  PATH and
+arguments may be bare tokens or double-quoted strings, with the quotes
+discarded before interpretation. This command reads each line from the
+file and executes it as a command.
 
 During execution of the script, the script name replaces the
 string "$0", and the optional following arguments (if any) replace the
@@ -7673,20 +7678,19 @@ script line is executed.
 
 // DoScript is the handler for the "script" command.
 func (rs *Reposurgeon) DoScript(ctx context.Context, line string) bool {
-	rs.newLineParse(line, parseNOSELECT, nil)
+	parse := rs.newLineParse(line, parseNOSELECT, nil)
 	interpreter := rs.cmd
-	if len(line) == 0 {
-		respond("script requires a file argument\n")
+	if len(parse.args) == 0 {
+		croak("script requires a file argument")
 		return false
 	}
-	words := strings.Split(line, " ")
-	fname := words[0]
+	fname := parse.args[0]
 	scriptfp, err := os.Open(filepath.Clean(fname))
 	if err != nil {
 		croak("script failure on '%s': %s", fname, err)
 		return false
 	}
-	rs.callstack = append(rs.callstack, words)
+	rs.callstack = append(rs.callstack, parse.args)
 	defer closeOrDie(scriptfp)
 	script := bufio.NewReader(scriptfp)
 
