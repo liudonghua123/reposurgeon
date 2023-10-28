@@ -1270,6 +1270,7 @@ https://github.com/google/pprof/blob/master/doc/README.md
 
 // DoProfile is the handler for the "profile" command.
 func (rs *Reposurgeon) DoProfile(line string) bool {
+	parse := rs.newLineParse(line, parseNOSELECT, nil)
 	profiles := pprof.Profiles()
 	names := newStringSet()
 	for _, profile := range profiles {
@@ -1278,22 +1279,25 @@ func (rs *Reposurgeon) DoProfile(line string) bool {
 	names.Add("cpu")
 	names.Add("trace")
 	names.Add("all")
-	if line == "" {
+	if len(parse.args) < 1 {
 		respond("The available profiles are %v", names)
 	} else {
-		verb, line := popToken(line)
+		verb := parse.args[0]
 		switch verb {
 		case "live":
-			port, _ := popToken(line)
-			if port == "" {
-				port = "1234"
+			port := "1234"
+			if len(parse.args) >= 2 {
+				port = parse.args[1]
 			}
 			go func() {
 				http.ListenAndServe("localhost:"+port, nil)
 			}()
 			respond("pprof server started on http://localhost:%s/debug/pprof", port)
 		case "start":
-			subject, line := popToken(line)
+			if len(parse.args) < 2 {
+				croak("profile start requires a profile name argument")
+			}
+			subject := parse.args[1]
 			storeProfileName(subject, line)
 			if !names.Contains(subject) {
 				croak("I don't recognize %#v as a profile name. The names I do recognize are %v.", subject, names)
@@ -1308,10 +1312,13 @@ func (rs *Reposurgeon) DoProfile(line string) bool {
 				respond("The %s profile starts automatically when you start reposurgeon; storing %#v to use as a filename to save the profile before reposurgeon exits.", subject, line)
 			}
 		case "save":
-			subject, line := popToken(line)
-			filename, _ := popToken(line)
-			if filename == "" {
-				filename = control.profileNames[subject]
+			if len(parse.args) < 2 {
+				croak("profile save requires a subject argument")
+			}
+			subject := parse.args[1]
+			filename := control.profileNames[subject]
+			if len(parse.args) >= 3 {
+				filename = parse.args[2]
 			}
 			if !names.Contains(subject) {
 				croak("I don't recognize %#v as a profile name. The names I do recognize are %v.", subject, names)
@@ -1336,7 +1343,6 @@ func (rs *Reposurgeon) DoProfile(line string) bool {
 				respond("%s profiling stopped.", subject)
 			}
 		case "bench":
-			rs.newLineParse(line, parseNOSELECT, nil)
 			var memStats runtime.MemStats
 			debug.FreeOSMemory()
 			runtime.ReadMemStats(&memStats)
