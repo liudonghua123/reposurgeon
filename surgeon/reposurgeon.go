@@ -4182,12 +4182,11 @@ expunge /[.]pdf$/
 func (rs *Reposurgeon) DoExpunge(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, nil)
 	defer parse.Closem()
-	expungePattern := parse.popToken()
-	if len(expungePattern) == 0 {
+	if len(parse.args) == 0 {
 		croak("required expunge pattern argument is missing.")
 		return false
 	}
-	err := rs.chosen().expunge(rs.selection, getPattern(expungePattern),
+	err := rs.chosen().expunge(rs.selection, getPattern(parse.args[0]),
 		!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
 	if err != nil {
 		respond(err.Error())
@@ -4592,20 +4591,19 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	verb := parse.popToken()
-	if len(verb) == 0 {
+	if len(parse.args) == 0 {
 		croak("path command requires a verb.")
 		return false
 	}
-	if verb == "rename" {
-		sourcePattern := parse.popToken()
+	if verb := parse.args[0]; verb == "rename" {
+		sourcePattern := parse.args[1]
 		if sourcePattern == "" {
 			croak("missing source pattern in path rename command")
 			return false
 		}
 		sourceRE := getPattern(sourcePattern)
 		force := parse.options.Contains("--force")
-		targetPattern := parse.popToken()
+		targetPattern := parse.args[2]
 		if targetPattern == "" {
 			croak("no target specified in path rename")
 			return false
@@ -5108,24 +5106,24 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		return branch
 	}
 
-	verb := parse.popToken()
-	if verb == "" {
+	if len(parse.args) == 0 {
 		croak("branch command requires a verb.")
 		return false
 	}
 
-	if verb == "rename" {
-		sourcepattern := parse.popToken()
-		if sourcepattern == "" {
-			croak("path rename is missing a source pattern")
+	if verb := parse.args[0]; verb == "rename" {
+		if len(parse.args) < 2 {
+			croak("vranch rename is missing a source pattern")
 			return false
 		}
+		sourcepattern := parse.args[1]
 
-		newname := parse.popToken()
-		if newname == "" {
-			croak("branch name must be nonempty.")
+		if len(parse.args) < 3 {
+			croak("branch newname must be nonempty.")
 			return false
 		}
+		newname := parse.args[2]
+
 		rootmap := repo.branchrootmap()
 		tipmap := repo.branchtipmap()
 		tipjoin := func(branch1, branch2 string) bool {
@@ -5211,11 +5209,11 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			respond("%d objects modified", n)
 		}
 	} else if verb == "delete" {
-		sourcepattern := parse.popToken()
-		if sourcepattern == "" {
-			croak("path delete is missing a source pattern")
+		if len(parse.args) < 2 {
+			croak("branch delete is missing a source pattern")
 			return false
 		}
+		sourcepattern := parse.args[1]
 
 		var shouldDelete func(string) bool
 		sourcepattern, isRe := delimitedRegexp(sourcepattern)
@@ -5300,7 +5298,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			croak("something is already named %s", tagname)
 			return false
 		}
-		rs.setSelectionSet(parse.line)
+		rs.setSelectionSet(parse.line) // This is why we have to do our own parsing.
 		if !rs.selection.isDefined() {
 			croak("usage: tag create <name> <singleton-selection>")
 			return false
@@ -5370,7 +5368,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	var newname string
 	if verb == "move" {
 		var ok bool
-		rs.setSelectionSet(parse.line)
+		rs.setSelectionSet(parse.line) // This is why we have to do our own parsing.
 		if rs.selection.Size() != 1 {
 			croak("tag move requires a singleton commit set.")
 			return false
@@ -5556,7 +5554,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			croak("can't move multiple resets")
 			return false
 		}
-		rs.setSelectionSet(parse.line)
+		rs.setSelectionSet(parse.line) // This is why we have to do our own parsing.
 		if rs.selection.Size() != 1 {
 			croak("reset move requires a singleton commit set.")
 			return false
@@ -5681,8 +5679,13 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 
 	repo := rs.chosen()
 
+	if len(parse.args) < 2 {
+		croak("branchlidt usage: branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]")
+		return false
+	}
+
 	// We need a source branch
-	sourcebranch := parse.popToken()
+	sourcebranch := parse.args[0]
 	var err error
 	sourcebranch, err = stringEscape(sourcebranch)
 	if err != nil {
@@ -5698,7 +5701,7 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	}
 
 	// We need a path prefix
-	pathprefix := parse.popToken()
+	pathprefix := parse.args[1]
 	if pathprefix == "" || pathprefix == "." || pathprefix == "/" {
 		croak("path prefix argument must be nonempty and not . or /.")
 		return false
@@ -5708,9 +5711,9 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	}
 
 	// We need a new branch name
-	newname := parse.popToken()
-	if newname == "" {
-		newname = path.Base(pathprefix[:len(pathprefix)-1])
+	newname := path.Base(pathprefix[:len(pathprefix)-1])
+	if len(parse.args) == 3 {
+		newname = parse.args[2]
 	}
 	if !strings.HasPrefix(newname, "refs/heads/") {
 		newname = "refs/heads/" + newname
