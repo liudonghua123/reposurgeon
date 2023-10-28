@@ -206,6 +206,7 @@ const (
 	parseNEEDSELECT                    // Command requires an explicit selection set
 	parseNEEDREDIRECT                  // Command requires a redirect, not a file name argument
 	parseNOREDIRECT                    // Ignore things that look like redirects (e.g email addresses).
+	parseNOARGS                        // Giving arguments (other than switches) is an error
 )
 
 func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities orderedStringSet) *LineParse {
@@ -370,6 +371,10 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 			break
 		}
 		lp.args = append(lp.args, tok)
+	}
+
+	if (len(lp.args) > 0) && (parseflags&parseNOARGS) != 0 {
+
 	}
 
 	return &lp
@@ -845,7 +850,7 @@ Typing EOT (usually Ctrl-D) is a shortcut for this.
 
 // DoQuit is the handler for the "quit" command.
 func (rs *Reposurgeon) DoQuit(line string) bool {
-	rs.newLineParse(line, parseNOSELECT, nil)
+	rs.newLineParse(line, parseNOSELECT|parseNOARGS, nil)
 	return true
 }
 
@@ -1044,7 +1049,7 @@ parentheses.
 
 // DoNames is the handler for the "names" command,
 func (rs *Reposurgeon) DoNames(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	branches := rs.chosen().branchset()
 	//sortbranches.Sort()
@@ -1076,7 +1081,7 @@ with these commands.
 
 // DoHistory is the handler for the "history" command,
 func (rs *Reposurgeon) DoHistory(line string) bool {
-	rs.newLineParse(line, parseNOSELECT, nil)
+	rs.newLineParse(line, parseNOSELECT|parseNOARGS, nil)
 	for _, line := range rs.history {
 		control.baton.printLogString(line)
 	}
@@ -1101,7 +1106,7 @@ prompt.
 
 // DoIndex generates a summary listing of events.
 func (rs *Reposurgeon) DoIndex(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(lineIn, parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	// We could do all this logic using reportSelect() and index() methods
@@ -1389,7 +1394,7 @@ this will not affect the reported high-water mark.
 
 // DoMemory is the handler for the "memory" command.
 func (rs *Reposurgeon) DoMemory(line string) bool {
-	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	var memStats runtime.MemStats
 	debug.FreeOSMemory()
@@ -1415,7 +1420,7 @@ Report object counts for the loaded repository.
 
 // DoStats reports information on repositories.
 func (rs *Reposurgeon) DoStats(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	var blobs, commits, tags, resets, passthroughs int
@@ -1457,7 +1462,7 @@ in the currently-selected repo.
 
 // DoCount is the command handler for the "count" command.
 func (rs *Reposurgeon) DoCount(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(lineIn, parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	fmt.Fprintf(parse.stdout, "%d\n", rs.selection.Size())
 	return false
@@ -1480,7 +1485,7 @@ prompt.
 
 // DoList generates a human-friendly listing of events.
 func (rs *Reposurgeon) DoList(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(lineIn, parseREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1511,7 +1516,7 @@ prompt.
 
 // DoTags is the handler for the "tags" command.
 func (rs *Reposurgeon) DoTags(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1547,7 +1552,7 @@ prompt.
 
 // DoStamp lists action stamps for each element of the selection set
 func (rs *Reposurgeon) DoStamp(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1583,7 +1588,7 @@ unwieldy.
 
 // DoSizes reports branch relative sizes.
 func (rs *Reposurgeon) DoSizes(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	sizes := make(map[string]int)
@@ -1666,7 +1671,7 @@ false otherwise.
 
 // DoLint looks for possible data malformations in a repo.
 func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
-	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if parse.options.Contains("--options") || parse.options.Contains("--o") {
 		fmt.Fprint(parse.stdout, `
@@ -2438,7 +2443,7 @@ before each event dump.
 
 // DoInspect dumps raw events.
 func (rs *Reposurgeon) DoInspect(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	selection := rs.selection
@@ -2486,7 +2491,7 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 	var repo *Repository
 	if nargs := len(strings.Fields(line)); nargs == 0 {
 		// View currently selected repository
-		parse := rs.newLineParse(line, parseREPO, nil)
+		parse := rs.newLineParse(line, parseREPO|parseNOARGS, nil)
 		defer parse.Closem()
 		repo = rs.chosen()
 		if dname, err := os.MkdirTemp("", "guitemp"); err != nil {
@@ -2578,7 +2583,7 @@ func (rs *Reposurgeon) CompleteStrip(text string) []string {
 
 // DoStrip strips out content to produce a reduced test case.
 func (rs *Reposurgeon) DoStrip(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	var striptypes orderedStringSet
@@ -2659,7 +2664,7 @@ const graphCaptionLength = 32
 
 // DoGraph dumps a commit graph.
 func (rs *Reposurgeon) DoGraph(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	rs.chosen().doGraph(rs.selection, parse.stdout)
 	return false
@@ -2742,7 +2747,7 @@ prompt.
 
 // DoMsgout generates a message-box file representing event metadata.
 func (rs *Reposurgeon) DoMsgout(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 
 	var filterRegexp *regexp.Regexp
@@ -2829,7 +2834,7 @@ otherwise.
 
 // DoMsgin accepts a message-box file representing event metadata and update from it.
 func (rs *Reposurgeon) DoMsgin(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdin"})
+	parse := rs.newLineParse(line, parseREPO|parseNOARGS, orderedStringSet{"stdin"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	errorCount, warnCount, changeCount := repo.readMessageBox(rs.selection, parse.stdin,
@@ -2912,7 +2917,7 @@ type filterCommand struct {
 // This was originally a shim for testing during the port from Python.  It has
 // been kept because Go's use of $n for group matches conflicts with the
 // use of $n for script arguments in reposurgeon.  Also, we can do interpretation
-// of Go string escapes at a good point, *after* the Python-style backrefereences
+// of Go string escapes at a good point, *after* the Python-style backreferences
 // have been translated.
 func GoReplacer(re *regexp.Regexp, fromString, toString string) string {
 	for i := 0; i < 10; i++ {
@@ -3108,7 +3113,7 @@ get true, all other events get false.
 
 // DoTranscode is the handler for the "transcode" command.
 func (rs *Reposurgeon) DoTranscode(line string) bool {
-	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT|parseNOARGS, nil)
 
 	enc, err := ianaindex.IANA.Encoding(parse.line)
 	if err != nil {
@@ -3434,7 +3439,7 @@ Clears all Q bits.
 
 // DoDelete is the handler for the "delete" command.
 func (rs *Reposurgeon) DoDelete(line string) bool {
-	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT|parseNOARGS, nil)
 	parse.options.Add("--delete")
 	rs.chosen().squash(rs.selection, parse.options, control.baton)
 	return false
@@ -3475,7 +3480,7 @@ Sets Q bits: true on commits that result from coalescence, false otherwise.
 
 // DoCoalesce coalesces events in the specified selection set.
 func (rs *Reposurgeon) DoCoalesce(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, nil)
 	defer parse.Closem()
 	repo := rs.chosen()
 	timefuzz := 90
@@ -3869,7 +3874,7 @@ one "done", and it will be at the end of the events.
 
 // DoRenumber is he handler for the "renumber" command.
 func (rs *Reposurgeon) DoRenumber(line string) bool {
-	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
+	rs.newLineParse(line, parseREPO|parseNOSELECT|parseNOARGS, nil)
 	rs.repo.renumber(1, nil)
 	return false
 }
@@ -3887,7 +3892,7 @@ referencing them to instead reference the (kept) first blob.
 
 // DoDedup deduplicates identical (up to hash) blobs within the selection set
 func (rs *Reposurgeon) DoDedup(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, nil)
 	defer parse.Closem()
 	blobMap := make(map[string]string) // hash -> mark
 	dupMap := make(map[string]string)  // duplicate mark -> canonical mark
@@ -4065,7 +4070,7 @@ branch 'qux', the branch segments are renamed 'qux-early' and
 
 // DoDivide is the command handler for the "divide" command.
 func (rs *Reposurgeon) DoDivide(line string) bool {
-	rs.newLineParse(line, parseREPO, nil)
+	rs.newLineParse(line, parseREPO|parseNOARGS, nil)
 	if rs.selection.Size() == 0 {
 		croak("one or possibly two arguments specifying a link are required")
 		return false
@@ -4730,7 +4735,7 @@ merge link is moved to the tagified commit's parent.
 
 // DoTagify searches for empty commits and turn them into tags.
 func (rs *Reposurgeon) DoTagify(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, nil)
 	defer parse.Closem()
 	repo := rs.chosen()
 	if parse.line != "" {
@@ -5768,7 +5773,7 @@ patterns.
 
 // DoIgnores manipulates ignore patterns in the repo.
 func (rs *Reposurgeon) DoIgnores(line string) bool {
-	rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
+	rs.newLineParse(line, parseREPO|parseNOSELECT|parseNOARGS, nil)
 	if rs.chosen() == nil {
 		croak("no repo has been chosen.")
 		return false
@@ -6352,7 +6357,7 @@ command, false on all other events.
 
 // DoGitify canonicalizes comments.
 func (rs *Reposurgeon) DoGitify(line string) bool {
-	rs.newLineParse(line, parseALLREPO, nil)
+	rs.newLineParse(line, parseALLREPO|parseNOARGS, nil)
 	lineEnders := orderedStringSet{".", ",", ";", ":", "?", "!"}
 	control.baton.startProgress("gitifying comments", uint64(rs.selection.Size()))
 	rs.chosen().clearColor(colorQSET)
@@ -6449,7 +6454,7 @@ must resolve to exactly two commits.
 
 // DoDiff displays a diff between versions.
 func (rs *Reposurgeon) DoDiff(line string) bool {
-	parse := rs.newLineParse(line, parseREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
 	if rs.selection.Size() != 2 {
@@ -6859,7 +6864,7 @@ timestamp values for anything but distinctness.
 
 // DoTimequake is the handler for the "timequake" command.
 func (rs *Reposurgeon) DoTimequake(line string) bool {
-	parse := rs.newLineParse(line, parseALLREPO, nil)
+	parse := rs.newLineParse(line, parseALLREPO|parseNOARGS, nil)
 	repo := rs.chosen()
 
 	if parse.options.Contains("--tick") {
@@ -7010,7 +7015,7 @@ repository by cliques of filepaths.
 
 // DoClone makes a repository with a specified name.
 func (rs *Reposurgeon) DoClone(line string) bool {
-	rs.newLineParse(line, parseNOSELECT|parseREPO, nil)
+	rs.newLineParse(line, parseNOSELECT|parseREPO|parseNOARGS, nil)
 	repo := rs.chosen().clone()
 	rs.repolist = append(rs.repolist, repo)
 	rs.choose(repo)
@@ -7131,7 +7136,7 @@ reference.
 
 // DoVersion is the handler for the "version" command.
 func (rs *Reposurgeon) DoVersion(line string) bool {
-	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if line == "" {
 		// This is a technically wrong way of enumerting the list and will need to
@@ -7182,7 +7187,7 @@ Display elapsed time since start.
 
 // DoElapsed is the handler for the "elapsed" command.
 func (rs *Reposurgeon) DoElapsed(line string) bool {
-	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
 	return false
@@ -7199,7 +7204,7 @@ Exit cleanly, emitting a goodbye message including elapsed time.
 
 // DoExit is the handler for the "exit" command.
 func (rs *Reposurgeon) DoExit(line string) bool {
-	parse := rs.newLineParse(line, parseNOSELECT, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, parseNOSELECT|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	parse.respond("exiting, elapsed time %v.", time.Now().Sub(rs.startTime))
 	return true
@@ -7867,7 +7872,7 @@ in an array of the structs.
 // const MaxInt = int(MaxUint >> 1)
 // const MinInt = -MaxInt - 1
 func (rs *Reposurgeon) DoSizeof(line string) bool {
-	rs.newLineParse(line, parseNOSELECT, nil)
+	rs.newLineParse(line, parseNOSELECT|parseNOARGS, nil)
 	const wordLengthInBytes = 8
 	roundUp := func(n, m uintptr) uintptr {
 		return ((n + m - 1) / m) * m
