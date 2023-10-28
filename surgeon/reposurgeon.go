@@ -375,11 +375,6 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 	return &lp
 }
 
-// Tokens returns the argument token list after the parse for redirects.
-func (lp *LineParse) Tokens() []string {
-	return strings.Fields(lp.line)
-}
-
 // popToken pops a token off the parse line, interpreting double quotes
 func (lp *LineParse) popToken() string {
 	var tok string
@@ -4355,7 +4350,7 @@ func (rs *Reposurgeon) DoUnite(line string) bool {
 	parse := rs.newLineParse(line, parseNOSELECT, nil)
 	defer parse.Closem()
 	factors := make([]*Repository, 0)
-	for _, name := range parse.Tokens() {
+	for _, name := range parse.args {
 		repo := rs.repoByName(name)
 		if repo == nil {
 			croak("no such repo as %s", name)
@@ -4452,15 +4447,14 @@ source branch are removed.
 func (rs *Reposurgeon) DoDebranch(line string) bool {
 	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, nil)
 	defer parse.Closem()
-	args := parse.Tokens()
-	if len(args) == 0 {
+	if len(parse.args) == 0 {
 		croak("debranch command requires at least one argument")
 		return false
 	}
 	target := "refs/heads/master"
-	source := args[0]
-	if len(args) == 2 {
-		target = args[1]
+	source := parse.args[0]
+	if len(parse.args) == 2 {
+		target = parse.args[1]
 	}
 	repo := rs.chosen()
 	branches := repo.branchtipmap()
