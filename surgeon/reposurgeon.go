@@ -5451,7 +5451,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 // HelpReset says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReset() {
 	rs.helpOutput(`
-[SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
+[SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME|SINGLETON]
 
 Note: While this command is provided for the sake of completeness, think
 twice before actually using it.  Normally a reset should only be deleted
@@ -5497,19 +5497,18 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	parse := rs.newLineParse(line, parseREPO, nil)
 	repo := rs.chosen()
 
-	verb := parse.popToken()
-	if verb == "" {
+	if len(parse.args) < 1 {
 		croak("reset command requires a verb.")
 		return false
 	}
+	verb := parse.args[0]
 
-	var err error
-
-	resetname := parse.popToken()
-	if len(resetname) == 0 {
+	if len(parse.args) < 2 {
 		croak("missing reset pattern")
 		return false
 	}
+	resetname := parse.args[1]
+
 	sourcepattern, isRe := delimitedRegexp(resetname)
 	if isRe {
 		if verb == "create" {
@@ -5525,6 +5524,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		}
 		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
 	}
+	var err error
 	sourceRE, err := regexp.Compile(sourcepattern)
 	if err != nil {
 		croak(err.Error())
@@ -5574,7 +5574,13 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			croak("can't move multiple resets")
 			return false
 		}
-		rs.setSelectionSet(parse.line) // This is why we have to do our own parsing.
+		if len(parse.args) < 3 {
+			croak("missing target location")
+			return false
+		} else if len(parse.args) >= 4 {
+			croak("too many arguments - whitespace in singleton selection?")
+		}
+		rs.setSelectionSet(parse.args[2])
 		if rs.selection.Size() != 1 {
 			croak("reset move requires a singleton commit set.")
 			return false
@@ -5592,11 +5598,12 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			croak("no resets match %s", sourcepattern)
 			return false
 		}
-		newname = parse.popToken()
-		if newname == "" {
-			croak("new reset name must be nonempty.")
+		if len(parse.args) < 3 {
+			croak("missing new reset name")
 			return false
 		}
+		newname = parse.args[2]
+
 		if strings.Count(newname, "/") == 0 {
 			newname = "heads/" + newname
 		}

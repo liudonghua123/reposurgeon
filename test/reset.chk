@@ -31,7 +31,7 @@ reset move D :6,:10,:15
 reposurgeon: reset move requires a singleton commit set.
 # error: empty new name
 reset rename Z
-reposurgeon: new reset name must be nonempty.
+reposurgeon: missing new reset name
 # error: reference collision
 reset rename Z D
 reposurgeon: reset reference collision, not renaming.
