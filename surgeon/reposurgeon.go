@@ -368,18 +368,14 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		tok := ""
 		line = strings.TrimLeftFunc(line, unicode.IsSpace)
 		inQuotes := false
-		escape := ""
 		for pos, r := range line {
-			if !inQuotes && escape == "" && unicode.IsSpace(r) {
+			if !inQuotes && unicode.IsSpace(r) {
 				line = strings.TrimLeftFunc(line[pos:], unicode.IsSpace)
 				return tok, line
 			}
-			s := escape + string(r)
-			escape = ""
-			if s == "\"" {
+			s := string(r)
+			if s == `"` {
 				inQuotes = !inQuotes
-			} else if s == "\\" {
-				escape = "\\"
 			} else {
 				tok += s
 			}
