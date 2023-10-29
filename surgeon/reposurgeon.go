@@ -380,6 +380,9 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 				tok += s
 			}
 		}
+		if inQuotes {
+			panic(throw("command", "unbalanced quotes"))
+		}
 		return tok, ""
 	}
 
