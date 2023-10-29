@@ -3915,7 +3915,7 @@ func (rs *Reposurgeon) DoDedup(line string) bool {
 // HelpTimeoffset says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTimeoffset() {
 	rs.helpOutput(`
-[SELECTION] timeoffset OFFSET
+[SELECTION] timeoffset OFFSET [TIMEZONE]
 
 Apply a time offset to all time/date stamps in the selected set.  An offset
 argument is required; it may be in the form [+-]ss, [+-]mm:ss or [+-]hh:mm:ss.
@@ -3967,48 +3967,47 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 		}
 		return hn*3600 + mn*60 + sn, nil
 	}
-	args := strings.Fields(line)
 	var loc *time.Location
 	var offset time.Duration
 	var noffset int
-	if len(args) == 0 {
+	if len(parse.args) == 0 {
 		noffset = 1
 		offset = time.Second
 	} else {
 		var err error
-		noffset, err = offsetOf(args[0])
+		noffset, err = offsetOf(parse.args[0])
 		if err != nil {
 			return false
 		}
 		offset = time.Duration(noffset) * time.Second
 	}
-	if len(args) > 1 {
+	if len(parse.args) > 1 {
 		tr := regexp.MustCompile(`[+-][0-9][0-9][0-9][0-9]`)
-		if !tr.MatchString(args[1]) {
+		if !tr.MatchString(parse.args[1]) {
 			croak("expected timezone literal to be [+-]hhmm")
 			return false
 		}
-		zoffset, err1 := offsetOf(args[1])
+		zoffset, err1 := offsetOf(parse.args[1])
 		if err1 != nil {
 			return false
 		}
-		loc = time.FixedZone(args[1], zoffset)
+		loc = time.FixedZone(parse.args[1], zoffset)
 	}
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) bool {
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagger != nil {
 				tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(offset)
-				if len(args) > 1 {
+				if len(parse.args) > 1 {
 					tag.tagger.date.timestamp = tag.tagger.date.timestamp.In(loc)
 				}
 			}
 		} else if commit, ok := event.(*Commit); ok {
 			commit.bump(noffset)
-			if len(args) > 1 {
+			if len(parse.args) > 1 {
 				commit.committer.date.timestamp = commit.committer.date.timestamp.In(loc)
 			}
 			for _, author := range commit.authors {
-				if len(args) > 1 {
+				if len(parse.args) > 1 {
 					author.date.timestamp = author.date.timestamp.In(loc)
 				}
 			}
