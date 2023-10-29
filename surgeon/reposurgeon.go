@@ -4273,10 +4273,7 @@ M 100644 :2 bar/src
 
 // DoSplit splits a commit.
 func (rs *Reposurgeon) DoSplit(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+	parse := rs.newLineParse(line, parseREPO, nil)
 	if rs.selection.Size() != 1 {
 		croak("selection of a single commit required for this command")
 		return false
@@ -4288,13 +4285,12 @@ func (rs *Reposurgeon) DoSplit(line string) bool {
 		croak("selection doesn't point at a commit")
 		return false
 	}
-	fields := strings.Fields(line)
-	prep := fields[0]
-	obj := fields[1]
-	if len(fields) != 2 {
+	if len(parse.args) != 2 {
 		croak("ill-formed split command")
 		return false
 	}
+	prep := parse.args[0]
+	obj := parse.args[1]
 	if prep == "at" {
 		splitpoint, err := strconv.Atoi(obj)
 		if err != nil {
