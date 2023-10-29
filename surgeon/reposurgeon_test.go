@@ -1467,12 +1467,11 @@ M 100644 :3 README
 	if c.String() != c.clone().String() {
 		t.Errorf("callout cloning failed")
 	}
-	// FIXME: String equality is failing here for some weird reason/
-	//p := newPassthrough(repo, "foozle")
-	//p.text = "foozle"
-	//if p.String() != c.clone().String() {
-	//	t.Errorf("passthrough cloning failed: expected %q, saw %q", p.String(), p.clone().String())
-	//}
+	p := newPassthrough(repo, "foozle")
+	p.text = "foozle"
+	if p.String() != p.clone().String() {
+		t.Errorf("passthrough cloning failed: expected %q, saw %q", p.String(), p.clone().String())
+	}
 }
 
 func TestReadAuthorMap(t *testing.T) {
