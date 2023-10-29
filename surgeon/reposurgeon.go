@@ -362,6 +362,31 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 		panic(throw("command", "command does not take a filename argument - use redirection instead"))
 	}
 
+	// Grab a whitespace-delimited token from the front of the line.
+	// Interpret double quotes to protect spaces.
+	popToken := func(line string) (string, string) {
+		tok := ""
+		line = strings.TrimLeftFunc(line, unicode.IsSpace)
+		inQuotes := false
+		escape := ""
+		for pos, r := range line {
+			if !inQuotes && escape == "" && unicode.IsSpace(r) {
+				line = strings.TrimLeftFunc(line[pos:], unicode.IsSpace)
+				return tok, line
+			}
+			s := escape + string(r)
+			escape = ""
+			if s == "\"" {
+				inQuotes = !inQuotes
+			} else if s == "\\" {
+				escape = "\\"
+			} else {
+				tok += s
+			}
+		}
+		return tok, ""
+	}
+
 	// Parse (possibly double-quoted) tokens
 	argline := lp.line
 	for true {
@@ -725,31 +750,6 @@ func (rs *Reposurgeon) reportSelect(parse *LineParse, display func(*LineParse, i
 			break
 		}
 	}
-}
-
-// Grab a whitespace-delimited token from the front of the line.
-// Interpret double quotes to protect spaces.
-func popToken(line string) (string, string) {
-	tok := ""
-	line = strings.TrimLeftFunc(line, unicode.IsSpace)
-	inQuotes := false
-	escape := ""
-	for pos, r := range line {
-		if !inQuotes && escape == "" && unicode.IsSpace(r) {
-			line = strings.TrimLeftFunc(line[pos:], unicode.IsSpace)
-			return tok, line
-		}
-		s := escape + string(r)
-		escape = ""
-		if s == "\"" {
-			inQuotes = !inQuotes
-		} else if s == "\\" {
-			escape = "\\"
-		} else {
-			tok += s
-		}
-	}
-	return tok, ""
 }
 
 func (commit *Commit) findSuccessors(path string) []string {
