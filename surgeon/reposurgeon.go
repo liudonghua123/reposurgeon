@@ -1366,8 +1366,8 @@ long-running conversion recipes.
 func (rs *Reposurgeon) DoTiming(line string) bool {
 	parse := rs.newLineParse(line, parseREPO|parseNOSELECT, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	if parse.line != "" {
-		rs.chosen().timings = append(rs.chosen().timings, TimeMark{line, time.Now()})
+	if len(parse.args) > 0 {
+		rs.chosen().timings = append(rs.chosen().timings, TimeMark{parse.args[0], time.Now()})
 	}
 	rs.repo.dumptimes(parse.stdout)
 	return false
@@ -3105,9 +3105,13 @@ get true, all other events get false.
 
 // DoTranscode is the handler for the "transcode" command.
 func (rs *Reposurgeon) DoTranscode(line string) bool {
-	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT|parseNOARGS, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNEEDSELECT, nil)
+	if len(parse.args) == 0 {
+		croak("transcode requires an argument.")
+		return false
+	}
 
-	enc, err := ianaindex.IANA.Encoding(parse.line)
+	enc, err := ianaindex.IANA.Encoding(parse.args[0])
 	if err != nil {
 		croak("can's set up codec %s: error %v", line, err)
 		return false
