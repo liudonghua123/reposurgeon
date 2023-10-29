@@ -380,13 +380,6 @@ func (rs *Reposurgeon) newLineParse(line string, parseflags uint, capabilities o
 	return &lp
 }
 
-// popToken pops a token off the parse line, interpreting double quotes
-func (lp *LineParse) popToken() string {
-	var tok string
-	tok, lp.line = popToken(lp.line)
-	return tok
-}
-
 // OptVal looks for an option flag on the line, returns value and presence
 func (lp *LineParse) OptVal(opt string) (val string, present bool) {
 	for _, option := range lp.options {
@@ -3742,13 +3735,23 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 	}
 	repo := rs.chosen()
 	orig := parse.line
-	opindex := parse.popToken()
+	var argindex int
+	popToken := func() string {
+		if argindex >= len(parse.args) {
+			return ""
+		}
+		arg := parse.args[argindex]
+		argindex++
+		return arg
+	}
+
+	opindex := popToken()
 	optypes := "DMRCN"
 	regex := regexp.MustCompile("^[DMRCN]+$")
 	match := regex.FindStringIndex(opindex)
 	if match != nil {
 		optypes = opindex[match[0]:match[1]]
-		opindex = parse.popToken()
+		opindex = popToken()
 	}
 	rs.chosen().clearColor(colorQSET)
 	rs.chosen().clearColor(colorDELETE)
@@ -3796,9 +3799,9 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 		}
 		target := -1
 		if parse.line != "" {
-			verb := parse.popToken()
+			verb := popToken()
 			if verb == "to" {
-				rs.setSelectionSet(parse.line)
+				rs.setSelectionSet(popToken())
 				if rs.selection.Size() != 1 {
 					croak("remove to requires a singleton selection")
 					return false
