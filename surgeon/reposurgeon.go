@@ -5782,7 +5782,7 @@ patterns.
 
 // DoIgnores manipulates ignore patterns in the repo.
 func (rs *Reposurgeon) DoIgnores(line string) bool {
-	rs.newLineParse(line, parseREPO|parseNOSELECT|parseNOARGS, nil)
+	parse := rs.newLineParse(line, parseREPO|parseNOSELECT|parseNOARGS, nil)
 	if rs.chosen() == nil {
 		croak("no repo has been chosen.")
 		return false
@@ -5810,7 +5810,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 		}
 		return true
 	}
-	for _, verb := range strings.Fields(line) {
+	for _, verb := range parse.options {
 		if verb == "--defaults" {
 			if rs.preferred.styleflags.Contains("import-defaults") {
 				croak("importer already set default ignores")
