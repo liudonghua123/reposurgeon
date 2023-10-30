@@ -4746,10 +4746,6 @@ func (rs *Reposurgeon) DoTagify(line string) bool {
 	parse := rs.newLineParse(line, "tagify", parseALLREPO|parseNOARGS, nil)
 	defer parse.Closem()
 	repo := rs.chosen()
-	if parse.line != "" {
-		croak("too many arguments for tagify.")
-		return false
-	}
 	before := len(repo.commits(undefinedSelectionSet))
 	err := repo.tagifyEmpty(
 		rs.selection,
@@ -5049,13 +5045,9 @@ after the operation.
 
 // DoReorder re-orders a contiguous range of commits.
 func (rs *Reposurgeon) DoReorder(line string) bool {
-	parse := rs.newLineParse(line, "reorder", parseREPO|parseNEEDSELECT, nil)
+	parse := rs.newLineParse(line, "reorder", parseREPO|parseNEEDSELECT|parseNOARGS, nil)
 	defer parse.Closem()
 	repo := rs.chosen()
-	if parse.line != "" {
-		croak("'reorder' takes no arguments")
-		return false
-	}
 	commits := repo.commits(rs.selection)
 	if len(commits) == 0 {
 		croak("no commits in selection")

@@ -1389,7 +1389,7 @@ read <reorder.fi
 
 # error: incorrect number of arguments
 1..$ reorder now
-reposurgeon: 'reorder' takes no arguments
+reposurgeon: reorder command does not take arguments
 
 # error: no event selection
 reorder
