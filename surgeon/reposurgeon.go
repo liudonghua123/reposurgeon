@@ -1243,7 +1243,7 @@ Corresponding subcommands are these:
 
 	    go tool pprof -http=":8080" http://localhost:1234/debug/pprof/<subject>
 
-    profile start {SUBJECT} {FILENAME}
+    profile start SUBJECT FILENAME
 
 	Starts the named profiler, and tells it to save to the named
 	file, which will be overwritten. Currently only the cpu and
@@ -1252,7 +1252,7 @@ Corresponding subcommands are these:
 	stored and used to automatically save the profile before
 	reposurgeon exits.
 
-    profile save {SUBJECT} [FILENAME]
+    profile save SUBJECT [FILENAME]
 
 	Saves the data from the named profiler to the named file, which
 	will be overwritten. If no filename is specified, this will fall
@@ -3074,7 +3074,7 @@ func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
 // HelpTranscode says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTranscode() {
 	rs.helpOutput(`
-[SELECTION] transcode {ENCODING}
+[SELECTION] transcode ENCODING
 
 Transcode blobs, commit comments, committer/author names, tag
 comments and tag committer names in the selection set to UTF-8 from
@@ -4032,7 +4032,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 // HelpWhen says "Shut up, golint!"
 func (rs *Reposurgeon) HelpWhen() {
 	rs.helpOutput(`
-when {TIMESTAMP}
+when TIMESTAMP
 
 Interconvert between git timestamps (integer Unix time plus TZ) and
 RFC3339 format.  Takes one argument, autodetects the format.  Useful
@@ -4388,7 +4388,7 @@ func (rs *Reposurgeon) DoUnite(line string) bool {
 // HelpGraft says "Shut up, golint!"
 func (rs *Reposurgeon) HelpGraft() {
 	rs.helpOutput(`
-[SELECTION] graft [--prune] {REPO-NAME}
+[SELECTION] graft [--prune] REPO-NAME
 
 For when unite doesn't give you enough control. This command may have
 either of two forms, distinguished by the size of the selection set.  The
@@ -5682,7 +5682,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 // HelpBranchlift says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBranchlift() {
 	rs.helpOutput(`
-branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
+branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]
 
 Every commit on SOURCEBRANCH with fileops matching the PATHPREFIX is examined;
 all commits with every fileop matching the PATH are moved to a new branch; if
@@ -5709,7 +5709,7 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	repo := rs.chosen()
 
 	if len(parse.args) < 2 {
-		croak("branchlidt usage: branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]")
+		croak("branchlidt usage: branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]")
 		return false
 	}
 
@@ -5900,7 +5900,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 // FIXME: Odd syntax
 func (rs *Reposurgeon) HelpAttribution() {
 	rs.helpOutput(`
-[SELECTION] attribution {SUBCOMMAND}
+[SELECTION] attribution [ATTR-SELECTION] SUBCOMMAND [ARG...]
 
 Inspect, modify, add, and remove commit and tag attributions.
 
@@ -5934,9 +5934,9 @@ Available actions are:
     expression is given, defaults to all attributions. If no event selection
     is specified, defaults to all events. Supports > redirection.
 
-{SELECTION} attribution {ATTR-SELECTION} set {NAME} [EMAIL] [DATE]
-{SELECTION} attribution {ATTR-SELECTION} set [NAME] {EMAIL} [DATE]
-{SELECTION} attribution {ATTR-SELECTION} set [NAME] [EMAIL] {DATE}
+{SELECTION} attribution ATTR-SELECTION set NAME [EMAIL] [DATE]
+{SELECTION} attribution ATTR-SELECTION set [NAME] EMAIL [DATE]
+{SELECTION} attribution ATTR-SELECTION set [NAME] [EMAIL] DATE
     Assign NAME, EMAIL, DATE to the selected attributions. As a
     convenience, if only some fields need to be changed, the others can be
     omitted. Arguments NAME, EMAIL, and DATE can be given in any order.
@@ -5946,8 +5946,8 @@ Available actions are:
     <selection> is not given. It is an error to delete the mandatory committer
     and tagger attributions of commit and tag events, respectively.
 
-{SELECTION} attribution [ATTR-SELECTION] prepend {NAME} [EMAIL] [DATE]
-{SELECTION} attribution [ATTR-SELECTION] prepend [NAME] {EMAIL} [DATE]
+{SELECTION} attribution [ATTR-SELECTION] prepend NAME [EMAIL] [DATE]
+{SELECTION} attribution [ATTR-SELECTION] prepend [NAME] EMAIL [DATE]
     Insert a new attribution before the first attribution named by SELECTION.
     The new attribution has the same type ('committer', 'author', or 'tagger')
     as the one before which it is being inserted. Arguments NAME, EMAIL,
@@ -5984,7 +5984,7 @@ Available actions are:
     It is presently an error to insert a new committer or tagger attribution.
     To change a committer or tagger, use 'setfield' instead.
 
-{SELECTION} attribution {ATTR-SELECTION} resolve [>file] [LABEL-TEXT...]
+{SELECTION} attribution ATTR-SELECTION resolve [>file] [LABEL-TEXT...]
     Does nothing but resolve an attribution selection-set expression for the
     selected events and echo the resulting attribution-number set to standard
     output. The remainder of the line after the command is used as a label for
@@ -6975,7 +6975,7 @@ func (rs *Reposurgeon) DoChangelogs(line string) bool {
 // HelpCreate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCreate() {
 	rs.helpOutput(`
-create {NAME}
+create NAME
 
 Create an empty repository with a specified name in memory. The new repository becomes chosen.
 It has no eveents and no sourcetype or preferred type.
@@ -7319,9 +7319,10 @@ precedence than & | but lower than ?.
 func (rs *Reposurgeon) HelpSyntax() {
 	rs.helpOutputMisc(`
 Each command description begins with a syntax summary.  Mandatory
-parts are in {}, optional in [], and ... says the element just before
-it may be repeated.  Parts separated by | are alternatives.  Parts in
-ALL-CAPS are expected to be filled in by the user.
+parts are bare or in in {}, optional in [], and ... says the element
+just before it may be repeated.  Parts separated by | are
+alternatives.  Parts in ALL-CAPS are expected to be filled in by the
+user.
 
 Commands are distinguished by a command keyword.  Most take a
 selection set immediately before it; see "help selection" for details.
