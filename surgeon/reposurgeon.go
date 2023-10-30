@@ -398,7 +398,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 	}
 
 	if (len(lp.args) > 0) && (parseflags&parseNOARGS) != 0 {
-
+		panic(throw("command", name+" command does not take arguments"))
 	}
 
 	return &lp
@@ -6869,7 +6869,7 @@ all other events.
 
 With --tick, instead set all commit and tag timestamps in accordance with a 
 monotonic clock that ticks once per repository object in sequence. If the rest
-of the line is nonblank, it replaces rgw committer address. This option can be
+of the line is nonblank, it replaces the committer address. This option can be
 used to make reproducible streams for testing; no use of it should rely on the
 timestamp values for anything but distinctness.
 `)
@@ -6877,7 +6877,7 @@ timestamp values for anything but distinctness.
 
 // DoTimequake is the handler for the "timequake" command.
 func (rs *Reposurgeon) DoTimequake(line string) bool {
-	parse := rs.newLineParse(line, "timequake", parseALLREPO|parseNOARGS, nil)
+	parse := rs.newLineParse(line, "timequake", parseALLREPO, nil)
 	repo := rs.chosen()
 
 	if parse.options.Contains("--tick") {
