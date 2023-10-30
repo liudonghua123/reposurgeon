@@ -3811,7 +3811,7 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 			}
 		}
 		target := -1
-		if parse.line != "" {
+		if len(parse.args) > argindex {
 			verb := popToken()
 			if verb == "to" {
 				rs.setSelectionSet(popToken())
