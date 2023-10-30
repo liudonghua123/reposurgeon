@@ -5788,11 +5788,6 @@ patterns.
 // DoIgnores manipulates ignore patterns in the repo.
 func (rs *Reposurgeon) DoIgnores(line string) bool {
 	parse := rs.newLineParse(line, "ignores", parseREPO|parseNOSELECT|parseNOARGS, nil)
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	repo := rs.chosen()
 	if rs.preferred != nil && rs.ignorename == "" {
 		rs.ignorename = rs.preferred.ignorename
 	}
@@ -5815,6 +5810,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 		}
 		return true
 	}
+	repo := rs.chosen()
 	for _, verb := range parse.options {
 		if verb == "--defaults" {
 			if rs.preferred.styleflags.Contains("import-defaults") {
@@ -5904,27 +5900,28 @@ func (rs *Reposurgeon) HelpAttribution() {
 
 Inspect, modify, add, and remove commit and tag attributions.
 
-Arguments of this command (including attribution-field values) can
-be double-quoted srrings containing whitespace; the string quotes 
-are stripped before interpretation.
+Arguments of this command (including attribution-field values) can be
+double-quoted srrings containing whitespace; the string quotes are
+stripped before interpretation.
 
-Attributions upon which to operate are selected in much the same way as events
-are selected. The ATTR-SELECTION argument of each action is an expression
-composed of 1-origin attribution-sequence numbers, '$' for last attribution,
-'..' ranges, comma-separated items, '(...)' grouping, set operations '|'
-union, '&' intersection, and '~' negation, and function calls @min(), @max(),
-@amp(), @pre(), @suc(), @srt().
+Attributions upon which to operate are selected in much the same way
+as events are selected. The ATTR-SELECTION argument of each action is
+an expression composed of 1-origin attribution-sequence numbers, '$'
+for last attribution, '..' ranges, comma-separated items, '(...)'
+grouping, set operations '|' union, '&' intersection, and '~'
+negation, and function calls @min(), @max(), @amp(), @pre(), @suc(),
+@srt().
 
-Attributions can also be selected by visibility set '=C' for committers, '=A'
-for authors, and '=T' for taggers.
+Attributions can also be selected by visibility set '=C' for
+committers, '=A' for authors, and '=T' for taggers.
 
 Finally, /regex/ will attempt to match the Go regular expression regex
-against an attribution name and email address; '/n' limits the match to only
-the name, and '/e' to only the email address. See "help regexp" for more
-information about regular expressions.
+against an attribution name and email address; '/n' limits the match
+to only the name, and '/e' to only the email address. See "help
+regexp" for more information about regular expressions.
 
-With the exception of 'show', all actions require an explicit event selection
-upon which to operate.
+With the exception of 'show', all actions require an explicit event
+selection upon which to operate.
 
 Available actions are:
 
