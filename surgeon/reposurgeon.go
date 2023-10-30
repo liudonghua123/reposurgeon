@@ -2445,19 +2445,10 @@ before each event dump.
 
 // DoInspect dumps raw events.
 func (rs *Reposurgeon) DoInspect(line string) bool {
-	parse := rs.newLineParse(line, "inspect", parseREPO|parseNOARGS, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, "inspect", parseREPO|parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	selection := rs.selection
-	if !selection.isDefined() {
-		state := rs.evalState(len(repo.events))
-		defer state.release()
-		selection, parse.line = rs.parse(parse.line, state)
-		if !selection.isDefined() {
-			selection = repo.all()
-		}
-	}
-	for it := selection.Iterator(); it.Next(); {
+	for it := rs.selection.Iterator(); it.Next(); {
 		eventid := it.Value()
 		event := repo.events[eventid]
 		header := fmt.Sprintf("Event %d %s\n", eventid+1, strings.Repeat("=", 72))
