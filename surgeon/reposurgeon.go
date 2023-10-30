@@ -3747,7 +3747,6 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 		rs.selection = newSelectionSet()
 	}
 	repo := rs.chosen()
-	orig := parse.line
 	var argindex int
 	popToken := func() string {
 		if argindex >= len(parse.args) {
@@ -3806,7 +3805,7 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 			ind, err = strconv.Atoi(opindex)
 			ind--
 			if err != nil {
-				croak("invalid or missing fileop specification '%s' on %s", opindex, orig)
+				croak("remove has invalid or missing fileop specification '%s'", opindex)
 				return false
 			}
 		}
