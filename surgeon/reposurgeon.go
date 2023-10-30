@@ -338,7 +338,10 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 	}
 	// Options - these are removed from the line before the command handler sees it
 	for true {
-		match := regexp.MustCompile("--([^ ]+)").FindStringSubmatchIndex(lp.line)
+		match := regexp.MustCompile(`--([^" ]+="[^"]+")`).FindStringSubmatchIndex(lp.line)
+		if match == nil {
+			match = regexp.MustCompile(`--([^ ]+)`).FindStringSubmatchIndex(lp.line)
+		}
 		if match == nil {
 			break
 		} else {
@@ -7335,7 +7338,7 @@ Option flags are parsed out of the command line before any other
 interpretation is performed, and can be anywhere on the line.  The
 order of option flags is never significant. When an option flag "foo"
 sets a value, the syntax is --foo=xxx with no spaces around the equal
-sign.  The argument may be a double-quotee string.
+sign.  The argument may be a double-quotee string containg whitespace.
 
 The embedded help for some commands tells you that they interpret
 C/Go style backslash escapes like \n in arguments. Interpretation
