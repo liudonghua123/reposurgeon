@@ -7,7 +7,7 @@ read <multitag.fi
 
 # error: parse failure
 attribution missing "quotation mark
-reposurgeon: unbalanced quotes
+reposurgeon: attribution command has unbalanced quotes
 
 # error: no event selection
 attribution delete
