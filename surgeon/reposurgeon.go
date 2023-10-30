@@ -2306,7 +2306,7 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 			}
 		}
 		repo.fastImport(context.TODO(), parse.stdin, parse.options.toStringSet(), "", control.baton)
-	} else if parse.line == "" || parse.line == "." {
+	} else if len(parse.args) == 0 || parse.args[0] == "." {
 		var err2 error
 		// This is slightly asymmetrical with the write side, which
 		// interprets an empty argument list as '-'
@@ -2320,18 +2320,18 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 			croak(err2.Error())
 			return false
 		}
-	} else if isdir(parse.line) {
+	} else if isdir(parse.args[0]) {
 		var err2 error
-		repo, err2 = readRepo(parse.line, parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"] || parse.options.Contains("--quiet"), control.baton)
+		repo, err2 = readRepo(parse.args[0], parse.options.toStringSet(), rs.preferred, rs.extractor, control.flagOptions["quiet"] || parse.options.Contains("--quiet"), control.baton)
 		if err2 != nil {
 			croak(err2.Error())
 			return false
 		}
-	} else if isfile(parse.line) {
+	} else if isfile(parse.args[0]) {
 		croak("read no longer takes a filename argument - use < redirection instead")
 		return false
 	} else {
-		croak("read dir \"" + parse.line + "\" does not exist")
+		croak("directory \"" + parse.args[0] + "\" does not exist")
 		return false
 	}
 	rs.repolist = append(rs.repolist, repo)
@@ -2385,7 +2385,7 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 	defer parse.Closem()
 	// This is slightly asymmetrical with the read side, which
 	// interprets an empty argument list as '.'
-	if parse.redirected || parse.line == "" {
+	if parse.redirected || len(parse.args) == 0 {
 		for _, option := range parse.options {
 			if strings.HasPrefix(option, "--format=") {
 				_, vcs := splitRuneFirst(option, '=')
@@ -2416,11 +2416,11 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 		}
 		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
 	} else {
-		if strings.HasSuffix(parse.line, "/") && !exists(parse.line) {
-			os.Mkdir(parse.line, userReadWriteSearchMode)
+		if strings.HasSuffix(parse.args[0], "/") && !exists(parse.args[0]) {
+			os.Mkdir(parse.args[0], userReadWriteSearchMode)
 		}
-		if isdir(parse.line) {
-			err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
+		if isdir(parse.args[0]) {
+			err := rs.chosen().rebuildRepo(parse.args[0], parse.options.toStringSet(), rs.preferred, control.baton)
 			if err != nil {
 				croak(err.Error())
 			}
@@ -3681,7 +3681,7 @@ func (rs *Reposurgeon) DoBlob(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 
-	if parse.line == "" {
+	if len(parse.args) == 0 {
 		var markmax int
 		for _, event := range repo.events {
 			m := event.getMark()
@@ -3695,16 +3695,16 @@ func (rs *Reposurgeon) DoBlob(line string) bool {
 		}
 		fmt.Fprintf(parse.stdout, ":%d\n", markmax+1)
 		return false
-	} else if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(parse.line) {
-		croak("The mark number (%s) must begin with a colon and contain only numerics.", parse.line)
+	} else if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(parse.args[0]) {
+		croak("The mark number (%s) must begin with a colon and contain only numerics.", parse.args[0])
 		return false
-	} else if repo.markToEvent(parse.line) != nil {
+	} else if repo.markToEvent(parse.args[0]) != nil {
 		croak("Cannot bind blob to existing mark.")
 		return false
 	}
 
 	blob := newBlob(repo)
-	blob.setMark(parse.line)
+	blob.setMark(parse.args[0])
 	repo.insertEvent(blob, len(repo.frontEvents()), "adding blob")
 	content, err := ioutil.ReadAll(parse.stdin)
 	if err != nil {
