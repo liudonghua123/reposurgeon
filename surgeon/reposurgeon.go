@@ -7310,77 +7310,63 @@ precedence than & | but lower than ?.
 // HelpSyntax says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSyntax() {
 	rs.helpOutputMisc(`
-Each command description begins with a syntax summary.  Mandatory parts are
-in {}, optional in [], and ... says the element just before it may be repeated.
-Parts in ALL-CAPS are expected to be filled in by the user.
+Each command description begins with a syntax summary.  Mandatory
+parts are in {}, optional in [], and ... says the element just before
+it may be repeated.  Parts separated by | are alternatives.  Parts in
+ALL-CAPS are expected to be filled in by the user.
 
 Commands are distinguished by a command keyword.  Most take a
 selection set immediately before it; see "help selection" for details.
-Some commands have a following subcommand verb. Many commands take
-additional arguments after the command keyword(s).
+Some commands have a following subcommand verb.
 
-The syntax of following arguments is variable according to the
-requirements of individual commands, but there are a mumber of general
-rules.
+Many commands take additional arguments after the command (and
+subcommand, if present). Arguments can be either bare tokens or string
+literals enclosed by double quotes; the latter is in case you need to
+embed whitespace in a pathname or text string.
 
-* You can have comments in a script, led by the character "#".  Both
-  whole-line and "winged" comments following command arguments are
-  supported.  Note that reposurgeon's command parser is fairly
-  primitive and will be confused by a literal # in a command argument.
+Some commands support option flags.  These are led with a --, so if
+there is an option flag named "foo" you would write it as "--foo".
+Option flags are parsed out of the command line before any other
+interpretation is performed, and can be anywhere on the line.  The
+order of option flags is never significant. When an option flag "foo"
+sets a value, the syntax is --foo=xxx with no spaces around the equal
+sign.
 
-* The embedded help for some commands reminds you that pathname arguments
-  can be either bare tokens or string literals enclosed by double quotes;
-  the latter is in case you need to embed whitespace in a pathname.
-
-* The embedded help for some commands tells you that they interpret
-  C/Go style backslash escapes like \n in arguments. Interpretation
-  uses sing Go's Quote/Unquote codec from the strconv library.  In
-  such arguments you can, for example, get around having to include a
-  literal # in an argument by writing "\x23".
+The embedded help for some commands tells you that they interpret
+C/Go style backslash escapes like \n in arguments. Interpretation
+uses Go's Quote/Unquote codec from the strconv library.  In
+such arguments you can, for example, get around having to include a
+literal # in an argument by writing "\x23".
  
-* Some commands support option flags.  These are led with a --, so if
-  there is an option flag named "foo" you would write it as "--foo".
-  Option flags are parsed out of the command line before any other
-  interpretation is performed, and can be anywhere on the line.  The
-  order of option flags is never significant.
+All commands that expect data to be presented on standard input support
+input redirection.  You may write "<myfile" to take input from the
+file named "myfile".  Redirections are parsed out early, before
+the command arguments proper are interpreted, and can be anywhere
+on the line
 
-* When an option flag "foo" sets a value, the syntax is --foo=xxx
-  with no spaces around the equal sign.
+Most commands that normally ship data to standard output accept
+output redirection.  As in the shell, you can write ">outfile" to
+send the command output to "outfile", and ">>outfile2" to append
+to outfile2.
 
-* All commands that expect data to be presented on standard input support
-  input redirection.  You may write "<myfile" to take input from the
-  file named "myfile".  Redirections are parsed out early, before
-  the command arguments proper are interpreted, and can be anywhere
-  on the line
+Some commands take following arguments that are regular
+expressions. In this context, they still require start and end
+delimiters as they do when used in a selection prefix, but if you
+need to have a / in the expression the delimiters can be any
+punctuation character other than an ASCII single quote.  As a
+reminder, these are described in the embedded help as delimited
+regular expressions.
 
-* All commands that expect data to be presented on standard input also
-  accept a here-document, just the shell syntax for here-documents
-  with a leading "<<". There are two here-documents in the quick-start
-  example.
+Following-argument regular expressions may not contain whitespace;
+if you need to specify whitespace or a non-printable character use
+one of the escapes that Go regular expession syntax allows, such as
+\s or \t.
 
-* Most commands that normally ship data to standard output accept
-  output redirection.  As in the shell, you can write ">outfile" to
-  send the command output to "outfile", and ">>outfile2" to append
-  to outfile2.
-
-* Some commands take following arguments that are regular
-  expressions. In this context, they still require start and end
-  delimiters as they do when used in a selection prefix, but if you
-  need to have a / in the expression the delimiters can be any
-  punctuation character other than an ASCII single quote.  As a
-  reminder, these are described in the embedded help as delimited
-  regular expressions.
-
-* Following-argument regular expressions may not contain whitespace;
-  if you need to specify whitespace or a non-printable character use
-  one of the escapes that Go regular expession syntax allows, such as
-  \s or \t.
-
-* A command argumend with a name containing PATTERN may be either a
-  delimited regular expression or a literal string; if it is not recognized 
-  as the former it will be treated as the latter.  If the delimited regular 
-  wxpression starts and ends with ASCII single quotes, those will be stripped
-  off and the result treated as a literal string.
+A command argumend with a name containing PATTERN may be either a
+delimited regular expression or a literal string; if it is not recognized 
+as the former it will be treated as the latter.  If the delimited regular 
+wxpression starts and ends with ASCII single quotes, those will be stripped
+off and the result treated as a literal string.
 `)
 }
 
@@ -7673,6 +7659,11 @@ Scripts may have comments.  Any line beginning with a "#" is
 ignored. If a line has a trailing portion that begins with one or more
 whitespace characters followed by "#", that trailing portion is
 ignored.
+
+In scriupts, all commands that expect data to be presented on standard
+input also accept a here-document, just the shell syntax for
+here-documents with a leading "<<". There are two here-documents in
+the quick-start example.
 
 Scripts may call other scripts to arbitrary depth.
 
