@@ -2689,13 +2689,13 @@ Subversion and CVS conversions.)
 
 // DoRebuild rebuilds a live repository from the edited state.
 func (rs *Reposurgeon) DoRebuild(line string) bool {
-	parse := rs.newLineParse(line, "rebuild", parseREPO, nil)
+	parse := rs.newLineParse(line, "rebuild", parseREPO|parseNOSELECT, nil)
 	defer parse.Closem()
-	if rs.selection.Size() != 0 {
-		croak("rebuild does not take a selection set")
-		return false
+	dir := "."
+	if len(parse.args) != 0 {
+		dir = parse.args[0]
 	}
-	err := rs.chosen().rebuildRepo(parse.line, parse.options.toStringSet(), rs.preferred, control.baton)
+	err := rs.chosen().rebuildRepo(dir, parse.options.toStringSet(), rs.preferred, control.baton)
 	if err != nil {
 		croak(err.Error())
 	}
