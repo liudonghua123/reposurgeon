@@ -4419,8 +4419,10 @@ func (rs *Reposurgeon) DoGraft(line string) bool {
 	if len(rs.repolist) == 0 {
 		croak("no repositories are loaded.")
 		return false
+	} else if len(parse.args) == 0 {
+		croak("graft requires a repository argument.")
 	}
-	graftRepo := rs.repoByName(parse.line)
+	graftRepo := rs.repoByName(parse.args[0])
 	requireGraftPoint := true
 	var graftPoint int
 	if rs.selection.isDefined() && rs.selection.Size() == 1 {
