@@ -412,7 +412,12 @@ func (lp *LineParse) OptVal(opt string) (val string, present bool) {
 		} else if strings.HasPrefix(option, opt+"=") {
 			parts := strings.SplitN(option, "=", 3)
 			if len(parts) > 1 && parts[0] == opt {
-				return parts[1], true
+				val = parts[1]
+				// Cosmetic quote stripping for syntax uniformity.
+				if len(val) >= 3 && string(val[0]) == `"` && string(val[len(val)-1]) == `"` {
+					val = val[1 : len(val)-1]
+				}
+				return val, true
 			}
 			return "", true
 		}
@@ -2728,7 +2733,7 @@ The following example produces a mailbox of commit comments in a
 decluttered form that is convenient for editing:
 
 ----
-=C msgout --filter=/Committer:|Committer-Date:|Check-Text:/
+=C msgout --filter="/Committer:|Committer-Date:|Check-Text:/"
 ----
 
 This is the filter set by the --id option.
@@ -7330,7 +7335,7 @@ Option flags are parsed out of the command line before any other
 interpretation is performed, and can be anywhere on the line.  The
 order of option flags is never significant. When an option flag "foo"
 sets a value, the syntax is --foo=xxx with no spaces around the equal
-sign.
+sign.  The argument may be a double-quotee string.
 
 The embedded help for some commands tells you that they interpret
 C/Go style backslash escapes like \n in arguments. Interpretation

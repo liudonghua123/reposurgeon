@@ -1,3 +1,3 @@
 ## Test msgout --filter option
 read <sample1.fi
-=C msgout --filter=/Author:|Committer:|Committer-Date:/
+=C msgout --filter="/Author:|Committer:|Committer-Date:/"
