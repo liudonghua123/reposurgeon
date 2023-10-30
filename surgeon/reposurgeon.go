@@ -6861,10 +6861,7 @@ This command sets Q bits: true on each event with a timestamp bumped, false on
 all other events.
 
 With --tick, instead set all commit and tag timestamps in accordance with a 
-monotonic clock that ticks once per repository object in sequence. If the rest
-of the line is nonblank, it replaces the committer address. This option can be
-used to make reproducible streams for testing; no use of it should rely on the
-timestamp values for anything but distinctness.
+monotonic clock that ticks once per repository object in sequence.
 `)
 }
 
@@ -6876,26 +6873,16 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 	if parse.options.Contains("--tick") {
 		const tickBase = 10
 		const tickInterval = 60
-		name := strings.TrimSpace(parse.line)
 		for index, event := range repo.events {
 			when := time.Unix(tickBase+int64(index*tickInterval), 0).UTC()
 			if commit, ok := event.(*Commit); ok {
 				commit.committer.date.timestamp = when
-				if name != "" {
-					commit.committer.updateName(name)
-				}
 				for idx := range commit.authors {
 					commit.authors[idx].date.timestamp = when
-					if name != "" {
-						commit.authors[idx].updateName(name)
-					}
 				}
 			}
 			if tag, ok := event.(*Tag); ok {
 				tag.tagger.date.timestamp = when
-				if name != "" {
-					tag.tagger.email = name
-				}
 			}
 		}
 		return false
