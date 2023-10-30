@@ -4661,9 +4661,8 @@ func (rs *Reposurgeon) DoManifest(line string) bool {
 	parse := rs.newLineParse(line, "manifest", parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	var filterFunc = func(s string) bool { return true }
-	line = strings.TrimSpace(parse.line)
-	if line != "" {
-		filterRE := getPattern(line)
+	if len(parse.args) != 0 {
+		filterRE := getPattern(parse.args[0])
 		filterFunc = func(s string) bool {
 			return filterRE.MatchString(s)
 		}
