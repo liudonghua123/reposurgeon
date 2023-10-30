@@ -1075,7 +1075,7 @@ with these commands.
 func (rs *Reposurgeon) DoHistory(line string) bool {
 	rs.newLineParse(line, parseNOSELECT|parseNOARGS, nil)
 	for _, line := range rs.history {
-		control.baton.printLogString(line)
+		control.baton.printLogString(line + control.lineSep)
 	}
 	return false
 }
