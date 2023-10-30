@@ -7346,11 +7346,11 @@ uses Go's Quote/Unquote codec from the strconv library.  In
 such arguments you can, for example, get around having to include a
 literal # in an argument by writing "\x23".
  
-All commands that expect data to be presented on standard input support
-input redirection.  You may write "<myfile" to take input from the
-file named "myfile".  Redirections are parsed out early, before
-the command arguments proper are interpreted, and can be anywhere
-on the line
+All commands that expect data to be presented on standard input
+support input redirection.  You may write "<myfile" to take input from
+the file named "myfile".  Redirections are parsed out early, before
+the command arguments proper are interpreted, and can be anywhere on
+the line
 
 Most commands that normally ship data to standard output accept
 output redirection.  As in the shell, you can write ">outfile" to
@@ -7371,21 +7371,21 @@ one of the escapes that Go regular expession syntax allows, such as
 \s or \t.
 
 A command argumend with a name containing PATTERN may be either a
-delimited regular expression or a literal string; if it is not recognized 
-as the former it will be treated as the latter.  If the delimited regular 
-wxpression starts and ends with ASCII single quotes, those will be stripped
-off and the result treated as a literal string.
+delimited regular expression or a literal string; if it is not
+recognized as the former it will be treated as the latter.  If the
+delimited regular wxpression starts and ends with ASCII single quotes,
+those will be stripped off and the result treated as a literal string.
 `)
 }
 
 // HelpRedirection says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRedirection() {
 	rs.helpOutputMisc(`
-An optional command argument prefixed by "<" indicates that the command
-accepts input redirection; an optional argument prefixed by ">"
-indicates that the command accepts output redirection. There
-must be whitespace before the "<" or ">" so that the command parser
-won't falsely match uses of these characters in regular expressions.
+An optional command argument prefixed by "<" indicates that the
+command accepts input redirection; an optional argument prefixed by
+">" indicates that the command accepts output redirection. There must
+be whitespace before the "<" or ">" so that the command parser won't
+falsely match uses of these characters in regular expressions.
 
 Commands that support output redirection can also be followed by a
 pipe bar and a normal Unix command.  For example, "list | more"
@@ -7465,13 +7465,14 @@ language, with one exception. Due to a conflict with the use of $
 for arguments in the "script" command, we retain Python's use of
 backslashes as a leader for references to group matches.
 
-Normally patterns intended to be interpreted as regular expressions are 
-wrapped in slashes (e.g. /foobar/ matches any text containing the string
-"foobar"), but any punctuation character other than single quote will work
-as a delimiter in place of the /; this makes it easier to use an actual /
-in patterns.  Matched single quote delimiters mean the literal should be
-interpreted as plain text, suppressing interpretation of regexp special
-characters and requiring an anchored, entire match.
+Normally patterns intended to be interpreted as regular expressions
+are wrapped in slashes (e.g. /foobar/ matches any text containing the
+string "foobar"), but any punctuation character other than single
+quote will work as a delimiter in place of the /; this makes it easier
+to use an actual / in patterns.  Matched single quote delimiters mean
+the literal should be interpreted as plain text, suppressing
+interpretation of regexp special characters and requiring an anchored,
+entire match.
 
 Pattern expressions following the command verb may not contain literal
 whitespace; use \s or \t if you need to. Event-selection
@@ -7643,11 +7644,11 @@ arguments may be bare tokens or double-quoted strings, with the quotes
 discarded before interpretation. This command reads each line from the
 file and executes it as a command.
 
-During execution of the script, the script name replaces the
-string "$0", and the optional following arguments (if any) replace the
+During execution of the script, the script name replaces the string
+"$0", and the optional following arguments (if any) replace the
 strings "$1", "$2" ... "$n" in the script text. This is done before
-tokenization, so the "$1" in a string like "foo$1bar" will
-be expanded.  Additionally, "$$" is expanded to the current process ID
+tokenization, so the "$1" in a string like "foo$1bar" will be
+expanded.  Additionally, "$$" is expanded to the current process ID
 (which may be useful for scripts that use tempfiles).
 
 Within scripts (and only within scripts) reposurgeon accepts a
@@ -7656,12 +7657,12 @@ that the command continues on the next line. Any number of consecutive
 lines thus escaped are concatenated, without the ending backslashes,
 prior to evaluation. Second, a command that takes an input filename
 argument can instead take literal data using the syntax of a shell
-here-document. That is: if the "<filename" is replaced by
-"<<EOF", all following lines in the script up to a terminating
-line consisting only of "EOF" will be read, placed in a
-temporary file, and that file fed to the command and afterwards
-deleted.  "EOF" may be replaced by any string. Backslashes have no
-special meaning while reading a here-document.
+here-document. That is: if the "<filename" is replaced by "<<EOF", all
+following lines in the script up to a terminating line consisting only
+of "EOF" will be read, placed in a temporary file, and that file fed
+to the command and afterwards deleted.  "EOF" may be replaced by any
+string. Backslashes have no special meaning while reading a
+here-document.
 
 Scripts may have comments.  Any line beginning with a "#" is
 ignored. If a line has a trailing portion that begins with one or more
@@ -7675,9 +7676,9 @@ the quick-start example.
 
 Scripts may call other scripts to arbitrary depth.
 
-When running a script interactively, you can abort it by typing Ctl-C 
-and return to the top-level prompt. The abort flag is checked after each
-script line is executed.
+When running a script interactively, you can abort it by typing Ctl-C
+and return to the top-level prompt. The abort flag is checked after
+each script line is executed.
 `)
 }
 
