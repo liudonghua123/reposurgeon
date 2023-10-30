@@ -968,25 +968,29 @@ func (rs *Reposurgeon) DoAssign(line string) bool {
 		}
 		return false
 	}
-	name := strings.TrimSpace(parse.line)
-	for key := range repo.assignments {
-		if key == name {
-			croak("%s has already been set", name)
+	if len(parse.args) > 1 {
+		croak("too many arguments in assign command")
+	} else if len(parse.args) == 1 {
+		name := strings.TrimSpace(parse.args[0])
+		for key := range repo.assignments {
+			if key == name {
+				croak("%s has already been set", name)
+				return false
+			}
+		}
+		if repo.named(name).isDefined() {
+			croak("%s conflicts with a branch, tag, legacy-ID, date, or previous assignment", name)
 			return false
-		}
-	}
-	if repo.named(name).isDefined() {
-		croak("%s conflicts with a branch, tag, legacy-ID, date, or previous assignment", name)
-		return false
-	} else if parse.options.Contains("--singleton") && rs.selection.Size() != 1 {
-		croak("a singleton selection was required here")
-		return false
-	} else {
-		if repo.assignments == nil {
-			repo.assignments = make(map[string]selectionSet)
-		}
-		repo.assignments[name] = rs.selection
+		} else if parse.options.Contains("--singleton") && rs.selection.Size() != 1 {
+			croak("a singleton selection was required here")
+			return false
+		} else {
+			if repo.assignments == nil {
+				repo.assignments = make(map[string]selectionSet)
+			}
+			repo.assignments[name] = rs.selection
 
+		}
 	}
 	return false
 }
@@ -1016,9 +1020,15 @@ func (rs *Reposurgeon) CompleteUnassign(text string) []string {
 
 // DoUnassign is the handler for the "unassign" command.
 func (rs *Reposurgeon) DoUnassign(line string) bool {
-	rs.newLineParse(line, "unassign", parseREPO|parseNOSELECT, nil)
+	parse := rs.newLineParse(line, "unassign", parseREPO|parseNOSELECT, nil)
 	repo := rs.chosen()
-	name := strings.TrimSpace(line)
+	if len(parse.args) == 0 {
+		croak("unassign requires a name arguent")
+		return false
+	} else if len(parse.args) > 1 {
+		croak("too many arguments in unassign command")
+	}
+	name := strings.TrimSpace(parse.args[0])
 	if _, ok := repo.assignments[name]; ok {
 		delete(repo.assignments, name)
 	} else {
