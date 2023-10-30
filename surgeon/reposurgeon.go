@@ -7638,9 +7638,9 @@ func (rs *Reposurgeon) HelpPrint() {
 	rs.helpOutput(`
 print [TEXT...] [>OUTFILE]
 
-Ship a literal string to the terminal. All text on the command line,
-including whitespace, is sent.  Intended for scripting regression
-tests.
+Ship a literal string to the terminal. All tokens on the command line
+(which may be double-quoted strings containing whitespace) are joined
+by spaces and shipped.  Intended for scripting regression tests.
 `)
 }
 
@@ -7648,7 +7648,7 @@ tests.
 func (rs *Reposurgeon) DoPrint(line string) bool {
 	parse := rs.newLineParse(line, "print", parseNOSELECT, []string{"stdout"})
 	defer parse.Closem()
-	fmt.Fprintf(parse.stdout, "%s\n", parse.line)
+	fmt.Fprintf(parse.stdout, "%s\n", strings.Join(parse.args, " "))
 	return false
 }
 

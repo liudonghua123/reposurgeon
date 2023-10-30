@@ -90,12 +90,12 @@ from :10
 M 100644 :11 .README
 
 EOF
-print Initially no sourcetype is set, so =N should be empty
+print "Initially no sourcetype is set, so =N should be empty"
 set interactive
 =N resolve
 sourcetype cvs
-print Expect 2 CVS results
+print "Expect 2 CVS results"
 =N list
 sourcetype svn
-print Expect 4 SVN results
+print "Expect 4 SVN results"
 =N list

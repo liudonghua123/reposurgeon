@@ -1,27 +1,27 @@
 set faketime
 read <simple.fi
 set interactive
-print Test that we can define and see macro definitions
+print "Test that we can define and see macro definitions"
 Test that we can define and see macro definitions
 define fubar list
 define
 reposurgeon: define fubar list
 
-print Test that invoking the macro produces output
+print "Test that invoking the macro produces output"
 Test that invoking the macro produces output
 :49 do fubar
 list
     50 2010-10-26T09:02:25Z    :49 f8e0c0 Add and document a regression test.
-print Test that undefining the only macro removes it from the internal list
+print "Test that undefining the only macro removes it from the internal list"
 Test that undefining the only macro removes it from the internal list
 undefine fubar
 define
-print Test multiline macroexpansion
+print "Test multiline macroexpansion"
 Test multiline macroexpansion
 define fubaz {
 do fubaz :49
 :49 list
     50 2010-10-26T09:02:25Z    :49 f8e0c0 Add and document a regression test.
 undefine fubaz
-print Tests complete
+print "Tests complete"
 Tests complete

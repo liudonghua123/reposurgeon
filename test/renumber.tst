@@ -168,7 +168,7 @@ from :26
 
 EOF
 renumber
-print If there is not a commit :13 right after :12, something is busted
+print "If there is not a commit :13 right after :12, something is busted"
 write -
 
 
