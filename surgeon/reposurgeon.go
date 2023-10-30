@@ -3452,7 +3452,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 // HelpCoalesce says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCoalesce() {
 	rs.helpOutput(`
-[SELECTION] coalesce [--debug]
+[SELECTION] coalesce [--debug] [TIMEFUZZ]
 
 Scan the selection set (defaulting to all) for runs of commits with
 identical comments close to each other in time (this is a common form
@@ -3489,9 +3489,9 @@ func (rs *Reposurgeon) DoCoalesce(line string) bool {
 	repo := rs.chosen()
 	timefuzz := 90
 	changelog := parse.options.Contains("--changelog")
-	if parse.line != "" {
+	if len(parse.args) != 0 {
 		var err error
-		timefuzz, err = strconv.Atoi(parse.line)
+		timefuzz, err = strconv.Atoi(parse.args[0])
 		if err != nil {
 			croak("time-fuzz value must be an integer")
 			return false
