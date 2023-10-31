@@ -611,7 +611,7 @@ core
 			name:         "sccs",
 			subdirectory: "SCCS",
 			requires:     newStringSet("sccs", "rcs", "sccs2rcs", "cvs-fast-export"),
-			exporter:     "sccs2rcs && find RCS -name '*,v' -print | cvs-fast-export --reposurgeon && rm -fr RCS",
+			exporter:     "(sccs2rcs && find RCS -name '*,v' -print; rm -fr RCS) | cvs-fast-export --reposurgeon && rm -fr RCS",
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet("export-progress"),
 			extensions:   newOrderedStringSet(),
