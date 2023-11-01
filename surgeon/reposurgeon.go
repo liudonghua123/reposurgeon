@@ -238,7 +238,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		args:         make([]string, 0),
 	}
 
-	// Parse and process tokens and diuble0quoted strring
+	// Parse and process tokens and double-quoted string
 	// literals. The most general form of a token is aa"bb cc",
 	// that is " in a token toggles where or not whitespace is a
 	// token ender.  The special kind we want to catch this way
@@ -7347,7 +7347,7 @@ there is an option flag named "foo" you would write it as "--foo".
 Option flags can be anywhere on the line.  The order of option flags
 is never significant. When an option flag "foo" sets a value, the
 syntax is --foo=xxx with no spaces around the equal sign.  The
-argument may be a double-quoted string containg whitespace.
+value part may be a double-quoted string containg whitespace.
 
 The embedded help for some commands tells you that they interpret
 C/Go style backslash escapes like \n in arguments. Interpretation
@@ -7355,17 +7355,6 @@ uses Go's Quote/Unquote codec from the strconv library.  In
 such arguments you can, for example, get around having to include a
 literal # in an argument by writing "\x23".
  
-All commands that expect data to be presented on standard input
-support input redirection.  You may write "<myfile" to take input from
-the file named "myfile".  Redirections are parsed out early, before
-the command arguments proper are interpreted, and can be anywhere on
-the line
-
-Most commands that normally ship data to standard output accept
-output redirection.  As in the shell, you can write ">outfile" to
-send the command output to "outfile", and ">>outfile2" to append
-to outfile2.
-
 Some commands take following arguments that are regular
 expressions. In this context, they still require start and end
 delimiters as they do when used in a selection prefix, but if you
@@ -7390,11 +7379,19 @@ those will be stripped off and the result treated as a literal string.
 // HelpRedirection says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRedirection() {
 	rs.helpOutputMisc(`
-An optional command argument prefixed by "<" indicates that the
-command accepts input redirection; an optional argument prefixed by
-">" indicates that the command accepts output redirection. There must
-be whitespace before the "<" or ">" so that the command parser won't
-falsely match uses of these characters in regular expressions.
+All commands that expect data to be presented on standard input
+support input redirection.  You may write "<myfile" to take input from
+the file named "myfile".  Input redirections can be anywhere on
+the line.
+
+Most commands that normally ship data to standard output accept output
+redirection.  As in the shell, you can write ">outfile" to send the
+command output to "outfile", and ">>outfile2" to append to
+outfile2. Output redirections can be anywhere on the line.
+
+There must be whitespace before the "<"/">"/">>" so that the command
+parser won't falsely match uses of these characters in regular
+expressions.
 
 Commands that support output redirection can also be followed by a
 pipe bar and a normal Unix command.  For example, "list | more"
@@ -7411,13 +7408,12 @@ set the shell, falling back to /bin/sh.
 Beware that while the reposurgeon CLI mimics these simple shell
 features, many things you can do in a real shell won't work until the
 right-hand side of a pipe-bar output redirection, if there is one.
-String-quoting arguments will fail unless the specific, documented
-syntax of a command supports that.  You can't redirect standard error
-(but see the "log" command for a rough equivalent). And you
-can't pipe input from a shell command.
 
-In general you should avoid trying to get cute with the command parser.
-It's stupider than it looks.
+You can't redirect standard error (but see the "log" command for a
+rough equivalent). And you can't pipe input from a shell command.
+
+In general you should avoid trying to get cute with the redirection features.
+The command-line parser is promitive and easily confused.
 `)
 }
 
