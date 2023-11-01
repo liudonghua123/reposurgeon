@@ -349,21 +349,6 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 			lp.line = lp.line[:match[2]-2] + lp.line[match[3]:]
 		}
 	}
-	// strip excess whitespace
-	lp.line = strings.TrimSpace(lp.line)
-	// Dash redirection
-	if !lp.redirected && lp.line == "-" {
-		if !caps["stdout"] && !caps["stdin"] {
-			panic(throw("command", "no support for - redirection in "+name))
-		} else {
-			lp.line = ""
-			lp.redirected = true
-		}
-	}
-
-	if len(lp.line) > 0 && (parseflags&parseNEEDREDIRECT) != 0 {
-		panic(throw("command", name+" command does not take a filename argument - use redirection instead"))
-	}
 
 	// Parse (possibly double-quoted) tokens
 	argline := lp.line + " "
@@ -384,7 +369,19 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 			}
 		case 1: // bare token
 			if unicode.IsSpace(r) {
-				//fmt.Printf("string gather %s: %s\n", tok, argline)
+				// Token special handling goes here
+
+				// Dash redirection
+				if !lp.redirected && tok == `-` {
+					if !caps["stdout"] && !caps["stdin"] {
+						panic(throw("command", "no support for - redirection in "+name))
+					} else {
+						lp.redirected = true
+						continue
+					}
+				}
+
+				// Fell through specials, just add token to argument list
 				lp.args = append(lp.args, tok)
 				state = 0
 			} else if string(r) == `"` {
@@ -394,7 +391,6 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 			}
 		case 2: // string literal
 			if string(r) == `"` {
-				//fmt.Printf("string gather %s: '%s'\n", tok, argline)
 				lp.args = append(lp.args, tok)
 				state = 3
 			} else {
@@ -412,6 +408,9 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 
 	if state > 1 {
 		panic(throw("command", name+" command has unbalanced quotes"))
+	}
+	if len(lp.args) > 0 && (parseflags&parseNEEDREDIRECT) != 0 {
+		panic(throw("command", name+" command does not take a filename argument - use redirection instead"))
 	}
 	if (len(lp.args) > 0) && (parseflags&parseNOARGS) != 0 {
 		panic(throw("command", name+" command does not take arguments"))
