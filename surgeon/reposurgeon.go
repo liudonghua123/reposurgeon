@@ -238,51 +238,6 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		args:         make([]string, 0),
 	}
 
-	var err error
-	if (parseflags & parseNOREDIRECT) == 0 {
-		// Output redirection
-		match := regexp.MustCompile("(>>?)([^ ]+)").FindStringSubmatchIndex(lp.line)
-		if match != nil {
-			if !caps["stdout"] {
-				panic(throw("command", "no support for > redirection"))
-			}
-			lp.outfile = lp.line[match[2*2+0]:match[2*2+1]]
-			if lp.outfile != "" && lp.outfile != "-" {
-				info, err := os.Stat(lp.outfile)
-				if err == nil {
-					if info.Mode().IsDir() {
-						panic(throw("command", "can't redirect output to %s, which is a directory", lp.outfile))
-					}
-				}
-				// flush the outfile, if it happens to be a file
-				// that reposurgeon has already opened
-				mode := os.O_WRONLY
-				if match[2*1+1]-match[2*1+0] > 1 {
-					mode |= os.O_CREATE | os.O_APPEND
-				} else {
-					mode |= os.O_CREATE
-					// Unix delete doesn't nuke a file
-					// immediately, it (a) removes the
-					// directory reference, and (b)
-					// schedules the file for actual
-					// deletion on it when the last file
-					// descriptor open to it is closed.
-					// Thus, by deleting the file if it
-					// already exists we ensure that any
-					// seekstreams pointing to it will
-					// continue to get valid data.
-					os.Remove(lp.outfile)
-				}
-				lp.stdout, err = os.OpenFile(filepath.Clean(lp.outfile), mode, userReadWriteMode)
-				if err != nil {
-					panic(throw("command", "can't open %s for writing", lp.outfile))
-				}
-				lp.closem = append(lp.closem, lp.stdout)
-			}
-			lp.line = lp.line[:match[2*0+0]] + lp.line[match[2*0+1]:]
-			lp.redirected = true
-		}
-	}
 	// This collides with regexp alternation.  We require a whitespace character
 	// after the pipe bar and that it be either at BOL or have a preceding whitespace,
 	// which is a partial prevention.  This code looks a little weird because the command
@@ -319,7 +274,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 	}
 
 	// Parse and process tokens and diuble0quoted strring
-	// literals. The most general form of a token is aa"bb cc"dd,
+	// literals. The most general form of a token is aa"bb cc",
 	// that is " in a token toggles where or not whitespace is a
 	// token ender.  The special kind we wanto catch this way
 	// looks like --foo-"whim wham".
@@ -361,19 +316,64 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 				}
 
 				// Input redirection
-				// The reason for the > test is to prevent false matches
-				// on legacy IDs in singleton-selection literals.
-				if tok[0:1] == "<" && !strings.Contains(tok, ">") {
-					if !caps["stdin"] {
-						panic(throw("command", "no support for < redirection"))
-					}
-					lp.infile = tok[1:]
-					if lp.infile != "" && lp.infile != "-" {
-						lp.stdin, err = os.Open(filepath.Clean(lp.infile))
-						if err != nil {
-							panic(throw("command", "can't open %s for read", lp.infile))
+				if (parseflags & parseNOREDIRECT) == 0 {
+					var err error
+					// The reason for the > test is to prevent false matches
+					// on legacy IDs in singleton-selection literals.
+					if tok[0:1] == "<" && !strings.Contains(tok, ">") {
+						if !caps["stdin"] {
+							panic(throw("command", "no support for < redirection"))
 						}
-						lp.closem = append(lp.closem, lp.stdin)
+						lp.infile = tok[1:]
+						if lp.infile != "" && lp.infile != "-" {
+							lp.stdin, err = os.Open(filepath.Clean(lp.infile))
+							if err != nil {
+								panic(throw("command", "can't open %s for read", lp.infile))
+							}
+							lp.closem = append(lp.closem, lp.stdin)
+						}
+						lp.redirected = true
+						continue
+					}
+				}
+				// Output redirection
+				match := regexp.MustCompile("^(>>?)([^ ]+)").FindStringSubmatchIndex(tok)
+				if match != nil {
+					if !caps["stdout"] {
+						panic(throw("command", "no support for > redirection"))
+					}
+					lp.outfile = tok[match[2*2+0]:match[2*2+1]]
+					if lp.outfile != "" && lp.outfile != "-" {
+						info, err := os.Stat(lp.outfile)
+						if err == nil {
+							if info.Mode().IsDir() {
+								panic(throw("command", "can't redirect output to %s, which is a directory", lp.outfile))
+							}
+						}
+						// flush the outfile, if it happens to be a file
+						// that reposurgeon has already opened
+						mode := os.O_WRONLY
+						if match[2*1+1]-match[2*1+0] > 1 {
+							mode |= os.O_CREATE | os.O_APPEND
+						} else {
+							mode |= os.O_CREATE
+							// Unix delete doesn't nuke a file
+							// immediately, it (a) removes the
+							// directory reference, and (b)
+							// schedules the file for actual
+							// deletion on it when the last file
+							// descriptor open to it is closed.
+							// Thus, by deleting the file if it
+							// already exists we ensure that any
+							// seekstreams pointing to it will
+							// continue to get valid data.
+							os.Remove(lp.outfile)
+						}
+						lp.stdout, err = os.OpenFile(filepath.Clean(lp.outfile), mode, userReadWriteMode)
+						if err != nil {
+							panic(throw("command", "can't open %s for writing", lp.outfile))
+						}
+						lp.closem = append(lp.closem, lp.stdout)
 					}
 					lp.redirected = true
 					continue
