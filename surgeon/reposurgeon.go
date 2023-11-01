@@ -336,21 +336,12 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		}
 		lp.redirected = true
 	}
-	// Options - these are removed from the line before the command handler sees it
-	for true {
-		match := regexp.MustCompile(`--([^" ]+="[^"]+")`).FindStringSubmatchIndex(lp.line)
-		if match == nil {
-			match = regexp.MustCompile(`--([^ ]+)`).FindStringSubmatchIndex(lp.line)
-		}
-		if match == nil {
-			break
-		} else {
-			lp.options = append(lp.options, lp.line[match[2]-2:match[3]])
-			lp.line = lp.line[:match[2]-2] + lp.line[match[3]:]
-		}
-	}
 
-	// Parse (possibly double-quoted) tokens
+	// Parse and process tokens and diuble0quoted strring
+	// literals. The most general form of a token is aa"bb cc"dd,
+	// that is " in a token toggles where or not whitespace is a
+	// token ender.  The special kind we wanto catch this way
+	// looks like --foo-"whim wham".
 	argline := lp.line + " "
 	state := 0
 	var tok string
@@ -370,6 +361,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		case 1: // bare token
 			if unicode.IsSpace(r) {
 				// Token special handling goes here
+				state = 0
 
 				// Dash redirection
 				if !lp.redirected && tok == `-` {
@@ -381,9 +373,14 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 					}
 				}
 
+				// Options
+				if strings.HasPrefix(tok, "--") {
+					lp.options = append(lp.options, tok)
+					continue
+				}
+
 				// Fell through specials, just add token to argument list
 				lp.args = append(lp.args, tok)
-				state = 0
 			} else if string(r) == `"` {
 				state = 2
 			} else {
@@ -391,6 +388,14 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 			}
 		case 2: // string literal
 			if string(r) == `"` {
+				// Options with quted arguments.
+				// Ugh, this is kind of a kludge.
+				if strings.HasPrefix(tok, "--") {
+					lp.options = append(lp.options, tok)
+					state = 0
+					continue
+				}
+
 				lp.args = append(lp.args, tok)
 				state = 3
 			} else {
@@ -7344,11 +7349,10 @@ embed whitespace in a pathname or text string.
 
 Some commands support option flags.  These are led with a --, so if
 there is an option flag named "foo" you would write it as "--foo".
-Option flags are parsed out of the command line before any other
-interpretation is performed, and can be anywhere on the line.  The
-order of option flags is never significant. When an option flag "foo"
-sets a value, the syntax is --foo=xxx with no spaces around the equal
-sign.  The argument may be a double-quotee string containg whitespace.
+Option flags can be anywhere on the line.  The order of option flags
+is never significant. When an option flag "foo" sets a value, the
+syntax is --foo=xxx with no spaces around the equal sign.  The
+argument may be a double-quoted string containg whitespace.
 
 The embedded help for some commands tells you that they interpret
 C/Go style backslash escapes like \n in arguments. Interpretation
