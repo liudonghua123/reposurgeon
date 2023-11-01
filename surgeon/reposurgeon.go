@@ -400,6 +400,65 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		lp.args = append(lp.args, tok)
 	}
 
+	// Parse (possibly double-quoted) tokens
+	argline = lp.line + " "
+	state := 0
+	var tok string
+	altTokens := make([]string, 0)
+	for _, r := range argline {
+		switch state {
+		case 0: // initial state
+			if unicode.IsSpace(rune(r)) {
+				continue
+			}
+			if string(r) == `"` {
+				tok = ""
+				state = 2
+			} else {
+				tok = string(r)
+				state = 1
+			}
+		case 1: // bare token
+			if unicode.IsSpace(r) {
+				//fmt.Printf("string gather %s: %s\n", tok, argline)
+				altTokens = append(altTokens, tok)
+				state = 0
+			} else if string(r) == `"` {
+				state = 2
+			} else {
+				tok += string(r)
+			}
+		case 2: // string literal
+			if string(r) == `"` {
+				//fmt.Printf("string gather %s: '%s'\n", tok, argline)
+				altTokens = append(altTokens, tok)
+				state = 3
+			} else {
+				tok += string(r)
+			}
+		case 3: // end of string literal
+			if unicode.IsSpace(r) {
+				state = 0
+			} else {
+				tok += string(r)
+				state = 1
+			}
+		}
+	}
+
+	unequal := len(altTokens) != len(lp.args)
+	if !unequal {
+		for i := range lp.args {
+			if lp.args[i] != altTokens[i] {
+				unequal = true
+				break
+			}
+		}
+	}
+	if unequal {
+		croak("parse failure on '%s': %v != %v", line, lp.args, altTokens)
+	}
+
 	if (len(lp.args) > 0) && (parseflags&parseNOARGS) != 0 {
 		panic(throw("command", name+" command does not take arguments"))
 	}
