@@ -365,46 +365,10 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		panic(throw("command", name+" command does not take a filename argument - use redirection instead"))
 	}
 
-	// Grab a whitespace-delimited token from the front of the line.
-	// Interpret double quotes to protect spaces.
-	popToken := func(line string) (string, string) {
-		tok := ""
-		line = strings.TrimLeftFunc(line, unicode.IsSpace)
-		inQuotes := false
-		for pos, r := range line {
-			if !inQuotes && unicode.IsSpace(r) {
-				line = strings.TrimLeftFunc(line[pos:], unicode.IsSpace)
-				return tok, line
-			}
-			s := string(r)
-			if s == `"` {
-				inQuotes = !inQuotes
-			} else {
-				tok += s
-			}
-		}
-		if inQuotes {
-			panic(throw("command", name+" command has unbalanced quotes"))
-		}
-		return tok, ""
-	}
-
 	// Parse (possibly double-quoted) tokens
-	argline := lp.line
-	for true {
-		var tok string
-		tok, argline = popToken(argline)
-		if tok == "" {
-			break
-		}
-		lp.args = append(lp.args, tok)
-	}
-
-	// Parse (possibly double-quoted) tokens
-	argline = lp.line + " "
+	argline := lp.line + " "
 	state := 0
 	var tok string
-	altTokens := make([]string, 0)
 	for _, r := range argline {
 		switch state {
 		case 0: // initial state
@@ -421,7 +385,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		case 1: // bare token
 			if unicode.IsSpace(r) {
 				//fmt.Printf("string gather %s: %s\n", tok, argline)
-				altTokens = append(altTokens, tok)
+				lp.args = append(lp.args, tok)
 				state = 0
 			} else if string(r) == `"` {
 				state = 2
@@ -431,7 +395,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		case 2: // string literal
 			if string(r) == `"` {
 				//fmt.Printf("string gather %s: '%s'\n", tok, argline)
-				altTokens = append(altTokens, tok)
+				lp.args = append(lp.args, tok)
 				state = 3
 			} else {
 				tok += string(r)
@@ -446,19 +410,9 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		}
 	}
 
-	unequal := len(altTokens) != len(lp.args)
-	if !unequal {
-		for i := range lp.args {
-			if lp.args[i] != altTokens[i] {
-				unequal = true
-				break
-			}
-		}
+	if state > 1 {
+		panic(throw("command", name+" command has unbalanced quotes"))
 	}
-	if unequal {
-		croak("parse failure on '%s': %v != %v", line, lp.args, altTokens)
-	}
-
 	if (len(lp.args) > 0) && (parseflags&parseNOARGS) != 0 {
 		panic(throw("command", name+" command does not take arguments"))
 	}
