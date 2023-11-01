@@ -240,27 +240,8 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 
 	var err error
 	if (parseflags & parseNOREDIRECT) == 0 {
-		// Input redirection
-		// The reason for the < in the regexp is to prevent false matches
-		// on legacy IDs in singleton-selection literals.
-		match := regexp.MustCompile("<[^> ]+ ").FindStringIndex(lp.line + " ")
-		if match != nil {
-			if !caps["stdin"] {
-				panic(throw("command", "no support for < redirection"))
-			}
-			lp.infile = lp.line[match[0]+1 : match[1]-1]
-			if lp.infile != "" && lp.infile != "-" {
-				lp.stdin, err = os.Open(filepath.Clean(lp.infile))
-				if err != nil {
-					panic(throw("command", "can't open %s for read", lp.infile))
-				}
-				lp.closem = append(lp.closem, lp.stdin)
-			}
-			lp.line = lp.line[:match[0]] + lp.line[match[1]-1:]
-			lp.redirected = true
-		}
 		// Output redirection
-		match = regexp.MustCompile("(>>?)([^ ]+)").FindStringSubmatchIndex(lp.line)
+		match := regexp.MustCompile("(>>?)([^ ]+)").FindStringSubmatchIndex(lp.line)
 		if match != nil {
 			if !caps["stdout"] {
 				panic(throw("command", "no support for > redirection"))
@@ -376,6 +357,25 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 				// Options
 				if strings.HasPrefix(tok, "--") {
 					lp.options = append(lp.options, tok)
+					continue
+				}
+
+				// Input redirection
+				// The reason for the > test is to prevent false matches
+				// on legacy IDs in singleton-selection literals.
+				if tok[0:1] == "<" && !strings.Contains(tok, ">") {
+					if !caps["stdin"] {
+						panic(throw("command", "no support for < redirection"))
+					}
+					lp.infile = tok[1:]
+					if lp.infile != "" && lp.infile != "-" {
+						lp.stdin, err = os.Open(filepath.Clean(lp.infile))
+						if err != nil {
+							panic(throw("command", "can't open %s for read", lp.infile))
+						}
+						lp.closem = append(lp.closem, lp.stdin)
+					}
+					lp.redirected = true
 					continue
 				}
 
