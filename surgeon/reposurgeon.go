@@ -5236,7 +5236,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		}
 		sourcepattern := parse.args[1]
 
-		var shouldDelete func(string) bool
+		// Can't use getPattern here because we need to add the branch prefix.
 		sourcepattern, isRe := delimitedRegexp(sourcepattern)
 		if !isRe {
 			sourcepattern = "^" + regexp.QuoteMeta(addBranchPrefix(sourcepattern)) + "$"
@@ -5246,7 +5246,7 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			croak("in branch command: %v", err)
 			return false
 		}
-		shouldDelete = func(branch string) bool {
+		shouldDelete := func(branch string) bool {
 			return branchRE.MatchString(branch) == !parse.options.Contains("--not")
 		}
 		before := len(repo.branchset())
