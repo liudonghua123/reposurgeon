@@ -238,50 +238,15 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		args:         make([]string, 0),
 	}
 
-	// This collides with regexp alternation.  We require a whitespace character
-	// after the pipe bar and that it be either at BOL or have a preceding whitespace,
-	// which is a partial prevention.  This code looks a little weird because the command
-	// verb and following whitespace have already been popped off when lp.line gets here,
-	// so the pipe bar can in fact be at index zero.
-	pipeIndex := strings.Index(lp.line, "|")
-	isspace := func(b byte) bool { return b == ' ' }
-	if pipeIndex != -1 && len(lp.line) > 2 && (pipeIndex == 0 || isspace(lp.line[pipeIndex-1])) && isspace(lp.line[pipeIndex+1]) {
-		if !caps["stdout"] {
-			panic(throw("command", "no support for | redirection in "+name))
-		}
-		cmd := strings.TrimSpace(lp.line[pipeIndex+1:])
-		shell := os.Getenv("SHELL")
-		if shell == "" {
-			shell = "/bin/sh"
-		}
-		// #nosec
-		lp.proc = exec.Command(shell)
-		lp.proc.Args = append(lp.proc.Args, "-c")
-		lp.proc.Args = append(lp.proc.Args, cmd)
-		var err error
-		lp.stdout, err = lp.proc.StdinPipe()
-		if err != nil {
-			panic(throw("command", fmt.Sprintf("can't pipe to %q, error %v", cmd, err)))
-		}
-		lp.proc.Stdout = control.baton
-		lp.proc.Stderr = control.baton
-		lp.closem = append(lp.closem, lp.stdout)
-		err = lp.proc.Start()
-		if err != nil {
-			panic(throw("command", fmt.Sprintf("can't run %q, error %v", cmd, err)))
-		}
-		lp.redirected = true
-	}
-
 	// Parse and process tokens and diuble0quoted strring
 	// literals. The most general form of a token is aa"bb cc",
 	// that is " in a token toggles where or not whitespace is a
-	// token ender.  The special kind we wanto catch this way
+	// token ender.  The special kind we want to catch this way
 	// looks like --foo-"whim wham".
 	argline := lp.line + " "
 	state := 0
 	var tok string
-	for _, r := range argline {
+	for idx, r := range argline {
 		switch state {
 		case 0: // initial state
 			if unicode.IsSpace(rune(r)) {
@@ -378,6 +343,35 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 					lp.redirected = true
 					continue
 				}
+				//  Pipe to command
+				if tok == "|" {
+					if !caps["stdout"] {
+						panic(throw("command", "no support for | redirection in "+name))
+					}
+					cmd := strings.TrimSpace(argline[idx+1:])
+					shell := os.Getenv("SHELL")
+					if shell == "" {
+						shell = "/bin/sh"
+					}
+					// #nosec
+					lp.proc = exec.Command(shell)
+					lp.proc.Args = append(lp.proc.Args, "-c")
+					lp.proc.Args = append(lp.proc.Args, cmd)
+					var err error
+					lp.stdout, err = lp.proc.StdinPipe()
+					if err != nil {
+						panic(throw("command", fmt.Sprintf("can't pipe to %q, error %v", cmd, err)))
+					}
+					lp.proc.Stdout = control.baton
+					lp.proc.Stderr = control.baton
+					lp.closem = append(lp.closem, lp.stdout)
+					err = lp.proc.Start()
+					if err != nil {
+						panic(throw("command", fmt.Sprintf("can't run %q, error %v", cmd, err)))
+					}
+					lp.redirected = true
+					goto skipout
+				}
 
 				// Fell through specials, just add token to argument list
 				lp.args = append(lp.args, tok)
@@ -410,6 +404,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 			}
 		}
 	}
+skipout:
 
 	if state > 1 {
 		panic(throw("command", name+" command has unbalanced quotes"))
