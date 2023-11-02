@@ -2927,7 +2927,6 @@ type filterCommand struct {
 	repo       *Repository
 	filtercmd  string
 	sub        func(string) string
-	regexp     *regexp.Regexp
 	attributes orderedStringSet
 }
 
@@ -2998,25 +2997,24 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 			}
 			if strings.HasPrefix(filtercmd, "regex") {
 				pattern := parts[1]
-				var err error
-				fc.regexp, err = regexp.Compile(pattern)
+				mregexp, err := regexp.Compile(pattern)
 				if err != nil {
 					croak("filter compilation error: %v", err)
 					return nil
 				}
 				fc.sub = func(s string) string {
 					if subcount == -1 {
-						return GoReplacer(fc.regexp, s, parts[2])
+						return GoReplacer(mregexp, s, parts[2])
 					}
 					replacecount := subcount
 					replacer := func(s string) string {
 						replacecount--
 						if replacecount > -1 {
-							return GoReplacer(fc.regexp, s, parts[2])
+							return GoReplacer(mregexp, s, parts[2])
 						}
 						return s
 					}
-					return fc.regexp.ReplaceAllStringFunc(s, replacer)
+					return mregexp.ReplaceAllStringFunc(s, replacer)
 				}
 			} else if strings.HasPrefix(filtercmd, "replace") {
 				fc.sub = func(s string) string {
