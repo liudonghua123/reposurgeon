@@ -2736,11 +2736,12 @@ contents of repository metadata. Takes a selection set; members of the
 set other than commits, annotated tags, and passthroughs are ignored
 (that is, presently, blobs and resets).
 
-May have an option --filter, followed by a pattern expression.  If this
-is given, only headers with names matching it are emitted.  In this
-control the name of the header includes its trailing colon.  The value
-of the option must be a pattern expression. See "help regexp"
-for information on the regexp syntax.
+May have an option --filter, followed by a pattern expression
+(unachored matching).  If this is given, only headers with names
+matching it are emitted.  In this control the name of the header
+includes its trailing colon.  The value of the option must be a
+pattern expression and is anchored. See "help regexp" for information
+on the regexp syntax.
 
 Blobs may be included in the output with the option --blobs.
 
@@ -2869,6 +2870,10 @@ Run blobs, commit comments and committer/author names, or tag comments
 and tag committer names in the selection set through the filter
 specified on the command line.
 
+This command is an exception to the normal rules for parsing
+command arguments; double-quoting arguments will not have the expected 
+result.
+
 With any verb other than dedos, attempting to specify a selection
 set including both blobs and non-blobs (that is, commits or tags)
 throws an error. Inline content in commits is filtered when the
@@ -2884,19 +2889,19 @@ shell command. Each blob or comment is presented to the filter on
 standard input; the content is replaced with whatever the filter emits
 to standard output.
 
-With the verb regex, the remainder of the line is expected to be a Go regular
-expression substitution written as /from/to/ with Go-style backslash
-escapes interpreted in 'to' as well as 'from'.  Python-style
-backreferences (\1, \2 etc.) rather than Go-style $1, $2...  are
-interpreted; this avoids a conflict with parameter substitution in
-script commands. Any non-space character will work as a delimiter in
-place of the /; this makes it easier to use / in patterns. Ordinarily
-only the first such substitution is performed; putting 'g' after the
-slash replaces globally, and a numeric literal gives the maximum
-number of substitutions to perform. Other flags available restrict
-substitution scope - 'c' for comment text only, 'C' for committer name
-only, 'a' for author names only. See "help regexp" for more information
-about regular expressions.
+With the verb regex, the remainder of the line is expected to be a Go
+regular expression substitution written as /from/to/ with Go-style
+backslash escapes interpreted in 'to' as well as 'from'. Matching is
+unanchored. Python-style backreferences (\1, \2 etc.) rather than
+Go-style $1, $2...  are interpreted; this avoids a conflict with
+parameter substitution in script commands. Any punctuation character
+will work as a delimiter in place of the /; this makes it easier to
+use / in patterns. Ordinarily only the first such substitution is
+performed; putting 'g' after the slash replaces globally, and a
+numeric literal gives the maximum number of substitutions to
+perform. Other flags available restrict substitution scope - 'c' for
+comment text only, 'C' for committer name only, 'a' for author names
+only.
 
 With the verb replace, the behavior is like regexp but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
@@ -3030,9 +3035,6 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 			out := strings.Replace(s, "\r\n", "\n", -1)
 			return out
 		}
-	} else {
-		croak("missing required command verb")
-		return nil
 	}
 	return fc
 }
@@ -4174,9 +4176,10 @@ func (rs *Reposurgeon) HelpExpunge() {
 
 Expunge files from the selected portion of the repo history; the
 default is the entire history.  The argument to this command is a
-pattern expression matching paths. If the pattern is enclosed by
-double quotes it may contain spaces; the double quotes are stripped
-off before it is interpreted as a delimited regexp or literal string.
+pattern expression matching paths (anchored match). If the pattern is
+enclosed by double quotes it may contain spaces; the double quotes are
+stripped off before it is interpreted as a delimited regexp or literal
+string.
 
 The option --not inverts this; all file paths other than those
 selected by the remaining arguments to be expunged.  You may use
@@ -4574,13 +4577,14 @@ func (rs *Reposurgeon) HelpPath() {
 With the verb "list", list all paths touched by fileops in the selection
 set (which defaults to the entire repo). This command does > redirection.
 
-With the verb "rename", rename a path in every fileop of every selected
-commit.  The default selection set is all commits. The first argument is
-interpreted as a pattern expression to match against paths; the second may
-contain back-reference syntax (\1 etc.). See "help regexp" for more
-information about regular expressions.  If PATTERN or TARGET are wrapped
-by double quotes they may contain whitespace; the quotes are stripped 
-before futher interprepretation as a delimited regexp or literal string.
+With the verb "rename", rename a path in every fileop of every
+selected commit.  The default selection set is all commits. The first
+argument is interpreted as a pattern expression to match against paths
+(matching is anchored); the second may contain back-reference syntax
+(\1 etc.). See "help regexp" for more information about regular
+expressions.  If PATTERN or TARGET are wrapped by double quotes they
+may contain whitespace; the quotes are stripped before further
+interprepretation as a delimited regexp or literal string.
 
 Ordinarily, if the target path already exists in the fileops, or is visible
 in the ancestry of the commit, this command throws an error.  With the
@@ -4658,13 +4662,13 @@ func (rs *Reposurgeon) HelpManifest() {
 [SELECTION] manifest [PATTERN] [>OUTFILE]
 
 Print commit path lists. Takes an optional selection set argument
-defaulting to all commits, and an optional pattern expression. For
-each commit in the selection set, print the mapping of all paths
-in that commit tree to the corresponding blob marks, mirroring what
-files would be created in a checkout of the commit. If a regular
-expression is given, only print "path -> mark" lines for paths
-matching it. See "help regexp" for more information about regular
-expressions.
+defaulting to all commits, and an optional pattern expression (with
+anchored matching). For each commit in the selection set, print the
+mapping of all paths in that commit tree to the corresponding blob
+marks, mirroring what files would be created in a checkout of the
+commit. If a regular expression is given, only print "path -> mark"
+lines for paths matching it. See "help regexp" for more information
+about regular expressions.
 `)
 }
 
@@ -5082,9 +5086,10 @@ func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
 branch {rename|delete} BRANCH-PATTERN [--not] [NEW-NAME]
 
-Rename or delete matching branches. BRANCH-PATTERN can be a string or a
-delimited regexp. If it is a string, it should be full reference name
-like "refs/heads/master".  The string should not be quoted.
+Rename or delete matching branches. BRANCH-PATTERN can be a string or
+a delimited regexp (with unanchored matching). If it is a string, it
+should be full reference name like "refs/heads/master".  The string
+should not be quoted.
 
 The command also operates on any associated annotated tags and resets. Git
 lightweight tag here is simply a branch in the tags/ namespace.
@@ -5275,9 +5280,9 @@ commit if there are no tags).  The tagger, committish, and comment
 fields are copied from the commit's committer, mark, and comment
 fields.
 
-Otherwise, the TAG-PATTERN argument is a pattern expression matching
-a set of tags.  The subcommand must be one of the verbs 'move',
-'rename', or 'delete'.
+Otherwise, the TAG-PATTERN argument is a pattern expression matching a
+set of tags (unanchored matching).  The subcommand must be one of the
+verbs 'move', 'rename', or 'delete'.
 
 For a 'move', a second argument must be a singleton selection set. For
 a 'rename', the third argument may be any token that is a syntactically
@@ -5477,9 +5482,10 @@ reset, takes as a first argument the name of the reset (which must not
 exist), and ends with the keyword create. In this case the name must be 
 fully qualified, with a refs/heads/ or refs/tags/ prefix.
 
-In the other modes, the RESET-PATTERN finds by text match existing resets 
-within the selection.  If RESET-PATTERN is a delimited regexp, the match is
-to the regexp (--not inverts this, selecting all non-matching resets). 
+In the other modes, the RESET-PATTERN finds by text match existing
+resets within the selection.  If RESET-PATTERN is a delimited regexp,
+the match is to the regexp (unanchored matching); --not inverts this,
+selecting all non-matching resets.
 
 If RESET-PATTERN is a text literal, each reset's name is matched if 
 RESET-PATTERN is either the entire reference (refs/heads/FOO or refs/tags/FOO
@@ -6938,11 +6944,11 @@ func (rs *Reposurgeon) HelpChangelogs() {
 
 Mine ChangeLog files for authorship data.
 
-Takes a selection set.  If no set is specified, process all changelogs.
-An optional following argument is a pattern expression to match the 
-basename of files that should be treated as changelogs; the default
-is "/^ChangeLog$/". See "help regexp" for more information about
-regular expressions.
+Takes a selection set.  If no set is specified, process all
+changelogs.  An optional following argument is a pattern expression to
+match the basename of files that should be treated as changelogs; the
+default is "/^ChangeLog$/". The match is unanchored. See "help regexp"
+for more information about regular expressions.
 
 This command assumes that changelogs are in the format used by FSF
 projects: entry header lines begin with YYYY-MM-DD and are followed by
@@ -6971,8 +6977,12 @@ by this command, false otherwise.
 
 // DoChangelogs mines repository changelogs for authorship data.
 func (rs *Reposurgeon) DoChangelogs(line string) bool {
-	rs.newLineParse(line, "changelogs", parseALLREPO, nil)
-	ok, cm, cc, cd, cl := rs.chosen().processChangelogs(rs.selection, line, control.baton)
+	parse := rs.newLineParse(line, "changelogs", parseALLREPO, nil)
+	pattern := ""
+	if len(parse.args) > 0 {
+		pattern = parse.args[0]
+	}
+	ok, cm, cc, cd, cl := rs.chosen().processChangelogs(rs.selection, pattern, control.baton)
 	if ok {
 		respond("fills %d of %d authorships, changing %d, from %d ChangeLogs.", cm, cc, cd, cl)
 	}
@@ -7481,10 +7491,14 @@ entire match.
 
 Pattern expressions following the command verb may not contain literal
 whitespace; use \s or \t if you need to. Event-selection
-regexps may contain literal whitespace.
+regexps (before the command) may contain literal whitespace.
 
-Regular expressions are not anchored.  Use ^ and $ to anchor them
-to the beginning or end of the search space, when appropriate.
+Some regular expressions, notably those for things like pathnames, are
+anchored; that is, they must match the emtirety of their target rather
+than just some substring of it. When a regular expression is not
+anchored, you can use ^ and $ to anchor it to the beginning or end of
+the search space. The command help will tell you whether or not an
+anchored match is required.
 
 Some commands support regular expression flags, and some even add
 additional flags over the standard set. The documentation for each
