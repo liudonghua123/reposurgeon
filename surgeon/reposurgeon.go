@@ -2952,18 +2952,28 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 	fc.attributes = newOrderedStringSet()
 	// Must not use LineParse here as it would try to strip options
 	// in shell commands.
+	fields := strings.SplitN(filtercmd, " ", 2)
+	if len(fields) == 0 {
+		croak("command required a subcommand verb")
+	}
+	verb := fields[0]
 	flagRe := regexp.MustCompile(`[0-9]*g?`)
-	if strings.HasPrefix(filtercmd, "shell") {
-		fc.filtercmd = strings.TrimSpace(filtercmd[5:])
-		fc.attributes = newOrderedStringSet("c", "a", "C")
-	} else if strings.HasPrefix(filtercmd, "regex") || strings.HasPrefix(filtercmd, "replace") {
-		firstspace := strings.Index(filtercmd, " ")
-		if firstspace == -1 {
-			croak("missing filter specification")
-			return nil
+	if verb == "dedos" {
+		if len(fc.attributes) == 0 {
+			fc.attributes = newOrderedStringSet("c", "a", "C")
 		}
-		stripped := strings.TrimSpace(filtercmd[firstspace:])
-		parts := strings.Split(stripped, stripped[0:1])
+		fc.sub = func(s string) string {
+			out := strings.Replace(s, "\r\n", "\n", -1)
+			return out
+		}
+		return fc
+	}
+	command := strings.TrimSpace(fields[1])
+	if verb == "shell" {
+		fc.filtercmd = command
+		fc.attributes = newOrderedStringSet("c", "a", "C")
+	} else if verb == "regex" || verb == "replace" {
+		parts := strings.Split(command, command[0:1])
 		subflags := parts[len(parts)-1]
 		if len(parts) != 4 {
 			croak("malformed filter specification")
@@ -2991,7 +3001,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 			if len(fc.attributes) == 0 {
 				fc.attributes = newOrderedStringSet("c", "a", "C")
 			}
-			if strings.HasPrefix(filtercmd, "regex") {
+			if verb == "regex" {
 				pattern := parts[1]
 				mregexp, err := regexp.Compile(pattern)
 				if err != nil {
@@ -3012,7 +3022,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 					}
 					return mregexp.ReplaceAllStringFunc(s, replacer)
 				}
-			} else if strings.HasPrefix(filtercmd, "replace") {
+			} else if verb == "replace" {
 				fc.sub = func(s string) string {
 					return strings.Replace(s, parts[1], parts[2], subcount)
 				}
@@ -3020,14 +3030,6 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 				croak("unexpected verb in filter command")
 				return nil
 			}
-		}
-	} else if strings.HasPrefix(filtercmd, "dedos") {
-		if len(fc.attributes) == 0 {
-			fc.attributes = newOrderedStringSet("c", "a", "C")
-		}
-		fc.sub = func(s string) string {
-			out := strings.Replace(s, "\r\n", "\n", -1)
-			return out
 		}
 	}
 	return fc
