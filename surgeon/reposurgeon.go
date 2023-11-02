@@ -425,13 +425,9 @@ func (lp *LineParse) OptVal(opt string) (val string, present bool) {
 		if option == opt {
 			return "", true
 		} else if strings.HasPrefix(option, opt+"=") {
-			parts := strings.SplitN(option, "=", 3)
+			parts := strings.SplitN(option, "=", 2)
 			if len(parts) > 1 && parts[0] == opt {
 				val = parts[1]
-				// Cosmetic quote stripping for syntax uniformity.
-				if len(val) >= 3 && string(val[0]) == `"` && string(val[len(val)-1]) == `"` {
-					val = val[1 : len(val)-1]
-				}
 				return val, true
 			}
 			return "", true
