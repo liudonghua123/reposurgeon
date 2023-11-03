@@ -2877,7 +2877,7 @@ selection set contains (only) blobs and the commit is within the range
 bounded by the earliest and latest blob in the specification.
 
 When filtering blobs, if the command line contains the magic cookie
-'%PATHS%' it is replaced with a space-separated list of all paths
+'%PATHSo%' it is replaced with a space-separated list of all paths
 that reference the blob.
 
 With the verb shell, the remainder of the line specifies a filter as a
@@ -2921,8 +2921,7 @@ Some examples:
 
 type filterCommand struct {
 	repo       *Repository
-	filtercmd  string
-	sub        func(string) (string, error)
+	sub        func(string, map[string]string) (string, error)
 	attributes orderedStringSet
 }
 
@@ -2962,7 +2961,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 		if len(fc.attributes) == 0 {
 			fc.attributes = newOrderedStringSet("c", "a", "C")
 		}
-		fc.sub = func(s string) (string, error) {
+		fc.sub = func(s string, _ map[string]string) (string, error) {
 			out := strings.Replace(s, "\r\n", "\n", -1)
 			return out, nil
 		}
@@ -2970,8 +2969,24 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 	}
 	command := strings.TrimSpace(fields[1])
 	if verb == "shell" {
-		fc.filtercmd = command
 		fc.attributes = newOrderedStringSet("c", "a", "C")
+		fc.sub = func(content string, substitutions map[string]string) (string, error) {
+			substituted := command
+			for k, v := range substitutions {
+				substituted = strings.Replace(substituted, k, v, -1)
+			}
+			cmd := exec.Command("sh", "-c", substituted)
+			cmd.Stdin = strings.NewReader(content)
+			newcontent, err := cmd.Output()
+			if err == nil {
+				content = string(newcontent)
+			} else {
+				if logEnable(logWARN) {
+					logit("filter command %q failed - %s", substituted, err)
+				}
+			}
+			return string(content), err
+		}
 	} else if verb == "regex" || verb == "replace" {
 		parts := strings.Split(command, command[0:1])
 		subflags := parts[len(parts)-1]
@@ -3008,7 +3023,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 					croak("filter compilation error: %v", err)
 					return nil
 				}
-				fc.sub = func(s string) (string, error) {
+				fc.sub = func(s string, _ map[string]string) (string, error) {
 					if subcount == -1 {
 						return GoReplacer(mregexp, s, parts[2]), nil
 					}
@@ -3023,7 +3038,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 					return mregexp.ReplaceAllStringFunc(s, replacer), nil
 				}
 			} else if verb == "replace" {
-				fc.sub = func(s string) (string, error) {
+				fc.sub = func(s string, _ map[string]string) (string, error) {
 					return strings.Replace(s, parts[1], parts[2], subcount), nil
 				}
 			} else {
@@ -3037,31 +3052,16 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 
 func (fc *filterCommand) do(content string, substitutions map[string]string) string {
 	// Perform the filter on string content or a file.
-	if fc.filtercmd != "" {
-		substituted := fc.filtercmd
-		for k, v := range substitutions {
-			substituted = strings.Replace(substituted, k, v, -1)
-		}
-		cmd := exec.Command("sh", "-c", substituted)
-		cmd.Stdin = strings.NewReader(content)
-		content, err := cmd.Output()
-		if err != nil {
-			if logEnable(logWARN) {
-				logit("filter command failed")
-			}
-		}
-		return string(content)
-	} else if fc.sub != nil {
-		val, err := fc.sub(content)
+	if fc.sub != nil {
+		val, err := fc.sub(content, substitutions)
 		if err != nil {
 			logit("shell filter command failed")
 			return content
 		}
 		return val
-	} else {
-		if logEnable(logWARN) {
-			logit("unknown mode in filter command")
-		}
+	}
+	if logEnable(logWARN) {
+		logit("unknown mode in filter command")
 	}
 	return content
 }
