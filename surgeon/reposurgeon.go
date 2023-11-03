@@ -2922,7 +2922,7 @@ Some examples:
 type filterCommand struct {
 	repo       *Repository
 	filtercmd  string
-	sub        func(string) string
+	sub        func(string) (string, error)
 	attributes orderedStringSet
 }
 
@@ -2962,9 +2962,9 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 		if len(fc.attributes) == 0 {
 			fc.attributes = newOrderedStringSet("c", "a", "C")
 		}
-		fc.sub = func(s string) string {
+		fc.sub = func(s string) (string, error) {
 			out := strings.Replace(s, "\r\n", "\n", -1)
-			return out
+			return out, nil
 		}
 		return fc
 	}
@@ -3008,9 +3008,9 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 					croak("filter compilation error: %v", err)
 					return nil
 				}
-				fc.sub = func(s string) string {
+				fc.sub = func(s string) (string, error) {
 					if subcount == -1 {
-						return GoReplacer(mregexp, s, parts[2])
+						return GoReplacer(mregexp, s, parts[2]), nil
 					}
 					replacecount := subcount
 					replacer := func(s string) string {
@@ -3020,11 +3020,11 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 						}
 						return s
 					}
-					return mregexp.ReplaceAllStringFunc(s, replacer)
+					return mregexp.ReplaceAllStringFunc(s, replacer), nil
 				}
 			} else if verb == "replace" {
-				fc.sub = func(s string) string {
-					return strings.Replace(s, parts[1], parts[2], subcount)
+				fc.sub = func(s string) (string, error) {
+					return strings.Replace(s, parts[1], parts[2], subcount), nil
 				}
 			} else {
 				croak("unexpected verb in filter command")
@@ -3052,7 +3052,12 @@ func (fc *filterCommand) do(content string, substitutions map[string]string) str
 		}
 		return string(content)
 	} else if fc.sub != nil {
-		return fc.sub(content)
+		val, err := fc.sub(content)
+		if err != nil {
+			logit("shell filter command failed")
+			return content
+		}
+		return val
 	} else {
 		if logEnable(logWARN) {
 			logit("unknown mode in filter command")
