@@ -207,6 +207,7 @@ const (
 	parseNEEDREDIRECT                  // Command requires a redirect, not a file name argument
 	parseNOREDIRECT                    // Ignore things that look like redirects (e.g email addresses).
 	parseNOARGS                        // Giving arguments (other than switches) is an error
+	parseNEEDVERB                      // Command needs at a subcommand verb
 )
 
 func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, capabilities orderedStringSet) *LineParse {
@@ -415,7 +416,9 @@ skipout:
 	if (len(lp.args) > 0) && (parseflags&parseNOARGS) != 0 {
 		panic(throw("command", name+" command does not take arguments"))
 	}
-
+	if (len(lp.args) == 0) && (parseflags&parseNEEDVERB) != 0 {
+		panic(throw("command", name+" command requires a subcommand verb"))
+	}
 	return &lp
 }
 
@@ -3068,12 +3071,7 @@ func (fc *filterCommand) do(content string, substitutions map[string]string) str
 
 // DoFilter is the handler for the "filter" command.
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
-	rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT, nil)
-	if line == "" {
-		croak("no filter is specified")
-		return false
-	}
-	// Mainline of do_filter() continues {
+	rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
 	filterhook := newFilterCommand(rs.chosen(), line)
 	if filterhook != nil {
 		rs.chosen().dataTraverse("Filtering",
@@ -4623,13 +4621,9 @@ func (pa pathAction) String() string {
 
 // DoPath renames paths in the history.
 func (rs *Reposurgeon) DoPath(line string) bool {
-	parse := rs.newLineParse(line, "path", parseALLREPO, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, "path", parseALLREPO|parseNEEDVERB, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	if len(parse.args) < 1 {
-		croak("path command requires a verb.")
-		return false
-	}
 	if verb := parse.args[0]; verb == "rename" {
 		if len(parse.args) < 2 {
 			croak("missing source pattern in path rename command")
@@ -5116,7 +5110,7 @@ Branch rename sets Q bits; true on every object modified, false otherwise.
 
 // DoBranch renames a branch or deletes it.
 func (rs *Reposurgeon) DoBranch(line string) bool {
-	parse := rs.newLineParse(line, "branch", parseNOSELECT, nil)
+	parse := rs.newLineParse(line, "branch", parseNOSELECT|parseNEEDVERB, nil)
 
 	repo := rs.chosen()
 
@@ -5131,11 +5125,6 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 			return "refs/" + branch
 		}
 		return branch
-	}
-
-	if len(parse.args) == 0 {
-		croak("branch command requires a verb.")
-		return false
 	}
 
 	if verb := parse.args[0]; verb == "rename" {
@@ -5304,12 +5293,8 @@ rename, get their Q bit set.
 
 // DoTag moves a tag to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoTag(line string) bool {
-	parse := rs.newLineParse(line, "tag", parseALLREPO, nil)
+	parse := rs.newLineParse(line, "tag", parseALLREPO|parseNEEDVERB, nil)
 	repo := rs.chosen()
-	if len(parse.args) == 0 {
-		croak("tag command requires a verb.")
-		return false
-	}
 	verb := parse.args[0]
 
 	repo.clearColor(colorQSET)
@@ -5515,13 +5500,9 @@ or rename, get their Q bit set.
 
 // DoReset moves a reset to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoReset(line string) bool {
-	parse := rs.newLineParse(line, "reset", parseREPO, nil)
+	parse := rs.newLineParse(line, "reset", parseREPO|parseNEEDVERB, nil)
 	repo := rs.chosen()
 
-	if len(parse.args) < 1 {
-		croak("reset command requires a verb.")
-		return false
-	}
 	verb := parse.args[0]
 
 	if len(parse.args) < 2 {
