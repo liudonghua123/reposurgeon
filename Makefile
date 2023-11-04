@@ -290,7 +290,7 @@ fmt:
 clean:
 	rm -f $(BINARIES)
 	rm -fr docinclude cuttercommands.inc toolcommands.inc *~ *.1 *.html *.tar.xz MANIFEST *.md5
-	rm -fr .rs .rs* test/.rs test/.rs*
+	rm -fr .rs .rs* test/.rs test/.rs* covdatafiles merged-coverage profile.txt profile.html
 	rm -f typescript test/typescript
 
 #
@@ -335,6 +335,7 @@ version:
 # https://goreportcard.com/report/gitlab.com/esr/reposurgeon
 
 check: lint all test
+	@echo GOCOVERDIR=${GOCOVERDIR}
 	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
 
 fixme:
@@ -348,15 +349,20 @@ fixme:
 # Coverage testing
 #
 # See also:
+# https://go.dev/testing/coverage/
 # https://go.dev/blog/integration-test-coverage
+# https://github.com/dave/courtney
 #
-# Won't work until our production version is 1.20.
+# Requires Go 1.20.
 
 coverage:
 	rm -rf covdatafiles
 	mkdir covdatafiles
-	make GOFLAGS=-cover build 
-	make GOCOVERDIR=covdatafiles check
+	make GOFLAGS=-cover GOCOVERDIR=$(realpath $(CURDIR))/covdatafiles check
+	rm -rf merged-coverage ; mkdir merged-coverage ; go tool covdata merge -i=covdatafiles -o=merged-coverage
+	rm -rf covdatafiles
+	go tool covdata textfmt -i=merged-coverage -o=profile.txt
+	go tool cover -html=profile.txt -o profile.html
 
 #
 # Continuous integration.  More specifics are in the ci/ directory
