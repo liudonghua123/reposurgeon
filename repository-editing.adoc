@@ -3595,6 +3595,12 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
+In versions 4.38 and earlier, there was no "gui" or "clone" command.
+The command-line parser was fragile and ad-hoc, without consistent
+application of double-quoting. The =E event selector didn't yet exist.
+There was a read --use-uuid option which has been retired. Negation
+was not yet supported in pathsets.
+
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
 equivalent manipulations with repocutter.
