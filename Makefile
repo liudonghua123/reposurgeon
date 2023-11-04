@@ -66,7 +66,7 @@ fullinstall: stable-golang helpers test-helpers
 stable-golang:
 	sudo apt-get -y install golang
 
-# This may improve performance, if the backports repostotory
+# This may improve performance, if the backports repository
 # has been updated to a version more recemnt than your distro's.
 current-golang:
 	sudo add-apt-repository ppa:longsleep/golang-backports
@@ -343,6 +343,20 @@ fixme:
 	else \
 		find . -type f -exec grep -n FIX''ME {} /dev/null \; | grep -v "[.]git"; \
 	fi
+
+#
+# Coverage testing
+#
+# See also:
+# https://go.dev/blog/integration-test-coverage
+#
+# Won't work until our production version is 1.20.
+
+coverage:
+	rm -rf covdatafiles
+	mkdir covdatafiles
+	make GOFLAGS=-cover build 
+	make GOCOVERDIR=covdatafiles check
 
 #
 # Continuous integration.  More specifics are in the ci/ directory
