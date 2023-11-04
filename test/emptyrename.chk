@@ -1,0 +1,12 @@
+.gitignore
+data/cmdvartab
+data/driver.list
+drivers/Makefile.drvbuild
+drivers/libusb.c
+drivers/serial.c
+.gitignore
+cmdvartab
+driver.list
+drivers/Makefile.drvbuild
+drivers/libusb.c
+drivers/serial.c

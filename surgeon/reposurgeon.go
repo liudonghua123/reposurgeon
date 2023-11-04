@@ -4626,23 +4626,23 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 	parse := rs.newLineParse(line, "path", parseALLREPO, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	if len(parse.args) == 0 {
+	if len(parse.args) < 1 {
 		croak("path command requires a verb.")
 		return false
 	}
 	if verb := parse.args[0]; verb == "rename" {
-		sourcePattern := parse.args[1]
-		if sourcePattern == "" {
+		if len(parse.args) < 2 {
 			croak("missing source pattern in path rename command")
 			return false
 		}
+		sourcePattern := parse.args[1]
 		sourceRE := getPattern(sourcePattern)
-		force := parse.options.Contains("--force")
-		targetPattern := parse.args[2]
-		if targetPattern == "" {
+		if len(parse.args) < 3 {
 			croak("no target specified in path rename")
 			return false
 		}
+		targetPattern := parse.args[2]
+		force := parse.options.Contains("--force")
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
 	} else if verb == "list" {
 		allpaths := newOrderedStringSet()
