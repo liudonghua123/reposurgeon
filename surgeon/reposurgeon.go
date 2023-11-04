@@ -7339,7 +7339,7 @@ there is an option flag named "foo" you would write it as "--foo".
 Option flags can be anywhere on the line.  The order of option flags
 is never significant. When an option flag "foo" sets a value, the
 syntax is --foo=xxx with no spaces around the equal sign.  The
-value part may be a double-quoted string containg whitespace.
+value part may be a double-quoted string containing whitespace.
 
 The embedded help for some commands tells you that they interpret
 C/Go style backslash escapes like \n in arguments. Interpretation

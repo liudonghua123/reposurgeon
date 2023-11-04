@@ -332,7 +332,7 @@ version:
 # Code validation
 #
 # See also:
-# https://goreportcard.com/report/gitlab.com/esr/reposurgeon#L156
+# https://goreportcard.com/report/gitlab.com/esr/reposurgeon
 
 check: lint all test
 	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))

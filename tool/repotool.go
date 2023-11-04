@@ -528,13 +528,6 @@ func mirror(args []string) {
 		// the clone operation will create a live Git repository capturing the
 		// Perforce history.
 		operand = operand[3:]
-		if mirrordir == "" {
-			locald = filepath.Join(pwd, filepath.Base(operand)+"-mirror")
-		} else if mirrordir[0] == os.PathSeparator {
-			locald = mirrordir
-		} else {
-			locald = filepath.Join(pwd, mirrordir)
-		}
 		cmd := ""
 		legend := ""
 		if isdir(mirrordir) {
