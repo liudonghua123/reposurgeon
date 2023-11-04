@@ -3453,11 +3453,10 @@ explains how it breaks the tool. Those are turned into regression tests
 instantly.
 
 When you don't know the cause of the error, ship the project a dump
-file derived from the real repository that triggered it.  To speed up
-the debugging process so you can get an answer more quickly, there are
-some tactics you can use to reduce the bulk of the test case you
-send. Also, a well-reduced dump can become a regression test to ensure
-the bug does not recur.
+file derived from the real repository and a script containing the
+commands that triggered it.  To speed up the debugging process so you
+can get an answer more quickly, there are some tactics you can use to
+reduce the bulk of the test case you send.
 
 How to make dumps in Git: cd to your git repository and capture the
 output of "<<repotool.adoc#,repotool>> export".
