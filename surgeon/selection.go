@@ -372,7 +372,7 @@ func (rs *Reposurgeon) parsePathset() selEvaluator {
 	}
 	if strings.HasPrefix(matcher, "~") {
 		complement = true
-		matcher = matcher[1:len(matcher)]
+		matcher = matcher[1:]
 	}
 	if strings.HasPrefix(matcher, "/") {
 		end := strings.LastIndexByte(matcher, '/')

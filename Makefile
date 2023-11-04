@@ -282,7 +282,7 @@ lint:
 	shellcheck -f gcc repobench test/fi-to-fi test/liftcheck test/singlelift test/svn-to-git test/svn-to-svn test/delver test/*.sh test/*test
 
 fmt:
-	gofmt -w .
+	gofmt -s -w .
 
 #
 # Cleaning
