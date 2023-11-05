@@ -8862,7 +8862,7 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 }
 
 // Filter commit metadata (and possibly blobs) through a specified hook.
-func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook func(string, map[string]string) string, attributes orderedStringSet, safety bool, quiet bool, baton *Baton) {
+func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook func(string, string, map[string]string) string, attributes orderedStringSet, safety bool, quiet bool, baton *Baton) {
 	blobs := false
 	nonblobs := false
 	for it := selection.Iterator(); it.Next(); {
@@ -8907,10 +8907,10 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 		if tag, ok := event.(*Tag); ok {
 			if nonblobs {
 				oldcomment := tag.Comment
-				tag.Comment = hook(tag.Comment, nil)
+				tag.Comment = hook(tag.Comment, tag.idMe()+" comment", nil)
 				anychanged := (oldcomment != tag.Comment)
 				oldtagger := tag.tagger.who()
-				newtagger := hook(oldtagger, nil)
+				newtagger := hook(oldtagger, tag.idMe()+" tagger", nil)
 				if oldtagger != newtagger {
 					newtagger += " " + tag.tagger.date.String()
 					attrib, err := newAttribution(newtagger)
@@ -8930,14 +8930,14 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 				anychanged := false
 				if attributes.Contains("c") {
 					oldcomment := commit.Comment
-					commit.Comment = hook(commit.Comment, nil)
+					commit.Comment = hook(commit.Comment, commit.idMe()+" comment", nil)
 					if oldcomment != commit.Comment {
 						anychanged = true
 					}
 				}
 				if attributes.Contains("C") {
 					oldcommitter := commit.committer.who()
-					newcommitter := hook(oldcommitter, nil)
+					newcommitter := hook(oldcommitter, commit.idMe()+" committer", nil)
 					changed := (oldcommitter != newcommitter)
 					if changed {
 						newcommitter += " " + commit.committer.date.String()
@@ -8952,7 +8952,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 				if attributes.Contains("a") {
 					for i := range commit.authors {
 						oldauthor := commit.authors[i].who()
-						newauthor := hook(oldauthor, nil)
+						newauthor := hook(oldauthor, commit.idMe()+" author", nil)
 						if oldauthor != newauthor {
 							newauthor += " " + commit.authors[i].date.String()
 							attrib, err := newAttribution(newauthor)
@@ -8974,7 +8974,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 				for _, fileop := range commit.operations() {
 					if len(fileop.inline) > 0 {
 						oldinline := fileop.inline
-						fileop.inline = []byte(hook(string(fileop.inline), nil))
+						fileop.inline = []byte(hook(string(fileop.inline), commit.idMe()+" inline", nil))
 						if !bytes.Equal(fileop.inline, oldinline) {
 							anychanged = true
 						}
@@ -8987,7 +8987,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 			}
 		} else if blob, ok := event.(*Blob); ok {
 			content := string(blob.getContent())
-			modified := hook(content, map[string]string{"%PATHS%": fmt.Sprintf("%v", blob.paths(nil))})
+			modified := hook(content, blob.idMe(), map[string]string{"%PATHS%": fmt.Sprintf("%v", blob.paths(nil))})
 			if content != modified {
 				blob.setContent([]byte(modified), noOffset)
 				altered.bump()

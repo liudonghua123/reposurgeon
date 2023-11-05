@@ -603,9 +603,7 @@ func (rs *Reposurgeon) inScript() bool {
 	return len(rs.callstack) > 0
 }
 
-//
 // Housekeeping hooks.
-//
 var inlineCommentRE = regexp.MustCompile(`\s+#`)
 
 func (rs *Reposurgeon) buildPrompt() {
@@ -2924,7 +2922,7 @@ Some examples:
 
 type filterCommand struct {
 	repo       *Repository
-	sub        func(string, map[string]string) (string, error)
+	sub        func(string, string, map[string]string) (string, error)
 	attributes orderedStringSet
 }
 
@@ -2964,7 +2962,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 		if len(fc.attributes) == 0 {
 			fc.attributes = newOrderedStringSet("c", "a", "C")
 		}
-		fc.sub = func(s string, _ map[string]string) (string, error) {
+		fc.sub = func(s string, _ string, _ map[string]string) (string, error) {
 			out := strings.Replace(s, "\r\n", "\n", -1)
 			return out, nil
 		}
@@ -2973,7 +2971,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 	command := strings.TrimSpace(fields[1])
 	if verb == "shell" {
 		fc.attributes = newOrderedStringSet("c", "a", "C")
-		fc.sub = func(content string, substitutions map[string]string) (string, error) {
+		fc.sub = func(content string, id string, substitutions map[string]string) (string, error) {
 			substituted := command
 			for k, v := range substitutions {
 				substituted = strings.Replace(substituted, k, v, -1)
@@ -2985,7 +2983,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 				content = string(newcontent)
 			} else {
 				if logEnable(logWARN) {
-					logit("filter command %q failed - %s", substituted, err)
+					logit("filter command %q failed at %s - %s", substituted, id, err)
 				}
 			}
 			return string(content), err
@@ -3026,7 +3024,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 					croak("filter compilation error: %v", err)
 					return nil
 				}
-				fc.sub = func(s string, _ map[string]string) (string, error) {
+				fc.sub = func(s string, _ string, _ map[string]string) (string, error) {
 					if subcount == -1 {
 						return GoReplacer(mregexp, s, parts[2]), nil
 					}
@@ -3041,7 +3039,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 					return mregexp.ReplaceAllStringFunc(s, replacer), nil
 				}
 			} else if verb == "replace" {
-				fc.sub = func(s string, _ map[string]string) (string, error) {
+				fc.sub = func(s string, _ string, _ map[string]string) (string, error) {
 					return strings.Replace(s, parts[1], parts[2], subcount), nil
 				}
 			} else {
@@ -3053,10 +3051,10 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 	return fc
 }
 
-func (fc *filterCommand) do(content string, substitutions map[string]string) string {
+func (fc *filterCommand) do(content string, id string, substitutions map[string]string) string {
 	// Perform the filter on string content or a file.
 	if fc.sub != nil {
-		val, err := fc.sub(content, substitutions)
+		val, err := fc.sub(content, id, substitutions)
 		if err != nil {
 			logit("shell filter command failed")
 			return content
@@ -3070,6 +3068,7 @@ func (fc *filterCommand) do(content string, substitutions map[string]string) str
 }
 
 // DoFilter is the handler for the "filter" command.
+// FIXME: Odd syntax
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
 	rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
 	filterhook := newFilterCommand(rs.chosen(), line)
@@ -3140,11 +3139,11 @@ func (rs *Reposurgeon) DoTranscode(line string) bool {
 	}
 	decoder := enc.NewDecoder()
 
-	transcode := func(txt string, _ map[string]string) string {
+	transcode := func(txt string, id string, _ map[string]string) string {
 		out, err := decoder.Bytes([]byte(txt))
 		if err != nil {
 			if logEnable(logWARN) {
-				logit("decode error during transcoding: %v", err)
+				logit("decode error during transcoding of %s: %v", id, err)
 			}
 			rs.unchoose()
 		}
@@ -5899,7 +5898,7 @@ func (rs *Reposurgeon) HelpAttribution() {
 [SELECTION] attribution [ATTR-SELECTION] SUBCOMMAND [ARG...]
 
 Inspect, modify, add, and remove commit and tag attributions.
-
+1
 Arguments of this command (including attribution-field values) can be
 double-quoted srrings containing whitespace; the string quotes are
 stripped before interpretation.
