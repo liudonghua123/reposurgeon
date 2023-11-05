@@ -3102,8 +3102,8 @@ The ENCODING argument must name one of the codecs listed at
 https://www.iana.org/assignments/character-sets/character-sets.xhtml
 and known to the Go standard codecs library. 
 
-Errors in this command force the repository to be dropped, because an
-error may leave repository events in a damaged state.
+If a transcode attempt faikls on a particular repostory object, the
+object ID and field is logged and the data is left unchanged.
 
 The theory behind the design of this command is that the
 repository might contain a mixture of encodings used to enter commit
@@ -3145,7 +3145,7 @@ func (rs *Reposurgeon) DoTranscode(line string) bool {
 			if logEnable(logWARN) {
 				logit("decode error during transcoding of %s: %v", id, err)
 			}
-			rs.unchoose()
+			return txt
 		}
 		return string(out)
 	}
