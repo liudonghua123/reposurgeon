@@ -6656,11 +6656,11 @@ var allPolicies = orderedStringSet{
 }
 
 // scavenge removes deletion-marged blobs
-func (repo *Repository) scavenge(delCount int, legend string) {
+func (repo *Repository) scavenge(legend string) {
 	// Preserve assignments
 	repo.filterAssignments(func(e Event) bool { return e.hasColor(colorDELETE) })
 	// Do the actual deletions
-	survivors := make([]Event, 0, len(repo.events)-delCount)
+	survivors := make([]Event, 0)
 	for _, e := range repo.events {
 		if e.hasColor(colorDELETE) {
 			continue
@@ -6769,7 +6769,6 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 	}
 	// Here are the deletions
 	repo.clearColor(colorDELETE)
-	var delCount int
 	for it := selected.Iterator(); it.Next(); {
 		var newTarget *Commit
 		event := repo.events[it.Value()]
@@ -6793,7 +6792,6 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 		case *Commit:
 			fileopsWerePushed := false
 			event.addColor(colorDELETE)
-			delCount++
 			commit := event.(*Commit)
 			// Decide the new target for tags
 			if tagforward && commit.hasChildren() {
@@ -6972,7 +6970,6 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				// No place to move alternatives, no alternative but to nuke them.
 				for _, e := range commit.attachments {
 					e.addColor(colorDELETE)
-					delCount++
 				}
 			} else {
 				// use a copy of attachments since it
@@ -7016,7 +7013,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 			commit.forget()
 		}
 	}
-	repo.scavenge(delCount, "squash/delete")
+	repo.scavenge("squash/delete")
 	// Canonicalize all the commits that got ops pushed to them
 	if coalesce {
 		for _, commit := range altered {
