@@ -2861,7 +2861,7 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 // HelpFilter says "Shut up, golint!"
 func (rs *Reposurgeon) HelpFilter() {
 	rs.helpOutput(`
-[SELECTION] filter {dedos|shell|regexp|replace} [TEXT-OR-REGEXP]
+[SELECTION] filter {dedos|shell|regex|replace} [TEXT-OR-REGEXP]
 
 Run blobs, commit comments and committer/author names, or tag comments
 and tag committer names in the selection set through the filter
@@ -2900,7 +2900,7 @@ perform. Other flags available restrict substitution scope - 'c' for
 comment text only, 'C' for committer name only, 'a' for author names
 only.
 
-With the verb replace, the behavior is like regexp but the expressions are
+With the verb replace, the behavior is like regex but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
 
 With the verb dedos, DOS/Windows-style \r\n line terminators are replaced with \n.
