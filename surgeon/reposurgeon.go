@@ -3876,7 +3876,7 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 			}
 		}
 	}
-	repo.scavenge(delCount, "remove")
+	repo.scavenge("remove")
 	return false
 }
 
