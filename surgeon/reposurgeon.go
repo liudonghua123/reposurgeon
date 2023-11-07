@@ -1,4 +1,4 @@
-// Reposurgeon is an editor/converter for version-control histories.
+// Reposurgeonv is an editor/converter for version-control histories.
 //
 // This file includes the program main and defines the syntax for the DSL.
 //
@@ -6753,7 +6753,7 @@ func (rs *Reposurgeon) HelpDo() {
 do MACRO-NAME [ARG...]
 
 Expand and perform a macro.  The first argument is the name of the
-macro to be called;  remaining argumentd replace {0}, {1}... in the macro
+macro to be called;  remaining argumentd replace %{0}, %{1}... in the macro
 definition. Arguments may contain whitespace if they are string-quoted; 
 string quotes are stripped. Macros can call macros.
 
@@ -6780,7 +6780,7 @@ func (rs *Reposurgeon) DoDo(ctx context.Context, line string) bool {
 	args := parse.args[1:]
 	replacements := make([]string, 2*len(args))
 	for i, arg := range args {
-		replacements = append(replacements, fmt.Sprintf("{%d}", i), arg)
+		replacements = append(replacements, fmt.Sprintf("%%{%d}", i), arg)
 	}
 	body := strings.NewReplacer(replacements...).Replace(strings.Join(macro, "\n"))
 	doSelection := rs.selection

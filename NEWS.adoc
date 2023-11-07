@@ -12,6 +12,7 @@ Repository head::
      Added "clone" command.
      Command arguments can now be "-quoted strinds containing whitespace.
      Graceful recovery frrom transcode errors.
+     Macro argument formal change from {0}, {1}, {2}... to %{0}, %{1}, %{2}...
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.

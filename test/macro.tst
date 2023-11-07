@@ -13,7 +13,7 @@ undefine fubar
 define
 print "Test multiline macroexpansion"
 define fubaz {
-{0} list
+%{0} list
 }
 do fubaz :49
 undefine fubaz
