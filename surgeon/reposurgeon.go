@@ -2891,18 +2891,15 @@ standard input; the content is replaced with whatever the filter emits
 to standard output.
 
 With the verb regex, the remainder of the line is expected to be a Go
-regular expression substitution written as /from/to/ with Go-style
-backslash escapes interpreted in 'to' as well as 'from'. Matching is
-unanchored. Python-style backreferences (\1, \2 etc.) rather than
-Go-style $1, $2...  are interpreted; this avoids a conflict with
-parameter substitution in script commands. Any punctuation character
-will work as a delimiter in place of the /; this makes it easier to
-use / in patterns. Ordinarily only the first such substitution is
-performed; putting 'g' after the slash replaces globally, and a
-numeric literal gives the maximum number of substitutions to
-perform. Other flags available restrict substitution scope - 'c' for
-comment text only, 'C' for committer name only, 'a' for author names
-only.
+regular expression substitution written as /from/to/ with C-like
+backslash escapes interpreted in 'to'. Matching is unanchored. Any
+punctuation character will work as a delimiter in place of the /; this
+makes it easier to use / in patterns. Ordinarily only the first such
+substitution is performed; putting 'g' after the slash replaces
+globally, and a numeric literal gives the maximum number of
+substitutions to perform. Other flags available restrict substitution
+scope - 'c' for comment text only, 'C' for committer name only, 'a'
+for author names only.
 
 With the verb replace, the behavior is like regex but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
