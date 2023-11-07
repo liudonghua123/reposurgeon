@@ -2922,7 +2922,6 @@ Some examples:
 }
 
 type filterCommand struct {
-	repo       *Repository
 	sub        func(string, string, map[string]string) (string, error)
 	attributes orderedStringSet
 }
@@ -2942,7 +2941,6 @@ func GoReplacer(re *regexp.Regexp, fromString, toString string) string {
 // newFilterCommand - Initialize a filter from the command line.
 func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 	fc := new(filterCommand)
-	fc.repo = repo
 	fc.attributes = newOrderedStringSet()
 	// Must not use LineParse here as it would try to strip options
 	// in shell commands.
