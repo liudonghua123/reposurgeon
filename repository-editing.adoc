@@ -3598,7 +3598,10 @@ In versions 4.38 and earlier, there was no "gui" or "clone" command.
 The command-line parser was fragile and ad-hoc, without consistent
 application of double-quoting. The =E event selector didn't yet exist.
 There was a read --use-uuid option which has been retired. Negation
-was not yet supported in pathsets.
+was not yet supported in pathsets. The regex, path rename and
+{branch|tag|reset} rename commands used Python-style ratrher than
+Go-style match references. Macro argument formals did not yet
+have a % prefix.
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
