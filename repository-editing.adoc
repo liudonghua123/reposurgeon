@@ -3034,7 +3034,7 @@ command.  The pattern for that looks like this:
 read <multiproject.svn
 branchlift master branches/release-1.0
 branchlift master branches/release-2.0
-path rename "trunk/(.*)" "\1"
+path rename "trunk/(.*)" "${1}"
 --------
 
 This will turn two subdirectories into branches named "release-1.0"
@@ -3174,10 +3174,10 @@ pathnames by segment.  Here is how to handle some common cases:
 
 -----------------------------------
 # Push a pathname segment onto filenames
-path rename /^(.*)/ foo/\1
+path rename /^(.*)/ "foo/${1}"
 
 # Pop a pathname segment off filenames
-path rename :foo/(.*): \1
+path rename :foo/(.*): "${1}"
 -----------------------------------
 
 The second recipe uses the fact that almost any delimiter character
@@ -3194,7 +3194,7 @@ a very common pre-conversion artifact is a commit with the comment
 entry explaining the commit immediately previous to it. The following
 
 --------
-define changelog <%{0}> & /empty log message/ squash --pushback
+define changelog <%{0}<> & /empty log message/ squash --pushback
 do changelog 2012-08-14T21:51:35Z
 do changelog 2012-08-08T22:52:14Z
 do changelog 2012-08-07T04:48:26Z

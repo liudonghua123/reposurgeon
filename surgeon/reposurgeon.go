@@ -2930,20 +2930,13 @@ type filterCommand struct {
 	attributes orderedStringSet
 }
 
-// GoReplacer bridges from Python-style backreferences (\1) to Go-style ($1).
-// This was originally a shim for testing during the port from Python.  It has
-// been kept because Go's use of $n for group matches conflicts with the
-// use of $n for script arguments in reposurgeon.  Also, we can do interpretation
-// of Go string escapes at a good point, *after* the Python-style backreferences
-// have been translated.
+// GoReplacer was originally a shim for testing during the port from Python.
+// It has been kept bwcause it means we can do interpretation of Go
+// string escapes in the to string at a single point.
 func GoReplacer(re *regexp.Regexp, fromString, toString string) string {
-	for i := 0; i < 10; i++ {
-		sdigit := fmt.Sprintf("%d", i)
-		toString = strings.Replace(toString, `\`+sdigit, `${`+sdigit+`}`, -1)
-		sub, e2 := stringEscape(toString)
-		if e2 == nil {
-			toString = sub
-		}
+	sub, e2 := stringEscape(toString)
+	if e2 == nil {
+		toString = sub
 	}
 	out := re.ReplaceAllString(fromString, toString)
 	return out
@@ -7465,9 +7458,7 @@ func (rs *Reposurgeon) HelpRegexp() {
 	rs.helpOutputMisc(`
 The pattern expressions used in event selections and various commands
 (attribution, expunge, filter, msgout, path) are those of the Go 
-language, with one exception. Due to a conflict with the use of $
-for arguments in the "script" command, we retain Python's use of
-backslashes as a leader for references to group matches.
+language.
 
 Normally patterns intended to be interpreted as regular expressions
 are wrapped in slashes (e.g. /foobar/ matches any text containing the

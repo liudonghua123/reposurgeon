@@ -98,7 +98,7 @@ func TestShlex(t *testing.T) {
 		// Check that effect on alphabetics
 		{`dir\xname`, []string{`dirxname`}},
 		// Check effect on our regular-expression backreferences either
-		{`dir\1name`, []string{`dir1name`}},
+		{`dir${1}name`, []string{`dir${1}name`}},
 	}
 	for testnum, item := range tests {
 		tokens, err := shlex.Split(item.text, true)
@@ -2248,7 +2248,7 @@ TAG o123-o123
 		},
 
 		// back-ref everywhere
-		{safetyOff, isValid, "(1..$)", "/o(123)/r\\1/g", "unsafe-bref-every",
+		{safetyOff, isValid, "(1..$)", "/o(123)/r${1}/g", "unsafe-bref-every",
 			[]string{
 				"BLB r123-r123\n",
 				"CMT r123-r123\n", "aut@r123-r123.com", "com@r123-r123.com",
@@ -2257,7 +2257,7 @@ TAG o123-o123
 		},
 
 		// back-ref, default comment
-		{safetyOn, isValid, "(1..$ & =C)", "/o(123)/r\\1/cg", "bref-dft-comment",
+		{safetyOn, isValid, "(1..$ & =C)", "/o(123)/r${1}/cg", "bref-dft-comment",
 			[]string{
 				"BLB o123-o123\n",
 				"CMT r123-r123\n", "aut@o123-o123.com", "com@o123-o123.com",
@@ -2266,7 +2266,7 @@ TAG o123-o123
 		},
 
 		// back-ref, commits, comment only, only first
-		{safetyOn, isValid, "(1..$ & =C)", "/o(123)/r\\1/1c", "bref-explicit-first",
+		{safetyOn, isValid, "(1..$ & =C)", "/o(123)/r${1}/1c", "bref-explicit-first",
 			[]string{
 				"BLB o123-o123\n",
 				"CMT r123-o123\n", "aut@o123-o123.com", "com@o123-o123.com",

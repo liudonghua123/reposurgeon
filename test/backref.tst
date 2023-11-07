@@ -15,7 +15,7 @@ s12345 s45678 s21456
 
 M 100644 :1 README
 EOF
-# EXPECT 'rb:\1' should be 'rb:12345' (the substitution /s(\d+)/\1/)
-(=C) filter regex /s(\d+)/rb:\1/1
+# EXPECT 'rb:${1}' should be 'rb:12345' (the substitution /s(\d+)/${1}/)
+(=C) filter regex /s(\d+)/rb:${1}/1
 (=C) msgout
 write -
