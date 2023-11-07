@@ -5627,8 +5627,10 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		}
 
 		for _, reset := range resets {
+			if reset.ref != newname {
+				reset.addColor(colorQSET)
+			}
 			reset.ref = newname
-			reset.addColor(colorQSET)
 		}
 		for _, commit := range repo.commits(undefinedSelectionSet) {
 			if sourceRE.MatchString(commit.Branch) {
