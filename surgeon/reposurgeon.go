@@ -7650,6 +7650,10 @@ tokenization, so the "$1" in a string like "foo$1bar" will be
 expanded.  Additionally, "$$" is expanded to the current process ID
 (which may be useful for scripts that use tempfiles).
 
+(The Unix shell syntax ${n} will not expand into a script argument. Don't
+confuse it with ${n} used for regular expression match group
+references.)
+
 Within scripts (and only within scripts) reposurgeon accepts a
 slightly extended syntax: First, a backslash ending a line signals
 that the command continues on the next line. Any number of consecutive
