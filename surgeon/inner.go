@@ -4989,10 +4989,12 @@ type Event interface {
 	isCommit() bool
 }
 
-// walkEvents walks an event list applying a hook function.
-// This is intended to be parallelized.  Apply only when the
-// computation has no dependency on the order in which commits
-// are processed.
+// walkEvents walks an event list applying a hook function.  Runs
+// parallelized unles the "serial" option is on.  Apply only when the
+// computation has no dependency on the order in which commits are
+// processed. The hook function must not panic, as that is recoverable
+// only in the serial case. The hook can abort its thread (though not
+// the entire traversal) by returning false rathher than true.
 //
 // Note: There's a clone of this code that walks selection sets.
 // Go is not quite generic enough to make unifying the two convenient.
@@ -8912,7 +8914,8 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 					newtagger += " " + tag.tagger.date.String()
 					attrib, err := newAttribution(newtagger)
 					if err != nil {
-						panic(throw("command", "in data traverse of tag: %v", err))
+						logit("in data traverse of tag: %v", err)
+						return false
 					}
 					tag.tagger = attrib
 					anychanged = anychanged || true
@@ -8940,7 +8943,8 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 						newcommitter += " " + commit.committer.date.String()
 						attrib, err := newAttribution(newcommitter)
 						if err != nil {
-							panic(throw("command", "in data traverse of commit: %v", err))
+							logit("in data traverse of commit: %v", err)
+							return false
 						}
 						commit.committer = *attrib
 						anychanged = true
@@ -8954,7 +8958,8 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 							newauthor += " " + commit.authors[i].date.String()
 							attrib, err := newAttribution(newauthor)
 							if err != nil {
-								panic(throw("command", "in data traverse of commit: %v", err))
+								logit("in data traverse of commit: %v", err)
+								return false
 							}
 							commit.authors[i] = *attrib
 							anychanged = true
