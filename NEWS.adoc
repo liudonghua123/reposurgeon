@@ -14,6 +14,7 @@ Repository head::
      Graceful recovery frrom transcode errors.
      Macro argument formal change from {0}, {1}, {2}... to %{0}, %{1}, %{2}...
      Move to Go-style match references (${1}) from Python ones (\1).
+     Simplifued syntax of solit command.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.

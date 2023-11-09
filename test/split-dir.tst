@@ -4,8 +4,8 @@ set relax
 set interactive 
 set quiet
 read <split-dir.svn
-:2 split by bar
+:2 split bar
 # Expect the split on zed to fail
-:5 split by zed
-:5 split by f
+:5 split zed
+:5 split --path f
 inspect

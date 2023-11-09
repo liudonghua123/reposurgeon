@@ -2,7 +2,7 @@ set interactive
 set quiet
 set relax
 read <mergeinfo.svn
-:6 split at 2
+:6 split 2
 reposurgeon: selection doesn't point at a commit
 prefer git
 git is the preferred type.

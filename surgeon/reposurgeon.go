@@ -4221,18 +4221,17 @@ func (rs *Reposurgeon) DoExpunge(line string) bool {
 }
 
 // HelpSplit says "Shut up, golint!"
-// FIXME: Odd syntax
 func (rs *Reposurgeon) HelpSplit() {
 	rs.helpOutput(`
-[SELECTION] split [ at M | by PREFIX ]
+[SELECTION] split [ --path ] PATH-OR-INDEX
 
 Split a specified commit in two, the opposite of squash.
 
-The selection set is required to be a commit location; the modifier is
-a preposition which indicates which splitting method to use. If the
-preposition is 'at', then the third argument must be an integer
-1-origin index of a file operation within the commit. If it is 'by',
-then the third argument must be a pathname to be matched.
+The selection set is required to be a commit location; the required
+argument identifies a fileop. If it is numeric, it is intepreted as an
+integer 1-origin index of a file operation within the commit. If not,
+it must be a pathame to match.  The option --path forces the pathname
+interpretation.
 
 The commit is copied and inserted into a new position in the
 event sequence, immediately following itself; the duplicate becomes
@@ -4242,55 +4241,15 @@ then changed.  If the new commit has a legacy ID, the suffix '.split' is
 appended to it.
 
 Finally, some file operations - starting at the one matched or indexed
-by the split argument - are moved forward from the original commit
+by an index argument - are moved forward from the original commit
 into the new one.  Legal indices are 2-n, where n is the number of
 file operations in the original commit.
-
-----
-reposurgeon% :3 inspect
-Event 4 =================================================================
-commit refs/heads/master
-#legacy-id 2
-mark :3
-committer brooksd <brooksd> 1353813663 +0000
-data 33
-add a new file in each directory
-M 100644 :1 .gitignore
-M 100644 :2 bar/src
-M 100644 :2 baz/src
-M 100644 :2 foo/src
-
-reposurgeon% :3 split by bar
-reposurgeon: new commits are events 4 and 5.
-
-reposurgeon% 4,5 inspect
-Event 4 =================================================================
-commit refs/heads/master
-#legacy-id 2
-mark :3
-committer brooksd <brooksd> 1353813663 +0000
-data 33
-add a new file in each directory
-M 100644 :1 .gitignore
-M 100644 :2 baz/src
-M 100644 :2 foo/src
-
-Event 5 =================================================================
-commit refs/heads/master
-#legacy-id 2.split
-mark :7
-committer brooksd <brooksd> 1353813663 +0000
-data 33
-add a new file in each directory
-from :3
-M 100644 :2 bar/src
-----
 `)
 }
 
 // DoSplit splits a commit.
 func (rs *Reposurgeon) DoSplit(line string) bool {
-	parse := rs.newLineParse(line, "split", parseREPO|parseNOOPTS, nil)
+	parse := rs.newLineParse(line, "split", parseREPO, nil)
 	if rs.selection.Size() != 1 {
 		croak("selection of a single commit required for this command")
 		return false
@@ -4302,18 +4261,12 @@ func (rs *Reposurgeon) DoSplit(line string) bool {
 		croak("selection doesn't point at a commit")
 		return false
 	}
-	if len(parse.args) != 2 {
-		croak("ill-formed split command")
+	if len(parse.args) < 1 {
+		croak("split command required a fileop identifier")
 		return false
 	}
-	prep := parse.args[0]
-	obj := parse.args[1]
-	if prep == "at" {
-		splitpoint, err := strconv.Atoi(obj)
-		if err != nil {
-			croak("expected integer fileop index (1-origin)")
-			return false
-		}
+	obj := parse.args[0]
+	if splitpoint, err := strconv.Atoi(obj); err == nil && !parse.options.Contains("--path") {
 		splitpoint--
 		if splitpoint > len(commit.operations()) {
 			croak("fileop index %d out of range", splitpoint)
@@ -4324,15 +4277,12 @@ func (rs *Reposurgeon) DoSplit(line string) bool {
 			croak(err.Error())
 			return false
 		}
-	} else if prep == "by" {
+	} else {
 		err := rs.chosen().splitCommitByPrefix(where, obj)
 		if err != nil {
 			croak(err.Error())
 			return false
 		}
-	} else {
-		croak("don't know what to do for preposition %s", prep)
-		return false
 	}
 	respond("new commits are events %d and %d.", where+1, where+2)
 	return false
