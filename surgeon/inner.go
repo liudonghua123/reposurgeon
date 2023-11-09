@@ -212,10 +212,10 @@ func filecopy(src, dst string) (int64, error) {
 }
 
 // stringCopy forces crearion of a copy of the input strimg.  This is
-// useful because the Go runtime tries not to do more allcations tn
+// useful because the Go runtime tries not to do more allocations tn
 // necessary, making string-valued references instead. Thus,
 // sectioning a small string out of a very large one may cause
-// the large string to be held in memory even thouggh the rest of the
+// the large string to be held in memory even though the rest of the
 // content is no longer referenced.
 func stringCopy(a string) string {
 	return (a + " ")[:len(a)]
@@ -1023,8 +1023,6 @@ func (date Date) rfc1123() string {
 func (date Date) delta(other Date) time.Duration {
 	return other.timestamp.Sub(date.timestamp)
 }
-
-const dayHalf = (24 * 60 * 60) / 2
 
 // String formats a Date object as an internal Git date (Unix time in seconds
 // and a hhmm offset).
