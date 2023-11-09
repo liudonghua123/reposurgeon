@@ -7911,6 +7911,9 @@ func (repo *Repository) splitCommit(where int, splitfunc func([]*FileOp) ([]*Fil
 	if commit2.legacyID != "" {
 		commit2.legacyID += ".split"
 	}
+	repo.clearColor(colorQSET)
+	commit.addColor(colorQSET)
+	commit2.addColor(colorQSET)
 	return nil
 }
 

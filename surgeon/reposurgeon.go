@@ -4244,6 +4244,8 @@ Finally, some file operations - starting at the one matched or indexed
 by an index argument - are moved forward from the original commit
 into the new one.  Legal indices are 2-n, where n is the number of
 file operations in the original commit.
+
+Sets Q bits on the split commits; clears all others.
 `)
 }
 
