@@ -1,0 +1,35 @@
+Check that manifest includes sample and sample2
+Event 6 =================================================================
+commit refs/heads/master
+mark :4
+
+sample -> :1
+sample2 -> :1
+Last commit should have no fileops
+## A stream file with a copy operation
+blob
+mark :1
+data 30
+First line of sample content.
+
+reset refs/heads/master
+commit refs/heads/master
+mark :2
+author Fred J. Foonly <fered@foonly.org> 1000000060 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000060 +0000
+data 22
+First commit (master)
+M 100644 :1 sample
+
+tag emptycommit-mark4
+from :2
+tagger Eric S. Raymond <esr@thyrsus.com> 1000000120 +0000
+data 23
+Second commit (master)
+
+Following command should list sample
+Event 4 =================================================================
+commit refs/heads/master
+mark :2
+
+sample -> :1
