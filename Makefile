@@ -335,7 +335,6 @@ version:
 # https://goreportcard.com/report/gitlab.com/esr/reposurgeon
 
 check: lint all test
-	@echo GOCOVERDIR=${GOCOVERDIR}
 	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
 
 fixme:
