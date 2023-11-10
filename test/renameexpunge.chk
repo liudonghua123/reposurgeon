@@ -1,0 +1,37 @@
+Check that manifest includes just sample2
+Event 6 =================================================================
+commit refs/heads/master
+mark :4
+
+sample2 -> :1
+Last commit should have no fileops
+## A stream with a rename operation
+blob
+mark :1
+data 30
+First line of sample content.
+
+reset refs/heads/master
+commit refs/heads/master
+mark :2
+author Fred J. Foonly <fered@foonly.org> 1000000060 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000060 +0000
+data 22
+First commit (master)
+M 100644 :1 sample
+
+commit refs/heads/master
+mark :4
+author Fred J. Foonly <fered@foonly.org> 1000000120 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000120 +0000
+data 23
+Second commit (master)
+from :2
+D sample2
+
+Following command should list sample
+Event 5 =================================================================
+commit refs/heads/master
+mark :4
+
+sample2 -> :1
