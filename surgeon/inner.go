@@ -7119,15 +7119,11 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 				if logEnable(logDELETE) {
 					logit(fileop.String() + control.lineSep)
 				}
-				if fileop.op == opD || fileop.op == opM {
-					if expunge.MatchString(fileop.Path) == delete {
-						deletia.Add(i)
-					}
-				} else if fileop.op == opR || fileop.op == opC {
-					sourcedelete := expunge.MatchString(fileop.Source) == delete
-					targetdelete := expunge.MatchString(fileop.Path) == delete
-					if sourcedelete {
-						deletia.Add(i)
+				if expunge.MatchString(fileop.Path) == delete {
+					deletia.Add(i)
+				}
+				if fileop.op == opR || fileop.op == opC {
+					if expunge.MatchString(fileop.Source) == delete {
 						if fileop.op == opR {
 							oldmatchers := strings.Split(expunge.String(), "|")
 							newmatchers := make([]string, 0)
@@ -7137,12 +7133,6 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 								}
 							}
 							expunge = regexp.MustCompile(strings.Join(newmatchers, "|"))
-						}
-					} else if targetdelete {
-						if fileop.op == opR {
-							fileop.op = opD
-						} else if fileop.op == opC {
-							deletia.Add(i)
 						}
 					}
 				}
