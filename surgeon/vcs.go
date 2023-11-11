@@ -45,6 +45,7 @@ type VCS struct {
 	styleflags   orderedStringSet // fast-export style flags
 	extensions   orderedStringSet // Format extension flags
 	initializer  string           // Command to initualize a repo
+	committer    string           // Command to commit a directory state
 	pathlister   string           // Command to list registered files
 	taglister    string           // Command to list tag names
 	branchlister string           // Command to list branch names
@@ -111,6 +112,7 @@ func (vcs VCS) String() string {
 		fmt.Sprintf(" Export-Style: %s\n", vcs.styleflags.String()) +
 		fmt.Sprintf("   Extensions: %s\n", vcs.extensions.String()) +
 		fmt.Sprintf("  Initializer: %s\n", vcs.initializer) +
+		fmt.Sprintf("    Committer: %s\n", vcs.committer) +
 		fmt.Sprintf("   Pathlister: %s\n", vcs.pathlister) +
 		fmt.Sprintf("    Taglister: %s\n", vcs.taglister) +
 		fmt.Sprintf(" Branchlister: %s\n", vcs.branchlister) +
@@ -179,6 +181,7 @@ func vcsInit() {
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "git init --quiet",
+			committer:    "git commit -q -a -m '%s'",
 			importer:     "git fast-import --quiet --export-marks=.git/marks",
 			checkout:     "git checkout",
 			gui:          "TZ=UTC gitk --all",
@@ -207,7 +210,8 @@ func vcsInit() {
 			extensions: newOrderedStringSet(
 				"empty-directories",
 				"multiple-authors", "commit-properties"),
-			initializer:  "bzr init",
+			initializer:  "bzr init --quiet",
+			committer:    "bzr commit -q -m '%s'",
 			pathlister:   "",
 			taglister:    "bzr tags",
 			branchlister: "bzr branches | cut -c 3-",
@@ -250,7 +254,8 @@ bzr-orphans
 			extensions: newOrderedStringSet(
 				"empty-directories",
 				"multiple-authors", "commit-properties"),
-			initializer:  "brz init",
+			initializer:  "brz init --quiet",
+			committer:    "brz commit -q -m '%s'",
 			pathlister:   "",
 			taglister:    "brz tags",
 			branchlister: "brz branches | cut -c 3-",
@@ -290,7 +295,8 @@ bzr-orphans
 				"nl-after-comment",
 				"export-progress"),
 			extensions:   newOrderedStringSet(),
-			initializer:  "hg init",
+			initializer:  "hg init --quiet",
+			committer:    "hg commit -q -m '%s'",
 			pathlister:   "hg status -macn",
 			taglister:    "hg tags --quiet",
 			branchlister: "hg branches --closed --template '{branch}\n' | grep -v '^default$'",
@@ -319,6 +325,7 @@ branch is renamed to 'master'.
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "darcs initialize",
+			committer:    "", // No option to specify a commit message
 			pathlister:   "darcs show files",
 			taglister:    "darcs show tags",
 			branchlister: "",
@@ -444,6 +451,7 @@ core
 				styleflags:   newOrderedStringSet(),
 				extensions:   newOrderedStringSet(),
 				initializer:  "pijul init",
+				committer:    "",
 				pathlister:   "pijul ls", // Undocumented
 				taglister:    "",
 				branchlister: "pijul channels 2>&1 | cut -c 3-",
@@ -532,6 +540,7 @@ _darcs
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "svnadmin create .",
+			committer:    "", // Can't do this yet, need to be in checkout directory
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -558,6 +567,7 @@ _darcs
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "cvs init",
+			committer:    "", // Can't do this yet, need to be in checkout directory
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -616,6 +626,7 @@ core
 			styleflags:   newOrderedStringSet("export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "mkdir SCCS",
+			committer:    "src commit -m '%s'", // Using SRC avoids a lot of hassle
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -639,6 +650,7 @@ core
 			extensions:   newOrderedStringSet(),
 			initializer:  "mkdir RCS",
 			importer:     "",
+			committer:    "src commit -m '%s'", // Using SRC avoids a lot of hassle
 			checkout:     "",
 			gui:          "",
 			pathlister:   "",
@@ -660,6 +672,7 @@ core
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "mkdir .src",
+			committer:    "src commit -m '%s'",
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -684,6 +697,7 @@ core
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "", // bk setup doesn't work here
+			committer:    "", // don't yet know right command for ths
 			pathlister:   "bk gfiles -U",
 			taglister:    "bk tags | sed -n 's/ *TAG: *//p'",
 			branchlister: "",
