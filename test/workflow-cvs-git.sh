@@ -23,7 +23,7 @@ mkdir "${TMPDIR}/cvs-scratch$$"
 tapcd "${TMPDIR}/cvs-scratch$$"
 
 # Make the workflow file.
-repotool initialize -q hack1 cvs git
+repotool makemake -q hack1 cvs git
 
 # Convert the repository
 # These variables are unset so the following make invocation won't try to

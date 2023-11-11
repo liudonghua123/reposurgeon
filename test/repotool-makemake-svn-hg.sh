@@ -1,12 +1,11 @@
 #!/bin/sh
-## Test repotool initialize, cvs->git
+## Test repotool makemake, svn->hg
 
 mkdir /tmp/test-workdir$$
-cd /tmp/test-workdir$$ || ( echo "$0: cd failed"; exit 1 )
-${REPOTOOL:-repotool} initialize xyzzy cvs git >/tmp/out$$
+cd /tmp/test-workdir$$ >/dev/null || ( echo "$0: cd failed" >&2; exit 1 )
+${REPOTOOL:-repotool} makemake xyzzy svn hg >/tmp/out$$
 echo Return code: $? >>/tmp/out$$
-# shellcheck disable=2064
-cd - >/dev/null || ( echo "$0: cd failed"; exit 1 )
+cd - >/dev/null || ( echo "$0: cd failed" >&2; exit 1 )
 ./dir-md5 /tmp/test-workdir$$ >>/tmp/out$$
 
 # shellcheck disable=SC1091
