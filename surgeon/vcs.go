@@ -207,7 +207,7 @@ func vcsInit() {
 			extensions: newOrderedStringSet(
 				"empty-directories",
 				"multiple-authors", "commit-properties"),
-			initializer:  "",
+			initializer:  "bzr init",
 			pathlister:   "",
 			taglister:    "bzr tags",
 			branchlister: "bzr branches | cut -c 3-",
@@ -250,7 +250,7 @@ bzr-orphans
 			extensions: newOrderedStringSet(
 				"empty-directories",
 				"multiple-authors", "commit-properties"),
-			initializer:  "",
+			initializer:  "brz init",
 			pathlister:   "",
 			taglister:    "brz tags",
 			branchlister: "brz branches | cut -c 3-",
@@ -318,7 +318,7 @@ branch is renamed to 'master'.
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
-			initializer:  "",
+			initializer:  "darcs initialize",
 			pathlister:   "darcs show files",
 			taglister:    "darcs show tags",
 			branchlister: "",
@@ -469,7 +469,7 @@ core
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
-			initializer:  "",
+			initializer:  "", // No single command does this due to wacky db setup
 			pathlister:   "mtn list known",
 			taglister:    "",
 			branchlister: "",
@@ -557,7 +557,7 @@ _darcs
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
 			extensions:   newOrderedStringSet(),
-			initializer:  "",
+			initializer:  "cvs init",
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -615,7 +615,7 @@ core
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet("export-progress"),
 			extensions:   newOrderedStringSet(),
-			initializer:  "",
+			initializer:  "mkdir SCCS",
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -625,7 +625,7 @@ core
 			ignorename:   "",
 			dfltignores:  "", // Has none
 			cookies:      reMake(dottedNumeric),
-			project:      "http://www.catb.org/~esr/cvs-fast-export http://www.catb.org/~esr/sccs2rcs",
+			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "Requires cvs-fast-export and sccs2rcs.",
 			idformat:     "%s",
 		},
@@ -637,7 +637,7 @@ core
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet("export-progress"),
 			extensions:   newOrderedStringSet(),
-			initializer:  "",
+			initializer:  "mkdir RCS",
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -659,7 +659,7 @@ core
 			quieter:      "-q",
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
-			initializer:  "",
+			initializer:  "mkdir .src",
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -711,7 +711,6 @@ core
 // and emits a fast-import stream on standard output.  The exporter
 // must be an *importer to* that takes an import stream on standard input
 // and produces a named alien file.
-//
 var fileFilters = map[string]struct {
 	importer string
 	exporter string

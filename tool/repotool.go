@@ -413,6 +413,29 @@ func makemake(args []string) {
 	}
 }
 
+func vcsinit(args []string) {
+	if verbose {
+		fmt.Printf("init args: %v\n", args)
+	}
+	vcstype := args[0]
+	var vcs VCS
+	for _, vcs = range vcstypes {
+		if vcs.name == vcstype {
+			goto foundit
+		}
+	}
+	croak("unknown VCS type %s", vcstype)
+foundit:
+	if isdir(vcs.subdirectory) {
+		croak("%s repository is already initialized here", vcstype)
+	}
+	if vcs.initializer != "" {
+		runShellProcessOrDie(vcs.initializer, "repository initialization")
+	} else {
+		croak("no initializer command defined for %s", vcstype)
+	}
+}
+
 func export() {
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -1198,6 +1221,15 @@ to step on any of these files that already exist.  Afterwards, you
 will need to set some variables in the Makefile; read its header
 comment.
 `},
+	"init": {
+		"init",
+		"initialize the current directory as a repository of specified type",
+		`The 'init' action takes a version-control system name 
+argument. It bails out if that the current directory is already initialized as a
+repository of that type.  Otherwise,. it initializes an empty repository. Under
+systems where tge distrinction is meaningful (notably CVS and SVN) this is a 
+repository directory, not a checkout dfirectory.
+`},
 	"export": {
 		"export",
 		"export a stream dump of the source repository",
@@ -1314,6 +1346,7 @@ With a following argument that is a command name, display detailed help for that
 
 var narrativeOrder []string = []string{
 	"makemake",
+	"init",
 	"export",
 	"mirror",
 	"branches",
@@ -1390,6 +1423,8 @@ func main() {
 	args := flags.Args()
 	if operation == "makemake" {
 		makemake(args)
+	} else if operation == "init" {
+		vcsinit(args)
 	} else if operation == "export" {
 		export()
 	} else if operation == "mirror" {

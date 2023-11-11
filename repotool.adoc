@@ -71,6 +71,10 @@ The compare operation accepts the following options:
 -i::
 	Perform comparison of normally ignored dot directories
 
+In older versions of this tool, the "makemake" command was named
+"initialize". It was renamed in order to avoid confusion with the
+"init" command.
+
 [[environment]]
 == ENVIRONMENT VARIABLES ==
 
@@ -118,7 +122,7 @@ or the following engines: cvs-fast-export(1) (for CVS), svnadmin(1)
 appropriate engine in your $PATH for whatever kind of repository you
 are streaming.
 
- [[see_also]]
+[[see_also]]
 == SEE ALSO ==
 
 reposurgeon(1).
