@@ -4546,6 +4546,7 @@ func matchesSubversionHeader(line []byte) bool {
 
 func matchesFastImportHeader(line []byte) bool {
 	var headerAlternatives = []string{
+		"progress",
 		"blob",
 		"commit",
 		"feature",
@@ -4571,6 +4572,8 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 		if len(line) == 0 {
 			break
 		} else if len(bytes.TrimSpace(line)) == 0 {
+			continue
+		} else if bytes.HasPrefix(line, []byte("progress")) {
 			continue
 		} else if bytes.HasPrefix(line, []byte("blob")) {
 			blob := newBlob(sp.repo)
