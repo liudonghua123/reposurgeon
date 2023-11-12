@@ -1,0 +1,32 @@
+progress (reading repository)
+progress 1: TAG refs/branches/master
+commit refs/heads/master
+mark :1
+committer Ralf Schlatterbeck <rsc@runtux.com> 0 +0000
+data 24
+TAG refs/branches/master
+progress 2: First commit.
+commit refs/heads/master
+mark :2
+committer Ralf Schlatterbeck <rsc@runtux.com> 0 +0000
+data 13
+First commit.
+from :1
+M 100644 inline README
+data 20
+1234567890123456789
+
+progress 3: Second commit.
+commit refs/heads/master
+mark :3
+committer Ralf Schlatterbeck <rsc@runtux.com> 10 +0000
+data 14
+Second commit.
+from :2
+M 100644 inline README
+data 20
+0123456789012345678
+
+progress (patches converted)
+progress (cleaning up)
+progress done

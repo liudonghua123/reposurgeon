@@ -467,7 +467,7 @@ but this feature is not yet exploited.
 
 FIXME: Need test for repocutter filecopy with -f, and skipcopy.
 
-FIXME: Meeds tests of SCCS, RCS, bk, darcs, mtn.
+FIXME: Needs tests of SCCS, RCS, bk, mtn.
 
 == Some references
 

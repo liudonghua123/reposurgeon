@@ -6,6 +6,7 @@ apt-get update -qy && apt-get install -qy --no-install-recommends \
 			      bzr \
 			      cvs \
 			      cvs-fast-export \
+			      darcs \
 			      golang \
 			      golint \
 			      mercurial \

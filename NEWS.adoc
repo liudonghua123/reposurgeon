@@ -17,6 +17,7 @@ Repository head::
      Simplifued syntax of solit command.
      repotool initialize becomes repotool makemake.
      Handle "progress" directive in fast-import streams.
+     Tested support for reading darcs repositories.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
