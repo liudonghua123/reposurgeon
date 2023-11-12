@@ -183,8 +183,9 @@ func screenwidth() int {
 
 // LineParse is state for a simple CLI parser with options and redirects.
 type LineParse struct {
-	repolist     *RepositoryList
+	name         string
 	line         string
+	flags        uint
 	capabilities orderedStringSet
 	stdin        io.ReadCloser
 	stdout       io.WriteCloser
@@ -225,12 +226,10 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		panic(throw("command", "command requires an explicit selection"))
 	}
 
-	caps := make(map[string]bool)
-	for _, cap := range capabilities {
-		caps[cap] = true
-	}
 	lp := LineParse{
+		name:         name,
 		line:         line,
+		flags:        parseflags,
 		capabilities: capabilities,
 		stdin:        os.Stdin,
 		stdout:       control.baton,
@@ -239,12 +238,22 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		closem:       make([]io.Closer, 0),
 		args:         make([]string, 0),
 	}
+	if err := lp.parse(); err != nil {
+		panic(throw("command", err.Error()))
+	}
+	return &lp
+}
 
+func (lp *LineParse) parse() error {
 	// Parse and process tokens and double-quoted string
 	// literals. The most general form of a token is aa"bb cc",
 	// that is " in a token toggles where or not whitespace is a
 	// token ender.  The special kind we want to catch this way
 	// looks like --foo-"whim wham".
+	caps := make(map[string]bool)
+	for _, cap := range lp.capabilities {
+		caps[cap] = true
+	}
 	argline := lp.line + " "
 	state := 0
 	var tok string
@@ -269,7 +278,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 				// Dash redirection
 				if !lp.redirected && tok == `-` {
 					if !caps["stdout"] && !caps["stdin"] {
-						panic(throw("command", "no support for - redirection in "+name))
+						panic(throw("command", "no support for - redirection in "+lp.name))
 					} else {
 						lp.redirected = true
 						continue
@@ -278,15 +287,15 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 
 				// Options
 				if strings.HasPrefix(tok, "--") {
-					if (parseflags & parseNOOPTS) != 0 {
-						panic(throw("command", name+" command has no options"))
+					if (lp.flags & parseNOOPTS) != 0 {
+						panic(throw("command", lp.name+" command has no options"))
 					}
 					lp.options = append(lp.options, tok)
 					continue
 				}
 
 				// Input redirection
-				if (parseflags & parseNOREDIRECT) == 0 {
+				if (lp.flags & parseNOREDIRECT) == 0 {
 					var err error
 					// The reason for the > test is to prevent false matches
 					// on legacy IDs in singleton-selection literals.
@@ -351,7 +360,7 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 				//  Pipe to command
 				if tok == "|" {
 					if !caps["stdout"] {
-						panic(throw("command", "no support for | redirection in "+name))
+						panic(throw("command", "no support for | redirection in "+lp.name))
 					}
 					cmd := strings.TrimSpace(argline[idx+1:])
 					shell := os.Getenv("SHELL")
@@ -410,20 +419,19 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		}
 	}
 skipout:
-
 	if state > 1 {
-		panic(throw("command", name+" command has unbalanced quotes"))
+		return fmt.Errorf(lp.name + " command has unbalanced quotes")
 	}
-	if len(lp.args) > 0 && (parseflags&parseNEEDREDIRECT) != 0 {
-		panic(throw("command", name+" command does not take a filename argument - use redirection instead"))
+	if len(lp.args) > 0 && (lp.flags&parseNEEDREDIRECT) != 0 {
+		return fmt.Errorf(lp.name + " command does not take a filename argument - use redirection instead")
 	}
-	if (len(lp.args) > 0) && (parseflags&parseNOARGS) != 0 {
-		panic(throw("command", name+" command does not take arguments"))
+	if (len(lp.args) > 0) && (lp.flags&parseNOARGS) != 0 {
+		return fmt.Errorf(lp.name + " command does not take arguments")
 	}
-	if (len(lp.args) == 0) && (parseflags&parseNEEDVERB) != 0 {
-		panic(throw("command", name+" command requires a subcommand verb"))
+	if (len(lp.args) == 0) && (lp.flags&parseNEEDVERB) != 0 {
+		return fmt.Errorf(lp.name + " command requires a subcommand verb")
 	}
-	return &lp
+	return nil
 }
 
 // OptVal looks for an option flag on the line, returns value and presence
