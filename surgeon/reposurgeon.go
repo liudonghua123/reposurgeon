@@ -2871,10 +2871,6 @@ Run blobs, commit comments and committer/author names, or tag comments
 and tag committer names in the selection set through the filter
 specified on the command line.
 
-This command is an exception to the normal rules for parsing
-command arguments; double-quoting arguments will not have the expected 
-result.
-
 With any verb other than dedos, attempting to specify a selection
 set including both blobs and non-blobs (that is, commits or tags)
 throws an error. Inline content in commits is filtered when the
@@ -2882,11 +2878,12 @@ selection set contains (only) blobs and the commit is within the range
 bounded by the earliest and latest blob in the specification.
 
 When filtering blobs, if the command line contains the magic cookie
-'%PATHSo%' it is replaced with a space-separated list of all paths
+'%PATHS%' it is replaced with a space-separated list of all paths
 that reference the blob.
 
 With the verb shell, the remainder of the line specifies a filter as a
-shell command. Each blob or comment is presented to the filter on
+shell command - reposurgeon does not interpret double quotes there, passing
+them to the shell. Each blob or comment is presented to the filter on
 standard input; the content is replaced with whatever the filter emits
 to standard output.
 
@@ -2950,7 +2947,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 	}
 	verb := fields[0]
 	flagRe := regexp.MustCompile(`[0-9]*g?`)
-	if verb == "dedos" {
+	if verb == `dedos` {
 		if len(fc.attributes) == 0 {
 			fc.attributes = newOrderedStringSet("c", "a", "C")
 		}
@@ -2961,7 +2958,9 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 		return fc
 	}
 	command := strings.TrimSpace(fields[1])
-	if verb == "shell" {
+	// These verb tests simulate normal handling of doublequotes
+	// around the subcommand.
+	if verb == `shell` || verb == `"shell"` {
 		fc.attributes = newOrderedStringSet("c", "a", "C")
 		fc.sub = func(content string, id string, substitutions map[string]string) (string, error) {
 			substituted := command
@@ -2980,7 +2979,7 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 			}
 			return string(content), err
 		}
-	} else if verb == "regex" || verb == "replace" {
+	} else if verb == `regex` || verb == `replace` || verb == `"regex"` || verb == `"replace"` {
 		parts := strings.Split(command, command[0:1])
 		subflags := parts[len(parts)-1]
 		if len(parts) != 4 {
@@ -3060,7 +3059,6 @@ func (fc *filterCommand) do(content string, id string, substitutions map[string]
 }
 
 // DoFilter is the handler for the "filter" command.
-// FIXME: Odd syntax
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
 	rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
 	filterhook := newFilterCommand(rs.chosen(), line)
