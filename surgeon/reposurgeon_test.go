@@ -2300,7 +2300,9 @@ TAG o123-o123
 			rs.setSelectionSet(test.ss)
 
 			// all tests have valid --regex lines, not checking nil
-			fhook := newFilterCommand(repo, fmt.Sprint("regex ", test.regex))
+			parse := rs.newLineParse(fmt.Sprint("regex ", test.regex),
+				"filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
+			fhook := newFilterCommand(parse)
 
 			rs.chosen().dataTraverse("", rs.selection, fhook.do, fhook.attributes, test.safety, true, control.baton)
 

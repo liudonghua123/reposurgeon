@@ -2944,17 +2944,17 @@ func GoReplacer(re *regexp.Regexp, fromString, toString string) string {
 }
 
 // newFilterCommand - Initialize a filter from the command line.
-func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
+func newFilterCommand(lp *LineParse) *filterCommand {
 	fc := new(filterCommand)
 	fc.attributes = newOrderedStringSet()
-	// Must not use LineParse here as it would try to strip options
-	// in shell commands.
-	fields := strings.SplitN(filtercmd, " ", 2)
+	fields := strings.SplitN(lp.line, " ", 2)
 	if len(fields) == 0 {
 		croak("command required a subcommand verb")
 	}
 	verb := fields[0]
 	flagRe := regexp.MustCompile(`[0-9]*g?`)
+	// These verb tests simulate normal handling of doublequotes
+	// around the shell subcommand.
 	if verb == `dedos` {
 		if len(fc.attributes) == 0 {
 			fc.attributes = newOrderedStringSet("c", "a", "C")
@@ -2987,7 +2987,9 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 			}
 			return string(content), err
 		}
-	} else if verb == `regex` || verb == `replace` || verb == `"regex"` || verb == `"replace"` {
+		return fc
+	}
+	if verb == `regex` || verb == `replace` || verb == `"regex"` || verb == `"replace"` {
 		parts := strings.Split(command, command[0:1])
 		subflags := parts[len(parts)-1]
 		if len(parts) != 4 {
@@ -3046,6 +3048,9 @@ func newFilterCommand(repo *Repository, filtercmd string) *filterCommand {
 				return nil
 			}
 		}
+	} else {
+		croak("unrecognized filter verb %q", verb)
+		return nil
 	}
 	return fc
 }
@@ -3068,8 +3073,8 @@ func (fc *filterCommand) do(content string, id string, substitutions map[string]
 
 // DoFilter is the handler for the "filter" command.
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
-	rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
-	filterhook := newFilterCommand(rs.chosen(), line)
+	parse := rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
+	filterhook := newFilterCommand(parse)
 	if filterhook != nil {
 		rs.chosen().dataTraverse("Filtering",
 			rs.selection,
