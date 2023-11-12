@@ -142,7 +142,7 @@ repository() {
     case "${cmd}" in
 	init)
 	    # Initialize repo in specified temporary directory
-	    repotype="$1"	# Not yet nontrivially used
+	    repotype="$1"
 	    base="$2";
 	    set -e
 	    trap 'rm -fr ${base}' EXIT HUP INT QUIT TERM
@@ -154,7 +154,7 @@ repository() {
 	    case "${repotype}" in
 		git|bzr|brz) "${repotype}" init -q;;
 		svn) svnadmin create .; svn co -q "file://$(pwd)" checkout ;;
-		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ts=10
 	    ;;
@@ -183,7 +183,7 @@ repository() {
 		svn)
 		    # Doesn't force timestamp or author.
 		    svn commit -q -m "${text}";;
-		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    # shellcheck disable=SC2046,2086
 	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
@@ -199,7 +199,7 @@ repository() {
 			git branch "${branch}"
 		    fi
 		    git checkout -q "$1";;
-		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
 	merge)
@@ -211,7 +211,7 @@ repository() {
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
 		    git merge -q "$@";;
-		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
 	mkdir)
@@ -222,6 +222,7 @@ repository() {
 		mkdir -p "${d}"
 		case "${repotype}" in
 		    svn) svn add -q "${d}"; svn commit -q -m "${d} creation";;
+		    *) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 		esac
 	    done
 	    # shellcheck disable=SC2046,2086
@@ -232,7 +233,7 @@ repository() {
 	    tagname="$1"
 	    case "${repotype}" in
 		git|bzr|brz) "${repotype}" tag -q "${tagname}";;
-		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
 	up)
@@ -240,7 +241,7 @@ repository() {
 	    if [ -d "checkout" ]; then cd checkout >/dev/null || exit 1; fi
 	    case "${repotype}" in
 		svn) svn -q up;;
-		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    # shellcheck disable=SC2046,2086
 	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
@@ -256,7 +257,7 @@ repository() {
 		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
 		    svnadmin dump -q "." | repocutter -q -t "${base}" testify >/tmp/stream$$
 		    ;;
-		*) echo "not ok - ${cmd} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    echo "${spacer}## $1"; echo "${spacer}# Generated - do not hand-hack!"; cat /tmp/stream$$
 	    ;;
