@@ -45,7 +45,6 @@ type VCS struct {
 	styleflags   orderedStringSet // fast-export style flags
 	extensions   orderedStringSet // Format extension flags
 	initializer  string           // Command to initualize a repo
-	committer    string           // Command to commit a directory state
 	pathlister   string           // Command to list registered files
 	taglister    string           // Command to list tag names
 	branchlister string           // Command to list branch names
@@ -112,7 +111,6 @@ func (vcs VCS) String() string {
 		fmt.Sprintf(" Export-Style: %s\n", vcs.styleflags.String()) +
 		fmt.Sprintf("   Extensions: %s\n", vcs.extensions.String()) +
 		fmt.Sprintf("  Initializer: %s\n", vcs.initializer) +
-		fmt.Sprintf("    Committer: %s\n", vcs.committer) +
 		fmt.Sprintf("   Pathlister: %s\n", vcs.pathlister) +
 		fmt.Sprintf("    Taglister: %s\n", vcs.taglister) +
 		fmt.Sprintf(" Branchlister: %s\n", vcs.branchlister) +
@@ -181,7 +179,6 @@ func vcsInit() {
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "git init --quiet",
-			committer:    "git commit -q -a -m '%s'",
 			pathlister:   "git ls-files",
 			taglister:    "git tag -l",
 			branchlister: "git branch -q --list 2>&1 | cut -c 3- | grep -E -v 'detached|^master$' || exit 0",
@@ -211,7 +208,6 @@ func vcsInit() {
 				"empty-directories",
 				"multiple-authors", "commit-properties"),
 			initializer:  "bzr init --quiet",
-			committer:    "bzr commit -q -m '%s'",
 			pathlister:   "bzr ls",
 			taglister:    "bzr tags",
 			branchlister: "bzr branches | cut -c 3-",
@@ -255,7 +251,6 @@ bzr-orphans
 				"empty-directories",
 				"multiple-authors", "commit-properties"),
 			initializer:  "brz init --quiet",
-			committer:    "brz commit -q -m '%s'",
 			pathlister:   "brz ls",
 			taglister:    "brz tags",
 			branchlister: "brz branches | cut -c 3-",
@@ -296,7 +291,6 @@ bzr-orphans
 				"export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "hg init --quiet",
-			committer:    "hg commit -q -m '%s'",
 			pathlister:   "hg status -macn",
 			taglister:    "hg tags --quiet",
 			branchlister: "hg branches --closed --template '{branch}\n' | grep -v '^default$'",
@@ -325,7 +319,6 @@ branch is renamed to 'master'.
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "darcs initialize",
-			committer:    "darcs record -m '%s'",
 			pathlister:   "darcs show files",
 			taglister:    "darcs show tags",
 			branchlister: "",
@@ -451,7 +444,6 @@ core
 				styleflags:   newOrderedStringSet(),
 				extensions:   newOrderedStringSet(),
 				initializer:  "pijul init",
-				committer:    "",
 				pathlister:   "pijul ls", // Undocumented
 				taglister:    "",
 				branchlister: "pijul channels 2>&1 | cut -c 3-",
@@ -478,7 +470,6 @@ core
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "", // No single command does this due to wacky db setup
-			committer:    "mtn commit --message='%s'",
 			pathlister:   "mtn list known",
 			taglister:    "mtn list tags",
 			branchlister: "mtn list branches",
@@ -541,7 +532,6 @@ _darcs
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "svnadmin create .",
-			committer:    "", // Can't do this yet, need to be in checkout directory
 			importer:     "",
 			pathlister:   "svn ls",
 			taglister:    "svn ls 'file://${pwd}/tags' | sed 's|/$||'",
@@ -568,7 +558,6 @@ _darcs
 			styleflags:   newOrderedStringSet("import-defaults", "export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "cvs init",
-			committer:    "", // Can't do this yet, need to be in checkout directory
 			importer:     "",
 			checkout:     "",
 			gui:          "",
@@ -627,7 +616,6 @@ core
 			styleflags:   newOrderedStringSet("export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "mkdir SCCS",
-			committer:    "src sccs commit -m '%s'",
 			pathlister:   "src sccs ls",
 			taglister:    "src sccs tag list",
 			branchlister: "src sccs branch list",
@@ -652,7 +640,6 @@ core
 			styleflags:   newOrderedStringSet("export-progress"),
 			extensions:   newOrderedStringSet(),
 			initializer:  "mkdir RCS",
-			committer:    "src rcs commit -m '%s'",
 			pathlister:   "src rcs ls",
 			taglister:    "src rcs tag list",
 			branchlister: "src rcs branch list",
@@ -677,7 +664,6 @@ core
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "mkdir .src",
-			committer:    "src commit -m '%s'",
 			pathlister:   "src ls",
 			taglister:    "src tag list",
 			branchlister: "src branch list",
@@ -704,7 +690,6 @@ core
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
 			initializer:  "", // bk setup doesn't work here
-			committer:    "", // don't yet know right command for ths
 			pathlister:   "bk gfiles -U",
 			taglister:    "bk tags | sed -n 's/ *TAG: *//p'",
 			branchlister: "",
