@@ -2533,14 +2533,17 @@ include::docinclude/strip.adoc[]
 [[profiling]]
 === Profiling
 
+The "set eadlimit" option can be used to limit processing to
+head segments of an input stream file; this can be useful for
+profiling andf fault isolation.
+
+Profiling commands are:
+
 // COMMAND
 include::docinclude/elapsed.adoc[]
 
 // COMMAND
 include::docinclude/timing.adoc[]
-
-// COMMAND
-include::docinclude/readlimit.adoc[]
 
 // COMMAND
 include::docinclude/memory.adoc[]
@@ -3601,7 +3604,9 @@ There was a read --use-uuid option which has been retired. Negation
 was not yet supported in pathsets. The regex, path rename, branch
 rename, and tag rename commands used Python-style rather than Go-style
 match references. Macro argument formals did not yet have a %
-prefix. The split command syntax was incompatibly different.
+prefix. The split command syntax was incompatibly different.  The
+"set" command didn't take a subcommand verb.  Theere was a "readlimit"
+campoaing what "swt readlimit" now does.
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the

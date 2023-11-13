@@ -6520,11 +6520,17 @@ func getOptionNames() []string {
 // HelpSet says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSet() {
 	rs.helpOutput(fmt.Sprintf(`
-set [readlimit|%s]+
+set {flag[s] [%s]+ | readlimit [limit]}
 
-Set a (tab-completed) boolean option to control reposurgeon's
-behavior.  With no arguments, displays the state of all flags.
-Do "help options" to see the available options.
+"set flag" sets one or more (tab-completed) boolean option to control
+reposurgeon's behavior.  With no arguments, displays the state of all
+flags.  Do "help options" to see the available options.
+
+"set readlimit" sets a maximum number of commits to read from a stream.
+If the limit is reached before EOF it will be logged. Mainly useful
+for benchmarking.  Without arguments, report the read limit; 0 means
+there is none.
+
 `, strings.Join(getOptionNames(), "|")))
 }
 
@@ -6619,34 +6625,6 @@ func (rs *Reposurgeon) CompleteClear(text string) []string {
 func (rs *Reposurgeon) DoClear(line string) bool {
 	parse := rs.newLineParse(line, "clear", parseNOSELECT|parseNOOPTS, nil)
 	tweakFlagOptions(parse.args, false)
-	return false
-}
-
-// HelpReadLimit says "Shut up, golint!"
-func (rs *Reposurgeon) HelpReadLimit() {
-	rs.helpOutput(`
-readlimit N
-
-Set a maximum number of commits to read from a stream.  If the limit
-is reached before EOF it will be logged. Mainly useful for benchmarking.
-Without arguments, report the read limit; 0 means there is none.
-`)
-}
-
-// DoReadlimit is the command handler for the "readlimit" command.
-func (rs *Reposurgeon) DoReadlimit(line string) bool {
-	rs.newLineParse(line, "readlimit", parseNOSELECT|parseNOOPTS, nil)
-	if line == "" {
-		respond("readlimit %d\n", control.readLimit)
-		return false
-	}
-	lim, err := strconv.ParseUint(line, 10, 64)
-	if err != nil {
-		if logEnable(logWARN) {
-			logit("ill-formed readlimit argument %q: %v.", line, err)
-		}
-	}
-	control.readLimit = lim
 	return false
 }
 

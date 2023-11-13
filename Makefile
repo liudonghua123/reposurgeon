@@ -159,7 +159,6 @@ BNF_TOPICS = \
 	preserve \
 	print \
 	quit \
-	readlimit \
 	rebuild \
 	references \
 	remove \

@@ -1,4 +1,4 @@
-readlimit 3
+set readlimit 3
 read <simpletag.svn
 reposurgeon: read limit 3 reached.
 prefer git

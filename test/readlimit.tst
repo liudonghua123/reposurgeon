@@ -1,7 +1,7 @@
-## Test readlimit
+## Test set readlimit
 set flag relax
 set flag echo
-readlimit 3
+set readlimit 3
 read <simpletag.svn
 prefer git
 write -
