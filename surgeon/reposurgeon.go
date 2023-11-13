@@ -1393,7 +1393,7 @@ func (rs *Reposurgeon) HelpTiming() {
 	rs.helpOutput(`
 timings [MARK-NAME] [>OUTFILE]
 
-Report phase-timing results from repository analysis.
+Report phase-timing results from analysis of the current repository.
 
 If the command has a following argument, this creates a new, named time mark
 that will be visible in a later report; this may be useful during
@@ -1412,27 +1412,91 @@ func (rs *Reposurgeon) DoTiming(line string) bool {
 	return false
 }
 
-// HelpMemory says "Shut up, golint!"
-func (rs *Reposurgeon) HelpMemory() {
+// HelpShow says "Shut up, golint!"
+func (rs *Reposurgeon) HelpShow() {
 	rs.helpOutput(`
-memory [>OUTFILE]
+show {elapsed|memory|sizeof} [>OUTFILE]
 
-Report memory usage.  Runs a garbage-collect before reporting so the
+The "show" command generates reports that do not require a repository
+to be loaded.
+
+With "elapsed", display elapsed time since start.
+
+With "memory", eport memory usage.  Runs a garbage-collect before reporting so the
 figure will better reflect storage currently held in loaded repositories;
 this will not affect the reported high-water mark.
+
+With "sizeof", report byte-extent sizes for various reposurgeon
+internal types.  Note that these sizes are stride lengths, as in C's
+sizeof(); this means that for structs they will include whatever
+trailing padding is required for instances in an array of the structs.
+This command is for developer use when optimizing structure packing to
+reduce memory use. It is probably not of interest to ordinary
+reposurgeon users.
 `)
 }
 
-// DoMemory is the handler for the "memory" command.
-func (rs *Reposurgeon) DoMemory(line string) bool {
-	parse := rs.newLineParse(line, "memory", parseNOSELECT|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
+// DoShow is the handler for the "memory" command.
+func (rs *Reposurgeon) DoShow(line string) bool {
+	parse := rs.newLineParse(line, "show", parseNOSELECT|parseNOOPTS|parseNEEDVERB, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	var memStats runtime.MemStats
-	debug.FreeOSMemory()
-	runtime.ReadMemStats(&memStats)
-	const MB = 1e6
-	fmt.Fprintf(parse.stdout, "Heap: %.2fMB  High water: %.2fMB\n",
-		float64(memStats.HeapAlloc)/MB, float64(memStats.TotalAlloc)/MB)
+
+	if verb := parse.args[0]; verb == "memory" {
+		var memStats runtime.MemStats
+		debug.FreeOSMemory()
+		runtime.ReadMemStats(&memStats)
+		const MB = 1e6
+		parse.respond("Heap: %.2fMB  High water: %.2fMB",
+			float64(memStats.HeapAlloc)/MB, float64(memStats.TotalAlloc)/MB)
+	} else if verb == "elapsed" {
+		parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
+	} else if verb == "sizeof" {
+		// For developer use when optimizing structure packing to reduce memory use
+		// const MaxUint = ^uint(0)
+		// const MinUint = 0
+		// const MaxInt = int(MaxUint >> 1)
+		// const MinInt = -MaxInt - 1
+		const wordLengthInBytes = 8
+		roundUp := func(n, m uintptr) uintptr {
+			return ((n + m - 1) / m) * m
+		}
+		explain := func(size uintptr) string {
+			out := fmt.Sprintf("%3d", size)
+			if size%wordLengthInBytes > 0 {
+				paddedSize := roundUp(size, wordLengthInBytes)
+				out += fmt.Sprintf(" (padded to %d, step down %d)", paddedSize, size%wordLengthInBytes)
+			}
+			return out
+		}
+		// Don't use respond() here, we want to be able to do "reposurgeon sizeof"
+		// and get a result.
+		fmt.Fprintf(control.baton, "NodeAction:        %s\n", explain(unsafe.Sizeof(*new(NodeAction))))
+		fmt.Fprintf(control.baton, "RevisionRecord:    %s\n", explain(unsafe.Sizeof(*new(RevisionRecord))))
+		fmt.Fprintf(control.baton, "Commit:            %s\n", explain(unsafe.Sizeof(*new(Commit))))
+		fmt.Fprintf(control.baton, "Callout:           %s\n", explain(unsafe.Sizeof(*new(Callout))))
+		fmt.Fprintf(control.baton, "FileOp:            %s\n", explain(unsafe.Sizeof(*new(FileOp))))
+		fmt.Fprintf(control.baton, "Blob:              %s\n", explain(unsafe.Sizeof(*new(Blob))))
+		fmt.Fprintf(control.baton, "Tag:               %s\n", explain(unsafe.Sizeof(*new(Tag))))
+		fmt.Fprintf(control.baton, "Reset:             %s\n", explain(unsafe.Sizeof(*new(Reset))))
+		fmt.Fprintf(control.baton, "Attribution:       %s\n", explain(unsafe.Sizeof(*new(Attribution))))
+		fmt.Fprintf(control.baton, "blobidx:           %3d\n", unsafe.Sizeof(blobidx(0)))
+		fmt.Fprintf(control.baton, "markidx:           %3d\n", unsafe.Sizeof(markidx(0)))
+		fmt.Fprintf(control.baton, "revidx:            %3d\n", unsafe.Sizeof(revidx(0)))
+		fmt.Fprintf(control.baton, "nodeidx:           %3d\n", unsafe.Sizeof(nodeidx(0)))
+		fmt.Fprintf(control.baton, "string:            %3d\n", unsafe.Sizeof("foo"))
+		fmt.Fprintf(control.baton, "[]byte:            %3d\n", unsafe.Sizeof(make([]byte, 0)))
+		fmt.Fprintf(control.baton, "pointer:           %3d\n", unsafe.Sizeof(new(Attribution)))
+		fmt.Fprintf(control.baton, "int:               %3d\n", unsafe.Sizeof(0))
+		fmt.Fprintf(control.baton, "bool:              %3d\n", unsafe.Sizeof(true))
+		fmt.Fprintf(control.baton, "map[string]string: %3d\n", unsafe.Sizeof(make(map[string]string)))
+		fmt.Fprintf(control.baton, "[]string:          %3d\n", unsafe.Sizeof(make([]string, 0)))
+		fmt.Fprintf(control.baton, "map[string]bool:   %3d\n", unsafe.Sizeof(make(map[string]bool)))
+		seq := NewNameSequence()
+		fmt.Fprintf(control.baton, "raw modulus:      %-5d\n", len(seq.color)*len(seq.item))
+		fmt.Fprintf(control.baton, "modulus/phi:      %-5d\n", int((float64(len(seq.color)*len(seq.item)))/phi))
+	} else {
+		croak("unknown show subcommand.")
+	}
 	return false
 }
 
@@ -7151,23 +7215,6 @@ func (rs *Reposurgeon) DoVersion(line string) bool {
 // Exiting (in case EOT has been rebound)
 //
 
-// HelpElapsed says "Shut up, golint!"
-func (rs *Reposurgeon) HelpElapsed() {
-	rs.helpOutput(`
-elapsed [>OUTFILE]
-
-Display elapsed time since start.
-`)
-}
-
-// DoElapsed is the handler for the "elapsed" command.
-func (rs *Reposurgeon) DoElapsed(line string) bool {
-	parse := rs.newLineParse(line, "elapsed", parseNOSELECT|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
-	return false
-}
-
 // HelpExit says "Shut up, golint!"
 func (rs *Reposurgeon) HelpExit() {
 	rs.helpOutput(`
@@ -7835,69 +7882,6 @@ func (rs *Reposurgeon) DoHash(line string) bool {
 			}
 		}
 	}
-	return false
-}
-
-// HelpSizeof says "Shut up, golint!"
-func (rs *Reposurgeon) HelpSizeof() {
-	rs.helpOutput(`
-sizeof
-
-This command is for developer use when optimizing structure packing to reduce
-memory use. It is probably not of interest to ordinary reposurgeon users.
-
-It displays byte-extent sizes for various reposurgeon internal types.  Note
-that these sizes are stride lengths, as in C's sizeof(); this means that for
-structs they will include whatever trailing padding is required for instances
-in an array of the structs.
-`)
-}
-
-// DoSizeof is for developer use when optimizing structure packing to reduce memory use
-// const MaxUint = ^uint(0)
-// const MinUint = 0
-// const MaxInt = int(MaxUint >> 1)
-// const MinInt = -MaxInt - 1
-func (rs *Reposurgeon) DoSizeof(line string) bool {
-	rs.newLineParse(line, "sizeof", parseNOSELECT|parseNOARGS|parseNOOPTS, nil)
-	const wordLengthInBytes = 8
-	roundUp := func(n, m uintptr) uintptr {
-		return ((n + m - 1) / m) * m
-	}
-	explain := func(size uintptr) string {
-		out := fmt.Sprintf("%3d", size)
-		if size%wordLengthInBytes > 0 {
-			paddedSize := roundUp(size, wordLengthInBytes)
-			out += fmt.Sprintf(" (padded to %d, step down %d)", paddedSize, size%wordLengthInBytes)
-		}
-		return out
-	}
-	// Don't use respond() here, we want to be able to do "reposurgeon sizeof"
-	// and get a result.
-	fmt.Fprintf(control.baton, "NodeAction:        %s\n", explain(unsafe.Sizeof(*new(NodeAction))))
-	fmt.Fprintf(control.baton, "RevisionRecord:    %s\n", explain(unsafe.Sizeof(*new(RevisionRecord))))
-	fmt.Fprintf(control.baton, "Commit:            %s\n", explain(unsafe.Sizeof(*new(Commit))))
-	fmt.Fprintf(control.baton, "Callout:           %s\n", explain(unsafe.Sizeof(*new(Callout))))
-	fmt.Fprintf(control.baton, "FileOp:            %s\n", explain(unsafe.Sizeof(*new(FileOp))))
-	fmt.Fprintf(control.baton, "Blob:              %s\n", explain(unsafe.Sizeof(*new(Blob))))
-	fmt.Fprintf(control.baton, "Tag:               %s\n", explain(unsafe.Sizeof(*new(Tag))))
-	fmt.Fprintf(control.baton, "Reset:             %s\n", explain(unsafe.Sizeof(*new(Reset))))
-	fmt.Fprintf(control.baton, "Attribution:       %s\n", explain(unsafe.Sizeof(*new(Attribution))))
-	fmt.Fprintf(control.baton, "blobidx:           %3d\n", unsafe.Sizeof(blobidx(0)))
-	fmt.Fprintf(control.baton, "markidx:           %3d\n", unsafe.Sizeof(markidx(0)))
-	fmt.Fprintf(control.baton, "revidx:            %3d\n", unsafe.Sizeof(revidx(0)))
-	fmt.Fprintf(control.baton, "nodeidx:           %3d\n", unsafe.Sizeof(nodeidx(0)))
-	fmt.Fprintf(control.baton, "string:            %3d\n", unsafe.Sizeof("foo"))
-	fmt.Fprintf(control.baton, "[]byte:            %3d\n", unsafe.Sizeof(make([]byte, 0)))
-	fmt.Fprintf(control.baton, "pointer:           %3d\n", unsafe.Sizeof(new(Attribution)))
-	fmt.Fprintf(control.baton, "int:               %3d\n", unsafe.Sizeof(0))
-	fmt.Fprintf(control.baton, "bool:              %3d\n", unsafe.Sizeof(true))
-	fmt.Fprintf(control.baton, "map[string]string: %3d\n", unsafe.Sizeof(make(map[string]string)))
-	fmt.Fprintf(control.baton, "[]string:          %3d\n", unsafe.Sizeof(make([]string, 0)))
-	fmt.Fprintf(control.baton, "map[string]bool:   %3d\n", unsafe.Sizeof(make(map[string]bool)))
-	seq := NewNameSequence()
-	fmt.Fprintf(control.baton, "raw modulus:      %-5d\n", len(seq.color)*len(seq.item))
-	fmt.Fprintf(control.baton, "modulus/phi:      %-5d\n", int((float64(len(seq.color)*len(seq.item)))/phi))
 	return false
 }
 

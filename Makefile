@@ -125,7 +125,6 @@ BNF_TOPICS = \
 	divide \
 	do \
 	drop \
-	elapsed \
 	exit \
 	expunge \
 	filter \
@@ -146,7 +145,6 @@ BNF_TOPICS = \
 	log \
 	logfile \
 	manifest \
-	memory \
 	merge \
 	msgin \
 	msgout \
@@ -171,7 +169,7 @@ BNF_TOPICS = \
 	setfield \
 	setperm \
 	shell \
-	sizeof \
+	show \
 	sizes \
 	sourcetype \
 	split \

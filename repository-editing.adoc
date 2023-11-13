@@ -2525,9 +2525,6 @@ include::docinclude/version.adoc[]
 include::docinclude/hash.adoc[]
 
 // COMMAND
-include::docinclude/sizeof.adoc[]
-
-// COMMAND
 include::docinclude/strip.adoc[]
 
 [[profiling]]
@@ -2540,13 +2537,10 @@ profiling andf fault isolation.
 Profiling commands are:
 
 // COMMAND
-include::docinclude/elapsed.adoc[]
+include::docinclude/show.adoc[]
 
 // COMMAND
 include::docinclude/timing.adoc[]
-
-// COMMAND
-include::docinclude/memory.adoc[]
 
 [[profile_cmd,profile]]
 profile [live|start|save|bench] [PORT | SUBJECT [FILENAME]]::
@@ -3606,7 +3600,9 @@ rename, and tag rename commands used Python-style rather than Go-style
 match references. Macro argument formals did not yet have a %
 prefix. The split command syntax was incompatibly different.  The
 "set" and "clear" commands didn't take a subcommand verb.  There was a
-"readlimit" command doing what "set readlimit" now does.
+"readlimit" command doing what "set readlimit" now does. The "elapsed",
+"memory", and "sizeof" subcommands of "show" used to be separate
+commands.
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3966,6 +3962,7 @@ renumber
 [SELECTION] reorder [--quiet]
 {SELECTION} resolve
 [SELECTION] setfield {FIELD} {VALUE}
+show {elapsed|memory|sizeof} [>OUTFILE]
 {SELECTION} setperm {PERM} [PATH...]
 [SELECTION] split [ --path ] PATH-OR-INDEX
 [SELECTION] squash [POLICY-FLAFS...]
@@ -4006,12 +4003,11 @@ path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
 ----
 
-The following are S and should probably be attacched to some verb:
+The following are S and should probably be attached to some verb:
 
 ----
 blob [MARK-NUMBER] {<INFILE|>OUTFILE] 
 logfile [PATH]
-memory [>OUTFILE]
 references [list|lift]
 ----
 
@@ -4019,7 +4015,6 @@ The following are S, but probably shouldn't change:
 
 ----
 [SELECTION] changelogs [BASENAME-PATTERN]
-elapsed [>OUTFILE]
 ignores [--rename] [--translate] [--defaults]
 script {PATH} [ARG...]
 shell [COMMAND-TEXT]
@@ -4035,7 +4030,6 @@ Should these be subcommands of list?
 ----
 [SELECTION] manifest [PATTERN] [>OUTFILE]
 names [>OUTFILE]
-sizeof
 [SELECTION] sizes [>OUTFILE]
 [SELECTION] stamp [>OUTFILE]
 stats [>OUTFILE]
