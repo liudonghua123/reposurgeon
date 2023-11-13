@@ -3885,6 +3885,184 @@ Guarantee: As version-control systems add support for the
 fast-import format, their repositories will become editable by
 reposurgeon.
 
+== Notes on the DSL ==
+
+The syntax of the reposurgeomn DSL evolved ad hoc as more capabilities
+were glued onto the tool. The result is something of an irregular mess
+that is difficult for uses to wrap their heads around even with good
+documentation.
+
+Wrestling the DSL into a simpler and more uniform shape is an ongoing
+area of development, and not a simple one. There are conflicting
+objectives:
+
+. Simplify individual commands with complex syntax.
+
+. Most commands have the form of a simple verb. (V). Some have the
+  form verb-subject (VS) or verb-subject-object (VSO). Some have the
+  form subject-verb (SV). Some are subject nouns (S). Some are harder
+  to classify. Ideally we want a simpler and more uniform morphology.
+
+. Group commands so the language is easier to remember and document.
+
+. The distinction between things done with policy flags vs. things
+  done with subcommand ketwords is not very principled. Probably
+  we should use subcommand keywords more for alternative modes, as
+  opposed to policy bits that can be set several at a time.
+
+. Keep commonly-used commands short and simple.
+
+. Avoid using the same verb for VS commands that may have
+  a selection set and must not have a selection set.
+
+A relatively recent advance at the end of the 4.x release
+series was implementing uniform argument-tokenization rules across all
+commands (with one motivated exception at "filter shell").  This
+replaced differeng tokenization rules in different commands.
+
+The state of play...
+
+Most commands are simple and V:
+
+----
+[SELECTION] append [--rstrip] {TEXT}
+{SELECTION} assign [--singleton] [NAME]
+branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
+{SELECTION} checkout
+choose [REPO-NAME]
+[SELECTION] coalesce [--debug] [TIMEFUZZ]
+{SELECTION} count [>OUTFILE]
+debranch {SOURCE-BRANCH} [TARGET-BRANCH]
+[SELECTION] dedup
+define [NAME [TEXT]]
+[SELECTION] delete
+{SELECTION} diff [>OUTFILE]
+{SELECTION} divide
+do {MACRO-NAME} [ARG...]
+drop [REPO-NAME]
+exit [>OUTFILE]
+[SELECTION] expunge [--not|--notagify] {PATH-PATTERN}
+gc [GOGC]
+[SELECTION] gitify
+[SELECTION] graft [--prune] {REPO-NAME}
+[SELECTION] graph [>OUTFILE]
+[SELECTION] hash [--tree] [>OUTFILE]
+help [COMMAND]
+history
+{SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
+[SELECTION] lint [--OPTION...] [>OUTFILE]
+[SELECTION] list [>OUTFILE]
+log [[+-]LOG-CLASS]...
+{SELECTION} merge
+[SELECTION] msgin [--create] [<INFILE]
+[SELECTION] msgout [--filter=PATTERN] [--blobs]
+prefer [VCS-NAME]
+preserve [PATH...]
+print [TEXT...] [>OUTFILE]
+quit
+rebuild [DIRECTORY]
+rename {NEW-NAME}
+renumber
+[SELECTION] reorder [--quiet]
+{SELECTION} resolve
+[SELECTION] setfield {FIELD} {VALUE}
+{SELECTION} setperm {PERM} [PATH...]
+[SELECTION] split [ --path ] PATH-OR-INDEX
+[SELECTION] squash [POLICY-FLAFS...]
+[SELECTION] strip {--blobs|--reduce}
+[SELECTION] tagify [ --tagify-merges | --canonicalize | --tipdeletes ]
+[SELECTION] transcode {ENCODING}
+unassign {NAME}
+undefine {MACRO-NAME}
+unite [--prune] [REPO-NAME...]
+{SELECTION} unmerge
+unpreserve [PATH...]
+view
+----
+
+The following are VS and unpleasantly complex - there are
+alternations in the syntax that aren't just flags.
+
+----
+clear flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
+clear readlimit
+{SELECTION} add { "D" {PATH} | "M" {PERM} {MARK} {PATH} | "R" {SOURCE} {TARGET} | "C" {SOURCE} {TARGET} }
+[SELECTION] filter {dedos|shell|regexp|replace} [TEXT-OR-REGEXP]
+[SELECTION] remove [DMRCN] {OP} [to {SELECTION}]
+set flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
+set readlimit
+----
+
+The following are SV. Inverting these to verb-first might be a good thing.
+
+----
+[SELECTION] authors {read <INFILE | write >OUTFILE}
+branch {rename|delete} {BRANCH-PATTERN} [--not] [NEW-NAME]
+legacy {read [<INFILE] | write [>OUTFILE]}
+path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
+[SELECTION] references [list|lift]
+[SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
+[SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME|SINGLETON]
+[SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
+----
+
+The following are S and should probably be attacched to some verb:
+
+----
+blob [MARK-NUMBER] {<INFILE|>OUTFILE] 
+logfile [PATH]
+memory [>OUTFILE]
+references [list|lift]
+----
+
+The following are S, but probably shouldn't change:
+
+----
+[SELECTION] changelogs [BASENAME-PATTERN]
+elapsed [>OUTFILE]
+ignores [--rename] [--translate] [--defaults]
+script {PATH} [ARG...]
+shell [COMMAND-TEXT]
+sourcetype [VCS-NAME]
+[SELECTION] timeoffset {OFFSET}
+[SELECTION] timequake [--tick]
+version [EXPECT]
+when {TIMESTAMP}
+----
+
+Should these be subcommands of list?
+
+----
+[SELECTION] manifest [PATTERN] [>OUTFILE]
+names [>OUTFILE]
+sizeof
+[SELECTION] sizes [>OUTFILE]
+[SELECTION] stamp [>OUTFILE]
+stats [>OUTFILE]
+[SELECTION] tags {>OUTFILE]
+timings [MARK-NAME] [>OUTFILE]
+[SELECTION] index [>OUTFILE]
+[SELECTION] inspect
+----
+
+In a revised, more verb-centered syntax, the key verbs would probanly
+be: list read write create move rename delete add.  Here are some
+opossible verbifications:
+
+---
+read authors <INFILE
+read legacy <INFILE
+read message <INFILE
+read repo <INFILE
+write authors >OUTFILE
+write legacy >OUTFILE
+write message >OUTFILE
+write repo >OUTFILE
+---
+
+Unfortunately these would make repository loads unplrasabtly verbose,
+cpnflicting with "short and simple for common commands".
+
 == Credits ==
 
 These are in roughly descending magnitude.
