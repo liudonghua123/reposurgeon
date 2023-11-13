@@ -18,6 +18,7 @@ Repository head::
      repotool initialize becomes repotool makemake.
      Handle "progress" directive in fast-import streams.
      Tested support for reading darcs repositories.
+     When enabling logging flags, the "+" syntax is now optional.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.

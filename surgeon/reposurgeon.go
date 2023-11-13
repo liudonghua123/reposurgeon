@@ -7467,18 +7467,18 @@ Without an argument, list all log message classes, prepending a + if
 that class is enabled and a - if not.
 
 Otherwise, it expects a space-separated list of "<+ or -><log message
-class>" entries, and enables (with +) or disables (with -) the
+class>" entries, and enables (with + or no prefix) or disables (with -) the
 corresponding log message class. The special keyword "all" can be used
 to affect all the classes at the same time.
 
-For instance, "log -all +shout +warn" will disable all classes except
+For instance, "log -all shout +warn" will disable all classes except
 "shout" and "warn", which is the default setting. "log +all -svnparse"
 would enable logging everything but messages from the svn parser.
 
 A list of available message classes follows; most above "warn"
 level or above are only of interest to developers, consult the source
 code to learn more.
-
+0
 ----
 `)
 	for _, item := range verbosityLevelList() {
@@ -7508,12 +7508,13 @@ func (rs *Reposurgeon) DoLog(line string) bool {
 	rs.newLineParse(line, "log", parseNOSELECT|parseNOOPTS, nil)
 	line = strings.Replace(line, ",", " ", -1)
 	for _, tok := range strings.Fields(line) {
-		enable := tok[0] == '+'
-		if !(enable || tok[0] == '-') {
-			croak("an entry should start with a + or a -")
-			goto breakout
+		enable := true
+		if tok[0] == '+' {
+			tok = tok[1:]
+		} else if tok[0] == '-' {
+			enable = false
+			tok = tok[1:]
 		}
-		tok = tok[1:]
 		mask, ok := logtags[tok]
 		if !ok {
 			if tok == "all" {
