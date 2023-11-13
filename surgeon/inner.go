@@ -8155,7 +8155,16 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 				} else if err2 != nil {
 					return nil, fmt.Errorf("while collecting file manifest: %v", err2)
 				}
-				registered = append(registered, strings.TrimSpace(line))
+				pathtrimmer := func(path string) string {
+					path = strings.TrimSpace(path)
+					// No, I don't know that any VCS makes this necessary.
+					// It seems like good paranoia.
+					if strings.HasPrefix(path, "./") {
+						path = path[2:]
+					}
+					return path
+				}
+				registered = append(registered, pathtrimmer(line))
 			}
 			stdout.Close()
 			// Get the names of all files except those in the
