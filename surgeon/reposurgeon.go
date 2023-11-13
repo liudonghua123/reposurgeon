@@ -1395,7 +1395,7 @@ timings [MARK-NAME] [>OUTFILE]
 
 Report phase-timing results from repository analysis.
 
-If the command has following text, this creates a new, named time mark
+If the command has a following argument, this creates a new, named time mark
 that will be visible in a later report; this may be useful during
 long-running conversion recipes.
 `)
@@ -2231,6 +2231,12 @@ argument, if any, is interpreted as a pathname. Pathname arguments may be
 bare tokens or double-quoted strings, which may contain whitespace;
 the double quotes are stripped before interpretation. The current
 preserve list is displayed afterwards.
+
+This command is included for completeness, but most version-control
+systems (and all those that reposurgeon can rebuild) have a path-list
+list and that makes it unnecessary. The path-list command is used with
+a sweep for all files existing in the repository directory to identift
+everything that should be preserved.
 `)
 }
 
@@ -2251,10 +2257,13 @@ unpreserve [PATH...]
 
 Remove (presumably untracked) files or directories to the repo's list
 of paths to be restored from the backup directory after a
-rebuild. Each argument, if any, is interpreted as a pathname.Pathname
+rebuild. Each argument, if any, is interpreted as a pathname. Pathname
 arguments may be bare tokens or double-quoted strings, which may
 contain whitespace; the double quotes are stripped before
 interpretation.  The current preserve list is displayed afterwards.
+
+See the documentation of the "preserve" command for whu this command
+for why this command is almost never mecessary.
 `)
 }
 
@@ -2275,7 +2284,7 @@ func (rs *Reposurgeon) DoUnpreserve(line string) bool {
 // HelpRead says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRead() {
 	rs.helpOutput(`
-read [--quiet] [ --format=fossil ] [<INFILE | DIRECTORY | -]
+read [--quiet] [ --format=fossil ] [<INFILE | - | DIRECTORY]
 
 A read command with no arguments is treated as 'read .', operating on the
 current directory.
@@ -2284,12 +2293,12 @@ With a directory-name argument, this command attempts to read in the
 contents of a repository in any supported version-control system under
 that directory.
 
-If input is redirected from a plain file, it will be read in as a
-fast-import stream or Subversion dump, whichever it is.
+If input is redirected from a plain file, it will be read in as an
+import stream (fast-mport or Subversion dump), whichever it is.
 
-With an argument of '-', this command reads a fast-import stream or
-Subversion dump from standard input (this will be useful in filters
-constructed with command-line arguments).
+With an argument of '-', this command reads an import stream from
+standard input (this will be useful in filters constructed with
+command-line arguments).
 
 Various options and special features of this command are described in
 the long-form manual.  Only the general options are included in the synopsis
@@ -2402,9 +2411,6 @@ directory is created and the repository written into it.
 
 Property extensions will be omitted if the importer for the
 preferred repository type cannot digest them.
-
-Various options and special features of this command are described in
-the long-form manual.
 `)
 }
 
@@ -3246,7 +3252,7 @@ func (rs *Reposurgeon) HelpSetperm() {
 SELECTION setperm PERM [PATH...]
 
 The PERM and PATH arguments can be double-quoted strings containing
-whitespace. This is only likely to be useful in PATH.
+whitespace. This is only likely to be useful on PATH.
 
 For the selected events (defaulting to none) take the first argument as an
 octal literal describing permissions.  All subsequent arguments are paths.
@@ -5231,7 +5237,8 @@ fields.
 
 Otherwise, the TAG-PATTERN argument is a pattern expression matching a
 set of tags (unanchored matching).  The subcommand must be one of the
-verbs 'move', 'rename', or 'delete'.
+verbs 'move', 'rename', or 'delete'. The option "--not" tajkes the
+complement of the set if tags impiled by the pattern.
 
 For a 'move', a second argument must be a singleton selection set. For
 a 'rename', the third argument may be any token that is a syntactically
@@ -5860,7 +5867,7 @@ func (rs *Reposurgeon) HelpAttribution() {
 [SELECTION] attribution [ATTR-SELECTION] SUBCOMMAND [ARG...]
 
 Inspect, modify, add, and remove commit and tag attributions.
-1
+
 Arguments of this command (including attribution-field values) can be
 double-quoted srrings containing whitespace; the string quotes are
 stripped before interpretation.
