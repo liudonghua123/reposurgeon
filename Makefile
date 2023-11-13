@@ -200,9 +200,7 @@ UNANCHORED_TOPICS = \
 	regexp \
 	selection \
 	syntax
-READ_OPTION_TOPICS = \
-	branchify
-TOPICS = $(BNF_TOPICS) $(UNANCHORED_TOPICS) $(READ_OPTION_TOPICS)
+TOPICS = $(BNF_TOPICS) $(UNANCHORED_TOPICS)
 # These are in regular form, but the entries in the
 # long-form manual have additional material.
 SHORTFORM = \
@@ -230,12 +228,7 @@ docincludes: surgeon/reposurgeon.go reposurgeon repository-editing.adoc
 	for topic in $(UNANCHORED_TOPICS); \
 	do \
 		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
-	done; \
-	for topic in $(READ_OPTION_TOPICS); \
-	do \
-		echo "[[$${topic}_opt,--$${topic}]]" >>"docinclude/$${topic}.adoc"; \
-		get_help "$${topic}" >>"docinclude/$${topic}.adoc"; \
-	done
+	done;
 	@./reposurgeon "help options" | sed '/:/s//::/' >docinclude/options.adoc
 
 repository-editing.html: docincludes
