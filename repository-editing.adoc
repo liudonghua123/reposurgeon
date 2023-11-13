@@ -1807,7 +1807,7 @@ include::docinclude/inspect.adoc[]
 include::docinclude/graph.adoc[]
 
 // COMMAND
-include::docinclude/gui.adoc[]
+include::docinclude/view.adoc[]
 
 // COMMAND
 include::docinclude/lint.adoc[]
@@ -3597,7 +3597,7 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
-In versions 4.38 and earlier, there was no "gui" or "clone" command.
+In versions 4.38 and earlier, there was no "view" or "clone" command.
 The command-line parser was fragile and ad-hoc, without consistent
 application of double-quoting. The =E event selector didn't yet exist.
 There was a read --use-uuid option which has been retired. Negation

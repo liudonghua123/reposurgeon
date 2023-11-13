@@ -133,7 +133,6 @@ BNF_TOPICS = \
 	gitify \
 	graft \
 	graph \
-	gui \
 	hash \
 	help \
 	history \
@@ -192,6 +191,7 @@ BNF_TOPICS = \
 	unmerge \
 	unpreserve \
 	version \
+	view \
 	when
 UNANCHORED_TOPICS = \
 	functions \

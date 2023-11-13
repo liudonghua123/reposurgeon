@@ -2494,10 +2494,10 @@ func (rs *Reposurgeon) DoInspect(line string) bool {
 	return false
 }
 
-// HelpGui says "Shut up, golint!"
-func (rs *Reposurgeon) HelpGui() {
+// HelpView says "Shut up, golint!"
+func (rs *Reposurgeon) HelpView() {
 	rs.helpOutput(`
-gui [repodir]
+view [repodir]
 
 With an argument directory that is a live repository, browse the
 repository using whatever native GUI tool may be appropriate for the
@@ -2514,20 +2514,20 @@ reposurgeon's timestamp syntax.
 `)
 }
 
-// DoGui runs a GUI on the selected repo.
-func (rs *Reposurgeon) DoGui(line string) bool {
+// DoView runs a GUI on the selected repo.
+func (rs *Reposurgeon) DoView(line string) bool {
 	var repo *Repository
 	if nargs := len(strings.Fields(line)); nargs == 0 {
 		// View currently selected repository
-		parse := rs.newLineParse(line, "gui", parseREPO|parseNOARGS|parseNOOPTS, nil)
+		parse := rs.newLineParse(line, "view", parseREPO|parseNOARGS|parseNOOPTS, nil)
 		defer parse.Closem()
 		repo = rs.chosen()
-		if dname, err := os.MkdirTemp("", "guitemp"); err != nil {
+		if dname, err := os.MkdirTemp("", "viewtemp"); err != nil {
 			croak(err.Error())
 		} else {
 			defer os.RemoveAll(dname)
 			if cwd, err := os.Getwd(); err != nil {
-				croak("gui is disoriented: %v", err)
+				croak("view is disoriented: %v", err)
 			} else {
 				if err := os.Chdir(dname); err != nil {
 					croak(err.Error())
@@ -2535,8 +2535,8 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 					defer os.Chdir(cwd)
 					git := findVCS("git")
 					repo.innerRebuildRepo(git, nullStringSet, control.baton)
-					runProcess(git.checkout, "gui checkout")
-					runShellProcess(git.gui, "gui viewer")
+					runProcess(git.checkout, "view checkout")
+					runShellProcess(git.viewer, "viewer")
 				}
 			}
 		}
@@ -2559,10 +2559,10 @@ func (rs *Reposurgeon) DoGui(line string) bool {
 				croak("couldn't find a repo under %s", line)
 			} else if hitcount > 1 {
 				croak("too many repos (%d) under %s", hitcount, line)
-			} else if vcs.gui == "" {
-				croak("no GUI browaer is reistered for %s", vcs.name)
+			} else if vcs.viewer == "" {
+				croak("no viewer is reistered for %s", vcs.name)
 			}
-			cmd := exec.Command("sh", "-c", vcs.gui)
+			cmd := exec.Command("sh", "-c", vcs.viewer)
 			cmd.Run()
 		}
 	} else {

@@ -50,7 +50,7 @@ type VCS struct {
 	branchlister string           // Command to list branch names
 	importer     string           // Command to import from stream format
 	checkout     string           // Command to check out working copy
-	gui          string           // GUI command to browse with
+	viewer       string           // GUI command to browse with
 	preserve     orderedStringSet // Config and hook stuff to be preserved
 	prenuke      orderedStringSet // Things to be removed from staging
 	authormap    string           // Where importer might drop an authormap
@@ -116,7 +116,7 @@ func (vcs VCS) String() string {
 		fmt.Sprintf(" Branchlister: %s\n", vcs.branchlister) +
 		fmt.Sprintf("     Importer: %s\n", vcs.importer) +
 		fmt.Sprintf("     Checkout: %s\n", vcs.checkout) +
-		fmt.Sprintf("          GUI: %s\n", vcs.gui) +
+		fmt.Sprintf("       Viewer: %s\n", vcs.viewer) +
 		fmt.Sprintf("      Prenuke: %s\n", vcs.prenuke.String()) +
 		fmt.Sprintf("     Preserve: %s\n", vcs.preserve.String()) +
 		fmt.Sprintf("    Authormap: %s\n", vcs.authormap) +
@@ -184,7 +184,7 @@ func vcsInit() {
 			branchlister: "git branch -q --list 2>&1 | cut -c 3- | grep -E -v 'detached|^master$' || exit 0",
 			importer:     "git fast-import --quiet --export-marks=.git/marks",
 			checkout:     "git checkout",
-			gui:          "TZ=UTC gitk --all",
+			viewer:       "TZ=UTC gitk --all",
 			prenuke:      newOrderedStringSet(".git/config", ".git/hooks"),
 			preserve:     newOrderedStringSet(".git/config", ".git/hooks"),
 			authormap:    ".git/cvs-authors",
@@ -213,7 +213,7 @@ func vcsInit() {
 			branchlister: "bzr branches | cut -c 3-",
 			importer:     "bzr fast-import -",
 			checkout:     "bzr checkout",
-			gui:          "TZ=UTC bzr qlog",
+			viewer:       "TZ=UTC bzr qlog",
 			prenuke:      newOrderedStringSet(".bzr/plugins"),
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
@@ -256,7 +256,7 @@ bzr-orphans
 			branchlister: "brz branches | cut -c 3-",
 			importer:     "brz fast-import -",
 			checkout:     "brz checkout",
-			gui:          "TZ=UTC brz qlog",
+			viewer:       "TZ=UTC brz qlog",
 			prenuke:      newOrderedStringSet(".brz/plugins"),
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
@@ -296,7 +296,7 @@ bzr-orphans
 			branchlister: "hg branches --closed --template '{branch}\n' | grep -v '^default$'",
 			importer:     "hg-git-fast-import .",
 			checkout:     "hg checkout",
-			gui:          "TZ=UTC hgk",
+			viewer:       "TZ=UTC hgk",
 			prenuke:      newOrderedStringSet(".hg/hgrc"),
 			preserve:     newOrderedStringSet(".hg/hgrc"),
 			authormap:    "",
@@ -324,7 +324,7 @@ branch is renamed to 'master'.
 			branchlister: "",
 			importer:     "darcs convert import --quiet >/dev/null",
 			checkout:     "",
-			gui:          "",
+			viewer:       "",
 			prenuke:      newOrderedStringSet(),
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
@@ -449,7 +449,7 @@ core
 				branchlister: "pijul channels 2>&1 | cut -c 3-",
 				importer:     "",
 				checkout:     "",
-				gui:          "",
+				viewer:      "",
 				prenuke:      newOrderedStringSet(),
 				preserve:     newOrderedStringSet(),
 				authormap:    "",
@@ -475,7 +475,7 @@ core
 			branchlister: "mtn list branches",
 			importer:     "",
 			checkout:     "",
-			gui:          "",
+			viewer:       "",
 			prenuke:      newOrderedStringSet(),
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
@@ -537,7 +537,7 @@ _darcs
 			taglister:    "svn ls 'file://${pwd}/tags' | sed 's|/$||'",
 			branchlister: "svn ls 'file://${pwd}/branches' | sed 's|/$||'",
 			checkout:     "",
-			gui:          "",
+			viewer:       "",
 			prenuke:      newOrderedStringSet(),
 			preserve:     newOrderedStringSet("hooks"),
 			authormap:    "",
@@ -560,7 +560,7 @@ _darcs
 			initializer:  "cvs init",
 			importer:     "",
 			checkout:     "",
-			gui:          "",
+			viewer:       "",
 			pathlister:   "",
 			// CVS code will screw up if any tag is not common to all files
 			// Hacks at https://stackoverflow.com/questions/6174742/how-to-get-a-list-of-tags-created-in-cvs-repository
@@ -621,7 +621,7 @@ core
 			branchlister: "src sccs branch list",
 			importer:     "",
 			checkout:     "",
-			gui:          "",
+			viewer:       "",
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
 			ignorename:   "",
@@ -645,7 +645,7 @@ core
 			branchlister: "src rcs branch list",
 			importer:     "",
 			checkout:     "",
-			gui:          "",
+			viewer:       "",
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
 			ignorename:   "",
@@ -669,7 +669,7 @@ core
 			branchlister: "src branch list",
 			importer:     "",
 			checkout:     "",
-			gui:          "",
+			viewer:       "",
 			prenuke:      newOrderedStringSet(),
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
@@ -695,7 +695,7 @@ core
 			branchlister: "",
 			importer:     "bk fast-import -q",
 			checkout:     "",
-			gui:          "TZ=UTC bk viewer",
+			viewer:       "TZ=UTC bk viewer",
 			prenuke:      newOrderedStringSet(),
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
