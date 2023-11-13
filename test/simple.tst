@@ -1,5 +1,5 @@
 ## Test of index, tip, tags, history, paths, expunge and checkout
-set echo
+set flag echo
 read <simple.fi
 ~=B index
 tags

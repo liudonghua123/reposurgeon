@@ -1,4 +1,4 @@
-set interactive
+set flag interactive
 1,3 resolve
 (1,3)
 1..3 resolve

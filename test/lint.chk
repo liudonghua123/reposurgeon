@@ -1,4 +1,4 @@
-set quiet
+set flag quiet
 read <bs.fi
 lint
 1 root commits in Q set.

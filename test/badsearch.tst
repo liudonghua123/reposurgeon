@@ -1,6 +1,6 @@
 ## Test recovery from malformed search
-set faketime
-set relax
+set flag faketime
+set flag relax
 read <simple.fi
 list
 print "Expect malformed text specifier message"

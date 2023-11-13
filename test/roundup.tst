@@ -1,7 +1,7 @@
 ## Test squash --pushback
-set echo
+set flag echo
 read <roundup.fi
-set interactive
+set flag interactive
 :1? resolve
 :39,:42 inspect
 :42 squash --pushback

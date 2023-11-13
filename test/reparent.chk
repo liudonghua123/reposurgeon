@@ -1,6 +1,6 @@
-set relax
+set flag relax
 read <simple.fi
-set interactive
+set flag interactive
 127 inspect
 Event 127 ===============================================================
 commit refs/heads/master

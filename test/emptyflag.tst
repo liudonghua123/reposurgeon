@@ -1,5 +1,5 @@
 ## Test --empty modifier on msgin
-set relax
+set flag relax
 read <min.fi
 # Expecting failure on this command
 msgin --empty-only <<EOF

@@ -1,5 +1,5 @@
 ## Test of strip blobs reduce command
-set echo
+set flag echo
 read <implicit.fi
 strip --blobs --reduce
 write -

@@ -1,7 +1,7 @@
 ## Tests of selection-set syntax and parser features
-set echo
+set flag echo
 read <simple.fi
-set interactive
+set flag interactive
 =H resolve Special set resolution
 15 resolve Event number resolution
 =TR resolve Special combination
@@ -63,7 +63,7 @@ clear echo
 :2 authors read <<EOF
 esr = Eric Raymond <esr@thyrsus.com>
 EOF
-set echo
+set flag echo
 :2 inspect
 # Test multiline commands
 <annotated-sample> \

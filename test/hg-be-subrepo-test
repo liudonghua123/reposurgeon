@@ -83,7 +83,7 @@ if [ $stream = True ]
 then
     echo "#reposurgeon fescription: from an hg repo, trying out subrepo feature."
     # shellcheck disable=SC2086
-    "${BIN}/${REPOSURGEON:-reposurgeon}" "${BUILDOPT}" ${TESTOPT} "set quiet" "read $testrepo" "sourcetype git" "write -"
+    "${BIN}/${REPOSURGEON:-reposurgeon}" "${BUILDOPT}" ${TESTOPT} "set flag quiet" "read $testrepo" "sourcetype git" "write -"
 fi
 
 # Should we clean up the test directory

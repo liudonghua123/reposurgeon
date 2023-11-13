@@ -1,5 +1,5 @@
 ## Test the add primitive
-set relax
+set flag relax
 read <sample2.fi
 :15 add D .gitignore
 :17 add M 100755 :9 hello

@@ -26,7 +26,7 @@ export TZ=UTC
 # Force pure serial execution when rebuilding check files.  Slower,
 # but makes them deterministic and may help smoke out bugs in
 # concurrent code.
-BUILDOPT="set serial"
+BUILDOPT="set flag serial"
 
 # See https://stackoverflow.com/questions/6481005/how-to-obtain-the-number-of-cpus-cores-in-linux-from-the-command-line
 #CONCURRENT_JOBS=$(shell getconf _NPROCESSORS_ONLN || getconf NPROCESSORS_ONLN || echo 4)
@@ -95,7 +95,7 @@ MESSAGEBOX_TARGETS=$(patsubst %,messagebox-%,$(wildcard *.fi))
 $(ROUNDTRIP_TARGETS): roundtrip-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | tapdiffer "$< roundtrip" $<) || echo "$@" >>$(FAILLOG);
 $(ROUNDTRIP_COMPRESS_TARGETS): roundtrip-compress-%: %
-	@($(REPOSURGEON) "$(TESTOPT)" "set compress" "read -; write -" <$< | tapdiffer "$< compressed roundtrip" $<) || echo "$@" >>$(FAILLOG);
+	@($(REPOSURGEON) "$(TESTOPT)" "set flag compress" "read -; write -" <$< | tapdiffer "$< compressed roundtrip" $<) || echo "$@" >>$(FAILLOG);
 $(MESSAGEBOX_TARGETS): messagebox-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "read <$<" "msgout >/tmp/msgbox$$$$" "msgin </tmp/msgbox$$$$" "write -" "shell rm /tmp/msgbox$$$$" | tapdiffer "$< message-box roundtripping" $<) || echo "$@" >>$(FAILLOG);
 
@@ -197,12 +197,12 @@ SVNCHECK_LOADS := $(shell ls -1 svncheck*.sh | sed '/.sh/s///')
 svncheck-buildcheck:
 	@for file in $(SVNCHECK_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set faketime" 'read -' 'prefer git' 'write -' >$${file}.chk || exit 1; \
+	    $(SHELL) $${file}.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set flag faketime" 'read -' 'prefer git' 'write -' >$${file}.chk || exit 1; \
 	done
 SVNCHECK_TARGETS = $(SVNCHECK_LOADS:%=svncheck-test-%)
 $(SVNCHECK_TARGETS): svncheck-test-%:
 	@(legend=$$(sed -n '/^## /s///p' <"$*.sh" 2>/dev/null || echo "(no description)"); \
-	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set faketime" 'read -' 'prefer git' 'write -' \
+	$(SHELL) $*.sh -d | $(REPOSURGEON) "$(TESTOPT)" "set flag faketime" 'read -' 'prefer git' 'write -' \
 	| tapdiffer "$*: $${legend}" $*.chk) || echo "$@" >>$(FAILLOG);
 
 endif # if svn

@@ -1,7 +1,7 @@
 ## Test errors parsing and evaluating disjunctions
-set echo
+set flag echo
 
-set faketime
+set flag faketime
 
 read <sample1.fi
 

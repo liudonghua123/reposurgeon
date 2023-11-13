@@ -51,7 +51,7 @@ M 100644 :398168 lisp/cedet/ChangeLog
 M 100644 :398169 lisp/cedet/semantic/lex.el
 
 EOF
-set interactive
+set flag interactive
 =J resolve
 clear interactive
 =I transcode latin1

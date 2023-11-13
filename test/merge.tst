@@ -1,5 +1,5 @@
 ## Testing merge and unmerge commands
-set echo
+set flag echo
 read <sample1.fi
 :31 inspect
 :31 unmerge

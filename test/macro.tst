@@ -1,8 +1,8 @@
 ## Test the macro facility
-set echo
-set faketime
+set flag echo
+set flag faketime
 read <simple.fi
-set interactive
+set flag interactive
 print "Test that we can define and see macro definitions"
 define fubar list
 define

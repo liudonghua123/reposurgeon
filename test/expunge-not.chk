@@ -1,4 +1,4 @@
-set quiet
+set flag quiet
 read <expunge.svn
 1..$ expunge --not /VERSION/
 reposurgeon: at 4, expunging M .gitignore

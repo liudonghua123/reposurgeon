@@ -1,7 +1,7 @@
 ## Test if commands handling tree contents understand deleteall
-set echo
+set flag echo
 read <deleteall.fi
-set interactive
+set flag interactive
 :13 manifest
 [/^README/a] resolve
 [/^README$/a] resolve

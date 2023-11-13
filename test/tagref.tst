@@ -67,7 +67,7 @@ reset refs/heads/master
 from :4
 
 EOF
-set echo
+set flag echo
 <master> inspect
 <tag> inspect
 <first> inspect

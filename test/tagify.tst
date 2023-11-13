@@ -1,5 +1,5 @@
 ## Test of the tagify command
-set echo
+set flag echo
 read <tagify.fi
 tagify
 write -

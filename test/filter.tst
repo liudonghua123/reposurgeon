@@ -1,6 +1,6 @@
 ## Test content filtering
 read <sample1.fi
-set interactive
+set flag interactive
 print "Testing shell filtering of blobs"
 =B filter shell tr e X
 print "Testing shell filtering of commits"

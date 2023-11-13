@@ -1,8 +1,8 @@
 ## Reparenting parents with and w/o tree preservation
-set echo
-set relax
+set flag echo
+set flag relax
 read <simple.fi
-set interactive
+set flag interactive
 127 inspect
 127..$ manifest
 127,29 reparent

@@ -1,5 +1,5 @@
 read <roundup.fi
-set interactive
+set flag interactive
 :1? resolve
 (3,41)
 :39,:42 inspect

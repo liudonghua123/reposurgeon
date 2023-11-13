@@ -1,6 +1,6 @@
 ## Test mining authorship from Changelog
 read <liftlog.fi
-set interactive
+set flag interactive
 # Should be different TZ than the liftlog committer so we
 # can see that a substitution has occurred.
 authors read <<EOF

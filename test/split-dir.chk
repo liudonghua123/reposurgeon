@@ -1,6 +1,6 @@
-set relax
-set interactive
-set quiet
+set flag relax
+set flag interactive
+set flag quiet
 read <split-dir.svn
 :2 split bar
 reposurgeon: selection doesn't point at a commit

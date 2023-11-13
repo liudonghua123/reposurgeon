@@ -1,5 +1,5 @@
 
-set faketime
+set flag faketime
 
 read <sample1.fi
 

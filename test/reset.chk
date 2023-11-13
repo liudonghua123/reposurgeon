@@ -1,4 +1,4 @@
-set relax
+set flag relax
 read <be-bookmarks.fi
 =R index
      2 branch      -    refs/heads/master

@@ -1,5 +1,5 @@
 ## Legacy-ID pattern-matching
-set faketime
+set flag faketime
 read <<EOF
 blob
 mark :1
@@ -91,7 +91,7 @@ M 100644 :11 .README
 
 EOF
 print "Initially no sourcetype is set, so =N should be empty"
-set interactive
+set flag interactive
 =N resolve
 sourcetype cvs
 print "Expect 2 CVS results"

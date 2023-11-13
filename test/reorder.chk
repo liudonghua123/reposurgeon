@@ -1,4 +1,4 @@
-set relax
+set flag relax
 read <reorder.fi
 
 # basic operation

@@ -40,6 +40,6 @@ M 100644 :376859 lisp/server.el
 M 100644 :376860 lisp/startup.el
 
 EOF
-set interactive
+set flag interactive
 /Kulikov/a resolve Should match
 /mumble/a resolve Should not match

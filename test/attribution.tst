@@ -1,6 +1,6 @@
 ## Test attribution manipulation
-set relax
-set echo
+set flag relax
+set flag echo
 
 # error: no repo
 attribution

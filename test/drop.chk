@@ -1,4 +1,4 @@
-set relax
+set flag relax
 drop
 reposurgeon: no repo has been chosen.
 

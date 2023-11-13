@@ -1,6 +1,6 @@
 ## test ignore (defaults generation, rename, translation).
 read <min.fi
-set interactive
+set flag interactive
 prefer bzr
 ignores --defaults
 # Next line should reveal a generated ignore blob and its fileop

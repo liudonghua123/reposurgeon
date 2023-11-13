@@ -1,4 +1,4 @@
-set relax
+set flag relax
 read <treecontents.svn
 inspect
 Event 1 =================================================================

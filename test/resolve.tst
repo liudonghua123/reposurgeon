@@ -1,8 +1,8 @@
 ## Test selection sets
-set relax
+set flag relax
 read <testrepo.fi
-set echo
-set interactive
+set flag echo
+set flag interactive
 1,3 resolve
 1..3 resolve
 :2,:4 resolve

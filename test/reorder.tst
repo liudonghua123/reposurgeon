@@ -1,7 +1,7 @@
 ## Test commit re-ordering
-set quiet
-set echo
-set relax
+set flag quiet
+set flag echo
+set flag relax
 read <reorder.fi
 
 # basic operation

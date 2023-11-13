@@ -1,5 +1,5 @@
 ## Bad from-rev in file with discontiguous revisions
-set relax
+set flag relax
 log +warn
 read <<EOF
 SVN-fs-dump-format-version: 2

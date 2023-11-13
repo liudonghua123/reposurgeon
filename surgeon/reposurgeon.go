@@ -3380,7 +3380,7 @@ Sets Q bits: true for each commit and tag modified, false otherwise.
 
 Example:
 ---------
-=C prepend --legacy "Legacy-Id: %LEGACY%\n"
+=C prepend --legacy "Legacy-Id: %%LEGACY%%\n"
 ---------
 `)
 }
@@ -6520,7 +6520,7 @@ func getOptionNames() []string {
 // HelpSet says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSet() {
 	rs.helpOutput(fmt.Sprintf(`
-set [%s]+
+set [readlimit|%s]+
 
 Set a (tab-completed) boolean option to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
@@ -6549,14 +6549,13 @@ func performOptionSideEffect(opt string, val bool) {
 	}
 }
 
-func tweakFlagOptions(line string, val bool) {
-	if strings.TrimSpace(line) == "" {
+func tweakFlagOptions(args []string, val bool) {
+	if len(args) == 0 {
 		for _, opt := range optionFlags {
 			fmt.Printf("\t%s = %v\n", opt[0], control.flagOptions[opt[0]])
 		}
 	} else {
-		line = strings.Replace(line, ",", " ", -1)
-		for _, name := range strings.Fields(line) {
+		for _, name := range args {
 			for _, opt := range optionFlags {
 				if name == opt[0] {
 					control.flagOptions[opt[0]] = val
@@ -6572,8 +6571,24 @@ func tweakFlagOptions(line string, val bool) {
 
 // DoSet is the handler for the "set" command.
 func (rs *Reposurgeon) DoSet(line string) bool {
-	rs.newLineParse(line, "set", parseNOSELECT|parseNOOPTS, nil)
-	tweakFlagOptions(line, true)
+	parse := rs.newLineParse(line, "set", parseNOSELECT|parseNOOPTS|parseNEEDVERB, nil)
+	if verb := parse.args[0]; verb == "readlimit" {
+		if len(parse.args) < 2 {
+			respond("readlimit %d\n", control.readLimit)
+			return false
+		}
+		lim, err := strconv.ParseUint(parse.args[1], 10, 64)
+		if err != nil {
+			if logEnable(logWARN) {
+				logit("ill-formed readlimit argument %q: %v.", parse.args[1], err)
+			}
+		}
+		control.readLimit = lim
+	} else if verb == "flags" || verb == "flag" {
+		tweakFlagOptions(parse.args[1:], true)
+	} else {
+		croak(`"set" needs a "flag" or "flags" or "readlimit" subcommand.`)
+	}
 	return false
 }
 
@@ -6602,8 +6617,8 @@ func (rs *Reposurgeon) CompleteClear(text string) []string {
 
 // DoClear is the handler for the "clear" command.
 func (rs *Reposurgeon) DoClear(line string) bool {
-	rs.newLineParse(line, "clear", parseNOSELECT|parseNOOPTS, nil)
-	tweakFlagOptions(line, false)
+	parse := rs.newLineParse(line, "clear", parseNOSELECT|parseNOOPTS, nil)
+	tweakFlagOptions(parse.args, false)
 	return false
 }
 

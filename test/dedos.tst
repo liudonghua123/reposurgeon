@@ -26,7 +26,7 @@ from :2
 M 100644 :3 README
 
 EOF
-set interactive
+set flag interactive
 1..$ filter dedos
 clear interactive
 write -

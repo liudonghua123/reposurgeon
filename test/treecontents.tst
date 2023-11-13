@@ -1,6 +1,6 @@
 ## Generated commits should have the correct tree
-set echo
-set relax
+set flag echo
+set flag relax
 read <treecontents.svn
 inspect
 manifest
