@@ -6601,11 +6601,13 @@ func (rs *Reposurgeon) DoSet(line string) bool {
 // HelpClear says "Shut up, golint!"
 func (rs *Reposurgeon) HelpClear() {
 	rs.helpOutput(fmt.Sprintf(`
-clear [%s]+
+clear {flag[s] [%s]+ | readlimit [limit]}
 
-Clear a (tab-completed) boolean option to control reposurgeon's
+"clear flag[s]" clears (tab-completed) boolean options to control reposurgeon's
 behavior.  With no arguments, displays the state of all flags.
 Do "help options" to see the available options.
+
+"clear readlimit" removes any readlimit that has been set.
 `, strings.Join(getOptionNames(), "|")))
 }
 
@@ -6624,7 +6626,13 @@ func (rs *Reposurgeon) CompleteClear(text string) []string {
 // DoClear is the handler for the "clear" command.
 func (rs *Reposurgeon) DoClear(line string) bool {
 	parse := rs.newLineParse(line, "clear", parseNOSELECT|parseNOOPTS, nil)
-	tweakFlagOptions(parse.args, false)
+	if verb := parse.args[0]; verb == "readlimit" {
+		control.readLimit = 0
+	} else if verb == "flags" || verb == "flag" {
+		tweakFlagOptions(parse.args[1:], false)
+	} else {
+		croak(`"clear" needs a "flag" or "flags" or "readlimit" subcommand.`)
+	}
 	return false
 }
 

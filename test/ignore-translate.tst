@@ -7,6 +7,6 @@ ignores --defaults
 :2,:3 inspect
 prefer hg
 ignores --rename --translate
-clear interactive
+clear flag interactive
 write -
 

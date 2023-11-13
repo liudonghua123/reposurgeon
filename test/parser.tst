@@ -59,7 +59,7 @@ annotated-sample resolve Tag implicit
 @suc(<2010-10-27T17:25:36Z>) resolve successor function call 
 @pre(<2010-10-27T17:25:36Z>) resolve predecessor function call 
 # Test here-doc syntax
-clear echo
+clear flag echo
 :2 authors read <<EOF
 esr = Eric Raymond <esr@thyrsus.com>
 EOF

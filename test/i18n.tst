@@ -53,6 +53,6 @@ M 100644 :398169 lisp/cedet/semantic/lex.el
 EOF
 set flag interactive
 =J resolve
-clear interactive
+clear flag interactive
 =I transcode latin1
 write -

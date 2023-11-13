@@ -21,5 +21,5 @@ print "Testing replace filtering of tags"
 =T filter replace /Eric/Thorin/
 print "Testing %PATHS% feature"
 =B filter shell sed /spacXr/s//%PATHS%/ || cat
-clear interactive
+clear flag interactive
 write -
