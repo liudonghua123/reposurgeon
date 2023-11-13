@@ -2922,6 +2922,9 @@ Some examples:
 
 # Text replacement in comments
 =C filter replace /Telperion/Laurelin/c
+
+# Specifications with embedded spaces must be quoted
+=C filter replace "/Elendil/Ar-Pharazon the Golden/"
 ----
 `)
 }
@@ -2955,7 +2958,7 @@ func newFilterCommand(lp *LineParse) *filterCommand {
 	flagRe := regexp.MustCompile(`[0-9]*g?`)
 	// These verb tests simulate normal handling of doublequotes
 	// around the shell subcommand.
-	if verb == `dedos` {
+	if verb == `dedos` || verb == `"dedos"` {
 		if len(fc.attributes) == 0 {
 			fc.attributes = newOrderedStringSet("c", "a", "C")
 		}
@@ -2965,10 +2968,10 @@ func newFilterCommand(lp *LineParse) *filterCommand {
 		}
 		return fc
 	}
-	command := strings.TrimSpace(fields[1])
 	// These verb tests simulate normal handling of doublequotes
 	// around the subcommand.
 	if verb == `shell` || verb == `"shell"` {
+		command := strings.TrimSpace(fields[1])
 		fc.attributes = newOrderedStringSet("c", "a", "C")
 		fc.sub = func(content string, id string, substitutions map[string]string) (string, error) {
 			substituted := command
@@ -2989,8 +2992,10 @@ func newFilterCommand(lp *LineParse) *filterCommand {
 		}
 		return fc
 	}
-	if verb == `regex` || verb == `replace` || verb == `"regex"` || verb == `"replace"` {
-		parts := strings.Split(command, command[0:1])
+	lp.parse()
+	if verb = lp.args[0]; verb == `regex` || verb == `replace` {
+		replacer := lp.args[1]
+		parts := strings.Split(replacer, replacer[0:1])
 		subflags := parts[len(parts)-1]
 		if len(parts) != 4 {
 			croak("malformed filter specification")

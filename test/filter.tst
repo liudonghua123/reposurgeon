@@ -6,7 +6,7 @@ print "Testing shell filtering of blobs"
 print "Testing shell filtering of commits"
 =C filter shell tr e Y
 print "Testing regexp filtering of blobs"
-=B filter regex /This/THIS PATHETIC HEAP/
+=B filter regex "/This/THIS PATHETIC HEAP/"
 print "Testing regexp filtering of commits"
 =C filter regex /causing/FROBNICATING/
 print "Testing replace filtering of commits"
