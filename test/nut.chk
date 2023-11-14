@@ -2743,7 +2743,8 @@ commit refs/heads/v2.1.0
 #legacy-id 37
 mark :430
 committer aquette <aquette> 1114460457 +0000
-data 64
+data 108
+Insert a test referebce r23 after the fact.
 drivers/Makefile.in: remove unneeded STRLCPY flag for newhidups
 from :427
 M 100644 :428 CHANGES

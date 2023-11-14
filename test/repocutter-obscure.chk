@@ -9856,12 +9856,13 @@ Revision is 36, file path is branches/v2.1.0/drivers/Makefile.in.
 
 
 Revision-number: 37
-Prop-content-length: 170
-Content-length: 170
+Prop-content-length: 215
+Content-length: 215
 
 K 7
 svn:log
-V 64
+V 108
+Insert a test referebce r23 after the fact.
 drivers/Makefile.in: remove unneeded STRLCPY flag for newhidups
 
 K 10

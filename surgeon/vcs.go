@@ -542,7 +542,7 @@ _darcs
 			preserve:     newOrderedStringSet("hooks"),
 			authormap:    "",
 			ignorename:   "",
-			cookies:      reMake(`\sr?\d+([.])?\s`),
+			cookies:      reMake(`\sr?\d+[.;]?\s`),
 			project:      "http://subversion.apache.org/",
 			notes:        "Run from the repository, not a checkout directory.",
 			checkignore:  ".svn",
