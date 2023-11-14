@@ -291,7 +291,11 @@ func readFromProcess(command string) (io.ReadCloser, *exec.Cmd, error) {
 	// Alas, the commands for reading CVS repositories are pipelines,
 	// and the GUI method may need to be able to set TZ, so
 	// so we need shell expamsion to work.
-	cmd := exec.Command("sh", "-c", command)
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+	cmd := exec.Command(shell, "-c", command)
 	cmd.Stdin = os.Stdin
 	stdout, err := cmd.StdoutPipe()
 	cmd.Stderr = os.Stdout
@@ -365,7 +369,11 @@ func runShellProcess(dcmd string, legend string) error {
 	if logEnable(logCOMMANDS) {
 		logit("executing '%s'%s", dcmd, legend)
 	}
-	cmd := exec.Command("sh", "-c", dcmd)
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+	cmd := exec.Command(shell, "-c", dcmd)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

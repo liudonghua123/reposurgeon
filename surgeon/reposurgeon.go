@@ -889,21 +889,7 @@ Run a shell command. Honors the $SHELL environment variable.
 // DoShell is the handler for the "shell" command.
 func (rs *Reposurgeon) DoShell(line string) bool {
 	//Can't use newLineParse() here, it false-matches on shell redirect syntax
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/sh"
-	}
-	if logEnable(logCOMMANDS) {
-		logit("Spawning %s -c %#v...", shell, line)
-	}
-	cmd := exec.Command(shell, "-c", line)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		croak("spawn of %s returned error: %v", shell, err)
-	}
+	runShellProcess(line, "shell")
 	return false
 }
 
@@ -2580,12 +2566,15 @@ reposurgeon's timestamp syntax.
 
 // DoView runs a GUI on the selected repo.
 func (rs *Reposurgeon) DoView(line string) bool {
-	var repo *Repository
-	if nargs := len(strings.Fields(line)); nargs == 0 {
+	parse := rs.newLineParse(line, "view", parseNOSELECT|parseNOOPTS, nil)
+	defer parse.Closem()
+	if len(parse.args) == 0 {
 		// View currently selected repository
-		parse := rs.newLineParse(line, "view", parseREPO|parseNOARGS|parseNOOPTS, nil)
-		defer parse.Closem()
-		repo = rs.chosen()
+		repo := rs.chosen()
+		if repo == nil {
+			croak("no repo has been chosen.")
+			return true
+		}
 		if dname, err := os.MkdirTemp("", "viewtemp"); err != nil {
 			croak(err.Error())
 		} else {
@@ -2604,10 +2593,10 @@ func (rs *Reposurgeon) DoView(line string) bool {
 				}
 			}
 		}
-	} else if nargs == 1 {
-		// View an existing repository directory using its native tool, if any
+	} else if len(parse.args) == 1 {
+		// View an existing repository directory using its native tool, if any.
 		cwd, _ := os.Getwd()
-		if err := os.Chdir(line); err != nil {
+		if err := os.Chdir(parse.args[0]); err != nil {
 			croak(err.Error())
 		} else {
 			defer os.Chdir(cwd)
@@ -2626,11 +2615,10 @@ func (rs *Reposurgeon) DoView(line string) bool {
 			} else if vcs.viewer == "" {
 				croak("no viewer is reistered for %s", vcs.name)
 			}
-			cmd := exec.Command("sh", "-c", vcs.viewer)
-			cmd.Run()
+			runShellProcess(vcs.viewer, "viewer")
 		}
 	} else {
-		croak("gui command requires zero or one arguments.")
+		croak("view command requires zero or one arguments.")
 	}
 
 	return false

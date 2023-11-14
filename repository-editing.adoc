@@ -3902,9 +3902,9 @@ objectives:
 . Group commands so the language is easier to remember and document.
 
 . The distinction between things done with policy flags vs. things
-  done with subcommand ketwords is not very principled. Probably
-  we should use subcommand keywords more for alternative modes, as
-  opposed to policy bits that can be set several at a time.
+  done with subcommand ketwords is not very principled. Use subcommand
+  keywords more for alternative modes, as opposed to policy bits that
+  can be set several at a time.
 
 . Keep commonly-used commands short and simple.
 
@@ -3974,7 +3974,7 @@ undefine {MACRO-NAME}
 unite [--prune] [REPO-NAME...]
 {SELECTION} unmerge
 unpreserve [PATH...]
-view
+view [directory]
 ----
 
 The following are VS and unpleasantly complex - there are
@@ -4035,7 +4035,7 @@ stats [>OUTFILE]
 [SELECTION] tags {>OUTFILE]
 timings [MARK-NAME] [>OUTFILE]
 [SELECTION] index [>OUTFILE]
-[SELECTION] inspect
+[SELECTION] inspect [>OUTFILE]
 ----
 
 In a revised, more verb-centered syntax, the key verbs would probanly
