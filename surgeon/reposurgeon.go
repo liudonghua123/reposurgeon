@@ -2639,16 +2639,9 @@ func (rs *Reposurgeon) DoView(line string) bool {
 // HelpStrip says "Shut up, golint!"
 func (rs *Reposurgeon) HelpStrip() {
 	rs.helpOutput(`
-[SELECTION] strip {--blobs|--reduce [--fileops]|--obscure}
+[SELECTION] strip {--reduce [--fileops]|--blobs|--obscure}
 
 This is intended for producing reduced test cases from large repositories.
-
-Replace the blobs in the selected repository with self-identifying stubs;
-and/or strip out topologically uninteresting commits.  The options for
-this are "--blobs" and "--reduce" respectively; the default is "--blobs".
-
-A selection set is effective only with the "--blobs" option, defaulting to all
-blobs. The "--reduce" mode always acts on the entire repository.
 
 With the modifier "--reduce", perform a topological reduction that
 throws out uninteresting commits.  If a commit has all file
@@ -2661,10 +2654,23 @@ boring, the commit must also not be referred to by any tag or reset.
 Interesting commits are not boring, or have a non-boring parent or
 non-boring child.
 
+with the modifier "--blobs" the blobs in the selected repository with
+self-identifying stubs. This will drastically reduce the size of the
+repository which preserving its structure.
+
 With the modifier --obscure, map all file paths to nonce strings,
 preserving directory structure and distinctness.  This can be used
 in extreme cases where even the file paths might unacceptably
 leak information about the repository content.
+
+If more than one strip mode is specified, blob stubbing is performed
+first, then reduction, then path obscuration.
+
+A selection set is effective only with the "--blobs" and "--obscure"
+options, defaulting to all blobs or commits respectively. The
+"--reduce" mode always acts on the entire repository.
+
+This command sets Q bits on each modified object.
 `)
 }
 
@@ -2678,27 +2684,24 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 	parse := rs.newLineParse(line, "strip", parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	var striptypes orderedStringSet
-	var oldlen int
-	if line == "" {
-		striptypes = orderedStringSet{"--blobs"}
-	} else {
-		striptypes = newOrderedStringSet(strings.Fields(line)...)
-	}
-	if striptypes.Contains("--blobs") {
+
+	repo.clearColor(colorQSET)
+
+	if parse.options.Contains("--blobs") || len(parse.options) == 0 {
 		for it := rs.selection.Iterator(); it.Next(); {
 			if blob, ok := repo.events[it.Value()].(*Blob); ok {
 				blob.setContent([]byte(fmt.Sprintf("Blob at %s\n", blob.mark)), noOffset)
+				blob.addColor(colorQSET)
 			}
 		}
 	}
-	if striptypes.Contains("--reduce") {
-		oldlen = len(repo.events)
-		repo.reduce(striptypes.Contains("--fileops"))
+	if parse.options.Contains("--reduce") {
+		oldlen := len(repo.events)
+		repo.reduce(parse.options.Contains("--fileops"))
 		respond("From %d to %d events.", oldlen, len(repo.events))
 	}
 
-	if striptypes.Contains("--obscure") {
+	if parse.options.Contains("--obscure") {
 		seq := NewNameSequence()
 		pathMutator := func(s string) string {
 			if s == "" {
@@ -2710,12 +2713,13 @@ func (rs *Reposurgeon) DoStrip(line string) bool {
 			}
 			return filepath.FromSlash(strings.Join(parts, "/"))
 		}
-		for _, event := range repo.events {
-			if commit, ok := event.(*Commit); ok {
+		for it := rs.selection.Iterator(); it.Next(); {
+			if commit, ok := repo.events[it.Value()].(*Commit); ok {
 				for i := range commit.operations() {
 					commit.fileops[i].Path = pathMutator(commit.fileops[i].Path)
 					commit.fileops[i].Source = pathMutator(commit.fileops[i].Source)
 				}
+				commit.addColor(colorQSET)
 			}
 		}
 	}

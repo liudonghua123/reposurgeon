@@ -3965,8 +3965,8 @@ renumber
 show {elapsed|memory|sizeof} [>OUTFILE]
 {SELECTION} setperm {PERM} [PATH...]
 [SELECTION] split [ --path ] PATH-OR-INDEX
-[SELECTION] squash [POLICY-FLAFS...]
-[SELECTION] strip {--blobs|--reduce}
+[SELECTION] squash [POLICY-FLAGS...]
+[SELECTION] strip {--reduce|--blobs|--obscure}
 [SELECTION] tagify [ --tagify-merges | --canonicalize | --tipdeletes ]
 [SELECTION] transcode {ENCODING}
 unassign {NAME}
