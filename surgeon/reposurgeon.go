@@ -6233,67 +6233,34 @@ func (rs *Reposurgeon) DoLegacy(line string) bool {
 // HelpReferences says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReferences() {
 	rs.helpOutput(`
-[SELECTION] references [list|lift]
+[SELECTION] references
 
-With the 'list' modifier, produces a listing of events that may have
-commit references in them. How a commit reference is recognized depends on the
-repository source type; the code knows, for example, that in a Subversion
-repository an 'r' followed by digits is a likely commit reference. This version
-of the command supports > redirection.  The things you find this way should be
-patched into reference cookies before running
-"references lift". Equivalent to '=N list'. 
+Transform native commit-reference cookies into action stamps. You
+can specify a selection set of commits to be operated on; the default
+is all commits.
 
-With the modifier 'lift', transform commit-reference cookies from CVS
-and Subversion into action stamps.  This command expects cookies
-consisting of the leading string '[[', followed by a VCS identifier
-(currently SVN or CVS) followed by VCS-dependent information, followed
-by ']]'. An action stamp pointing at the corresponding commit is
-substituted when possible.  Enables writing of the legacy-reference
-map when the repo is written or rebuilt.  This variant sets Q bits:
-true if a commit's comment was modified by a reference lift, false
-on all other events.
+This command expects to find cookies consisting of the leading string '[[',
+followed by a VCS identifier (currently SVN or CVS) followed by
+VCS-dependent information, followed by ']]'.
+
+An action stamp pointing at the corresponding commit is substituted
+when possible.
+
+Enables writing of the legacy-reference map when the
+repo is written or rebuilt.
+
+Sets Q bits: true if a commit's comment was modified by a reference
+lift, false on all other events.
 `)
 }
 
 // DoReferences looks for things that might be CVS or Subversion revision references.
 func (rs *Reposurgeon) DoReferences(line string) bool {
-	rs.newLineParse(line, "references", parseALLREPO|parseNOOPTS, nil)
+	rs.newLineParse(line, "references", parseALLREPO|parseNOARGS|parseNOOPTS, nil)
 	repo := rs.chosen()
-	if strings.Contains(line, "lift") {
-		hits := repo.liftReferences(rs.selection)
-		respond("%d references resolved.", hits)
-	} else {
-		selection := newSelectionSet()
-		for it := repo.commitIterator(rs.selection); it.Next(); {
-			idx := it.Index()
-			commit := it.commit()
-			if rs.hasReference(commit) {
-				selection.Add(idx)
-			}
-		}
-		if selection.Size() > 0 {
-			parse := rs.newLineParse(line, "references", parseNONE|parseNOOPTS, orderedStringSet{"stdout"})
-			defer parse.Closem()
-			w := screenwidth()
-			for it := selection.Iterator(); it.Next(); {
-				ei := it.Value()
-				event := repo.events[ei]
-				summary := ""
-				switch event.(type) {
-				case *Commit:
-					commit := event.(*Commit)
-					summary = commit.lister(nil, ei, w)
-					break
-					//case *Tag:
-					//	tag := event.(*Tag)
-					//	summary = tag.lister(nil, ei, w)
-				}
-				if summary != "" {
-					fmt.Fprint(parse.stdout, summary+control.lineSep)
-				}
-			}
-		}
-	}
+	hits := repo.liftReferences(rs.selection)
+	repo.writeLegacy = true
+	respond("%d references resolved.", hits)
 	return false
 }
 

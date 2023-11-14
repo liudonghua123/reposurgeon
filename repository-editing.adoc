@@ -196,7 +196,7 @@ EOF
 # Change cookies like [[SVN:2]] into action stamps that are independent
 # of the VCS in use. A typical action stamp looks like this:
 # <jrh@random.org!2006-08-14T02:34:56Z>
-references lift
+references
 
 # Sometimes it's useful to drop files from the repo that should
 # never have been checked in. 1..$ - selects all commits.
@@ -2347,7 +2347,7 @@ created by '```git cvsimport```'.
 The detailed sequence for lifting possible references is this: first,
 find possible CVS and Subversion references with the
 `<<references_cmd>>` or `=N` visibility set; then replace them with
-equivalent cookies; then run `<<references_cmd>> lift` to turn the
+equivalent delimoited cookies; then run `<<references_cmd>>` to turn the
 cookies into action stamps (using the information in the
 legacy-reference map) without having to do the lookup by hand.
 
@@ -3997,7 +3997,6 @@ The following are SV. Inverting these to verb-first might be a good thing.
 branch {rename|delete} {BRANCH-PATTERN} [--not] [NEW-NAME]
 legacy {read [<INFILE] | write [>OUTFILE]}
 path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
-[SELECTION] references [list|lift]
 [SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
 [SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME|SINGLETON]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
@@ -4008,7 +4007,7 @@ The following are S and should probably be attached to some verb:
 ----
 blob [MARK-NUMBER] {<INFILE|>OUTFILE] 
 logfile [PATH]
-references [list|lift]
+[SELECTION] references
 ----
 
 The following are S, but probably shouldn't change:

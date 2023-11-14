@@ -34,6 +34,6 @@ from :4
 
 done
 EOF
-references lift
+references
 prefer git
 write -

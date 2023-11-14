@@ -6576,7 +6576,6 @@ func (repo *Repository) liftReferences(selection selectionSet) int {
 			}
 		}
 	}
-	repo.writeLegacy = true
 	return hits
 }
 
