@@ -6487,6 +6487,99 @@ func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, even
 	}
 }
 
+// liftReferences replaces delimited reference cookies with action stamps
+func (repo *Repository) liftReferences(selection selectionSet) int {
+	repo.clearColor(colorQSET)
+	dollarMap := repo.parseDollarCookies()
+	hits := 0
+	substitute := func(getter func(string) *Commit, legend string) string {
+		// legend was matchobj.group(0) in Python
+		commit := getter(legend)
+		if commit == nil {
+			if logEnable(logWARN) {
+				logit("no commit matches %q", legend)
+			}
+			return legend // no replacement
+		}
+		text := commit.actionStamp()
+		hits++
+		return text
+	}
+	type getterPair struct {
+		pattern string
+		getter  func(string) *Commit
+	}
+	getterPairs := []getterPair{
+		{`\[\[CVS:[^:\]]+:[0-9.]+\]\]`,
+			func(p string) *Commit {
+				p = p[2 : len(p)-2]
+				key := ""
+				ccount := 0
+				for _, c := range p {
+					if c == ':' {
+						if ccount > 0 {
+							key += " "
+						} else {
+							key += ":"
+						}
+						ccount++
+					} else {
+						key += string(c)
+					}
+				}
+				if c, ok := repo.legacyMap[key]; ok {
+					return c
+				}
+				if c, ok := dollarMap[key]; ok {
+					return c
+				}
+				return nil
+			}},
+		{`\[\[SVN:[0-9]+\]\]`,
+			func(p string) *Commit {
+				p = p[2 : len(p)-2]
+				if c, ok := repo.legacyMap[p]; ok {
+					return c
+				}
+				if c, ok := dollarMap[p]; ok {
+					return c
+				}
+				return nil
+			}},
+		{`\[\[HG:[0-9a-f]+\]\]`,
+			func(p string) *Commit {
+				p = p[2 : len(p)-2]
+				return repo.legacyMap[p]
+			}},
+		{`\[\[:[0-9]+\]\]`,
+			func(p string) *Commit {
+				p = p[2 : len(p)-2]
+				event := repo.markToEvent(p)
+				commit, ok := event.(*Commit)
+				if ok {
+					return commit
+				}
+				return nil
+			}},
+	}
+	for _, item := range getterPairs {
+		matchRE := regexp.MustCompile(item.pattern)
+		for it := repo.commitIterator(selection); it.Next(); {
+			oldcomment := it.commit().Comment
+			it.commit().Comment = matchRE.ReplaceAllStringFunc(
+				it.commit().Comment,
+				func(m string) string {
+					return substitute(item.getter, m)
+				})
+			if it.commit().Comment != oldcomment {
+				it.commit().addColor(colorQSET)
+			}
+		}
+	}
+	repo.writeLegacy = true
+	return hits
+}
+
 // Delete machinery begins here
 //
 // Count modifications of a path in this commit && its ancestors.
