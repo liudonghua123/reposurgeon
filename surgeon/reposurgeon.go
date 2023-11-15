@@ -974,7 +974,7 @@ func (rs *Reposurgeon) DoAssign(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	if !rs.selection.isDefined() {
-		if line != "" {
+		if len(parse.args) > 0 {
 			croak("No selection")
 			return false
 		}
@@ -1978,8 +1978,8 @@ func (rs *Reposurgeon) CompletePrefer(text string) []string {
 
 // DoPrefer reports or select the preferred repository type.
 func (rs *Reposurgeon) DoPrefer(line string) bool {
-	rs.newLineParse(line, "prefer", parseNOSELECT|parseNOOPTS, nil)
-	if line == "" {
+	parse := rs.newLineParse(line, "prefer", parseNOSELECT|parseNOOPTS, nil)
+	if len(parse.args) == 0 {
 		for _, vcs := range vcstypes {
 			control.baton.printLogString(vcs.String() + control.lineSep)
 		}
@@ -2061,13 +2061,13 @@ func (rs *Reposurgeon) CompleteSourcetype(text string) []string {
 
 // DoSourcetype reports or selects the current repository's source type.
 func (rs *Reposurgeon) DoSourcetype(line string) bool {
-	rs.newLineParse(line, "sourcetype", parseREPO|parseNOSELECT|parseNOOPTS, nil)
+	parse := rs.newLineParse(line, "sourcetype", parseREPO|parseNOSELECT|parseNOOPTS, nil)
 	if rs.chosen() == nil {
 		croak("no repo has been chosen.")
 		return false
 	}
 	repo := rs.chosen()
-	if line == "" {
+	if len(parse.args) == 0 {
 		if rs.chosen().vcs != nil {
 			fmt.Fprintf(control.baton, "%s: %s\n", repo.name, repo.vcs.name)
 		} else {
@@ -2076,7 +2076,7 @@ func (rs *Reposurgeon) DoSourcetype(line string) bool {
 	} else {
 		known := ""
 		for _, importer := range importers {
-			if strings.ToLower(line) == importer.name {
+			if strings.ToLower(parse.args[0]) == importer.name {
 				rs.chosen().vcs = importer.basevcs
 				return false
 			}
@@ -2112,13 +2112,13 @@ is reported.
 
 // DoGc is the handler for the "gc" command.
 func (rs *Reposurgeon) DoGc(line string) bool {
-	rs.newLineParse(line, "gc", parseNOSELECT|parseNOOPTS, nil)
+	parse := rs.newLineParse(line, "gc", parseNOSELECT|parseNOOPTS, nil)
 	for _, repo := range rs.repolist {
 		repo.gcBlobs()
 	}
 	runtime.GC()
-	if line != "" {
-		v, err := strconv.Atoi(line)
+	if len(parse.args) > 0 {
+		v, err := strconv.Atoi(parse.args[0])
 		if err != nil {
 			croak("ill-formed numeric argument")
 			return false
@@ -2165,14 +2165,14 @@ func (rs *Reposurgeon) CompleteChoose(text string) []string {
 
 // DoChoose selects a named repo on which to operate.
 func (rs *Reposurgeon) DoChoose(line string) bool {
-	rs.newLineParse(line, "choose", parseNOSELECT|parseNOOPTS, nil)
-	if len(rs.repolist) == 0 && len(line) > 0 {
+	parse := rs.newLineParse(line, "choose", parseNOSELECT|parseNOOPTS, nil)
+	if len(rs.repolist) == 0 && len(parse.args) > 0 {
 		if control.isInteractive() {
-			croak("no repositories are loaded, can't find %q.", line)
+			croak("no repositories are loaded, can't find %q.", parse.args[0])
 			return false
 		}
 	}
-	if line == "" {
+	if len(parse.args) == 0 {
 		for _, repo := range rs.repolist {
 			status := "-"
 			if rs.chosen() != nil && repo == rs.chosen() {
@@ -2181,13 +2181,13 @@ func (rs *Reposurgeon) DoChoose(line string) bool {
 			fmt.Fprintf(control.baton, "%s %s\n", status, repo.name)
 		}
 	} else {
-		if newOrderedStringSet(rs.reponames()...).Contains(line) {
-			rs.choose(rs.repoByName(line))
+		if newOrderedStringSet(rs.reponames()...).Contains(parse.args[0]) {
+			rs.choose(rs.repoByName(parse.args[0]))
 			if control.isInteractive() {
-				rs.DoStats(line)
+				rs.DoStats(parse.args[0])
 			}
 		} else {
-			croak("no such repo as %s", line)
+			croak("no such repo as %s", parse.args[0])
 		}
 	}
 	return false
@@ -2211,33 +2211,32 @@ func (rs *Reposurgeon) CompleteDrop(text string) []string {
 
 // DoDrop drops a repo from reposurgeon's list.
 func (rs *Reposurgeon) DoDrop(line string) bool {
-	rs.newLineParse(line, "drop", parseNOSELECT|parseNOOPTS, nil)
+	parse := rs.newLineParse(line, "drop", parseNOSELECT|parseNOOPTS, nil)
 	if len(rs.reponames()) == 0 {
 		if control.isInteractive() {
 			croak("no repositories are loaded.")
 			return false
 		}
 	}
-	if rs.selection.isDefined() {
-		croak("drop does not take a selection set")
-		return false
-	}
-	if line == "" {
+	var discard string
+	if len(parse.args) > 0 {
+		discard = parse.args[0]
+	} else {
 		if rs.chosen() == nil {
 			croak("no repo has been chosen.")
 			return false
 		}
-		line = rs.chosen().name
+		discard = rs.chosen().name
 	}
-	if rs.reponames().Contains(line) {
-		if rs.chosen() != nil && line == rs.chosen().name {
+	if rs.reponames().Contains(discard) {
+		if rs.chosen() != nil && discard == rs.chosen().name {
 			rs.unchoose()
 		}
-		holdrepo := rs.repoByName(line)
+		holdrepo := rs.repoByName(discard)
 		holdrepo.cleanup()
-		rs.removeByName(line)
+		rs.removeByName(discard)
 	} else {
-		croak("no such repo as %s", line)
+		croak("no such repo as %s", discard)
 	}
 	if control.isInteractive() && !control.flagOptions["quiet"] {
 		// Emit listing of remaining repos
@@ -2258,13 +2257,13 @@ if there is already one by the new name.
 
 // DoRename changes the name of a repository.
 func (rs *Reposurgeon) DoRename(line string) bool {
-	rs.newLineParse(line, "rename", parseNOSELECT|parseNOOPTS, nil)
+	parse := rs.newLineParse(line, "rename", parseNOSELECT|parseNOOPTS|parseNEEDVERB, nil)
 	if rs.reponames().Contains(line) {
-		croak("there is already a repo named %s.", line)
+		croak("there is already a repo named %s.", parse.args[0])
 	} else if rs.chosen() == nil {
 		croak("no repository is currently chosen.")
 	} else {
-		rs.chosen().rename(line)
+		rs.chosen().rename(parse.args[0])
 
 	}
 	return false
@@ -3204,7 +3203,7 @@ func (rs *Reposurgeon) DoTranscode(line string) bool {
 
 	enc, err := ianaindex.IANA.Encoding(parse.args[0])
 	if err != nil {
-		croak("can's set up codec %s: error %v", line, err)
+		croak("can's set up codec %s: error %v", parse.args[0], err)
 		return false
 	}
 	decoder := enc.NewDecoder()
@@ -4123,17 +4122,17 @@ date format and converts to RFC3339.
 `)
 }
 
-// DoWhen uis thee command handler for the "when" command.
+// DoWhen is the command handler for the "when" command.
 func (rs *Reposurgeon) DoWhen(line string) (StopOut bool) {
-	rs.newLineParse(line, "when", parseNOSELECT|parseNOOPTS, nil)
-	if line == "" {
+	parse := rs.newLineParse(line, "when", parseNOSELECT|parseNOOPTS, nil)
+	if len(parse.args) == 0 {
 		croak("a supported date format is required.")
 		return false
 	}
-	d, err := newDate(line)
+	d, err := newDate(parse.args[0])
 	if err != nil {
 		croak("unrecognized date format")
-	} else if strings.Contains(line, "Z") {
+	} else if strings.Contains(parse.args[0], "Z") {
 		control.baton.printLogString(d.String())
 	} else {
 		control.baton.printLogString(d.rfc3339())
@@ -6337,21 +6336,13 @@ set must resolve to a singleton commit.
 
 // DoCheckout checks out files for a specified commit into a directory.
 func (rs *Reposurgeon) DoCheckout(line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	repo := rs.chosen()
-	selection := rs.selection
-	if !selection.isDefined() {
-		selection = rs.chosen().all()
-	}
-	if line == "" {
+	parse := rs.newLineParse(line, "checkout", parseREPO|parseNOOPTS, nil)
+	if len(parse.args) == 0 {
 		croak("no target directory specified.")
-	} else if selection.Size() == 1 {
-		event := repo.events[selection.Fetch(0)]
+	} else if rs.selection.Size() == 1 {
+		event := rs.chosen().events[rs.selection.Fetch(0)]
 		if commit, ok := event.(*Commit); ok {
-			commit.checkout(line)
+			commit.checkout(parse.args[0])
 		} else {
 			croak("not a commit.")
 		}
@@ -6898,11 +6889,11 @@ create commands.
 
 // DoCreate makes a repository with a specified name.
 func (rs *Reposurgeon) DoCreate(line string) bool {
-	rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS, nil)
-	if rs.reponames().Contains(line) {
-		croak("there is already a repo named %s.", line)
+	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS, nil)
+	if rs.reponames().Contains(parse.args[0]) {
+		croak("there is already a repo named %s.", parse.args[0])
 	} else {
-		repo := newRepository(line)
+		repo := newRepository(parse.args[0])
 		rs.repolist = append(rs.repolist, repo)
 		rs.choose(repo)
 	}
@@ -7049,7 +7040,7 @@ reference.
 func (rs *Reposurgeon) DoVersion(line string) bool {
 	parse := rs.newLineParse(line, "version", parseNOSELECT|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	if line == "" {
+	if len(parse.args) == 0 {
 		// This is a technically wrong way of enumerting the list and will need to
 		// change if we ever have visible extractors not corresponding to an
 		// entry in the base VCS table.
@@ -7062,15 +7053,15 @@ func (rs *Reposurgeon) DoVersion(line string) bool {
 	} else {
 		vmajor, _ := splitRuneFirst(version, '.')
 		var major string
-		if strings.Contains(line, ".") {
-			fields := strings.Split(strings.TrimSpace(line), ".")
+		if strings.Contains(parse.args[0], ".") {
+			fields := strings.Split(parse.args[0], ".")
 			if len(fields) != 2 {
 				croak("invalid version.")
 				return false
 			}
 			major = fields[0]
 		} else {
-			major = strings.TrimSpace(line)
+			major = strings.TrimSpace(parse.args[0])
 		}
 		if major != vmajor {
 			croak("major version mismatch, aborting.")
@@ -7425,9 +7416,9 @@ func verbosityLevelList() []assoc {
 
 // DoLog is the handler for the "log" command.
 func (rs *Reposurgeon) DoLog(line string) bool {
-	rs.newLineParse(line, "log", parseNOSELECT|parseNOOPTS, nil)
 	line = strings.Replace(line, ",", " ", -1)
-	for _, tok := range strings.Fields(line) {
+	parse := rs.newLineParse(line, "log", parseNOSELECT|parseNOOPTS, nil)
+	for _, tok := range parse.args {
 		enable := true
 		if tok[0] == '+' {
 			tok = tok[1:]
@@ -7451,7 +7442,7 @@ func (rs *Reposurgeon) DoLog(line string) bool {
 		}
 	}
 breakout:
-	if len(line) == 0 || control.isInteractive() {
+	if len(parse.args) == 0 || control.isInteractive() {
 		// We make the capabilities display in ascending value order
 		out := "log"
 		for i, item := range verbosityLevelList() {
