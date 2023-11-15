@@ -126,7 +126,7 @@ command-buildcheck: $(GENERATEDSVN) $(GENERATEDGIT)
 		2>&1 || exit 1; \
 	done
 
-# Regression-yest loading from Subversion
+# Regression-test loading from Subversion
 SVN_AND_TST_FILES := $(sort $(wildcard *.svn *.tst))
 SVNLOAD_LOADS := $(shell echo $(SVN_AND_TST_FILES) | sed 's/\([^ ]*\)\.svn \1.tst//g; s/[^ ]*\.tst//g; s/\.svn//g')
 svnload-buildcheck:
@@ -294,8 +294,8 @@ endif # if brz
 
 # ENDS: Tests requiring brz
 
-# Test past this point may depend on any VCS and are expected
-# to die cleanly wuth a TAP complaint if they can't find what they need.
+# Tests past this point may depend on any VCS and are expected
+# to die cleanly with a TAP complaint if they can't find what they need.
 
 # Regression-testing of repotool; look at the *.sh and
 # corresponding *.chk files to see which tests this runs.
