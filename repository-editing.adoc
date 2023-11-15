@@ -3878,10 +3878,6 @@ differ by case only. To avoid the problem on a Mac, do all your
 surgery on an HFS+ file system formatted with case sensitivity
 specifically enabled.
 
-Limitation: If whitespace followed by `#` appears in a string or
-regexp command argument, it will be misinterpreted as the beginning of
-a line-ending comment and screw up parsing.
-
 Guarantee: As version-control systems add support for the
 fast-import format, their repositories will become editable by
 reposurgeon.

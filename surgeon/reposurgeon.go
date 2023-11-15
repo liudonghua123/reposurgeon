@@ -263,7 +263,9 @@ func (lp *LineParse) parse() error {
 			if unicode.IsSpace(rune(r)) {
 				continue
 			}
-			if string(r) == `"` {
+			if string(r) == `#` {
+				goto skipout
+			} else if string(r) == `"` {
 				tok = ""
 				state = 2
 			} else {
@@ -615,9 +617,6 @@ func (rs *Reposurgeon) inScript() bool {
 	return len(rs.callstack) > 0
 }
 
-// Housekeeping hooks.
-var inlineCommentRE = regexp.MustCompile(`\s+#`)
-
 func (rs *Reposurgeon) buildPrompt() {
 	rs.cmd.SetPrompt("reposurgeon% ")
 }
@@ -639,7 +638,6 @@ func (rs *Reposurgeon) PreCmd(line string) string {
 	if strings.HasPrefix(line, "#") {
 		return ""
 	}
-	line = inlineCommentRE.Split(line, 2)[0]
 
 	defer func(line *string) {
 		if e := catch("command", recover()); e != nil {
@@ -7215,7 +7213,7 @@ Some commands have a following subcommand verb.
 Many commands take additional arguments after the command (and
 subcommand, if present). Arguments can be either bare tokens or string
 literals enclosed by double quotes; the latter is in case you need to
-embed whitespace in a pathname or text string.
+embed whitespace in a pathname, regular expression, or text string.
 
 Some commands support option flags.  These are led with a --, so if
 there is an option flag named "foo" you would write it as "--foo".
@@ -7248,6 +7246,10 @@ delimited regular expression or a literal string; if it is not
 recognized as the former it will be treated as the latter.  If the
 delimited regular wxpression starts and ends with ASCII single quotes,
 those will be stripped off and the result treated as a literal string.
+
+If a command line has a trailing portion that begins with one or more
+whitespace characters followed by "#" and is not inside a string, that
+trailing portion is ignored.
 `)
 }
 
@@ -7551,10 +7553,7 @@ to the command and afterwards deleted.  "EOF" may be replaced by any
 string. Backslashes have no special meaning while reading a
 here-document.
 
-Scripts may have comments.  Any line beginning with a "#" is
-ignored. If a line has a trailing portion that begins with one or more
-whitespace characters followed by "#", that trailing portion is
-ignored.
+Any script line beginning with a "#" is ignored. 
 
 In scriupts, all commands that expect data to be presented on standard
 input also accept a here-document, just the shell syntax for
