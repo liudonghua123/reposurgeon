@@ -17,12 +17,12 @@ do
     case $opt in
 	a) arg=$OPTARG;;
 	b) mode=build;;
-	i) interactive="set interactive" ;;
+	i) interactive="set flag interactive" ;;
 	l) log="log $OPTARG" ;;
 	n) mode=errs;;
 	o) mode=view;;
-	s) serial="set serial";;
-	x) experimental="set experimental";;
+	s) serial="set flag serial";;
+	x) experimental="set flag experimental";;
 	*) cat <<EOF
 singletest - run a single regression test
 
@@ -100,7 +100,7 @@ do
     fi
 
     case $mode in
-    build) echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set serial" "$experimental" "$interactive" "script ${tst}" >"${chk}" 2>&1 ;;
+    build) echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set flag serial" "$experimental" "$interactive" "script ${tst}" >"${chk}" 2>&1 ;;
     view)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "$interactive" "script ${tst}" 2>&1 ;;
     errs)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "$interactive" "script ${tst}" >/dev/null ;;
     *)     legend=$(echo "${legend}" | sed -e 's/## //')
