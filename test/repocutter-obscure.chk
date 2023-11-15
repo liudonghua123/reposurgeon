@@ -9862,7 +9862,7 @@ Content-length: 215
 K 7
 svn:log
 V 108
-Insert a test referebce r23 after the fact.
+Insert a test reference r23 after the fact.
 drivers/Makefile.in: remove unneeded STRLCPY flag for newhidups
 
 K 10
