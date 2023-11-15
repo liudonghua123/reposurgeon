@@ -142,6 +142,10 @@ lift on a repository named _project_ just under the current directory.
 # Warning: this command is slow because Subversion is slow.
 read project
 
+# Transcode Latin-1 characters in comments and attributions
+# to UTF-8.
+=C transcode latin1
+
 # Check for and report glitches such as timestamp collisions,
 # ill-formed committer/author IDs, multiple roots, etc.
 lint
@@ -410,7 +414,7 @@ requirement for a remote rsyncd that an rsync URL fed directly to
 rsync itself does; internally, repotool turns them into a single-colon
 host plus path rsync source specification.
 
-If your first access attempt failed with ssome message abourt access
+If your first access attempt failed with some message about access
 control, you may need to uncomment the RUSERNAME and RPASSWORD and
 set them to a valid credential pair.
 
@@ -564,13 +568,12 @@ Mercurial: reposurgeon can read a Mercurial repository using
 either of two methods.  See <<mercurial>> for details.
 
 RCS: reposurgeon will read an RCS collection.  It uses
-http://www.catb.org/~esr/cvs-fast-export[cvs-fast-export],
-which despite its name does not actually require CVS metadata other than
-the RCS master files that store the content.
+http://www.catb.org/~esr/src[SRC] to get and export a fast-import
+stream to reposurgeon;s importer.
 
 SCCS: reposurgeon will read an SCCS collection. It uses
-http://www.catb.org/esr/sccs2rcs/[sccs2rcs] to get to RCS, then
-cvs-fast-export to convert to a fast-import stream.
+http://www.catb.org/esr/src/[SRC] to get and export a a fast-import
+stream to reposurgeon;s importer.
 
 Fossil: reposurgeon will read a Fossil repository file. It uses the
 native Fossil exporter, which is pretty good but doesn't export ignore
@@ -599,9 +602,10 @@ disconnected git branches; while there is functionality to identify
 branch and merge points, actually weaving the streams into a single
 DAG is something best done in reposurgeon.
 
-For other systems, see the
+For other systems, see the archived page on
 https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Interaction_with_other_Revision_Control_Systems[Git
-wiki page on conversion tools].
+wiki page on conversion tools]. Warning: the information on it may be
+out of date.
 
 === Step Three: Sanity Checking
 
@@ -1178,8 +1182,7 @@ or CVS revision number.
 
 The program can be run in one of two modes, either as an
 interactive command interpreter or in batch mode to execute commands
-given as arguments on the reposurgeon invocation
-line.
+given as arguments on the reposurgeon invocation line.
 
 The only differences between these modes are (1) the interactive one
 begins by turning on the '```interactive```' option, (2) in batch mode
@@ -1198,10 +1201,9 @@ repository metadata, while conversion experiments will be captured in
 a script that is gradually improved until the day final cutover
 can be performed and the old repository decommissioned.
 
-Note that this means the old repository can be left in service
-while the conversion recipe is under development. Recipe
-development should be treated as a serious project with its
-own change tracking.
+Note that this means the old repository can be left in service while
+the conversion recipe is under development. Recipe development should
+be treated as a serious project with its own change tracking.
 
 // START-TOC
 
