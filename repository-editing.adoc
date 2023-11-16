@@ -3252,14 +3252,14 @@ how to write and use a multiline macro:
 
 ----
 define splitAttribution {
-1..<$2> & /^$1$/C attribution =C|=A set "$3" "$3"
-<$2>..$ & /^$1$/C attribution =C|=A set "$4" "$4"
+1..<{1}> & /^{0}$/C attribution =C|=A set "{2}" "{2}"
+<{1}>..$ & /^{0}$/C attribution =C|=A set "{3}" "{3}"
 }
 do splitAttribution fred 2010-90-15T00:00:00Z fred1 fred2
 ----
 
-This depends on the fact that the the script arguments $1 and $2 get
-substituted before the regular-expression compiler interprets $.
+This depends on the fact that the the script arguments {0} and {1} get
+substituted before the regular-expression compiler interprets {}.
 You'd follow it by applying an attribution file containing entries
 for fred1 and fred2.
 
