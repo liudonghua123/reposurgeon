@@ -3734,50 +3734,6 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 	return false
 }
 
-// HelpBlob says "Shut up, golint!"
-func (rs *Reposurgeon) HelpBlob() {
-	rs.helpOutput(`
-blob MARK-NUMBER [<INFILE]
-
-Create a blob with the specified mark name, which must not already
-exist. The new blob is inserted at the front of the repository event
-sequence, after options but before previously-existing blobs. The blob
-data is taken from standard input, which may be a redirect from a file
-or a here-doc.
-
-This command can be used with the add command to patch new data into a
-repository.
-`)
-}
-
-// DoBlob adds a fileop to a specified commit.
-func (rs *Reposurgeon) DoBlob(line string) bool {
-	parse := rs.newLineParse(line, "blob", parseREPO|parseNOSELECT|parseNOOPTS|parseNEEDVERB, orderedStringSet{"stdin"})
-	defer parse.Closem()
-	repo := rs.chosen()
-
-	if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(parse.args[0]) {
-		croak("The mark number (%s) must begin with a colon and contain only alphanumerics.", parse.args[0])
-		return false
-	} else if repo.markToEvent(parse.args[0]) != nil {
-		croak("Cannot bind blob to existing mark.")
-		return false
-	}
-
-	blob := newBlob(repo)
-	blob.setMark(parse.args[0])
-	repo.insertEvent(blob, len(repo.frontEvents()), "adding blob")
-	content, err := ioutil.ReadAll(parse.stdin)
-	if err != nil {
-		croak("while reading blob content: %v", err)
-		return false
-	}
-	blob.setContent(content, noOffset)
-	repo.declareSequenceMutation("adding blob")
-	repo.invalidateNamecache()
-	return false
-}
-
 // HelpRemove says "Shut up, golint!"
 // FIXME: Odd syntax
 func (rs *Reposurgeon) HelpRemove() {
@@ -6857,7 +6813,7 @@ func (rs *Reposurgeon) DoChangelogs(line string) bool {
 // HelpCreate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCreate() {
 	rs.helpOutput(`
-create [repo|blob] NAME
+create {repo NAME|blob NAME [<INFILE]}
 
 With "repo", create an empty repository with a specified name in
 memory. The new repository becomes chosen.  It has no eveents and no

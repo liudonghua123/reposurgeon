@@ -1743,7 +1743,7 @@ include::docinclude/preserve.adoc[]
 include::docinclude/unpreserve.adoc[]
 
 [[tarballs]]
-=== Incorporating release tarballs
+=== Incorporating data
 
 When converting a legacy repository, it sometimes happens that
 there are archived releases of the project surviving from before the
@@ -2025,17 +2025,14 @@ include::docinclude/branchlift.adoc[]
 // COMMAND
 include::docinclude/debranch.adoc[]
 
-[[tag-reset-blob]]
-=== Tags, resets, and blobs
+[[tag-reset]]
+=== Tags and resets
 
 // COMMAND
 include::docinclude/tag.adoc[]
 
 // COMMAND
 include::docinclude/reset.adoc[]
-
-// COMMAND
-include::docinclude/blob.adoc[]
 
 // COMMAND
 include::docinclude/dedup.adoc[]
@@ -3929,6 +3926,7 @@ branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
 choose [REPO-NAME]
 [SELECTION] coalesce [--debug] [TIMEFUZZ]
 {SELECTION} count [>OUTFILE]
+create {repo NAME|blob NAME [<INFILE]}
 debranch {SOURCE-BRANCH} [TARGET-BRANCH]
 [SELECTION] dedup
 define [NAME [TEXT]]
@@ -4006,7 +4004,6 @@ path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
 The following are S and should probably be attached to some verb:
 
 ----
-blob MARK-NUMBER [<INFILE]
 logfile [PATH]
 [SELECTION] references
 ----
