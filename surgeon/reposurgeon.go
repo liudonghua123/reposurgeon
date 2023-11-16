@@ -209,7 +209,7 @@ const (
 	parseNOREDIRECT                    // Ignore things that look like redirects (e.g email addresses).
 	parseNOOPTS                        // Command has no option flags
 	parseNOARGS                        // Giving arguments (other than switches) is an error
-	parseNEEDVERB                      // Command needs at a subcommand verb
+	parseNEEDARG                       // Command needs at at leasr one argument
 )
 
 func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, capabilities orderedStringSet) *LineParse {
@@ -430,8 +430,8 @@ skipout:
 	if (len(lp.args) > 0) && (lp.flags&parseNOARGS) != 0 {
 		return fmt.Errorf(lp.name + " command does not take arguments")
 	}
-	if (len(lp.args) == 0) && (lp.flags&parseNEEDVERB) != 0 {
-		return fmt.Errorf(lp.name + " command requires a subcommand verb")
+	if (len(lp.args) == 0) && (lp.flags&parseNEEDARG) != 0 {
+		return fmt.Errorf(lp.name + " command requires a subcommand verb or mode")
 	}
 	return nil
 }
@@ -1297,8 +1297,7 @@ func (rs *Reposurgeon) DoProfile(line string) bool {
 	if len(parse.args) < 1 {
 		respond("The available profiles are %v", names)
 	} else {
-		verb := parse.args[0]
-		switch verb {
+		switch verb := parse.args[0]; verb {
 		case "live":
 			port := "1234"
 			if len(parse.args) >= 2 {
@@ -1422,19 +1421,20 @@ reposurgeon users.
 
 // DoShow is the handler for the "memory" command.
 func (rs *Reposurgeon) DoShow(line string) bool {
-	parse := rs.newLineParse(line, "show", parseNOSELECT|parseNOOPTS|parseNEEDVERB, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, "show", parseNOSELECT|parseNOOPTS|parseNEEDARG, orderedStringSet{"stdout"})
 	defer parse.Closem()
 
-	if verb := parse.args[0]; verb == "memory" {
+	switch verb := parse.args[0]; verb {
+	case "memory":
 		var memStats runtime.MemStats
 		debug.FreeOSMemory()
 		runtime.ReadMemStats(&memStats)
 		const MB = 1e6
 		parse.respond("Heap: %.2fMB  High water: %.2fMB",
 			float64(memStats.HeapAlloc)/MB, float64(memStats.TotalAlloc)/MB)
-	} else if verb == "elapsed" {
+	case "elapsed":
 		parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
-	} else if verb == "sizeof" {
+	case "sizeof":
 		// For developer use when optimizing structure packing to reduce memory use
 		// const MaxUint = ^uint(0)
 		// const MinUint = 0
@@ -1478,8 +1478,8 @@ func (rs *Reposurgeon) DoShow(line string) bool {
 		seq := NewNameSequence()
 		fmt.Fprintf(control.baton, "raw modulus:      %-5d\n", len(seq.color)*len(seq.item))
 		fmt.Fprintf(control.baton, "modulus/phi:      %-5d\n", int((float64(len(seq.color)*len(seq.item)))/phi))
-	} else {
-		croak("unknown show subcommand.")
+	default:
+		croak("unknown show subcommand %q.", verb)
 	}
 	return false
 }
@@ -2255,7 +2255,7 @@ if there is already one by the new name.
 
 // DoRename changes the name of a repository.
 func (rs *Reposurgeon) DoRename(line string) bool {
-	parse := rs.newLineParse(line, "rename", parseNOSELECT|parseNOOPTS|parseNEEDVERB, nil)
+	parse := rs.newLineParse(line, "rename", parseNOSELECT|parseNOOPTS|parseNEEDARG, nil)
 	if rs.reponames().Contains(line) {
 		croak("there is already a repo named %s.", parse.args[0])
 	} else if rs.chosen() == nil {
@@ -3137,7 +3137,7 @@ func (fc *filterCommand) do(content string, id string, substitutions map[string]
 
 // DoFilter is the handler for the "filter" command.
 func (rs *Reposurgeon) DoFilter(line string) (StopOut bool) {
-	parse := rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
+	parse := rs.newLineParse(line, "filter", parseREPO|parseNEEDSELECT|parseNEEDARG, nil)
 	filterhook := newFilterCommand(parse)
 	if filterhook != nil {
 		rs.chosen().dataTraverse("Filtering",
@@ -4578,10 +4578,11 @@ func (pa pathAction) String() string {
 
 // DoPath renames paths in the history.
 func (rs *Reposurgeon) DoPath(line string) bool {
-	parse := rs.newLineParse(line, "path", parseALLREPO|parseNEEDVERB, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(line, "path", parseALLREPO|parseNEEDARG, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	repo := rs.chosen()
-	if verb := parse.args[0]; verb == "rename" {
+	switch verb := parse.args[0]; verb {
+	case "rename":
 		if len(parse.args) < 2 {
 			croak("missing source pattern in path rename command")
 			return false
@@ -4595,14 +4596,14 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 		targetPattern := parse.args[2]
 		force := parse.options.Contains("--force")
 		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
-	} else if verb == "list" {
+	case "list":
 		allpaths := newOrderedStringSet()
 		for it := repo.commitIterator(rs.selection); it.Next(); {
 			allpaths = allpaths.Union(it.commit().paths(nil))
 		}
 		sort.Strings(allpaths)
 		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
-	} else {
+	default:
 		croak("unknown verb '%s' in path command.", verb)
 	}
 	return false
@@ -5067,7 +5068,7 @@ Branch rename sets Q bits; true on every object modified, false otherwise.
 
 // DoBranch renames a branch or deletes it.
 func (rs *Reposurgeon) DoBranch(line string) bool {
-	parse := rs.newLineParse(line, "branch", parseNOSELECT|parseNEEDVERB, nil)
+	parse := rs.newLineParse(line, "branch", parseNOSELECT|parseNEEDARG, nil)
 
 	repo := rs.chosen()
 
@@ -5251,7 +5252,7 @@ rename, get their Q bit set.
 
 // DoTag moves a tag to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoTag(line string) bool {
-	parse := rs.newLineParse(line, "tag", parseALLREPO|parseNEEDVERB, nil)
+	parse := rs.newLineParse(line, "tag", parseALLREPO|parseNEEDARG, nil)
 	repo := rs.chosen()
 	verb := parse.args[0]
 
@@ -5458,7 +5459,7 @@ or rename, get their Q bit set.
 
 // DoReset moves a reset to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoReset(line string) bool {
-	parse := rs.newLineParse(line, "reset", parseREPO|parseNEEDVERB, nil)
+	parse := rs.newLineParse(line, "reset", parseREPO|parseNEEDARG, nil)
 	repo := rs.chosen()
 
 	verb := parse.args[0]
@@ -6441,8 +6442,13 @@ func tweakFlagOptions(args []string, val bool) {
 
 // DoSet is the handler for the "set" command.
 func (rs *Reposurgeon) DoSet(line string) bool {
-	parse := rs.newLineParse(line, "set", parseNOSELECT|parseNOOPTS|parseNEEDVERB, nil)
-	if verb := parse.args[0]; verb == "readlimit" {
+	parse := rs.newLineParse(line, "set", parseNOSELECT|parseNOOPTS|parseNEEDARG, nil)
+	switch verb := parse.args[0]; verb {
+	case "flag":
+		fallthrough
+	case "flags":
+		tweakFlagOptions(parse.args[1:], true)
+	case "readlimit":
 		if len(parse.args) < 2 {
 			respond("readlimit %d\n", control.readLimit)
 			return false
@@ -6454,9 +6460,7 @@ func (rs *Reposurgeon) DoSet(line string) bool {
 			}
 		}
 		control.readLimit = lim
-	} else if verb == "flags" || verb == "flag" {
-		tweakFlagOptions(parse.args[1:], true)
-	} else {
+	default:
 		croak(`"set" needs a "flag" or "flags" or "readlimit" subcommand.`)
 	}
 	return false
@@ -6832,7 +6836,7 @@ used with the add command to patch new data into a repository.
 
 // DoCreate makes a repository with a specified name.
 func (rs *Reposurgeon) DoCreate(line string) bool {
-	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS|parseNEEDVERB, orderedStringSet{"stdin"})
+	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS|parseNEEDARG, orderedStringSet{"stdin"})
 	switch parse.args[0] {
 	case "repo":
 		if len(parse.args) < 2 {

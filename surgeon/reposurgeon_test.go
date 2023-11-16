@@ -2301,7 +2301,7 @@ TAG o123-o123
 
 			// all tests have valid --regex lines, not checking nil
 			parse := rs.newLineParse(fmt.Sprint("regex ", test.regex),
-				"filter", parseREPO|parseNEEDSELECT|parseNEEDVERB, nil)
+				"filter", parseREPO|parseNEEDSELECT|parseNEEDARG, nil)
 			fhook := newFilterCommand(parse)
 
 			rs.chosen().dataTraverse("", rs.selection, fhook.do, fhook.attributes, test.safety, true, control.baton)
