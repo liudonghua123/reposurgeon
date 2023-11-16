@@ -874,8 +874,12 @@ Test to be sure we can read in a tag in inbox format.
 		t.Errorf("%q was expected to be decodable, is not", t1.String())
 	}
 
+	if !t1.clone().tagger.isValid() {
+		t.Errorf("cloning of tag %q failed, tagger invlid", t1.tagname)
+	}
+
 	if t1.String() != t1.clone().String() {
-		t.Errorf("cloning of tag %q failed", t1.tagname)
+		t.Errorf("cloning of tag %q failed, stringification mismatch", t1.tagname)
 	}
 }
 

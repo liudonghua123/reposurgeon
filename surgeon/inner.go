@@ -1128,6 +1128,10 @@ func newAttribution(attrline string) (*Attribution, error) {
 	return attr, nil
 }
 
+func (attr *Attribution) isValid() bool {
+	return attr.fullname != "" && attr.email != ""
+}
+
 func (attr Attribution) String() string {
 	return attr.fullname + " <" + attr.email + "> " + attr.date.String()
 }
@@ -1817,10 +1821,8 @@ func newTag(repo *Repository,
 }
 
 func (t Tag) clone() *Tag {
-	var newtag Tag
-	attrib := *t.tagger
-	newtag = t
-	newtag.tagger = &attrib
+	newtag := t
+	newtag.tagger = t.tagger.clone()
 	newtag.colors.Clear()
 	return &newtag
 }
