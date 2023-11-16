@@ -2001,8 +2001,6 @@ func (t *Tag) emailIn(msg *MessageBlock, fill bool) bool {
 				modified = true
 			}
 			t.tagger.date = date
-		} else {
-			t.tagger.date, _ = newDate("")
 		}
 	}
 
