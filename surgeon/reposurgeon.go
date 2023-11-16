@@ -6876,7 +6876,7 @@ used with the add command to patch new data into a repository.
 
 // DoCreate makes a repository with a specified name.
 func (rs *Reposurgeon) DoCreate(line string) bool {
-	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS|parseNEEDVERB, nil)
+	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS|parseNEEDVERB, orderedStringSet{"stdin"})
 	switch parse.args[0] {
 	case "repo":
 		if len(parse.args) < 2 {
