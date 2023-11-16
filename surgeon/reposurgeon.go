@@ -5285,9 +5285,8 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			croak("create target is not a commit.")
 			return false
 		}
-		tag := newTag(repo, tagname, target.mark,
-			target.committer.clone(),
-			target.Comment)
+		tag := newTag(repo, tagname, target.mark, target.Comment)
+		tag.tagger = target.committer.clone()
 		tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(time.Second) // So it is unique
 		var lasttag int
 		var lastcommit int

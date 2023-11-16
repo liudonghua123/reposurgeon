@@ -429,7 +429,8 @@ func (ge *GitExtractor) gatherAllReferences(rs *RepoStreamer) error {
 				return fmt.Errorf("warning: atttribution in tag %s garbled: %v", tag, err)
 			}
 			// committish isn't a mark; we'll fix that later
-			tagobj := *newTag(nil, tag, objecthash, attrib, comment)
+			tagobj := *newTag(nil, tag, objecthash, comment)
+			tagobj.tagger = attrib
 			rs.tags = append(rs.tags, tagobj)
 		}
 		rs.baton.twirl()
@@ -675,7 +676,7 @@ func (he *HgExtractor) byLine(rs *RepoStreamer, cmd []string, errfmt string,
 	return nil
 }
 
-//gatherRevisionIDs gets the topologically-ordered list of revisions and parents.
+// gatherRevisionIDs gets the topologically-ordered list of revisions and parents.
 func (he *HgExtractor) gatherRevisionIDs(rs *RepoStreamer) error {
 	// Belated initialization
 	he.base = rs

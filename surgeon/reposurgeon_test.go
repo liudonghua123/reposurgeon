@@ -832,7 +832,8 @@ func TestTag(t *testing.T) {
 	repo := newRepository("fubar")
 	defer repo.cleanup()
 	attr1, _ := newAttribution("jrh <jrh> 1456976347 -0500")
-	t1 := newTag(repo, "sample1", ":2", attr1, "Sample tag #1\n")
+	t1 := newTag(repo, "sample1", ":2", "Sample tag #1\n")
+	t1.tagger = attr1
 	repo.events = append(repo.events, t1)
 	if !strings.Contains(t1.Comment, "Sample") {
 		t.Error("expected string not found in tag Comment")
@@ -1159,8 +1160,8 @@ Example commit for unit testing, modified.
 	hackcheck := "------------------------------------------------------------------------\nEvent-Number: 43\nEvent-Mark: :2\nCommitter: J. Random Hacker <jrh@foobar.com>\nCommitter-Date: Wed, 02 Mar 2016 22:39:07 -0500\nAuthor: Tim the Enchanter <esr@thyrsus.com>\nAuthor-Date: Mon, 14 Mar 2016 23:32:27 +0000\nCheck-Text: Example commit for unit testing, modified.\n\nExample commit for unit testing, modified.\n"
 	assertEqual(t, commit.emailOut(nullOrderedStringSet, 42, nil), hackcheck)
 
-	attr1, _ := newAttribution("jrh <jrh> 1456976347 -0500")
-	newTag(repo, "sample1", ":2", attr1, "Sample tag #1\n")
+	//attr1, _ := newAttribution("jrh <jrh> 1456976347 -0500")
+	newTag(repo, "sample1", ":2", "Sample tag #1\n")
 
 	if len(commit.attachments) != 1 {
 		t.Errorf("tag attachment failed: %d", len(commit.attachments))

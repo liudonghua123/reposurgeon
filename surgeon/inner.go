@@ -1804,16 +1804,13 @@ type Tag struct {
 	colors     colorSet
 }
 
-func newTag(repo *Repository,
-	name string, committish string,
-	tagger *Attribution, comment string) *Tag {
+func newTag(repo *Repository, name string, committish string, comment string) *Tag {
 	t := new(Tag)
 	if strings.HasPrefix(name, "refs/tags/") {
 		t.tagname = name[10:]
 	} else {
 		t.tagname = name
 	}
-	t.tagger = tagger
 	t.Comment = comment
 	t.remember(repo, committish)
 	return t
@@ -4844,7 +4841,8 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 				sp.pushback(line)
 			}
 			d, _ := sp.fiReadData([]byte{})
-			tag := newTag(sp.repo, tagname, referent, tagger, string(d))
+			tag := newTag(sp.repo, tagname, referent, string(d))
+			tag.tagger = tagger
 			tag.hash = hash
 			tag.legacyID = legacyID
 			sp.repo.addEvent(tag)
@@ -5990,7 +5988,8 @@ func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string
 			pref += control.lineSep
 		}
 	}
-	tag := newTag(commit.repo, name, target, &commit.committer, pref+legend)
+	tag := newTag(commit.repo, name, target, pref+legend)
+	tag.tagger = &commit.committer
 	tag.legacyID = commit.legacyID
 	repo.addEvent(tag)
 	if delete {
@@ -9336,7 +9335,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 	if create {
 		for _, operation := range updateList {
 			if strings.Contains(operation.update.String(), "Tag-Name") {
-				blank := newTag(nil, "", "", nil, "")
+				blank := newTag(nil, "", "", "")
 				attrib, _ := newAttribution("")
 				blank.tagger = attrib
 				blank.emailIn(operation.update, true)
@@ -9491,7 +9490,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				errorCount++
 			}
 		} else if updateList[i].update.getHeader("Tagger") != "" && updateList[i].update.getHeader("Tagger-Date") != "" {
-			blank := newTag(repo, "", "", nil, "")
+			blank := newTag(repo, "", "", "")
 			attrib, _ := newAttribution("")
 			blank.tagger = attrib
 			blank.emailIn(updateList[i].update, false)
@@ -9511,7 +9510,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				errorCount++
 			}
 		} else if updateList[i].update.getHeader("Tag-Name") != "" {
-			blank := newTag(repo, "", "", nil, "")
+			blank := newTag(repo, "", "", "")
 			attrib, _ := newAttribution("")
 			blank.tagger = attrib
 			blank.emailIn(updateList[i].update, false)
