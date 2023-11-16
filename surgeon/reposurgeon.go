@@ -6857,26 +6857,69 @@ func (rs *Reposurgeon) DoChangelogs(line string) bool {
 // HelpCreate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCreate() {
 	rs.helpOutput(`
-create NAME
+create [repo|blob] NAME
 
-Create an empty repository with a specified name in memory. The new repository becomes chosen.
-It has no eveents and no sourcetype or preferred type.
+With "repo", create an empty repository with a specified name in
+memory. The new repository becomes chosen.  It has no eveents and no
+sourcetype or preferred type.  This command an be used to begin
+scripted creation of a repository from scratch with incorporate,
+create blob, msgin --create, reset create, and tag create commands.
 
-This command an be used to begin scripted creation of a repository
-from scratch with incorporate, msgin --create, reset create, and tag
-create commands.
+With "blob", create a blob with the specified mark name, which must
+not already exist. The new blob is inserted at the front of the
+repository event sequence, after options but before
+previously-existing blobs. The blob data is taken from standard input,
+which may be a redirect from a file or a here-doc. This command can be
+used with the add command to patch new data into a repository.
 `)
 }
 
 // DoCreate makes a repository with a specified name.
 func (rs *Reposurgeon) DoCreate(line string) bool {
-	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS, nil)
-	if rs.reponames().Contains(parse.args[0]) {
-		croak("there is already a repo named %s.", parse.args[0])
-	} else {
-		repo := newRepository(parse.args[0])
-		rs.repolist = append(rs.repolist, repo)
-		rs.choose(repo)
+	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS|parseNEEDVERB, nil)
+	switch parse.args[0] {
+	case "repo":
+		if len(parse.args) < 2 {
+			croak("create repo requires a repository name argument.")
+			return false
+		}
+		name := parse.args[1]
+		if rs.reponames().Contains(name) {
+			croak("there is already a repo named %s.", name)
+		} else {
+			repo := newRepository(name)
+			rs.repolist = append(rs.repolist, repo)
+			rs.choose(repo)
+		}
+	case "blob":
+		if len(parse.args) < 2 {
+			croak("create blob requires a mark name argument.")
+			return false
+		}
+		name := parse.args[1]
+		repo := rs.chosen()
+		if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(name) {
+			croak("The mark number (%s) must begin with a colon and contain only alphanumerics.", name)
+			return false
+		} else if repo.markToEvent(name) != nil {
+			croak("Cannot bind blob to existing mark.")
+			return false
+		}
+
+		blob := newBlob(repo)
+		blob.setMark(name)
+		repo.insertEvent(blob, len(repo.frontEvents()), "adding blob")
+		content, err := ioutil.ReadAll(parse.stdin)
+		if err != nil {
+			croak("while reading blob content: %v", err)
+			return false
+		}
+		blob.setContent(content, noOffset)
+		repo.declareSequenceMutation("adding blob")
+		repo.invalidateNamecache()
+	default:
+		croak("can't create object of unknown type %q.", parse.args[0])
+		return false
 	}
 	return false
 }

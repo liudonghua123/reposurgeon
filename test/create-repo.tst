@@ -1,5 +1,5 @@
 ## Test synthesis of a repository using create and msgin
-create foo
+create repo foo
 shell echo "Alpha content" >alpha
 shell echo "Beta content" >beta
 msgin --create <<EOF
