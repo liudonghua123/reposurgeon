@@ -9325,10 +9325,10 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			}
 		}
 	}
-	lagacyIDMap := make(map[string]*Commit)
+	legacyIDMap := make(map[string]*Commit)
 	for _, commit := range repo.commits(undefinedSelectionSet) {
 		if commit.legacyID != "" {
-			lagacyIDMap[commit.legacyID] = commit
+			legacyIDMap[commit.legacyID] = commit
 		}
 	}
 	// Special case - event creation
@@ -9424,27 +9424,25 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 					updateList[i].eventValid = true
 				}
 			}
-		} else if updateList[i].update.getHeader("Legacy-ID") != "" {
-			trialEvent, ok = lagacyIDMap[updateList[i].update.getHeader("Legacy-ID")]
+		} else if legacyID := updateList[i].update.getHeader("Legacy-ID"); legacyID != "" {
+			trialEvent, ok = legacyIDMap[legacyID]
 			if ok {
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
 				if !relax {
-					logit("msgin: no commit matches legacy-ID %s",
-						updateList[i].update.getHeader("Legacy-ID"))
+					logit("msgin: no commit matches legacy-ID %s", legacyID)
 				}
 				warnCount++
 			}
-		} else if updateList[i].update.getHeader("Event-Mark") != "" {
-			trialEvent := repo.markToEvent(updateList[i].update.getHeader("Event-Mark"))
+		} else if mark := updateList[i].update.getHeader("Event-Mark"); mark != "" {
+			trialEvent := repo.markToEvent(mark)
 			if trialEvent != nil {
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
 				if !relax {
-					logit("msgin: no commit matches mark %s",
-						updateList[i].update.getHeader("Event-Mark"))
+					logit("msgin: no commit matches mark %s", mark)
 				}
 				warnCount++
 			}
@@ -9509,18 +9507,14 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 				croak("msgin: multiple events match %s", stamp)
 				errorCount++
 			}
-		} else if updateList[i].update.getHeader("Tag-Name") != "" {
-			blank := newTag(repo, "", "", "")
-			attrib, _ := newAttribution("")
-			blank.tagger = *attrib
-			blank.emailIn(updateList[i].update, false)
-			trialEvent, ok = nameMap[blank.tagname]
+		} else if tagname := updateList[i].update.getHeader("Tag-Name"); tagname != "" {
+			trialEvent, ok = nameMap[tagname]
 			if ok {
 				updateList[i].event = trialEvent
 				updateList[i].eventValid = true
 			} else {
 				if !relax {
-					logit("msgin: no tag matches name %s", blank.tagname)
+					logit("msgin: no tag matches name %s", tagname)
 				}
 				warnCount++
 			}
@@ -9531,8 +9525,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			warnCount++
 		}
 		if updateList[i].eventValid {
-			ei := repo.eventToIndex(updateList[i].event)
-			if ei == -1 {
+			if ei := repo.eventToIndex(updateList[i].event); ei == -1 {
 				croak("msgin: event at update %d can't be found in repository", i+1)
 				errorCount++
 			} else if _, ok := getAttr(updateList[i].event, "emailIn"); ok {
