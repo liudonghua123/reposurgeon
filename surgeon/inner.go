@@ -1010,8 +1010,9 @@ func (date *Date) isZero() bool {
 }
 
 func (date *Date) clone() Date {
-	out := *date
-	return out
+	// Has no reference parts, so we can just deref
+	// amnd pass it out by value
+	return *date
 }
 
 func (date Date) rfc3339() string {
@@ -1137,11 +1138,9 @@ func (attr Attribution) String() string {
 }
 
 func (attr *Attribution) clone() *Attribution {
-	mycopy, _ := newAttribution("")
-	mycopy.fullname = attr.fullname
-	mycopy.email = attr.email
-	mycopy.date = attr.date.clone()
-	return mycopy
+	mycopy := *attr
+	mycopy.date = attr.date.clone() // In case tDate ever has rreference parts
+	return &mycopy
 }
 
 func (attr Attribution) isEmpty() bool {

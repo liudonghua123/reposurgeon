@@ -864,7 +864,7 @@ Test to be sure we can read in a tag in inbox format.
 		t.Fatalf("On first read: %v", err)
 	}
 	var t2 Tag
-	t2.tagger, _ = newAttribution("")
+	t2.tagger = new(Attribution)
 	t2.emailIn(msg, false)
 
 	assertEqual(t, "sample2", t2.tagname)
