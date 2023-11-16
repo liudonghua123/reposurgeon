@@ -1798,7 +1798,7 @@ type Tag struct {
 	tagname    string
 	committish string
 	hash       gitHashType
-	tagger     *Attribution
+	tagger     Attribution
 	Comment    string
 	legacyID   string
 	colors     colorSet
@@ -1818,7 +1818,7 @@ func newTag(repo *Repository, name string, committish string, comment string) *T
 
 func (t Tag) clone() *Tag {
 	newtag := t
-	newtag.tagger = t.tagger.clone()
+	newtag.tagger = *t.tagger.clone()
 	newtag.colors.Clear()
 	return &newtag
 }
@@ -1934,7 +1934,7 @@ func (t *Tag) emailOut(modifiers orderedStringSet, eventnum int,
 	msg.setHeader("Event-Number", fmt.Sprintf("%d", eventnum+1))
 	msg.setHeader("Tag-Name", t.tagname)
 	msg.setHeader("Target-Mark", t.committish)
-	if t.tagger != nil {
+	if t.tagger.isValid() {
 		t.tagger.emailOut(modifiers, msg, "Tagger")
 	}
 	if t.legacyID != "" {
@@ -2085,7 +2085,7 @@ func (t *Tag) Save(w io.Writer) {
 	if t.hash.isValid() {
 		fmt.Fprintf(w, "original-oid %s\n", t.hash.hexify())
 	}
-	if t.tagger != nil {
+	if t.tagger.isValid() {
 		fmt.Fprintf(w, "tagger %s\n", t.tagger)
 	}
 	comment := t.Comment
@@ -4842,7 +4842,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 			}
 			d, _ := sp.fiReadData([]byte{})
 			tag := newTag(sp.repo, tagname, referent, string(d))
-			tag.tagger = tagger
+			tag.tagger = *tagger
 			tag.hash = hash
 			tag.legacyID = legacyID
 			sp.repo.addEvent(tag)
@@ -5801,7 +5801,7 @@ func (repo *Repository) writeAuthorMap(selection selectionSet, fp io.Writer) err
 			// in the wild when reading a Git repository file with corrupted
 			// metadata: https://gitlab.com/esr/reposurgeon/issues/249
 			// Skip the invalid tag.
-			if tag.tagger != nil {
+			if tag.tagger.isValid() {
 				contributors[tag.tagger.userid()] = tag.tagger.who()
 			}
 		}
@@ -5989,7 +5989,7 @@ func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string
 		}
 	}
 	tag := newTag(commit.repo, name, target, pref+legend)
-	tag.tagger = &commit.committer
+	tag.tagger = commit.committer
 	tag.legacyID = commit.legacyID
 	repo.addEvent(tag)
 	if delete {
@@ -9020,7 +9020,7 @@ func (repo *Repository) dataTraverse(prompt string, selection selectionSet, hook
 						logit("in data traverse of tag: %v", err)
 						return false
 					}
-					tag.tagger = attrib
+					tag.tagger = *attrib
 					anychanged = anychanged || true
 				}
 				if anychanged {
@@ -9316,7 +9316,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			if tag.tagname != "" {
 				nameMap[tag.tagname] = tag
 			}
-			if tag.tagger != nil {
+			if tag.tagger.isValid() {
 				stamp := tag.tagger.actionStamp()
 				if found, ok := attributionByAuthor[stamp]; ok && found != tag {
 					authorCounts[stamp]++
@@ -9337,7 +9337,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			if strings.Contains(operation.update.String(), "Tag-Name") {
 				blank := newTag(nil, "", "", "")
 				attrib, _ := newAttribution("")
-				blank.tagger = attrib
+				blank.tagger = *attrib
 				blank.emailIn(operation.update, true)
 				commits := repo.commits(undefinedSelectionSet)
 				if len(commits) == 0 {
@@ -9492,7 +9492,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 		} else if updateList[i].update.getHeader("Tagger") != "" && updateList[i].update.getHeader("Tagger-Date") != "" {
 			blank := newTag(repo, "", "", "")
 			attrib, _ := newAttribution("")
-			blank.tagger = attrib
+			blank.tagger = *attrib
 			blank.emailIn(updateList[i].update, false)
 			stamp := blank.tagger.actionStamp()
 			trialEvent, ok = attributionByAuthor[stamp]
@@ -9512,7 +9512,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 		} else if updateList[i].update.getHeader("Tag-Name") != "" {
 			blank := newTag(repo, "", "", "")
 			attrib, _ := newAttribution("")
-			blank.tagger = attrib
+			blank.tagger = *attrib
 			blank.emailIn(updateList[i].update, false)
 			trialEvent, ok = nameMap[blank.tagname]
 			if ok {

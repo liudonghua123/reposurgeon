@@ -230,9 +230,7 @@ func (s skipIt) commit() *Commit {
 // subject line no more than 50 chars, body lines no more than 72.
 var unclean = regexp.MustCompile("^[^\n]*\n[^\n]|^.{51,}\n|\n.{73,}")
 
-//
 // The selection-language parsing code starts here.
-//
 func (rs *Reposurgeon) parseSelectionSet(line string) (machine selEvaluator, rest string) {
 	s := strings.TrimLeft(line, " \t")
 	i := strings.IndexAny(s, " \t")
@@ -1645,7 +1643,7 @@ func (p *AttributionEditor) attributions(e Event) []attrEditAttr {
 		}
 		return v
 	case *Tag:
-		return []attrEditAttr{newAttrEditTagger(x.tagger)}
+		return []attrEditAttr{newAttrEditTagger(&x.tagger)}
 	default:
 		panic(fmt.Sprintf("unexpected event type: %T", e))
 	}

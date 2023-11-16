@@ -430,7 +430,7 @@ func (ge *GitExtractor) gatherAllReferences(rs *RepoStreamer) error {
 			}
 			// committish isn't a mark; we'll fix that later
 			tagobj := *newTag(nil, tag, objecthash, comment)
-			tagobj.tagger = attrib
+			tagobj.tagger = *attrib
 			rs.tags = append(rs.tags, tagobj)
 		}
 		rs.baton.twirl()

@@ -4025,7 +4025,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 	}
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) bool {
 		if tag, ok := event.(*Tag); ok {
-			if tag.tagger != nil {
+			if tag.tagger.isValid() {
 				tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(offset)
 				if len(parse.args) > 1 {
 					tag.tagger.date.timestamp = tag.tagger.date.timestamp.In(loc)
@@ -5286,7 +5286,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			return false
 		}
 		tag := newTag(repo, tagname, target.mark, target.Comment)
-		tag.tagger = target.committer.clone()
+		tag.tagger = *target.committer.clone()
 		tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(time.Second) // So it is unique
 		var lasttag int
 		var lastcommit int

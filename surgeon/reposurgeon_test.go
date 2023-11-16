@@ -833,7 +833,7 @@ func TestTag(t *testing.T) {
 	defer repo.cleanup()
 	attr1, _ := newAttribution("jrh <jrh> 1456976347 -0500")
 	t1 := newTag(repo, "sample1", ":2", "Sample tag #1\n")
-	t1.tagger = attr1
+	t1.tagger = *attr1
 	repo.events = append(repo.events, t1)
 	if !strings.Contains(t1.Comment, "Sample") {
 		t.Error("expected string not found in tag Comment")
@@ -865,7 +865,6 @@ Test to be sure we can read in a tag in inbox format.
 		t.Fatalf("On first read: %v", err)
 	}
 	var t2 Tag
-	t2.tagger = new(Attribution)
 	t2.emailIn(msg, false)
 
 	assertEqual(t, "sample2", t2.tagname)
