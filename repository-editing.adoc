@@ -4006,7 +4006,7 @@ path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
 The following are S and should probably be attached to some verb:
 
 ----
-blob [MARK-NUMBER] {<INFILE|>OUTFILE] 
+blob MARK-NUMBER [<INFILE]
 logfile [PATH]
 [SELECTION] references
 ----
@@ -4054,7 +4054,7 @@ write message >OUTFILE
 write repo >OUTFILE
 ---
 
-Unfortunately these would make repository loads unplrasabtly verbose,
+Unfortunately these would make repository loads unpleasantly verbose,
 cpnflicting with "short and simple for common commands".
 
 == Credits ==

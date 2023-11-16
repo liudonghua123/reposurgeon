@@ -3737,44 +3737,27 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 // HelpBlob says "Shut up, golint!"
 func (rs *Reposurgeon) HelpBlob() {
 	rs.helpOutput(`
-blob [MARK-NUMBER] [<INFILE|>OUTFILE]
+blob MARK-NUMBER [<INFILE]
 
-Given an argument, create a blob with the specified mark name, which must not
-already exist. The new blob is inserted at the front of the repository event
-sequence, after options but before previously-existing blobs. The blob data is
-taken from standard input, which may be a redirect from a file or a here-doc.
+Create a blob with the specified mark name, which must not already
+exist. The new blob is inserted at the front of the repository event
+sequence, after options but before previously-existing blobs. The blob
+data is taken from standard input, which may be a redirect from a file
+or a here-doc.
 
-Without an argument return a legal blob name that is not in use, having
-a numeric part just one greater than the highest-numbered existing blob in
-the repository.  This output may be redirected, but is intended for interactive
-use when developing a script.
-
-These commands can be used with the add command to patch new data into a repository.
+This command can be used with the add command to patch new data into a
+repository.
 `)
 }
 
 // DoBlob adds a fileop to a specified commit.
 func (rs *Reposurgeon) DoBlob(line string) bool {
-	parse := rs.newLineParse(line, "blob", parseREPO|parseNOSELECT|parseNOOPTS, orderedStringSet{"stdin", "stdout"})
+	parse := rs.newLineParse(line, "blob", parseREPO|parseNOSELECT|parseNOOPTS|parseNEEDVERB, orderedStringSet{"stdin"})
 	defer parse.Closem()
 	repo := rs.chosen()
 
-	if len(parse.args) == 0 {
-		var markmax int
-		for _, event := range repo.events {
-			m := event.getMark()
-			if m == "" {
-				continue
-			}
-			v, err := strconv.Atoi(m[1:])
-			if err == nil && v > markmax {
-				markmax = v
-			}
-		}
-		fmt.Fprintf(parse.stdout, ":%d\n", markmax+1)
-		return false
-	} else if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(parse.args[0]) {
-		croak("The mark number (%s) must begin with a colon and contain only numerics.", parse.args[0])
+	if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(parse.args[0]) {
+		croak("The mark number (%s) must begin with a colon and contain only alphanumerics.", parse.args[0])
 		return false
 	} else if repo.markToEvent(parse.args[0]) != nil {
 		croak("Cannot bind blob to existing mark.")
