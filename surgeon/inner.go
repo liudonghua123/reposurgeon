@@ -9408,6 +9408,17 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 	var trialEvent Event
 	var ok bool
 	for i := range updateList {
+		trialmark := func(ok bool, event Event, format string, key string) {
+			if ok {
+				updateList[i].event = event
+				updateList[i].eventValid = true
+			} else {
+				if !relax {
+					logit(format, key)
+				}
+				warnCount++
+			}
+		}
 		updateList[i].eventValid = false
 		if updateList[i].update.getHeader("Event-Number") != "" {
 			eventnum, err := strconv.Atoi(updateList[i].update.getHeader("Event-Number"))
@@ -9426,26 +9437,10 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			}
 		} else if legacyID := updateList[i].update.getHeader("Legacy-ID"); legacyID != "" {
 			trialEvent, ok = legacyIDMap[legacyID]
-			if ok {
-				updateList[i].event = trialEvent
-				updateList[i].eventValid = true
-			} else {
-				if !relax {
-					logit("msgin: no commit matches legacy-ID %s", legacyID)
-				}
-				warnCount++
-			}
+			trialmark(ok, trialEvent, "msgin: no commit matches legacy-ID %s", legacyID)
 		} else if mark := updateList[i].update.getHeader("Event-Mark"); mark != "" {
 			trialEvent := repo.markToEvent(mark)
-			if trialEvent != nil {
-				updateList[i].event = trialEvent
-				updateList[i].eventValid = true
-			} else {
-				if !relax {
-					logit("msgin: no commit matches mark %s", mark)
-				}
-				warnCount++
-			}
+			trialmark(trialEvent != nil, trialEvent, "msgin: no commit matches mark %s", mark)
 		} else if updateList[i].update.getHeader("Author") != "" && updateList[i].update.getHeader("Author-Date") != "" {
 			blank := newCommit(repo)
 			attrib, _ := newAttribution("")
@@ -9453,16 +9448,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			blank.emailIn(updateList[i].update, false)
 			stamp := blank.actionStamp()
 			trialEvent, ok = attributionByAuthor[stamp]
-			if ok {
-				updateList[i].event = trialEvent
-
-				updateList[i].eventValid = true
-			} else {
-				if !relax {
-					logit("msgin: no commit matches stamp %s", stamp)
-				}
-				warnCount++
-			}
+			trialmark(ok, trialEvent, "msgin: no commit matches stamp %s", stamp)
 			if authorCounts[stamp] > 1 {
 				croak("msgin: multiple events (%d) match %s", authorCounts[stamp], stamp)
 				errorCount++
@@ -9474,15 +9460,7 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			blank.emailIn(updateList[i].update, false)
 			stamp := blank.committer.actionStamp()
 			trialEvent, ok = attributionByCommitter[stamp]
-			if ok {
-				updateList[i].event = trialEvent
-				updateList[i].eventValid = true
-			} else {
-				if !relax {
-					logit("msgin: no commit matches stamp %s", stamp)
-				}
-				warnCount++
-			}
+			trialmark(ok, trialEvent, "msgin: no commit matches stamp %s", stamp)
 			if committerCounts[stamp] > 1 {
 				croak(fmt.Sprintf("msgin: multiple events (%d) match %s", committerCounts[stamp], stamp))
 				errorCount++
@@ -9494,33 +9472,17 @@ func (repo *Repository) readMessageBox(selection selectionSet, input io.ReadClos
 			blank.emailIn(updateList[i].update, false)
 			stamp := blank.tagger.actionStamp()
 			trialEvent, ok = attributionByAuthor[stamp]
-			if ok {
-				updateList[i].event = trialEvent
-				updateList[i].eventValid = true
-			} else {
-				if !relax {
-					logit("msgin: no tag matches stamp %s", stamp)
-				}
-				warnCount++
-			}
+			trialmark(ok, trialEvent, "msgin: no tag matches stamp %s", stamp)
 			if authorCounts[stamp] > 1 {
 				croak("msgin: multiple events match %s", stamp)
 				errorCount++
 			}
 		} else if tagname := updateList[i].update.getHeader("Tag-Name"); tagname != "" {
 			trialEvent, ok = nameMap[tagname]
-			if ok {
-				updateList[i].event = trialEvent
-				updateList[i].eventValid = true
-			} else {
-				if !relax {
-					logit("msgin: no tag matches name %s", tagname)
-				}
-				warnCount++
-			}
+			trialmark(ok, trialEvent, "msgin: no tag matches name %s", tagname)
 		} else {
 			if !relax {
-				logit("no commit matches update %d:\n%s", i+1, updateList[i].update.String())
+				logit("no commit or tag matches update %d:\n%s", i+1, updateList[i].update.String())
 			}
 			warnCount++
 		}
