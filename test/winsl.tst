@@ -2,7 +2,7 @@
 # This was Florian Eßer's tag create case that core dumped.
 # There should be a CR on the header delimiter line. 
 read <min.fi
-tag create cutover-git @max(=C)
+@max(=C) create tag cutover-git
 msgin <<EOF
 Tag-Name: cutover-git
 Tagger: J. Random Hacker <jrh@random.org> America/Los_Angeles

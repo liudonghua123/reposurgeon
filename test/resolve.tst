@@ -15,8 +15,9 @@ set flag interactive
 1...3 resolve
 
 # Create some tags to test tag selection
-tag create tag1test @max(=C)
-tag create tag2test @max(=C)
+@max(=C) create tag tag1test
+# Test selection default
+create tag tag2test
 
 # Test tag filtering by name
 =T&/tag1/n inspect

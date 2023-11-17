@@ -5218,19 +5218,11 @@ func (rs *Reposurgeon) HelpTag() {
 	rs.helpOutput(`
 [SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME|SINGLETON]
 
-Create, move, rename, or delete annotated tags.
+Move, rename, or delete annotated tags.
 
-Creation is a special case.  First argument is NEW-NAME, which must not
-be an existing tag. Takes a singleton event second argument which must
-point to a commit.  A tag event pointing to the commit is created and
-inserted just after the last tag in the repo (or just after the last
-commit if there are no tags).  The tagger, committish, and comment
-fields are copied from the commit's committer, mark, and comment
-fields.
-
-Otherwise, the TAG-PATTERN argument is a pattern expression matching a
-set of tags (unanchored matching).  The subcommand must be one of the
-verbs 'move', 'rename', or 'delete'. The option "--not" tajkes the
+The TAG-PATTERN argument is a pattern expression matching a set of
+tags (unanchored matching).  The subcommand must be one of the verbs
+'move', 'rename', or 'delete'. The option "--not" tajkes the
 complement of the set if tags impiled by the pattern.
 
 For a 'move', a second argument must be a singleton selection set. For
@@ -5257,56 +5249,6 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 	verb := parse.args[0]
 
 	repo.clearColor(colorQSET)
-	if verb == "create" {
-		if len(parse.args) < 2 {
-			croak("missing tag name")
-			return false
-		}
-		tagname := parse.args[1]
-		if repo.named(tagname).isDefined() {
-			croak("something is already named %s", tagname)
-			return false
-		}
-		if len(parse.args) < 3 {
-			croak("missing location")
-			return false
-		}
-		rs.setSelectionSet(parse.args[2])
-
-		var ok bool
-		var target *Commit
-		if !rs.selection.isDefined() {
-			croak("usage: tag create <name> <singleton-selection>")
-			return false
-		} else if rs.selection.Size() != 1 {
-			croak("tag create requires a singleton commit set.")
-			return false
-		} else if target, ok = repo.events[rs.selection.Fetch(0)].(*Commit); !ok {
-			croak("create target is not a commit.")
-			return false
-		}
-		tag := newTag(repo, tagname, target.mark, target.Comment)
-		tag.tagger = *target.committer.clone()
-		tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(time.Second) // So it is unique
-		var lasttag int
-		var lastcommit int
-		for i, event := range repo.events {
-			if _, ok := event.(*Tag); ok {
-				lasttag = i
-			} else if _, ok := event.(*Commit); ok {
-				lastcommit = i
-			}
-			control.baton.twirl()
-		}
-		if lasttag == 0 {
-			lasttag = lastcommit
-		}
-		repo.insertEvent(tag, lasttag+1, "tag creation")
-		tag.addColor(colorQSET)
-		control.baton.twirl()
-		return false
-	}
-
 	if len(parse.args) < 2 {
 		croak("missing tag pattern")
 		return false
@@ -6816,7 +6758,7 @@ func (rs *Reposurgeon) DoChangelogs(line string) bool {
 // HelpCreate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCreate() {
 	rs.helpOutput(`
-create {repo NAME|blob NAME [<INFILE]}
+[SELECTION] create {{repo|blob|tag} NAME | blob NAME [<INFILE]}
 
 With "repo", create an empty repository with a specified name in
 memory. The new repository becomes chosen.  It has no eveents and no
@@ -6830,16 +6772,28 @@ repository event sequence, after options but before
 previously-existing blobs. The blob data is taken from standard input,
 which may be a redirect from a file or a here-doc. This command can be
 used with the add command to patch new data into a repository.
+
+With "tag", creates an annotated tag. First argument is NAME, which
+must not be an existing tag. Takes a singleton selection set which
+must point to a commit; the default is the last commit,
+e.g. @max(=C).  A tag event pointing to the commit is created and
+inserted just after the last tag in the repo (or just after the last
+commit if there are no tags).  The tagger, committish, and comment
+fields are copied from the commit's committer, mark, and comment
+fields. The timestamp is incremented by a second for uniqueness.
 `)
 }
 
 // DoCreate makes a repository with a specified name.
 func (rs *Reposurgeon) DoCreate(line string) bool {
-	parse := rs.newLineParse(line, "create", parseNOSELECT|parseNOOPTS|parseNEEDARG, orderedStringSet{"stdin"})
-	switch parse.args[0] {
+	parse := rs.newLineParse(line, "create", parseNOOPTS|parseNEEDARG, orderedStringSet{"stdin"})
+	switch verb := parse.args[0]; verb {
 	case "repo":
 		if len(parse.args) < 2 {
 			croak("create repo requires a repository name argument.")
+			return false
+		} else if rs.selection.isDefined() {
+			croak("create repo cannot take a selection set")
 			return false
 		}
 		name := parse.args[1]
@@ -6853,6 +6807,9 @@ func (rs *Reposurgeon) DoCreate(line string) bool {
 	case "blob":
 		if len(parse.args) < 2 {
 			croak("create blob requires a mark name argument.")
+			return false
+		} else if rs.selection.isDefined() {
+			croak("create blob cannot take a selection set")
 			return false
 		}
 		name := parse.args[1]
@@ -6876,8 +6833,53 @@ func (rs *Reposurgeon) DoCreate(line string) bool {
 		blob.setContent(content, noOffset)
 		repo.declareSequenceMutation("adding blob")
 		repo.invalidateNamecache()
+	case "tag":
+		if len(parse.args) < 2 {
+			croak("missing tag name")
+			return false
+		}
+		tagname := parse.args[1]
+		repo := rs.chosen()
+		if repo.named(tagname).isDefined() {
+			croak("something is already named %s", tagname)
+			return false
+		}
+
+		var ok bool
+		var target *Commit
+		if !rs.selection.isDefined() {
+			rs.setSelectionSet("@max(=C)")
+		} else if rs.selection.Size() != 1 {
+			croak("tag create requires a singleton commit set.")
+			return false
+		}
+		if target, ok = repo.events[rs.selection.Fetch(0)].(*Commit); !ok {
+			croak("create target is not a commit.")
+			return false
+		}
+		tag := newTag(repo, tagname, target.mark, target.Comment)
+		tag.tagger = *target.committer.clone()
+		tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(time.Second) // So it is unique
+		var lasttag int
+		var lastcommit int
+		for i, event := range repo.events {
+			if _, ok := event.(*Tag); ok {
+				lasttag = i
+			} else if _, ok := event.(*Commit); ok {
+				lastcommit = i
+			}
+			control.baton.twirl()
+		}
+		if lasttag == 0 {
+			lasttag = lastcommit
+		}
+		repo.insertEvent(tag, lasttag+1, "tag creation")
+		tag.addColor(colorQSET)
+		repo.declareSequenceMutation("adding tag")
+		repo.invalidateNamecache()
+		return false
 	default:
-		croak("can't create object of unknown type %q.", parse.args[0])
+		croak("can't create object of unknown type %q.", verb)
 		return false
 	}
 	return false
