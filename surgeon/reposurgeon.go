@@ -5418,13 +5418,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			return false
 		}
 	} else {
-		if !strings.Contains(sourcepattern, "/") {
-			sourcepattern = "heads/" + sourcepattern
-		}
-		if !strings.HasPrefix(sourcepattern, "refs/") {
-			sourcepattern = "refs/" + sourcepattern
-		}
-		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
+		sourcepattern = "^" + regexp.QuoteMeta(nameToRef(sourcepattern)) + "$"
 	}
 	var err error
 	sourceRE, err := regexp.Compile(sourcepattern)

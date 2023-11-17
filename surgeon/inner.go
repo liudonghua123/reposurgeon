@@ -2117,6 +2117,17 @@ type Reset struct {
 	colors     colorSet
 }
 
+// nameToRef expands a name to Git-style reference path
+func nameToRef(name string) string {
+	if !strings.Contains(name, "/") {
+		name = "heads/" + name
+	}
+	if !strings.HasPrefix(name, "refs/") {
+		name = "refs/" + name
+	}
+	return name
+}
+
 func newReset(repo *Repository, ref string, committish string, legacy string) *Reset {
 	reset := new(Reset)
 	reset.repo = repo
