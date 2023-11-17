@@ -1,4 +1,4 @@
-= Repository Editing and Conversion With Reposurgeon =
+= Repository Editing and Conversion With Reposurgeon
 :doctype: book
 :author: Eric S. Raymond
 :docinfo: shared
@@ -3878,7 +3878,7 @@ Guarantee: As version-control systems add support for the
 fast-import format, their repositories will become editable by
 reposurgeon.
 
-== Notes on the DSL ==
+== Notes on the DSL
 
 The syntax of the reposurgeomn DSL evolved ad hoc as more capabilities
 were glued onto the tool. The result is something of an irregular mess
@@ -4053,7 +4053,7 @@ write repo >OUTFILE
 Unfortunately these would make repository loads unpleasantly verbose,
 cpnflicting with "short and simple for common commands".
 
-== Credits ==
+== Credits
 
 These are in roughly descending magnitude.
 
