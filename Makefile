@@ -143,7 +143,6 @@ BNF_TOPICS = \
 	merge \
 	msgin \
 	msgout \
-	names \
 	operators \
 	prefer \
 	prepend \

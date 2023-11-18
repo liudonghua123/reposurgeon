@@ -76,5 +76,5 @@ this is a test tag
 
 EOF
 list tags
-names
+list names
 write -

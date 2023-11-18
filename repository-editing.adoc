@@ -1794,9 +1794,6 @@ for append rather than write.
 include::docinclude/list.adoc[]
 
 // COMMAND
-include::docinclude/names.adoc[]
-
-// COMMAND
 include::docinclude/inspect.adoc[]
 
 // COMMAND
@@ -3935,7 +3932,7 @@ help [COMMAND]
 history
 {SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 [SELECTION] lint [--OPTION...] [>OUTFILE]
-[SELECTION] list [commits|tags|stamps|index|manifest|paths] [PATTERN] [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|index|manifest|paths|names] [PATTERN] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge
 [SELECTION] msgin [--create] [<INFILE]
@@ -4012,7 +4009,6 @@ when {TIMESTAMP}
 Should these be subcommands of list?
 
 ----
-names [>OUTFILE]
 [SELECTION] sizes [>OUTFILE]
 stats [>OUTFILE]
 timings [MARK-NAME] [>OUTFILE]

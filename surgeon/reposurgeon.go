@@ -1057,35 +1057,6 @@ func (rs *Reposurgeon) DoUnassign(line string) bool {
 	return false
 }
 
-// HelpNames says "Shut up, golint!"
-func (rs *Reposurgeon) HelpNames() {
-	rs.helpOutput(`
-names [>OUTFILE]
-
-List all known symbolic names of branches and tags. 
-Tells you what things are legal within angle brackets and
-parentheses.
-`)
-}
-
-// DoNames is the handler for the "names" command,
-func (rs *Reposurgeon) DoNames(line string) bool {
-	parse := rs.newLineParse(line, "names", parseREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	branches := rs.chosen().branchset()
-	//sortbranches.Sort()
-	for _, branch := range branches {
-		fmt.Fprintf(parse.stdout, "branch %s\n", branch)
-	}
-	for _, event := range rs.chosen().events {
-		if tag, ok := event.(*Tag); ok {
-			fmt.Fprintf(parse.stdout, "tag    %s\n", tag.tagname)
-
-		}
-	}
-	return false
-}
-
 // HelpHistory says "Shut up, golint!"
 func (rs *Reposurgeon) HelpHistory() {
 	rs.helpOutput(`
@@ -1496,7 +1467,7 @@ func (rs *Reposurgeon) DoCount(lineIn string) bool {
 // HelpList says "Shut up, golint!"
 func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
-[SELECTION] list [commits|tags|stamps|index|manifest|paths] [PATTERN] [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|index|manifest|paths|names] [PATTERN] [>OUTFILE]
 
 With "commits" or no subcommand, display commits in a human-friendly
 format; the first column is raw event numbers, the second a timestamp
@@ -1529,6 +1500,10 @@ information about regular expressions.
 
 With "paths", list all paths touched by fileops in the selection
 set (which defaults to the entire repo).
+
+With "names", list all known symbolic names of branches and tags. 
+Tells you what things are legal within angle brackets and
+parentheses.
 
 Any list command can be safely interrupted with ^C, returning you to the
 prompt.
@@ -1584,14 +1559,6 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			}
 		}
 		rs.reportSelect(parse, f)
-	case "paths":
-		parse.flagcheck(parseALLREPO)
-		allpaths := newOrderedStringSet()
-		for it := rs.chosen().commitIterator(rs.selection); it.Next(); {
-			allpaths = allpaths.Union(it.commit().paths(nil))
-		}
-		sort.Strings(allpaths)
-		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
 	case "index":
 		parse.flagcheck(parseALLREPO)
 		repo := rs.chosen()
@@ -1673,6 +1640,26 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			sort.Slice(manifestItems, func(i, j int) bool { return manifestItems[i].path < manifestItems[j].path })
 			for _, item := range manifestItems {
 				fmt.Fprintf(parse.stdout, "%s -> %s\n", item.path, item.entry.ref)
+			}
+		}
+	case "paths":
+		parse.flagcheck(parseALLREPO)
+		allpaths := newOrderedStringSet()
+		for it := rs.chosen().commitIterator(rs.selection); it.Next(); {
+			allpaths = allpaths.Union(it.commit().paths(nil))
+		}
+		sort.Strings(allpaths)
+		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
+	case "names":
+		branches := rs.chosen().branchset()
+		//sortbranches.Sort()
+		for _, branch := range branches {
+			fmt.Fprintf(parse.stdout, "branch %s\n", branch)
+		}
+		for _, event := range rs.chosen().events {
+			if tag, ok := event.(*Tag); ok {
+				fmt.Fprintf(parse.stdout, "tag    %s\n", tag.tagname)
+
 			}
 		}
 	default:
