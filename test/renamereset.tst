@@ -1,5 +1,5 @@
 ## test rename of a reset
 read <testrepo.fi
-reset rename master mistress
+rename reset master mistress
 write -
 

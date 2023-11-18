@@ -2252,7 +2252,7 @@ func (rs *Reposurgeon) DoDrop(line string) bool {
 // HelpRename says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRename() {
 	rs.helpOutput(`
-[SELECTION] {rename {repo NEW-NAME} | rename PATTERN [--force] {TARGET}}
+[SELECTION] rename {repo | path PATTERN [--force] | {branch|reset|tag} [--not] PATTERN}} NEW-NAME
 
 With "repo", renames the currently chosen repo; requires a NEW-NAME
 argument.  Won't do it if there is already one by the new name.
@@ -2262,7 +2262,7 @@ The default selection set is all commits. The first argument is
 interpreted as a pattern expression to match against paths (matching
 is anchored); the second may contain back-reference syntax (\1
 etc.). See "help regexp" for more information about regular
-expressions.  If PATTERN or TARGET are wrapped by double quotes they
+expressions.  If PATTERN or NEW-NAME are wrapped by double quotes they
 may contain whitespace; the quotes are stripped before further
 interprepretation as a delimited regexp or literal string. Ordinarily,
 if the target path already exists in the fileops, or is visible in the
@@ -2305,6 +2305,76 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 		targetPattern := parse.args[2]
 		force := parse.options.Contains("--force")
 		rs.chosen().pathRename(rs.selection, sourceRE, targetPattern, force)
+	case "reset":
+		parse.flagcheck(parseREPO | parseALLREPO)
+		if len(parse.args) < 2 {
+			croak("missing reset pattern")
+			return false
+		}
+
+		resetname := parse.args[1]
+
+		sourcepattern, isRe := delimitedRegexp(resetname)
+		if !isRe {
+			sourcepattern = "^" + regexp.QuoteMeta(nameToRef(sourcepattern)) + "$"
+		}
+		var err error
+		sourceRE, err := regexp.Compile(sourcepattern)
+		if err != nil {
+			croak(err.Error())
+			return false
+		}
+
+		repo := rs.chosen()
+		repo.clearColor(colorQSET)
+		resets := make([]*Reset, 0)
+		selection := rs.selection
+		if !selection.isDefined() {
+			selection = rs.repo.all()
+		}
+		for it := selection.Iterator(); it.Next(); {
+			reset, ok := repo.events[it.Value()].(*Reset)
+			if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
+				resets = append(resets, reset)
+			}
+		}
+
+		if len(resets) == 0 {
+			croak("no resets match %s", sourcepattern)
+			return false
+		}
+		if len(parse.args) < 3 {
+			croak("missing new reset name")
+			return false
+		}
+		newname := nameToRef(parse.args[2])
+
+		for it := rs.selection.Iterator(); it.Next(); {
+			reset, ok := repo.events[it.Value()].(*Reset)
+			if ok && reset.ref == newname {
+				croak("reset reference collision, not renaming.")
+				return false
+			}
+		}
+		for _, commit := range repo.commits(undefinedSelectionSet) {
+			if commit.Branch == newname {
+				croak("commit branch collision, not renaming.")
+				return false
+			}
+		}
+
+		for _, reset := range resets {
+			if reset.ref != newname {
+				reset.addColor(colorQSET)
+			}
+			reset.ref = newname
+		}
+		for _, commit := range repo.commits(undefinedSelectionSet) {
+			if sourceRE.MatchString(commit.Branch) {
+				commit.Branch = newname
+				commit.addColor(colorQSET)
+			}
+		}
 	}
 	return false
 }
@@ -3548,7 +3618,7 @@ func (rs *Reposurgeon) DoSquash(line string) bool {
 // HelpDelete says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDelete() {
 	rs.helpOutput(`
-{SELECTION} delete [--quiet] [--not] [commit | {tag|branch|reset} PATTERN]
+{SELECTION} delete [--quiet] {commit | {tag|branch|reset} [--not] PATTERN}
 
 With "commit" or mo subcommand, delete a selection set of events.
 Requires an explicit selection set.  Tags, resets, and passthroughs
@@ -5600,64 +5670,13 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 		reset.remember(repo, target.mark)
 		reset.addColor(colorQSET)
 		repo.declareSequenceMutation("reset move")
-	} else if verb == "rename" {
-		var newname string
-		if len(resets) == 0 {
-			croak("no resets match %s", sourcepattern)
-			return false
-		}
-		if len(parse.args) < 3 {
-			croak("missing new reset name")
-			return false
-		}
-		newname = parse.args[2]
-
-		if strings.Count(newname, "/") == 0 {
-			newname = "heads/" + newname
-		}
-		if !strings.HasPrefix(newname, "refs/") {
-			newname = "refs/" + newname
-		}
-		selection := rs.selection
-		if !selection.isDefined() {
-			selection = repo.all()
-		}
-		for it := selection.Iterator(); it.Next(); {
-			reset, ok := repo.events[it.Value()].(*Reset)
-			if ok && reset.ref == newname {
-				croak("reset reference collision, not renaming.")
-				return false
-			}
-		}
-		for _, commit := range repo.commits(undefinedSelectionSet) {
-			if commit.Branch == newname {
-				croak("commit branch collision, not renaming.")
-				return false
-			}
-		}
-
-		for _, reset := range resets {
-			if reset.ref != newname {
-				reset.addColor(colorQSET)
-			}
-			reset.ref = newname
-		}
-		for _, commit := range repo.commits(undefinedSelectionSet) {
-			if sourceRE.MatchString(commit.Branch) {
-				commit.Branch = newname
-				commit.addColor(colorQSET)
-			}
-		}
-	} else if verb == "delete" {
 	} else {
 		croak("unknown verb '%s' in reset command.", verb)
 	}
-	if verb != "delete" {
-		if n := repo.countColor(colorQSET); n == 0 {
-			croak("no reset names matched %s", sourceRE)
-		} else {
-			respond("%d objects modified", n)
-		}
+	if n := repo.countColor(colorQSET); n == 0 {
+		croak("no reset names matched %s", sourceRE)
+	} else {
+		respond("%d objects modified", n)
 	}
 	return false
 }

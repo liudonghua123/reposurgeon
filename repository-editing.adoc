@@ -3613,7 +3613,7 @@ separate commands. Blob/tag/reset creation used to be
 blob/tag/branch/reset deletion used to be "{blob/tag/branch/reset}
 delete", not "delete {blob/tag/branch/reset}".  The command to rename
 repositories was just "rename", not "rename repo"; "rename path" was
-"path rename".
+"path rename"; "renane reset" was "reset rename".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3939,13 +3939,13 @@ choose [REPO-NAME]
 debranch {SOURCE-BRANCH} [TARGET-BRANCH]
 [SELECTION] dedup
 define [NAME [TEXT]]
-[SELECTION] delete  [--quiet] [--not] [commit | {tag|branch} PATTERN]
+{SELECTION} delete [--quiet] {commit | {tag|branch|reset} [--not] PATTERN}
 {SELECTION} diff [>OUTFILE]
 {SELECTION} divide
 do {MACRO-NAME} [ARG...]
 drop [REPO-NAME]
 exit [>OUTFILE]
-[SELECTION] expunge [--not|--notagify] {PATH-PATTERN}
+[SELECTION] expunge [--not|--notagify] PATH-PATTERN
 gc [GOGC]
 [SELECTION] gitify
 [SELECTION] graft [--prune] {REPO-NAME}
@@ -3965,7 +3965,7 @@ preserve [PATH...]
 print [TEXT...] [>OUTFILE]
 quit
 rebuild [DIRECTORY]
-rename {repo {NEW-NAME} | rename {PATTERN} [--force] {TARGET}}
+rename {repo | path PATTERN [--force] | {branch|reset|tag} [--not] PATTERN}} NEW-NAME
 renumber
 [SELECTION] reorder [--quiet]
 {SELECTION} resolve
@@ -4002,10 +4002,9 @@ The following are SV. Inverting these to verb-first might be a good thing.
 
 ----
 [SELECTION] authors {read <INFILE | write >OUTFILE}
-branch rename {BRANCH-PATTERN} [--not] [NEW-NAME]
 legacy {read [<INFILE] | write [>OUTFILE]}
 path list [>OUTFILE]
-[SELECTION] reset {move|rename} [RESET-PATTERN] [--not] [NEW-NAME]
+[SELECTION] reset {move|rename} [--not] RESET-PATTERN [NEW-NAME]
 [SELECTION] tag {move|rename} [TAG-PATTERN] [--not] [NEW-NAME]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
 ----

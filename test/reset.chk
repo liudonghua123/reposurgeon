@@ -10,7 +10,7 @@ read <be-bookmarks.fi
     29 branch    :22    refs/heads/D
 reset move D :6
 delete reset A
-reset rename B Z
+rename reset B Z
 27 reset move master :10
 =R index
      2 branch      -    refs/heads/master
@@ -30,10 +30,10 @@ reposurgeon: can't move multiple resets
 reset move D :6,:10,:15
 reposurgeon: reset move requires a singleton commit set.
 # error: empty new name
-reset rename Z
+rename reset Z
 reposurgeon: missing new reset name
 # error: reference collision
-reset rename Z D
+rename reset Z D
 reposurgeon: reset reference collision, not renaming.
 # error: bogus verb
 reset fizzle Z
