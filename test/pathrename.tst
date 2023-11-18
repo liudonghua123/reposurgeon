@@ -1,6 +1,6 @@
 ## Test path rename capability
 set flag relax
 read <sample1.fi
-path rename «README« REAMDE	# Should succeed (deliberate use of unicode punctuation to test the parser at the same time)
-path rename /.gitignore/ REAMDE	# Should fail
+rename path «README« REAMDE	# Should succeed (deliberate use of unicode punctuation to test the parser at the same time)
+rename path /.gitignore/ REAMDE	# Should fail
 write -

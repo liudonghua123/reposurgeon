@@ -2252,10 +2252,22 @@ func (rs *Reposurgeon) DoDrop(line string) bool {
 // HelpRename says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRename() {
 	rs.helpOutput(`
-rename {repo NEW-NAME}
+[SELECTION] {rename {repo NEW-NAME} | rename PATTERN [--force] {TARGET}}
 
 With "repo", renames the currently chosen repo; requires a NEW-NAME
 argument.  Won't do it if there is already one by the new name.
+
+With "path", rename a path in every fileop of every selected commit.
+The default selection set is all commits. The first argument is
+interpreted as a pattern expression to match against paths (matching
+is anchored); the second may contain back-reference syntax (\1
+etc.). See "help regexp" for more information about regular
+expressions.  If PATTERN or TARGET are wrapped by double quotes they
+may contain whitespace; the quotes are stripped before further
+interprepretation as a delimited regexp or literal string. Ordinarily,
+if the target path already exists in the fileops, or is visible in the
+ancestry of the commit, this command throws an error.  With the
+--force option, these checks are skipped.
 `)
 }
 
@@ -2264,12 +2276,12 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 	parse := rs.newLineParse(line, "rename", parseNEEDARG, nil)
 	switch verb := parse.args[0]; verb {
 	case "repo":
+		parse.flagcheck(parseNOSELECT)
 		if len(parse.args) < 2 {
 			croak("missing repository newname.")
 			return false
 		}
 		name := parse.args[1]
-		parse.flagcheck(parseNOSELECT | parseNOOPTS)
 		if rs.reponames().Contains(name) {
 			croak("there is already a repo named %s.", name)
 		} else if rs.chosen() == nil {
@@ -2278,6 +2290,21 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 			rs.chosen().rename(name)
 
 		}
+	case "path":
+		parse.flagcheck(parseREPO | parseALLREPO)
+		if len(parse.args) < 2 {
+			croak("missing source pattern in path rename command")
+			return false
+		}
+		sourcePattern := parse.args[1]
+		sourceRE := getPattern(sourcePattern)
+		if len(parse.args) < 3 {
+			croak("no target specified in path rename")
+			return false
+		}
+		targetPattern := parse.args[2]
+		force := parse.options.Contains("--force")
+		rs.chosen().pathRename(rs.selection, sourceRE, targetPattern, force)
 	}
 	return false
 }
@@ -4701,23 +4728,10 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 // HelpPath says "Shut up, golint!"
 func (rs *Reposurgeon) HelpPath() {
 	rs.helpOutput(`
-[SELECTION] path [list [>OUTFILE] | rename PATTERN [--force] TARGET]]
+[SELECTION] path list [>OUTFILE]
 
 With the verb "list", list all paths touched by fileops in the selection
 set (which defaults to the entire repo). This command does > redirection.
-
-With the verb "rename", rename a path in every fileop of every
-selected commit.  The default selection set is all commits. The first
-argument is interpreted as a pattern expression to match against paths
-(matching is anchored); the second may contain back-reference syntax
-(\1 etc.). See "help regexp" for more information about regular
-expressions.  If PATTERN or TARGET are wrapped by double quotes they
-may contain whitespace; the quotes are stripped before further
-interprepretation as a delimited regexp or literal string.
-
-Ordinarily, if the target path already exists in the fileops, or is visible
-in the ancestry of the commit, this command throws an error.  With the
---force option, these checks are skipped.
 
 Example:
 
@@ -4755,20 +4769,6 @@ func (rs *Reposurgeon) DoPath(line string) bool {
 	defer parse.Closem()
 	repo := rs.chosen()
 	switch verb := parse.args[0]; verb {
-	case "rename":
-		if len(parse.args) < 2 {
-			croak("missing source pattern in path rename command")
-			return false
-		}
-		sourcePattern := parse.args[1]
-		sourceRE := getPattern(sourcePattern)
-		if len(parse.args) < 3 {
-			croak("no target specified in path rename")
-			return false
-		}
-		targetPattern := parse.args[2]
-		force := parse.options.Contains("--force")
-		repo.pathRename(rs.selection, sourceRE, targetPattern, force)
 	case "list":
 		allpaths := newOrderedStringSet()
 		for it := repo.commitIterator(rs.selection); it.Next(); {
