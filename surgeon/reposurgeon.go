@@ -3506,14 +3506,22 @@ func (rs *Reposurgeon) DoSquash(line string) bool {
 // HelpDelete says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDelete() {
 	rs.helpOutput(`
-{SELECTION} delete [--quiet]
+{SELECTION} delete [--quiet] [--not] [commit | tag TAG-PATTERN] 
 
-Delete a selection set of events.  Requires an explicit selection set.
-Tags, resets, and passthroughs are deleted with no side effects.  Blobs
-cannot be directly deleted with this command; they are removed only when
-removal of fileops associated with commits requires this.
+With "commit" or mo subcommand, delete a selection set of events.
+Requires an explicit selection set.  Tags, resets, and passthroughs
+are deleted with no side effects.  Blobs cannot be directly deleted
+with this command; they are removed only when removal of fileops
+associated with commits requires this. A delete is equivalent to a
+squash with the --delete flag.
 
-A delete is equivalent to a squash with the --delete flag.
+With "tag" requires a TAG-PATTERN argument that is a pattern
+expression matching a set of annotated tags (anchored matching).
+Matching tags are deleted.  Giving a regular expression rather than a
+plain string is useful for mass deletion of junk tags such as those
+derived from CVS branch-root tags.  The option "--not" takes the
+complement of the set of tags implied by the TAG-PATTERN. Deletions
+can be restricted by a selection set in the normal way.
 
 Clears all Q bits.
 `)
@@ -3521,9 +3529,61 @@ Clears all Q bits.
 
 // DoDelete is the handler for the "delete" command.
 func (rs *Reposurgeon) DoDelete(line string) bool {
-	parse := rs.newLineParse(line, "delete", parseREPO|parseNEEDSELECT|parseNOARGS, nil)
-	parse.options.Add("--delete")
-	rs.chosen().squash(rs.selection, parse.options, control.baton)
+	parse := rs.newLineParse(line, "delete", parseREPO|parseNEEDSELECT, nil)
+
+	repo := rs.chosen()
+	repo.clearColor(colorQSET)
+	if len(parse.args) == 0 {
+		parse.options.Add("--delete")
+		repo.squash(rs.selection, parse.options, control.baton)
+		return false
+	}
+
+	switch verb := parse.args[0]; verb {
+	case "commit":
+		parse.options.Add("--delete")
+		repo.squash(rs.selection, parse.options, control.baton)
+		return false
+	case "tag":
+		if len(parse.args) < 2 {
+			croak("missing tag pattern")
+			return false
+		}
+		sourcepattern := parse.args[1]
+		sourcepattern, isRe := delimitedRegexp(sourcepattern)
+		if !isRe {
+			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
+		}
+		sourceRE, err := regexp.Compile(sourcepattern)
+		if err != nil {
+			croak(err.Error())
+			return false
+		}
+		// Collect all matching tags in the selection set
+		tags := make([]*Tag, 0)
+		for it := rs.selection.Iterator(); it.Next(); {
+			event := repo.events[it.Value()]
+			if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) == !parse.options.Contains("--not") {
+				tags = append(tags, tag)
+			}
+		}
+		if len(tags) == 0 {
+			croak("no tag matches %s.", sourcepattern)
+			return false
+		}
+
+		control.baton.startProcess("tag deletion", "")
+		for _, tag := range tags {
+			// the order here in important
+			repo.delete(newSelectionSet(tag.index()), nil, control.baton)
+			tag.forget()
+			control.baton.twirl()
+		}
+		control.baton.endProcess()
+		repo.declareSequenceMutation("tag deletion")
+	default:
+		croak("object type must be commit, tag, rest, or branch.")
+	}
 	return false
 }
 
@@ -5231,12 +5291,6 @@ valid tag name (but not the name of an existing tag).  When TAG-PATTERN
 is a regexp, NEW-NAME may contain references to portions of the match.
 Errors are thrown for wildcarding that would produce name collisions
 
-For a 'delete', no second argument is required.  Annotated tags with names
-matching the pattern are deleted.  Giving a regular expression rather than
-a plain string is useful for mass deletion of junk tags such as those derived
-from CVS branch-root tags. Such deletions can be restricted by a selection
-set in the normal way.
-
 All Q bits are cleared; then any tags made by create or touched by move or
 rename, get their Q bit set.
 `)
@@ -5331,24 +5385,15 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 			}
 			tag.tagname = possible
 			tag.addColor(colorQSET)
-		} else if verb == "delete" {
-			// the order here in important
-			repo.delete(newSelectionSet(tag.index()), nil, control.baton)
-			tag.forget()
 		}
 		control.baton.twirl()
 	}
-	if verb != "delete" {
-		if n := repo.countColor(colorQSET); n == 0 {
-			croak("no tag names matched %s", sourceRE)
-		} else {
-			respond("%d objects modified", n)
-		}
+	if n := repo.countColor(colorQSET); n == 0 {
+		croak("no tag names matched %s", sourceRE)
+	} else {
+		respond("%d objects modified", n)
 	}
 	control.baton.endProcess()
-	if verb == "delete" {
-		repo.declareSequenceMutation("tag deletion")
-	}
 
 	return false
 }
@@ -5356,7 +5401,7 @@ func (rs *Reposurgeon) DoTag(line string) bool {
 // HelpReset says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReset() {
 	rs.helpOutput(`
-[SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME|SINGLETON]
+[SELECTION] reset {move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME|SINGLETON]
 
 Note: While this command is provided for the sake of completeness, think
 twice before actually using it.  Normally a reset should only be deleted

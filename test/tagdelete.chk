@@ -1,0 +1,4 @@
+Check file should not contain '33	tag	annotated'
+     2	reset	refs/tags/annotated
+    18	commit	refs/tags/annotated
+    31	reset	refs/heads/master
