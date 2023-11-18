@@ -185,6 +185,7 @@ func screenwidth() int {
 type LineParse struct {
 	name         string
 	line         string
+	rs           *Reposurgeon
 	flags        uint
 	capabilities orderedStringSet
 	stdin        io.ReadCloser
@@ -213,22 +214,10 @@ const (
 )
 
 func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, capabilities orderedStringSet) *LineParse {
-	if rs.chosen() == nil && (parseflags&(parseREPO|parseALLREPO)) != 0 {
-		panic(throw("command", "no repo has been chosen."))
-	}
-	if !rs.selection.isDefined() && (parseflags&parseALLREPO) != 0 {
-		rs.selection = rs.chosen().all()
-	}
-	if rs.selection.isDefined() && (parseflags&parseNOSELECT) != 0 {
-		panic(throw("command", "command does not take a selection set"))
-	}
-	if !rs.selection.isDefined() && (parseflags&parseNEEDSELECT) != 0 {
-		panic(throw("command", "command requires an explicit selection"))
-	}
-
 	lp := LineParse{
 		name:         name,
 		line:         line,
+		rs:           rs,
 		flags:        parseflags,
 		capabilities: capabilities,
 		stdin:        os.Stdin,
@@ -238,10 +227,27 @@ func (rs *Reposurgeon) newLineParse(line string, name string, parseflags uint, c
 		closem:       make([]io.Closer, 0),
 		args:         make([]string, 0),
 	}
+	lp.flagcheck(parseflags)
 	if err := lp.parse(); err != nil {
 		panic(throw("command", err.Error()))
 	}
 	return &lp
+}
+
+func (lp *LineParse) flagcheck(parseflags uint) {
+	//parseMEEDREDIRECT, parseNEEDARGS, and parseNOARGS aren't checked here
+	if lp.rs.chosen() == nil && (parseflags&(parseREPO|parseALLREPO)) != 0 {
+		panic(throw("command", lp.name+" requires a selected repository."))
+	}
+	if !lp.rs.selection.isDefined() && (parseflags&parseALLREPO) != 0 {
+		lp.rs.selection = lp.rs.chosen().all()
+	}
+	if lp.rs.selection.isDefined() && (parseflags&parseNOSELECT) != 0 {
+		panic(throw("command", lp.name+" command does not take a selection set."))
+	}
+	if !lp.rs.selection.isDefined() && (parseflags&parseNEEDSELECT) != 0 {
+		panic(throw("command", lp.name+" command requires an explicit selection."))
+	}
 }
 
 func (lp *LineParse) parse() error {
@@ -3506,7 +3512,7 @@ func (rs *Reposurgeon) DoSquash(line string) bool {
 // HelpDelete says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDelete() {
 	rs.helpOutput(`
-{SELECTION} delete [--quiet] [--not] [commit | tag TAG-PATTERN] 
+{SELECTION} delete [--quiet] [--not] [commit | {tag|branch} PATTERN] 
 
 With "commit" or mo subcommand, delete a selection set of events.
 Requires an explicit selection set.  Tags, resets, and passthroughs
@@ -3516,12 +3522,18 @@ associated with commits requires this. A delete is equivalent to a
 squash with the --delete flag.
 
 With "tag" requires a TAG-PATTERN argument that is a pattern
-expression matching a set of annotated tags (anchored matching).
+expression matching a set of annotated tags (unanchored matching).
 Matching tags are deleted.  Giving a regular expression rather than a
 plain string is useful for mass deletion of junk tags such as those
 derived from CVS branch-root tags.  The option "--not" takes the
 complement of the set of tags implied by the TAG-PATTERN. Deletions
 can be restricted by a selection set in the normal way.
+
+With "branch", requires a BRANCH-PATTERN argument which can be a
+string or a delimited regexp (with unanchored matching); with the
+option --not, invert the match. If the pattern does not begin with
+"refs/", that is prepended. Matching branches are deleted. Associatyed
+tags and resets are also deleted.
 
 Clears all Q bits.
 `)
@@ -3529,11 +3541,12 @@ Clears all Q bits.
 
 // DoDelete is the handler for the "delete" command.
 func (rs *Reposurgeon) DoDelete(line string) bool {
-	parse := rs.newLineParse(line, "delete", parseREPO|parseNEEDSELECT, nil)
+	parse := rs.newLineParse(line, "delete", parseREPO, nil)
 
 	repo := rs.chosen()
 	repo.clearColor(colorQSET)
 	if len(parse.args) == 0 {
+		parse.flagcheck(parseNEEDSELECT)
 		parse.options.Add("--delete")
 		repo.squash(rs.selection, parse.options, control.baton)
 		return false
@@ -3541,10 +3554,12 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 
 	switch verb := parse.args[0]; verb {
 	case "commit":
+		parse.flagcheck(parseNEEDSELECT)
 		parse.options.Add("--delete")
 		repo.squash(rs.selection, parse.options, control.baton)
 		return false
 	case "tag":
+		parse.flagcheck(parseALLREPO)
 		if len(parse.args) < 2 {
 			croak("missing tag pattern")
 			return false
@@ -3581,6 +3596,32 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 		}
 		control.baton.endProcess()
 		repo.declareSequenceMutation("tag deletion")
+	case "branch":
+		parse.flagcheck(parseNOSELECT)
+		if len(parse.args) < 2 {
+			croak("missing branch pattern")
+			return false
+		}
+		sourcepattern := parse.args[1]
+		// Can't use getPattern here because we need to add the branch prefix.
+		sourcepattern, isRe := delimitedRegexp(sourcepattern)
+		if !isRe {
+			if !strings.HasPrefix(sourcepattern, "refs/") {
+				sourcepattern = "refs/" + sourcepattern
+			}
+			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
+		}
+		branchRE, err := regexp.Compile(sourcepattern)
+		if err != nil {
+			croak("in branch command: %v", err)
+			return false
+		}
+		shouldDelete := func(branch string) bool {
+			return branchRE.MatchString(branch) == !parse.options.Contains("--not")
+		}
+		before := len(repo.branchset())
+		repo.deleteBranch(shouldDelete, control.baton)
+		respond("%d branches deleted", before-len(repo.branchset()))
 	default:
 		croak("object type must be commit, tag, rest, or branch.")
 	}
@@ -5242,29 +5283,6 @@ func (rs *Reposurgeon) DoBranch(line string) bool {
 		} else {
 			respond("%d objects modified", n)
 		}
-	} else if verb == "delete" {
-		if len(parse.args) < 2 {
-			croak("branch delete is missing a source pattern")
-			return false
-		}
-		sourcepattern := parse.args[1]
-
-		// Can't use getPattern here because we need to add the branch prefix.
-		sourcepattern, isRe := delimitedRegexp(sourcepattern)
-		if !isRe {
-			sourcepattern = "^" + regexp.QuoteMeta(addBranchPrefix(sourcepattern)) + "$"
-		}
-		branchRE, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak("in branch command: %v", err)
-			return false
-		}
-		shouldDelete := func(branch string) bool {
-			return branchRE.MatchString(branch) == !parse.options.Contains("--not")
-		}
-		before := len(repo.branchset())
-		repo.deleteBranch(shouldDelete, control.baton)
-		respond("%d branches deleted", before-len(repo.branchset()))
 	} else {
 		croak("unknown verb '%s' in branch command.", verb)
 		return false

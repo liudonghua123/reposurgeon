@@ -1384,7 +1384,7 @@ from :33
 # error: no repo
 drop reorder
 reorder
-reposurgeon: no repo has been chosen.
+reposurgeon: reorder requires a selected repository.
 read <reorder.fi
 
 # error: incorrect number of arguments
@@ -1393,7 +1393,7 @@ reposurgeon: reorder command does not take arguments
 
 # error: no event selection
 reorder
-reposurgeon: command requires an explicit selection
+reposurgeon: reorder command requires an explicit selection.
 
 # error: no commits in selection
 2,4,5 reorder

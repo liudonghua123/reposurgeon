@@ -1,4 +1,4 @@
 ## Test the branch delete command
 read <deleteall.fi
-branch delete heads/samplebranch
+delete branch heads/samplebranch
 write -

@@ -1,5 +1,5 @@
 ## Test of branch deletion by regexp
 set flag echo
 read <snarl.svn
-branch delete /INITIAL_IMPORT/
+delete branch /INITIAL_IMPORT/
 write -
