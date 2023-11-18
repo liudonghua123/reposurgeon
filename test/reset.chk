@@ -9,7 +9,7 @@ read <be-bookmarks.fi
     28 branch    :22    refs/heads/master
     29 branch    :22    refs/heads/D
 reset move D :6
-reset delete A
+delete reset A
 reset rename B Z
 27 reset move master :10
 =R index
@@ -21,7 +21,7 @@ reset rename B Z
     28 branch     :6    refs/heads/D
 
 # error: unknown reset name
-reset delete X
+delete reset X
 reposurgeon: no resets match ^refs/heads/X$
 # error: move multiple resets
 reset move master :15

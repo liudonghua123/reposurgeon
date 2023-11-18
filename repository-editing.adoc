@@ -3604,7 +3604,9 @@ prefix. The split command syntax was incompatibly different.  The
 "readlimit" command doing what "set readlimit" now does. The
 "elapsed", "memory", and "sizeof" subcommands of "show" used to be
 separate commands. Blob/tag/reset creation used to be
-"{blob{tag|reset} create", not "create {blob|tag|reset}".
+"{blob|tag|reset} create", not "create {blob|tag|reset}";
+blob/tag/branch/reset deletion used to be "{blob/tag/branch/reset}
+delete", not "delete {blob/tag/branch/reset}".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3930,7 +3932,7 @@ choose [REPO-NAME]
 debranch {SOURCE-BRANCH} [TARGET-BRANCH]
 [SELECTION] dedup
 define [NAME [TEXT]]
-[SELECTION] delete
+[SELECTION] delete  [--quiet] [--not] [commit | {tag|branch} PATTERN]
 {SELECTION} diff [>OUTFILE]
 {SELECTION} divide
 do {MACRO-NAME} [ARG...]
@@ -3993,11 +3995,11 @@ The following are SV. Inverting these to verb-first might be a good thing.
 
 ----
 [SELECTION] authors {read <INFILE | write >OUTFILE}
-branch {rename|delete} {BRANCH-PATTERN} [--not] [NEW-NAME]
+branch rename {BRANCH-PATTERN} [--not] [NEW-NAME]
 legacy {read [<INFILE] | write [>OUTFILE]}
 path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
-[SELECTION] reset {move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
-[SELECTION] tag {move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME]
+[SELECTION] reset {move|rename} [RESET-PATTERN] [--not] [NEW-NAME]
+[SELECTION] tag {move|rename} [TAG-PATTERN] [--not] [NEW-NAME]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
 ----
 

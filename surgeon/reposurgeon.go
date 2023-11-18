@@ -3512,7 +3512,7 @@ func (rs *Reposurgeon) DoSquash(line string) bool {
 // HelpDelete says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDelete() {
 	rs.helpOutput(`
-{SELECTION} delete [--quiet] [--not] [commit | {tag|branch} PATTERN] 
+{SELECTION} delete [--quiet] [--not] [commit | {tag|branch|reset} PATTERN]
 
 With "commit" or mo subcommand, delete a selection set of events.
 Requires an explicit selection set.  Tags, resets, and passthroughs
@@ -3534,6 +3534,17 @@ string or a delimited regexp (with unanchored matching); with the
 option --not, invert the match. If the pattern does not begin with
 "refs/", that is prepended. Matching branches are deleted. Associatyed
 tags and resets are also deleted.
+
+With "reset", RESET-PATTERN finds by text match existing
+resets within the selection.  If RESET-PATTERN is a delimited regexp,
+the match is to the regexp (unanchored matching); --not inverts this,
+selecting all non-matching resets.
+
+If RESET-PATTERN is a text literal, each reset's name is matched if 
+RESET-PATTERN is either the entire reference (refs/heads/FOO or refs/tags/FOO
+for some some value of FOO) or the basename (e.g. FOO), or a suffix of the form
+heads/FOO or tags/FOO. An unqualified basename is assumed to refer to a branch
+in refs/heads/.
 
 Clears all Q bits.
 `)
@@ -3622,8 +3633,60 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 		before := len(repo.branchset())
 		repo.deleteBranch(shouldDelete, control.baton)
 		respond("%d branches deleted", before-len(repo.branchset()))
+	case "reset":
+		parse.flagcheck(parseALLREPO)
+		if len(parse.args) < 2 {
+			croak("missing reset pattern")
+			return false
+		}
+		resetname := parse.args[1]
+
+		sourcepattern, isRe := delimitedRegexp(resetname)
+		if !isRe {
+			sourcepattern = "^" + regexp.QuoteMeta(nameToRef(sourcepattern)) + "$"
+		}
+		var err error
+		sourceRE, err := regexp.Compile(sourcepattern)
+		if err != nil {
+			croak(err.Error())
+			return false
+		}
+
+		repo.clearColor(colorQSET)
+		resets := make([]*Reset, 0)
+		for it := rs.selection.Iterator(); it.Next(); {
+			reset, ok := repo.events[it.Value()].(*Reset)
+			if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
+				resets = append(resets, reset)
+			}
+		}
+		if len(resets) == 0 {
+			croak("no resets match %s", sourcepattern)
+			return false
+		}
+		var tip *Commit
+		for _, commit := range repo.commits(undefinedSelectionSet) {
+			if sourceRE.MatchString(commit.Branch) {
+				tip = commit
+			}
+		}
+		if tip != nil && tip.childCount() == 1 {
+			successor := tip.children()[0]
+			if cSuccessor, ok := successor.(*Commit); ok {
+				for _, commit := range repo.commits(undefinedSelectionSet) {
+					if sourceRE.MatchString(commit.Branch) {
+						commit.Branch = cSuccessor.Branch
+					}
+				}
+			}
+		}
+		for _, reset := range resets {
+			reset.forget()
+			repo.delete(newSelectionSet(repo.eventToIndex(reset)), nil, control.baton)
+		}
+		repo.declareSequenceMutation("reset delete")
 	default:
-		croak("object type must be commit, tag, rest, or branch.")
+		croak("object type must be commit, tag, reset, or branch.")
 	}
 	return false
 }
@@ -5442,7 +5505,7 @@ for some some valueof FOO) or the basename (e.g. FOO), or a suffix of the form
 heads/FOO or tags/FOO. An unqualified basename is assumed to refer to a branch
 in refs/heads/.
 
-The second argument must be one of the verbs 'move', 'rename', or 'delete'.
+The second argument must be one of the verbs 'move' or 'rename'
 The default selection is all events.
 
 For a 'move', a SINGLETON argument must be a singleton selection set. For
@@ -5475,12 +5538,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 	resetname := parse.args[1]
 
 	sourcepattern, isRe := delimitedRegexp(resetname)
-	if isRe {
-		if verb == "create" {
-			croak("cannot reset create from a regular expression")
-			return false
-		}
-	} else {
+	if !isRe {
 		sourcepattern = "^" + regexp.QuoteMeta(nameToRef(sourcepattern)) + "$"
 	}
 	var err error
@@ -5582,31 +5640,6 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			}
 		}
 	} else if verb == "delete" {
-		if len(resets) == 0 {
-			croak("no resets match %s", sourcepattern)
-			return false
-		}
-		var tip *Commit
-		for _, commit := range repo.commits(undefinedSelectionSet) {
-			if sourceRE.MatchString(commit.Branch) {
-				tip = commit
-			}
-		}
-		if tip != nil && tip.childCount() == 1 {
-			successor := tip.children()[0]
-			if cSuccessor, ok := successor.(*Commit); ok {
-				for _, commit := range repo.commits(undefinedSelectionSet) {
-					if sourceRE.MatchString(commit.Branch) {
-						commit.Branch = cSuccessor.Branch
-					}
-				}
-			}
-		}
-		for _, reset := range resets {
-			reset.forget()
-			repo.delete(newSelectionSet(repo.eventToIndex(reset)), nil, control.baton)
-		}
-		repo.declareSequenceMutation("reset delete")
 	} else {
 		croak("unknown verb '%s' in reset command.", verb)
 	}

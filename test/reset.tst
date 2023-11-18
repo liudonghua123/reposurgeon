@@ -4,13 +4,13 @@ set flag relax
 read <be-bookmarks.fi
 =R index
 reset move D :6
-reset delete A
+delete reset A
 reset rename B Z
 27 reset move master :10
 =R index
 
 # error: unknown reset name
-reset delete X
+delete reset X
 # error: move multiple resets
 reset move master :15
 # error: non-singleton target
