@@ -1770,10 +1770,10 @@ include::docinclude/choose.adoc[]
 include::docinclude/drop.adoc[]
 
 // COMMAND
-include::docinclude/rename.adoc[]
-
-// COMMAND
 include::docinclude/clone.adoc[]
+
+The "rename repo" mode of <<help_cmd>> can be used to rename
+a reoopository.
 
 [[information]]
 == Information and reports
@@ -1851,7 +1851,7 @@ These are the operations the rest of reposurgeon is designed
 to support.
 
 [[deletion]]
-=== Commit deletion
+=== Deletions
 
 [[squash_cmd,squash]]
 [SELECTION] squash [POLICY...]::
@@ -1924,6 +1924,11 @@ converters such as `cvs2svn`.
 
 // COMMAND
 include::docinclude/delete.adoc[]
+
+=== Renames
+
+// COMMAND
+include::docinclude/rename.adoc[]
 
 [[topology]]
 === Commit mutation
@@ -3606,7 +3611,8 @@ prefix. The split command syntax was incompatibly different.  The
 separate commands. Blob/tag/reset creation used to be
 "{blob|tag|reset} create", not "create {blob|tag|reset}";
 blob/tag/branch/reset deletion used to be "{blob/tag/branch/reset}
-delete", not "delete {blob/tag/branch/reset}".
+delete", not "delete {blob/tag/branch/reset}".  The command to rename
+repositories was just "rename", not "rebame repo".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3958,7 +3964,7 @@ preserve [PATH...]
 print [TEXT...] [>OUTFILE]
 quit
 rebuild [DIRECTORY]
-rename {NEW-NAME}
+rename repo {NEW-NAME}
 renumber
 [SELECTION] reorder [--quiet]
 {SELECTION} resolve

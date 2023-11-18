@@ -18,7 +18,7 @@ reset refs/heads/master
 from :2
 
 EOF
-rename hello1
+rename repo hello1
 read <<EOF
 blob
 mark :1
@@ -38,7 +38,7 @@ reset refs/heads/master
 from :2
 
 EOF
-rename hello2
+rename repo hello2
 read <<EOF
 blob
 mark :1
@@ -58,7 +58,7 @@ reset refs/heads/master
 from :2
 
 EOF
-rename hello3
+rename repo hello3
 unite hello1 hello2 hello3
 write -
 

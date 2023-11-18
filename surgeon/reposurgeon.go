@@ -2252,23 +2252,32 @@ func (rs *Reposurgeon) DoDrop(line string) bool {
 // HelpRename says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRename() {
 	rs.helpOutput(`
-rename NEW-NAME
+rename {repo NEW-NAME}
 
-Rename the currently chosen repo; requires an argument.  Won't do it
-if there is already one by the new name.
+With "repo", renames the currently chosen repo; requires a NEW-NAME
+argument.  Won't do it if there is already one by the new name.
 `)
 }
 
 // DoRename changes the name of a repository.
 func (rs *Reposurgeon) DoRename(line string) bool {
-	parse := rs.newLineParse(line, "rename", parseNOSELECT|parseNOOPTS|parseNEEDARG, nil)
-	if rs.reponames().Contains(line) {
-		croak("there is already a repo named %s.", parse.args[0])
-	} else if rs.chosen() == nil {
-		croak("no repository is currently chosen.")
-	} else {
-		rs.chosen().rename(parse.args[0])
+	parse := rs.newLineParse(line, "rename", parseNEEDARG, nil)
+	switch verb := parse.args[0]; verb {
+	case "repo":
+		if len(parse.args) < 2 {
+			croak("missing repository newname.")
+			return false
+		}
+		name := parse.args[1]
+		parse.flagcheck(parseNOSELECT | parseNOOPTS)
+		if rs.reponames().Contains(name) {
+			croak("there is already a repo named %s.", name)
+		} else if rs.chosen() == nil {
+			croak("no repository is currently chosen.")
+		} else {
+			rs.chosen().rename(name)
 
+		}
 	}
 	return false
 }
