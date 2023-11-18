@@ -3962,7 +3962,7 @@ preserve [PATH...]
 print [TEXT...] [>OUTFILE]
 quit
 rebuild [DIRECTORY]
-rename {repo | path PATTERN [--force] | {branch|reset|tag} [--not] PATTERN}} NEW-NAME
+[SELECTION] rename {repo | path PATTERN [--force] | {path|branch|tag|reset} [--not] PATTERN}} NEW-NAME
 renumber
 [SELECTION] reorder [--quiet]
 {SELECTION} resolve
@@ -4001,8 +4001,8 @@ The following are SV. Inverting these to verb-first might be a good thing.
 [SELECTION] authors {read <INFILE | write >OUTFILE}
 legacy {read [<INFILE] | write [>OUTFILE]}
 path list [>OUTFILE]
-[SELECTION] reset {move|rename} [--not] RESET-PATTERN [NEW-NAME]
-[SELECTION] tag {move|rename} [TAG-PATTERN] [--not] [NEW-NAME]
+[SELECTION] reset {move [--not] RESET-PATTERN [NEW-NAME]
+[SELECTION] tag {move} [TAG-PATTERN] [--not] [NEW-NAME]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
 ----
 

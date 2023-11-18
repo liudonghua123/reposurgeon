@@ -3,9 +3,9 @@
 read <<EOF
 blob
 mark :1
-data 129
+data 128
 This is a simple repository containing several lightweight tags.
-It is inytended for tests of tag rename and deletion semantics.
+It is intended for tests of tag rename and deletion semantics.
 
 reset refs/tags/first-tag
 commit refs/tags/first-tag

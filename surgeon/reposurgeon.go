@@ -2252,7 +2252,7 @@ func (rs *Reposurgeon) DoDrop(line string) bool {
 // HelpRename says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRename() {
 	rs.helpOutput(`
-[SELECTION] rename {repo | path PATTERN [--force] | {branch|reset|tag} [--not] PATTERN}} NEW-NAME
+[SELECTION] rename {repo | path PATTERN [--force] | {path|branch|tag|reset} [--not] PATTERN}} NEW-NAME
 
 With "repo", renames the currently chosen repo; requires a NEW-NAME
 argument.  Won't do it if there is already one by the new name.
@@ -2305,6 +2305,70 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 		targetPattern := parse.args[2]
 		force := parse.options.Contains("--force")
 		rs.chosen().pathRename(rs.selection, sourceRE, targetPattern, force)
+	case "tag":
+		parse.flagcheck(parseREPO | parseALLREPO)
+		if len(parse.args) < 2 {
+			croak("missing tag pattern")
+			return false
+		}
+
+		repo := rs.chosen()
+		repo.clearColor(colorQSET)
+
+		sourcepattern := parse.args[1]
+		sourcepattern, isRe := delimitedRegexp(sourcepattern)
+		if !isRe {
+			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
+		}
+		sourceRE, err := regexp.Compile(sourcepattern)
+		if err != nil {
+			croak(err.Error())
+			return false
+		}
+
+		// Collect all matching tags in the selection set
+		tags := make([]*Tag, 0)
+		for it := rs.selection.Iterator(); it.Next(); {
+			event := repo.events[it.Value()]
+			if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) == !parse.options.Contains("--not") {
+				tags = append(tags, tag)
+			}
+		}
+		if len(tags) == 0 {
+			croak("no tag matches %s.", sourcepattern)
+			return false
+		}
+
+		// Validate the operation
+		if len(parse.args) < 3 {
+			croak("missing new tag name.")
+			return false
+		}
+		newname := parse.args[2]
+
+		if repo.named(newname).isDefined() {
+			croak("something is already named %s", newname)
+			return false
+		}
+
+		// Do it
+		control.baton.startProcess("tag rename", "")
+		for i, tag := range tags {
+			possible := GoReplacer(sourceRE, tag.tagname, newname)
+			if i > 0 && possible == tags[i-1].tagname {
+				croak("tag name collision, not renaming.")
+				return false
+			}
+			tag.tagname = possible
+			tag.addColor(colorQSET)
+			control.baton.twirl()
+		}
+		if n := repo.countColor(colorQSET); n == 0 {
+			croak("no tag names matched %s", sourceRE)
+		} else {
+			respond("%d objects modified", n)
+		}
+		control.baton.endProcess()
 	case "reset":
 		parse.flagcheck(parseREPO | parseALLREPO)
 		if len(parse.args) < 2 {
