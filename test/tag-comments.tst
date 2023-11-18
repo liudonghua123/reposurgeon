@@ -75,6 +75,6 @@ data 19
 this is a test tag
 
 EOF
-tags
+list tags
 names
 write -

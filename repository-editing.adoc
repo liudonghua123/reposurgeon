@@ -1794,16 +1794,7 @@ for append rather than write.
 include::docinclude/list.adoc[]
 
 // COMMAND
-include::docinclude/index.adoc[]
-
-// COMMAND
 include::docinclude/names.adoc[]
-
-// COMMAND
-include::docinclude/stamp.adoc[]
-
-// COMMAND
-include::docinclude/tags.adoc[]
 
 // COMMAND
 include::docinclude/inspect.adoc[]
@@ -2155,9 +2146,6 @@ include::docinclude/filter.adoc[]
 
 [[paths]]
 === Path reports and modifications
-
-// COMMAND
-include::docinclude/path.adoc[]
 
 // COMMAND
 include::docinclude/setperm.adoc[]
@@ -3608,7 +3596,8 @@ blob/tag/branch/reset deletion used to be "{blob/tag/branch/reset}
 delete", not "delete {blob/tag/branch/reset}".  The command to rename
 repositories was just "rename", not "rename repo";
 "rename {path|branch|tag|reset}" was "{path|branch|tag|reset} rename".
-The "delete path" command was named "expunge".
+The "delete path" command was named "expunge".  The subcommands of
+"list" were separate commands.
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3949,7 +3938,7 @@ help [COMMAND]
 history
 {SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 [SELECTION] lint [--OPTION...] [>OUTFILE]
-[SELECTION] list [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|index|paths] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge
 [SELECTION] msgin [--create] [<INFILE]
@@ -3997,7 +3986,6 @@ The following are SV. Inverting these to verb-first might be a good thing.
 ----
 [SELECTION] authors {read <INFILE | write >OUTFILE}
 legacy {read [<INFILE] | write [>OUTFILE]}
-path list [>OUTFILE]
 [SELECTION] reset {move [--not] RESET-PATTERN [NEW-NAME]
 [SELECTION] tag {move} [TAG-PATTERN] [--not] [NEW-NAME]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
@@ -4030,11 +4018,8 @@ Should these be subcommands of list?
 [SELECTION] manifest [PATTERN] [>OUTFILE]
 names [>OUTFILE]
 [SELECTION] sizes [>OUTFILE]
-[SELECTION] stamp [>OUTFILE]
 stats [>OUTFILE]
-[SELECTION] tags {>OUTFILE]
 timings [MARK-NAME] [>OUTFILE]
-[SELECTION] index [>OUTFILE]
 [SELECTION] inspect [>OUTFILE]
 ----
 

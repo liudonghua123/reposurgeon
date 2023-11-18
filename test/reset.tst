@@ -2,12 +2,12 @@
 set flag echo
 set flag relax
 read <be-bookmarks.fi
-=R index
+=R list index
 reset move D :6
 delete reset A
 rename reset B Z
 27 reset move master :10
-=R index
+=R list index
 
 # error: unknown reset name
 delete reset X

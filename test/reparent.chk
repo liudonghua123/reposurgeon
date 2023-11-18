@@ -178,7 +178,7 @@ reposurgeon.xml -> :114
 test/Makefile -> :68
 test/simple.dump -> :48
 theory.txt -> :50
-(:119..:123)|(:119..:121) index
+(:119..:123)|(:119..:121) list index
    120 commit   :119    refs/heads/master
    121 blob     :120    reposurgeon
    122 commit   :121    refs/heads/master
@@ -218,7 +218,7 @@ reposurgeon.xml -> :114
 test/Makefile -> :68
 test/simple.dump -> :48
 theory.txt -> :50
-(:119..:123)|(:119..:121) index
+(:119..:123)|(:119..:121) list index
    120 commit   :119    refs/heads/master
    121 blob     :120    reposurgeon
    122 blob     :122    reposurgeon

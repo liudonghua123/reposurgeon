@@ -1,6 +1,6 @@
-## Test that the path command does not crash if called with only one argument that is not a valid verb
+## Test that the list command does not crash if called with only one argument that is not a valid verb
 set flag relax
 read <sample1.fi
-path foo      # this should print an error message, not crash!
-path foo bar  # this should give 'foo' as the unknown verb, not 'bar'!
-=C path foo bar  # this too..
+list foo      # this should print an error message, not crash!
+list foo bar  # this should give 'foo' as the unknown verb, not 'bar'!
+=C list foo bar  # this too..

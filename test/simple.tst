@@ -1,11 +1,11 @@
 ## Test of index, tip, tags, history, paths, delete path and checkout
 set flag echo
 read <simple.fi
-~=B index
-tags
-path list
+~=B list index
+list tags
+list paths
 1..$ delete path theory.txt
-path list
+list paths
 116 checkout foobar
 !ls foobar
 !rm -fr foobar

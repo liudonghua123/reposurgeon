@@ -134,7 +134,6 @@ BNF_TOPICS = \
 	history \
 	ignores \
 	incorporate \
-	index \
 	inspect \
 	legacy \
 	lint \
@@ -147,7 +146,6 @@ BNF_TOPICS = \
 	msgout \
 	names \
 	operators \
-	path \
 	prefer \
 	prepend \
 	preserve \
@@ -170,12 +168,10 @@ BNF_TOPICS = \
 	sizes \
 	sourcetype \
 	split \
-	stamp \
 	stats \
 	strip \
 	tag \
 	tagify \
-	tags \
 	timeoffset \
 	timequake \
 	timing \

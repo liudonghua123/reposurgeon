@@ -1,5 +1,5 @@
-## Test interaction of debranch and path list
+## Test interaction of debranch and list paths
 read <debranch.svn
-path list
+list paths
 debranch resources master
-path list
+list paths

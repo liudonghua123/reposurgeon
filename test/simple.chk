@@ -1,5 +1,5 @@
 read <simple.fi
-~=B index
+~=B list index
      2 branch      -    refs/tags/lightweight-sample
      3 commit     :2    refs/tags/lightweight-sample
      5 commit     :4    refs/tags/lightweight-sample
@@ -58,13 +58,13 @@ read <simple.fi
    129 commit   :128    refs/heads/master
    130 branch   :128    refs/heads/master
    131 tag      :113    annotated-sample
-tags
+list tags
      2	reset	refs/tags/lightweight-sample
     83	commit	refs/tags/lightweight-sample
    114	commit	refs/tags/annotated-sample
    130	reset	refs/heads/master
    131	tag	annotated-sample
-path list
+list paths
 .gitignore
 Makefile
 READ[ME].txt
@@ -75,7 +75,7 @@ test/Makefile
 test/simple.dump
 theory.txt
 1..$ delete path theory.txt
-path list
+list paths
 .gitignore
 Makefile
 READ[ME].txt

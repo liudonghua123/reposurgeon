@@ -1109,66 +1109,6 @@ func (rs *Reposurgeon) DoHistory(line string) bool {
 	return false
 }
 
-// HelpIndex says "Shut up, golint!"
-func (rs *Reposurgeon) HelpIndex() {
-	rs.helpOutput(`
-[SELECTION] index [>OUTFILE]
-
-Display four columns of info on selected events: their number, their
-type, the associated mark (or '-' if no mark) and a summary field
-varying by type.  For a branch or tag it's the reference; for a commit
-it's the commit branch; for a blob it's a space-separated list of the 
-repository path of the files with the blob as content.
-
-This command can be safely interrupted with ^C, returning you to the
-prompt.
-`)
-}
-
-// DoIndex generates a summary listing of events.
-func (rs *Reposurgeon) DoIndex(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, "index", parseALLREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	repo := rs.chosen()
-	// We could do all this logic using reportSelect() and index() methods
-	// in the events, but that would have two disadvantages.  First, we'd
-	// get a default-set computation we don't want.  Second, for this
-	// function it's helpful to have the method strings close together so
-	// we can maintain columnation.
-	for it := rs.selection.Iterator(); it.Next(); {
-		eventid := it.Value()
-		event := repo.events[eventid]
-		switch e := event.(type) {
-		case *Blob:
-			fmt.Fprintf(parse.stdout, "%6d blob   %6s    %s\n", eventid+1, e.mark, strings.Join(e.paths(nil), " "))
-			if logEnable(logSHUFFLE) {
-				where := e.getBlobfile(false)
-				fmt.Fprintf(parse.stdout, "                        %v %6d %d %s\n", e.hasfile(), e.size, getsize(where), where)
-			}
-		case *Commit:
-			mark := e.mark
-			if mark == "" {
-				mark = "-"
-			}
-			fmt.Fprintf(parse.stdout, "%6d commit %6s    %s\n", eventid+1, mark, e.Branch)
-		case *Tag:
-			fmt.Fprintf(parse.stdout, "%6d tag    %6s    %4s\n", eventid+1, e.committish, e.tagname)
-		case *Reset:
-			committish := e.committish
-			if committish == "" {
-				committish = "-"
-			}
-			fmt.Fprintf(parse.stdout, "%6d branch %6s    %s\n", eventid+1, committish, e.ref)
-		default:
-			fmt.Fprintf(parse.stdout, "     ?             -    %s", e)
-		}
-		if control.getAbort() {
-			break
-		}
-	}
-	return false
-}
-
 func storeProfileName(subject string, name string) {
 	if control.profileNames == nil {
 		control.profileNames = make(map[string]string)
@@ -1556,103 +1496,135 @@ func (rs *Reposurgeon) DoCount(lineIn string) bool {
 // HelpList says "Shut up, golint!"
 func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
-[SELECTION] list [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|index|paths] [>OUTFILE]
 
-Display commits in a human-friendly format; the first column is raw
-event numbers, the second a timestamp in UTC. If the repository
-has legacy IDs, they will be displayed in the third column. The
-leading portion of the comment follows.
+With "commits" or no subcommand, display commits in a human-friendly
+format; the first column is raw event numbers, the second a timestamp
+in UTC. If the repository has legacy IDs, they will be displayed in
+the third column. The leading portion of the comment follows.
 
-This command can be safely interrupted with ^C, returning you to the
+With "tags", display tags and resets: three fields, an event number
+and a type and a name.  Branch tip commits associated with tags are
+also displayed with the type field 'commit'.
+
+With "stamps", display full action stamps corresponding to commits in
+a select.  The stamp is followed by the first line of the commit
+message.
+
+With "index", display four columns of info on selected events: their
+number, their type, the associated mark (or '-' if no mark) and a
+summary field varying by type.  For a branch or tag it's the
+reference; for a commit it's the commit branch; for a blob it's a
+space-separated list of the repository path of the files with the blob
+as content.
+
+With "paths", list all paths touched by fileops in the selection
+set (which defaults to the entire repo).
+
+Any list command can be safely interrupted with ^C, returning you to the
 prompt.
 `)
 }
 
 // DoList generates a human-friendly listing of events.
 func (rs *Reposurgeon) DoList(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, "list", parseREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(lineIn, "list", parseREPO|parseNOOPTS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
-	f := func(p *LineParse, i int, e Event) string {
-		c, ok := e.(*Commit)
-		if ok {
-			return c.lister(modifiers, i, w)
-		}
-		return ""
+
+	mode := "commits"
+	if len(parse.args) > 0 {
+		mode = parse.args[0]
 	}
-	rs.reportSelect(parse, f)
-	return false
-}
-
-// HelpTags says "Shut up, golint!"
-func (rs *Reposurgeon) HelpTags() {
-	rs.helpOutput(`
-[SELECTION] tags [>OUTFILE]
-
-Display tags and resets: three fields, an event number and a type and a name.
-Branch tip commits associated with tags are also displayed with the type
-field 'commit'.
-
-This command can be safely interrupted with ^C, returning you to the
-prompt.
-`)
-}
-
-// DoTags is the handler for the "tags" command.
-func (rs *Reposurgeon) DoTags(line string) bool {
-	parse := rs.newLineParse(line, "tags", parseREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	w := screenwidth()
-	modifiers := orderedStringSet{}
-	f := func(p *LineParse, i int, e Event) string {
-		// this is pretty stupid; pretend you didn't see it
-		switch v := e.(type) {
-		case *Commit:
-			return v.tags(modifiers, i, w)
-		case *Reset:
-			return v.tags(modifiers, i, w)
-		case *Tag:
-			return v.tags(modifiers, i, w)
-		default:
+	switch mode {
+	case "commits":
+		f := func(p *LineParse, i int, e Event) string {
+			c, ok := e.(*Commit)
+			if ok {
+				return c.lister(modifiers, i, w)
+			}
 			return ""
 		}
-	}
-	rs.reportSelect(parse, f)
-	return false
-}
-
-// HelpStamp says "Shut up, golint!"
-func (rs *Reposurgeon) HelpStamp() {
-	rs.helpOutput(`
-[SELECTION] stamp [>OUTFILE]
-
-Display full action stamps corresponding to commits in a select.
-The stamp is followed by the first line of the commit message.
-
-This command can be safely interrupted with ^C, returning you to the
-prompt.
-`)
-}
-
-// DoStamp lists action stamps for each element of the selection set
-func (rs *Reposurgeon) DoStamp(line string) bool {
-	parse := rs.newLineParse(line, "stamp", parseREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	w := screenwidth()
-	modifiers := orderedStringSet{}
-	f := func(p *LineParse, i int, e Event) string {
-		// this is pretty stupid; pretend you didn't see it
-		switch v := e.(type) {
-		case *Commit:
-			return v.stamp(modifiers, i, w)
-		case *Tag:
-			return v.stamp(modifiers, i, w)
-		default:
-			return ""
+		rs.reportSelect(parse, f)
+	case "tags":
+		f := func(p *LineParse, i int, e Event) string {
+			// this is pretty stupid; pretend you didn't see it
+			switch v := e.(type) {
+			case *Commit:
+				return v.tags(modifiers, i, w)
+			case *Reset:
+				return v.tags(modifiers, i, w)
+			case *Tag:
+				return v.tags(modifiers, i, w)
+			default:
+				return ""
+			}
 		}
+		rs.reportSelect(parse, f)
+	case "stamps":
+		f := func(p *LineParse, i int, e Event) string {
+			// this is pretty stupid; pretend you didn't see it
+			switch v := e.(type) {
+			case *Commit:
+				return v.stamp(modifiers, i, w)
+			case *Tag:
+				return v.stamp(modifiers, i, w)
+			default:
+				return ""
+			}
+		}
+		rs.reportSelect(parse, f)
+	case "paths":
+		parse.flagcheck(parseALLREPO)
+		allpaths := newOrderedStringSet()
+		for it := rs.chosen().commitIterator(rs.selection); it.Next(); {
+			allpaths = allpaths.Union(it.commit().paths(nil))
+		}
+		sort.Strings(allpaths)
+		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
+	case "index":
+		parse.flagcheck(parseALLREPO)
+		repo := rs.chosen()
+		// We could do all this logic using reportSelect() and index() methods
+		// in the events, but that would have two disadvantages.  First, we'd
+		// get a default-set computation we don't want.  Second, for this
+		// function it's helpful to have the method strings close together so
+		// we can maintain columnation.
+		for it := rs.selection.Iterator(); it.Next(); {
+			eventid := it.Value()
+			event := repo.events[eventid]
+			switch e := event.(type) {
+			case *Blob:
+				fmt.Fprintf(parse.stdout, "%6d blob   %6s    %s\n", eventid+1, e.mark, strings.Join(e.paths(nil), " "))
+				if logEnable(logSHUFFLE) {
+					where := e.getBlobfile(false)
+					fmt.Fprintf(parse.stdout, "                        %v %6d %d %s\n", e.hasfile(), e.size, getsize(where), where)
+				}
+			case *Commit:
+				mark := e.mark
+				if mark == "" {
+					mark = "-"
+				}
+				fmt.Fprintf(parse.stdout, "%6d commit %6s    %s\n", eventid+1, mark, e.Branch)
+			case *Tag:
+				fmt.Fprintf(parse.stdout, "%6d tag    %6s    %4s\n", eventid+1, e.committish, e.tagname)
+			case *Reset:
+				committish := e.committish
+				if committish == "" {
+					committish = "-"
+				}
+				fmt.Fprintf(parse.stdout, "%6d branch %6s    %s\n", eventid+1, committish, e.ref)
+			default:
+				fmt.Fprintf(parse.stdout, "     ?             -    %s", e)
+			}
+			if control.getAbort() {
+				break
+			}
+		}
+	default:
+		croak("unknown subcommand '%s' in list command.", mode)
 	}
-	rs.reportSelect(parse, f)
 	return false
 }
 
@@ -4983,63 +4955,6 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 		repo.delete(newSelectionSet(sourceReset), nil, control.baton)
 	}
 	repo.declareSequenceMutation("debranch operation")
-	return false
-}
-
-// HelpPath says "Shut up, golint!"
-func (rs *Reposurgeon) HelpPath() {
-	rs.helpOutput(`
-[SELECTION] path list [>OUTFILE]
-
-With the verb "list", list all paths touched by fileops in the selection
-set (which defaults to the entire repo). This command does > redirection.
-
-Example:
-
-----
-# move all content into docs/ subdir
-path rename /.+/ docs/\0
-----
-
-This command sets commit Q bits; true if the commit was modified.
-`)
-}
-
-type pathAction struct {
-	fileop  *FileOp
-	commit  *Commit // Only used for debug dump
-	attr    string
-	newpath string
-}
-
-func (pa pathAction) String() string {
-	var i int
-	var op *FileOp
-	for i, op = range pa.commit.fileops {
-		if op.Equals(pa.fileop) {
-			break
-		}
-	}
-
-	return fmt.Sprintf("[%s(%d) %s=%s]", pa.commit.idMe(), i, pa.attr, pa.newpath)
-}
-
-// DoPath renames paths in the history.
-func (rs *Reposurgeon) DoPath(line string) bool {
-	parse := rs.newLineParse(line, "path", parseALLREPO|parseNEEDARG, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	repo := rs.chosen()
-	switch verb := parse.args[0]; verb {
-	case "list":
-		allpaths := newOrderedStringSet()
-		for it := repo.commitIterator(rs.selection); it.Next(); {
-			allpaths = allpaths.Union(it.commit().paths(nil))
-		}
-		sort.Strings(allpaths)
-		fmt.Fprint(parse.stdout, strings.Join(allpaths, control.lineSep)+control.lineSep)
-	default:
-		croak("unknown verb '%s' in path command.", verb)
-	}
 	return false
 }
 

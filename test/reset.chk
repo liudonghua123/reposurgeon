@@ -1,6 +1,6 @@
 set flag relax
 read <be-bookmarks.fi
-=R index
+=R list index
      2 branch      -    refs/heads/master
     24 branch     :6    refs/heads/A
     25 branch    :10    refs/heads/B
@@ -12,7 +12,7 @@ reset move D :6
 delete reset A
 rename reset B Z
 27 reset move master :10
-=R index
+=R list index
      2 branch      -    refs/heads/master
     24 branch    :10    refs/heads/Z
     25 branch    :15    refs/heads/C

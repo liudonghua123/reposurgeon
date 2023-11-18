@@ -25,8 +25,8 @@ set flag interactive
 :119,:123 reparent --use-order
 :123 inspect
 :123 manifest
-(:119..:123)|(:119..:121) index
+(:119..:123)|(:119..:121) list index
 :123,:121 reparent --use-order
 :121 inspect
 :121 manifest
-(:119..:123)|(:119..:121) index
+(:119..:123)|(:119..:121) list index

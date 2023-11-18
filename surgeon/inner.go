@@ -9157,6 +9157,25 @@ func (repo *Repository) accumulateCommits(subarg selectionSet,
 	return result
 }
 
+type pathAction struct {
+	fileop  *FileOp
+	commit  *Commit // Only used for debug dump
+	attr    string
+	newpath string
+}
+
+func (pa pathAction) String() string {
+	var i int
+	var op *FileOp
+	for i, op = range pa.commit.fileops {
+		if op.Equals(pa.fileop) {
+			break
+		}
+	}
+
+	return fmt.Sprintf("[%s(%d) %s=%s]", pa.commit.idMe(), i, pa.attr, pa.newpath)
+}
+
 // pathRename performs batch path renames by regular expression
 func (repo *Repository) pathRename(selection selectionSet, sourceRE *regexp.Regexp, targetPattern string, force bool) {
 	actions := make([]pathAction, 0)

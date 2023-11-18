@@ -22,14 +22,14 @@ read <debranch3.fi
 debranch alternate master
 write -
 set flag echo
-:17 path list
-:15 path list
-:13 path list
-:11 path list
-:9 path list
-:6 path list
-:4 path list
-:2 path list
+:17 list paths
+:15 list paths
+:13 list paths
+:11 list paths
+:9 list paths
+:6 list paths
+:4 list paths
+:2 list paths
 :9 inspect
 :15 inspect
 :6 inspect

@@ -1,6 +1,6 @@
 ## Test @dsc recursive-descendant operation
 read <svnfodder.fi
-index
+list index
 set flag interactive
 @dsc(:19) resolve expect all commmits following :19
 @dsc(:27) resolve expect both commits on alternate branch and the last merge
