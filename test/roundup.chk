@@ -2,7 +2,7 @@ read <roundup.fi
 set flag interactive
 :1? resolve
 (3,41)
-:39,:42 inspect
+:39,:42 list inspect
 Event 41 ================================================================
 commit refs/tags/release-0-5-0
 mark :39
@@ -51,7 +51,7 @@ M 100644 :40 Makefile
 M 100644 :41 dummy_config.py
 
 :42 squash --pushback
-:39 inspect
+:39 list inspect
 Event 43 ================================================================
 commit refs/tags/release-0-5-0
 mark :39

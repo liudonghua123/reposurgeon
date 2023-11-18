@@ -2,5 +2,5 @@
 set flag echo
 set flag relax
 read <treecontents.svn
-inspect
+list inspect
 list manifest

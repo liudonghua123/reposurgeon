@@ -789,10 +789,10 @@ The command `=L <<msgout_cmd>>` is good for extracting commits with
 multi-line comments in a form that can be deleted and merged back in
 with the msgin command.
 
-The reposurgeon command `=H <<inspect_cmd>>` will show you tip commits
+The reposurgeon command `=H <<list>> inspect` will show you tip commits
 which may contain only deletes and deletealls.
 
-Tags can be inspected with `=T <<inspect_cmd>>`. Junk tags can be
+Tags can be inspected with `=T <<list>> inspect`. Junk tags can be
 removed with the `<<delete_cmd>>` command. Tag comments can be
 modified with a msgin/msgout sequence.  Check that the creation date of tags
 matches what you see in the source repository; this is the easiest way
@@ -1219,39 +1219,39 @@ To give you the flavor of the command language, here
 are some simple examples:
 
 --------
-29..71 list            ;; list summary index of events 29..71.
+29..71 list             ;; list summary index of events 29..71.
 
-236..$ list            ;; List events from 236 to the last.
+236..$ list             ;; List events from 236 to the last.
 
-<#523> inspect         ;; Look for commit #523; they are numbered
-                       ;; 1-origin from the beginning of the
-                       ;; repository.
+<#523> list inspect     ;; Look for commit #523; they are numbered
+                        ;; 1-origin from the beginning of the
+                        ;; repository.
 
-<2317> inspect         ;; Look for a tag with the name 2317, a tip
-                       ;; commit of a branch named 2317, or a commit
-                       ;; with legacy ID 2317. Inspect what is found.
-                       ;; A plain number is probably a legacy ID
-                       ;; inherited from a Subversion revision
-                       ;; number.
+<2317> list inspect     ;; Look for a tag with the name 2317, a tip
+                        ;; commit of a branch named 2317, or a commit
+                        ;; with legacy ID 2317. Inspect what is found.
+                        ;; A plain number is probably a legacy ID
+                        ;; inherited from a Subversion revision
+                        ;; number.
 
-/regression/ list      ;; list all commits and tags with comments or
-                       ;; committer headers or author headers
-                       ;; containing the string "regression".
+/regression/ list       ;; list all commits and tags with comments or
+                        ;; committer headers or author headers
+                        ;; containing the string "regression".
 
-1..:97 & =T delete     ;; delete tags from event 1 to mark 97.
+1..:97 & =T delete      ;; delete tags from event 1 to mark 97.
 
-[Makefile] inspect     ;; Inspect all commits with a file op touching
-                       ;; Makefile and all blobs referred to in a
-                       ;; fileop touching Makefile.
+[Makefile] list inspect ;; Inspect all commits with a file op touching
+                        ;; Makefile and all blobs referred to in a
+                        ;; fileop touching Makefile.
 
-@dsc(:55) list         ;; Display all commits with ancestry tracing
-                       ;; to :55.
+@dsc(:55) list          ;; Display all commits with ancestry tracing
+                        ;; to :55.
 
 @min([.gitignore]&=C) remove .gitignore
-                       ;; Remove the first .gitignore fileop in the
-                       ;; repo.  In a Subversion lift this contains
-                       ;; patterns corresponding to Subversion default
-                       ;; ignores.
+                        ;; Remove the first .gitignore fileop in the
+                        ;; repo.  In a Subversion lift this contains
+                        ;; patterns corresponding to Subversion default
+                        ;; ignores.
 --------
 
 // TOPIC
@@ -1540,7 +1540,7 @@ generators, such as the "lint" command.
 
 Thus, "=Q count" and "=Q list" can provide you with a check on the
 scope of modifications while you are trying things out.  Or you can
-use "=Q list" and "=Q inspect" to zero in on anomalies reported by
+use "=Q list" and "=Q list inspect" to zero in on anomalies reported by
 lint.
 
 [[import-export]]
@@ -1656,7 +1656,7 @@ Property extensions will be be omitted from the output if the
 importer for the preferred repository type cannot digest them.
 +
 Note: to examine small groups of commits without the progress
-meter, use '```<<inspect_cmd>>```'.
+meter, use '```<<list_cmd>> inspect```'.
 
 [[preferences]]
 === Repository type preference
@@ -1792,9 +1792,6 @@ for append rather than write.
 
 // COMMAND
 include::docinclude/list.adoc[]
-
-// COMMAND
-include::docinclude/inspect.adoc[]
 
 // COMMAND
 include::docinclude/graph.adoc[]
@@ -3143,8 +3140,7 @@ delete junk branches and tags; reposurgeon(1) makes this easy to do.
 When you're experimenting with mass changes based on pattern matching
 (as in filter, transcode, changelogs, or even msgin) bear in mind that
 commits and other objects actually modified get their Q bits set. You
-can use this as a selection with "list" or "inspect" commands to check
-your work.
+can use this as a selection with "list" commands to check your work.
 
 === Pushing and popping pathname segments
 
@@ -3217,7 +3213,7 @@ But there's a different technique that will work.  Like this:
 ----
 1..<2010-90-15T00:00:00Z> & /^fred$/C attribution =C|=A set "Fred Foonly" "fred1@foonly.org"
 <2010-90-15T00:00:00Z>..$ & /^fred$/C attribution =C|=A set "Fred J. Muggs" "fred2@foonly.org"
-/fred[12]/C inspect
+/fred[12]/C list inspect
 ----
 
 The third command allows you to check that the previous two produced
@@ -3932,7 +3928,7 @@ help [COMMAND]
 history
 {SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 [SELECTION] lint [--OPTION...] [>OUTFILE]
-[SELECTION] list [commits|tags|stamps|index|manifest|paths|names] [PATTERN] [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge
 [SELECTION] msgin [--create] [<INFILE]
@@ -4012,7 +4008,6 @@ Should these be subcommands of list?
 [SELECTION] sizes [>OUTFILE]
 stats [>OUTFILE]
 timings [MARK-NAME] [>OUTFILE]
-[SELECTION] inspect [>OUTFILE]
 ----
 
 In a revised, more verb-centered syntax, the key verbs would probanly

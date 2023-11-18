@@ -1,6 +1,6 @@
 set flag relax
 read <treecontents.svn
-inspect
+list inspect
 Event 1 =================================================================
 #reposurgeon sourcetype svn
 Event 2 =================================================================

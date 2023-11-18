@@ -1,5 +1,5 @@
 read <inline-simple.fi
-2 inspect
+2 list inspect
 Event 2 =================================================================
 commit refs/heads/master
 mark :2
@@ -25,7 +25,7 @@ mark :2
 
 thefile -> inline
 1,2 reparent
-2 inspect
+2 list inspect
 Event 2 =================================================================
 commit refs/heads/master
 mark :2

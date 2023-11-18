@@ -30,6 +30,6 @@ set flag echo
 :6 list paths
 :4 list paths
 :2 list paths
-:9 inspect
-:15 inspect
-:6 inspect
+:9 list inspect
+:15 list inspect
+:6 list inspect

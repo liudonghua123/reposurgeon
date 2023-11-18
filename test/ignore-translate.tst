@@ -4,7 +4,7 @@ set flag interactive
 prefer bzr
 ignores --defaults
 # Next line should reveal a generated ignore blob and its fileop
-:2,:3 inspect
+:2,:3 list inspect
 prefer hg
 ignores --rename --translate
 clear flag interactive

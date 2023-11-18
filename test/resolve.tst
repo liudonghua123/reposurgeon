@@ -20,4 +20,4 @@ set flag interactive
 create tag tag2test
 
 # Test tag filtering by name
-=T&/tag1/n inspect
+=T&/tag1/n list inspect

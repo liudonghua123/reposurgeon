@@ -1,7 +1,7 @@
 set flag relax
 read <simple.fi
 set flag interactive
-127 inspect
+127 list inspect
 Event 127 ===============================================================
 commit refs/heads/master
 mark :126
@@ -42,7 +42,7 @@ test/Makefile -> :68
 test/simple.dump -> :48
 theory.txt -> :50
 127,29 reparent
-127 inspect
+127 list inspect
 Event 127 ===============================================================
 commit refs/heads/master
 mark :126
@@ -90,7 +90,7 @@ test/Makefile -> :68
 test/simple.dump -> :48
 theory.txt -> :50
 129,3 reparent --rebase
-129 inspect
+129 list inspect
 Event 129 ===============================================================
 commit refs/heads/master
 mark :128
@@ -120,7 +120,7 @@ parents of octopus merge: (3,127)
 :123,:121 reparent --use-order
 reposurgeon: reparenting a commit to its own descendant would introduce a cycle
 reposurgeon: 1 new log message(s)
-:121 inspect
+:121 list inspect
 Event 122 ===============================================================
 commit refs/heads/master
 mark :121
@@ -146,7 +146,7 @@ test/simple.dump -> :48
 theory.txt -> :50
 # swap the order of :123 and :121
 :119,:123 reparent --use-order
-:123 inspect
+:123 list inspect
 Event 124 ===============================================================
 commit refs/heads/master
 mark :123
@@ -186,7 +186,7 @@ theory.txt -> :50
    124 commit   :123    refs/heads/master
 :123,:121 reparent --use-order
 reposurgeon: re-sorted events
-:121 inspect
+:121 list inspect
 Event 124 ===============================================================
 commit refs/heads/master
 mark :121

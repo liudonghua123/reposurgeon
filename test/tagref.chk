@@ -1,4 +1,4 @@
-<master> inspect
+<master> list inspect
 Event 5 =================================================================
 commit refs/heads/master
 mark :4
@@ -8,7 +8,7 @@ Second commit
 from :3
 D bar.c
 
-<tag> inspect
+<tag> list inspect
 Event 5 =================================================================
 commit refs/heads/master
 mark :4
@@ -18,7 +18,7 @@ Second commit
 from :3
 D bar.c
 
-<first> inspect
+<first> list inspect
 Event 3 =================================================================
 commit refs/heads/master
 mark :3

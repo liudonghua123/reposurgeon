@@ -25,7 +25,7 @@ reposurgeon: malformed span
 create tag tag2test
 
 # Test tag filtering by name
-=T&/tag1/n inspect
+=T&/tag1/n list inspect
 Event 36 ================================================================
 tag tag1test
 from :34

@@ -64,7 +64,7 @@ clear flag echo
 esr = Eric Raymond <esr@thyrsus.com>
 EOF
 set flag echo
-:2 inspect
+:2 list inspect
 # Test multiline commands
 <annotated-sample> \
 resolve

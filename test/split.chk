@@ -6,7 +6,7 @@ read <mergeinfo.svn
 reposurgeon: selection doesn't point at a commit
 prefer git
 git is the preferred type.
-inspect
+list inspect
 Event 1 =================================================================
 #reposurgeon sourcetype svn
 Event 2 =================================================================

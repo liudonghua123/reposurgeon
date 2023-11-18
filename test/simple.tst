@@ -17,4 +17,4 @@ list paths
 :2 setperm 100755 rs
 :2 setfield author "J. Fred Muggs <muggs@foobar.com>"
 # Stream enough parts to verify the setfield and setperm operations
-:2 inspect
+:2 list inspect

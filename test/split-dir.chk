@@ -9,7 +9,7 @@ reposurgeon: selection doesn't point at a commit
 reposurgeon: couldn't find 'zed' in a fileop path
 :5 split --path f
 reposurgeon: new commits are events 6 and 7.
-inspect
+list inspect
 Event 1 =================================================================
 #reposurgeon sourcetype svn
 Event 2 =================================================================

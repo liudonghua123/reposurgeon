@@ -144,7 +144,7 @@ f2
 f2
 :2 list paths
 f1
-:9 inspect
+:9 list inspect
 Event 10 ================================================================
 commit refs/heads/master
 mark :9
@@ -156,7 +156,7 @@ from :6
 M 100644 :7 alternate/f1
 M 100644 :8 alternate/f2
 
-:15 inspect
+:15 list inspect
 Event 16 ================================================================
 commit refs/heads/master
 mark :15
@@ -167,7 +167,7 @@ Change on master
 from :13
 M 100644 :14 f2
 
-:6 inspect
+:6 list inspect
 Event 7 =================================================================
 commit refs/heads/master
 mark :6

@@ -1,5 +1,5 @@
 tag move annotated :15
-<annotated> inspect
+<annotated> list inspect
 Event 34 ================================================================
 tag annotated
 from :15

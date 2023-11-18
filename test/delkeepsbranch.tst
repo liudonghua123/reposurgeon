@@ -32,6 +32,6 @@ data 48
 This is another modification of that test file.
 
 EOF
-inspect
+list inspect
 :2,:3 delete --tagback
-inspect
+list inspect

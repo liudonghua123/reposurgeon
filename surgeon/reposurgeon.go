@@ -1467,7 +1467,7 @@ func (rs *Reposurgeon) DoCount(lineIn string) bool {
 // HelpList says "Shut up, golint!"
 func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
-[SELECTION] list [commits|tags|stamps|index|manifest|paths|names] [PATTERN] [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
 
 With "commits" or no subcommand, display commits in a human-friendly
 format; the first column is raw event numbers, the second a timestamp
@@ -1481,6 +1481,11 @@ also displayed with the type field 'commit'.
 With "stamps", display full action stamps corresponding to commits in
 a select.  The stamp is followed by the first line of the commit
 message.
+
+With "inspect", dump a fast-import stream representing selected events
+to standard output.  Just like a write, except (1) the progress meter
+is disabled, and (2) there is an identifying header before each event
+dump.
 
 With "index", display four columns of info on selected events: their
 number, their type, the associated mark (or '-' if no mark) and a
@@ -1559,6 +1564,16 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			}
 		}
 		rs.reportSelect(parse, f)
+	case "inspect":
+		repo := rs.chosen()
+		parse.flagcheck(parseALLREPO)
+		for it := rs.selection.Iterator(); it.Next(); {
+			eventid := it.Value()
+			event := repo.events[eventid]
+			header := fmt.Sprintf("Event %d %s\n", eventid+1, strings.Repeat("=", 72))
+			fmt.Fprintln(parse.stdout, utf8trunc(header, 73))
+			fmt.Fprint(parse.stdout, event.String())
+		}
 	case "index":
 		parse.flagcheck(parseALLREPO)
 		repo := rs.chosen()
@@ -2832,34 +2847,6 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 			croak("write no longer takes a filename argument - use > redirection instead")
 		}
 	}
-	return false
-}
-
-// HelpInspect says "Shut up, golint!"
-func (rs *Reposurgeon) HelpInspect() {
-	rs.helpOutput(`
-[SELECTION] inspect
-
-Dump a fast-import stream representing selected events to standard
-output or via > redirect to a file.  Just like a write, except (1) the
-progress meter is disabled, and (2) there is an identifying header
-before each event dump.
-`)
-}
-
-// DoInspect dumps raw events.
-func (rs *Reposurgeon) DoInspect(line string) bool {
-	parse := rs.newLineParse(line, "inspect", parseREPO|parseALLREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	repo := rs.chosen()
-	for it := rs.selection.Iterator(); it.Next(); {
-		eventid := it.Value()
-		event := repo.events[eventid]
-		header := fmt.Sprintf("Event %d %s\n", eventid+1, strings.Repeat("=", 72))
-		fmt.Fprintln(parse.stdout, utf8trunc(header, 73))
-		fmt.Fprint(parse.stdout, event.String())
-	}
-
 	return false
 }
 

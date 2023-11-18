@@ -68,6 +68,6 @@ from :4
 
 EOF
 set flag echo
-<master> inspect
-<tag> inspect
-<first> inspect
+<master> list inspect
+<tag> list inspect
+<first> list inspect

@@ -8,4 +8,4 @@ read <split-dir.svn
 # Expect the split on zed to fail
 :5 split zed
 :5 split --path f
-inspect
+list inspect
