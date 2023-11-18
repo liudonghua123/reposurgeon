@@ -1,4 +1,4 @@
-## Expunge of inline file
+## Path delete of inline file
 read <inline-simple.fi
-expunge /thefile/
+delete path /thefile/
 write

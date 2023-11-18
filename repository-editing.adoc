@@ -176,7 +176,7 @@ tag move emptycommit-23 noteworthy
 tag delete /emptycommit/
 
 # Delete remnant .cvsignore files from a past life as CVS.
-expunge /.cvsignore$/
+delete path /.cvsignore$/
 
 # Often, your Subversion repository was a CVS repository in a past
 # life. CVS creates tags named with the suffix "-root" to mark branch
@@ -204,7 +204,7 @@ references
 
 # Sometimes it's useful to drop files from the repo that should
 # never have been checked in. 1..$ - selects all commits.
-1..$ expunge /documents/.*.pdf/
+1..$ delete path /documents/.*.pdf/
 
 # Process GNU Changelogs to get better attributions for changesets.
 # When a commit was derived from a patch and checked in by someone
@@ -2049,9 +2049,6 @@ include::docinclude/dedup.adoc[]
 include::docinclude/divide.adoc[]
 
 // COMMAND
-include::docinclude/expunge.adoc[]
-
-// COMMAND
 include::docinclude/unite.adoc[]
 
 // COMMAND
@@ -3280,7 +3277,7 @@ subtle damage in the metadata.  One common class of problems comes from
 git-svn creating .gitignore and .git histories in the Subversion
 repository. Commits on these paths are best treated as junk and removed.
 
-While they could be removed with a reposurgeon expunge command after
+While they could be removed with a reposurgeon delete path command after
 the repository has been translated to Git, sometimes one sees a worse
 problem resulting from git-svn somehow creating invalid copy nodes
 involving .git/.gitignore.  This can produce alarming log messages,
@@ -3543,7 +3540,7 @@ commits out of a Subversion dump. For a git dump, look at reposugeon's
 ==== Prune irrelevant branches
 
 Try to throw away branches that are not relevant to your problem.  The
-'expunge' operation on repocutter or the '<<branch_cmd>> delete'
+'expunge' operation on repocutter or the '<<delete_cmd>> branch'
 command in reposurgeon may be helpful.
 
 This is the attempted simplification least unlikely to make your bug
@@ -3613,7 +3610,8 @@ separate commands. Blob/tag/reset creation used to be
 blob/tag/branch/reset deletion used to be "{blob/tag/branch/reset}
 delete", not "delete {blob/tag/branch/reset}".  The command to rename
 repositories was just "rename", not "rename repo"; "rename path" was
-"path rename"; "renane reset" was "reset rename".
+"path rename"; "renane reset" was "reset rename". The "delete path"
+command was named "expunge".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3674,7 +3672,7 @@ In versions before 4.10, the "reduce" and "blob" options of the
 "<<ignores_cmd>>" command were bare keywords. There was a command to
 set the prompt string that has been retired.
 
-In versions before 4.8, the `<<expunge_cmd>>` command run on a
+In versions before 4.8, the `expunge` command run on a
 repository named "foo" tried to keep deleted fileops in a new
 synthetic repository named "foo-expunges".  This feature has been
 replaced by the "~" negation operator on expunge selections.
@@ -3939,13 +3937,12 @@ choose [REPO-NAME]
 debranch {SOURCE-BRANCH} [TARGET-BRANCH]
 [SELECTION] dedup
 define [NAME [TEXT]]
-{SELECTION} delete [--quiet] {commit | {tag|branch|reset} [--not] PATTERN}
+{SELECTION} delete [--quiet] {commit | {path|tag|branch|reset} [--not|--notagify] PATTERN}
 {SELECTION} diff [>OUTFILE]
 {SELECTION} divide
 do {MACRO-NAME} [ARG...]
 drop [REPO-NAME]
 exit [>OUTFILE]
-[SELECTION] expunge [--not|--notagify] PATH-PATTERN
 gc [GOGC]
 [SELECTION] gitify
 [SELECTION] graft [--prune] {REPO-NAME}

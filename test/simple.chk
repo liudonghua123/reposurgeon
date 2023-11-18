@@ -74,7 +74,7 @@ rs
 test/Makefile
 test/simple.dump
 theory.txt
-1..$ expunge theory.txt
+1..$ delete path theory.txt
 path list
 .gitignore
 Makefile

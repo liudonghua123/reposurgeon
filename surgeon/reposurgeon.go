@@ -3627,6 +3627,10 @@ with this command; they are removed only when removal of fileops
 associated with commits requires this. A delete is equivalent to a
 squash with the --delete flag.
 
+All other subcommands require a selercyed repository and a
+BRANCH-PATTERN argument which can be a string or a delimited regexp
+(with unanchored matching); with the option --not, invert the match.
+
 With "tag" requires a TAG-PATTERN argument that is a pattern
 expression matching a set of annotated tags (unanchored matching).
 Matching tags are deleted.  Giving a regular expression rather than a
@@ -3635,24 +3639,47 @@ derived from CVS branch-root tags.  The option "--not" takes the
 complement of the set of tags implied by the TAG-PATTERN. Deletions
 can be restricted by a selection set in the normal way.
 
-With "branch", requires a BRANCH-PATTERN argument which can be a
-string or a delimited regexp (with unanchored matching); with the
-option --not, invert the match. If the pattern does not begin with
-"refs/", that is prepended. Matching branches are deleted. Associatyed
-tags and resets are also deleted.
+With "branch", if the pattern does not begin with "refs/", that is
+prepended. Matching branches are deleted. Associated tags and resets
+are also deleted.
 
-With "reset", RESET-PATTERN finds by text match existing
-resets within the selection.  If RESET-PATTERN is a delimited regexp,
-the match is to the regexp (unanchored matching); --not inverts this,
-selecting all non-matching resets.
+With "reset", all matching resets are deleted. If RESET-PATTERN is a
+text literal, each reset's name is matched if RESET-PATTERN is either
+the entire reference (refs/heads/FOO or refs/tags/FOO for some some
+value of FOO) or the basename (e.g. FOO), or a suffix of the form
+heads/FOO or tags/FOO. An unqualified basename is assumed to refer to
+a branch in refs/heads/.
 
-If RESET-PATTERN is a text literal, each reset's name is matched if 
-RESET-PATTERN is either the entire reference (refs/heads/FOO or refs/tags/FOO
-for some some value of FOO) or the basename (e.g. FOO), or a suffix of the form
-heads/FOO or tags/FOO. An unqualified basename is assumed to refer to a branch
-in refs/heads/.
+With "path", expunge files from the selected portion of the repo history; the
+default is the entire history.  The argument to this command is a
+pattern expression matching paths (anchored match). If the pattern is
+enclosed by double quotes it may contain spaces; the double quotes are
+stripped off before it is interpreted as a delimited regexp or literal
+string.
 
-Clears all Q bits.
+The option --not inverts this; all file paths other than those
+selected by the remaining arguments to be expunged.  You may use
+this to sift out all file operations matching a pattern set rather
+than expunging them.
+
+All filemodify (M) operations and delete (D) operations involving a
+matched file in the selected set of events are disconnected from the
+repo and put in a removal set.  Renames are followed as the tool walks
+forward in the selection set; each triggers a warning message. If a
+selected file is a copy (C) target, the copy will be deleted and a
+warning message issued. If a selected file is a copy source, the copy
+target will be added to the list of paths to be deleted and a warning
+issued.
+
+After file expunges have been performed, any commits with no
+remaining file operations will be deleted, and any tags pointing to
+them. By default each deleted commit is replaced with a tag of the form
+emptycommit-<ident> on the preceding commit unless the --notagify option
+is specified.  Commits with deleted fileops pointing both in and outside the
+path set are not deleted.
+
+This command clears all Q bits. The "path" mode then sets true on any commit
+which lost fileops but was not entirely deleted.
 `)
 }
 
@@ -3674,6 +3701,18 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 		parse.flagcheck(parseNEEDSELECT)
 		parse.options.Add("--delete")
 		repo.squash(rs.selection, parse.options, control.baton)
+		return false
+	case "path":
+		parse.flagcheck(parseREPO | parseALLREPO)
+		if len(parse.args) < 2 {
+			croak("required expunge pattern argument is missing.")
+			return false
+		}
+		err := rs.chosen().expunge(rs.selection, getPattern(parse.args[1]),
+			!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
+		if err != nil {
+			respond(err.Error())
+		}
 		return false
 	case "tag":
 		parse.flagcheck(parseALLREPO)
@@ -4448,43 +4487,6 @@ func (rs *Reposurgeon) HelpExpunge() {
 	rs.helpOutput(`
 [SELECTION] expunge [--not|--notagify] PATH-PATTERN
 
-Expunge files from the selected portion of the repo history; the
-default is the entire history.  The argument to this command is a
-pattern expression matching paths (anchored match). If the pattern is
-enclosed by double quotes it may contain spaces; the double quotes are
-stripped off before it is interpreted as a delimited regexp or literal
-string.
-
-The option --not inverts this; all file paths other than those
-selected by the remaining arguments to be expunged.  You may use
-this to sift out all file operations matching a pattern set rather
-than expunging them.
-
-All filemodify (M) operations and delete (D) operations involving a
-matched file in the selected set of events are disconnected from the
-repo and put in a removal set.  Renames are followed as the tool walks
-forward in the selection set; each triggers a warning message. If a
-selected file is a copy (C) target, the copy will be deleted and a
-warning message issued. If a selected file is a copy source, the copy
-target will be added to the list of paths to be deleted and a warning
-issued.
-
-After file expunges have been performed, any commits with no
-remaining file operations will be deleted, and any tags pointing to
-them. By default each deleted commit is replaced with a tag of the form
-emptycommit-<ident> on the preceding commit unless the --notagify option
-is specified.  Commits with deleted fileops pointing both in and outside the
-path set are not deleted.
-
-This command sets Q bits: true on any commit which lost fileops but was
-not entirely deleted, false on all other (remaining) events.
-
-Example:
-
-----
-# Delete all PDFs from the loaded repository.
-expunge /[.]pdf$/
-----
 `)
 }
 
@@ -4492,15 +4494,6 @@ expunge /[.]pdf$/
 func (rs *Reposurgeon) DoExpunge(line string) bool {
 	parse := rs.newLineParse(line, "expunge", parseALLREPO, nil)
 	defer parse.Closem()
-	if len(parse.args) == 0 {
-		croak("required expunge pattern argument is missing.")
-		return false
-	}
-	err := rs.chosen().expunge(rs.selection, getPattern(parse.args[0]),
-		!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
-	if err != nil {
-		respond(err.Error())
-	}
 	return false
 }
 

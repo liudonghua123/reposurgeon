@@ -1,10 +1,10 @@
-## Test of index, tip, tags, history, paths, expunge and checkout
+## Test of index, tip, tags, history, paths, delete path and checkout
 set flag echo
 read <simple.fi
 ~=B index
 tags
 path list
-1..$ expunge theory.txt
+1..$ delete path theory.txt
 path list
 116 checkout foobar
 !ls foobar

@@ -1,4 +1,4 @@
-## Test expunge that deletes a commit with notagify
+## Test delete path that deletes a commit with notagify
 read <commit-expunge.fi
-expunge --notagify /packed/
+delete path --notagify /packed/
 write -

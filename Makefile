@@ -125,7 +125,6 @@ BNF_TOPICS = \
 	do \
 	drop \
 	exit \
-	expunge \
 	filter \
 	gc \
 	gitify \
