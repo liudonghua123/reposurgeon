@@ -3601,9 +3601,10 @@ rename, and tag rename commands used Python-style rather than Go-style
 match references. Macro argument formals did not yet have a %
 prefix. The split command syntax was incompatibly different.  The
 "set" and "clear" commands didn't take a subcommand verb.  There was a
-"readlimit" command doing what "set readlimit" now does. The "elapsed",
-"memory", and "sizeof" subcommands of "show" used to be separate
-commands. Tasg creation used to be "tag create", not "create tag".
+"readlimit" command doing what "set readlimit" now does. The
+"elapsed", "memory", and "sizeof" subcommands of "show" used to be
+separate commands. Blob/tag/reset creation used to be
+"{blob{tag|reset} create", not "create {blob|tag|reset}".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3925,7 +3926,7 @@ branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
 choose [REPO-NAME]
 [SELECTION] coalesce [--debug] [TIMEFUZZ]
 {SELECTION} count [>OUTFILE]
-[SELECTION] create {repo NAME|blob NAME [<INFILE]|tag NAME}
+[SELECTION] create {repo NAME|blob NAME [<INFILE]|tag NAME|reset NAME}
 debranch {SOURCE-BRANCH} [TARGET-BRANCH]
 [SELECTION] dedup
 define [NAME [TEXT]]
@@ -3995,7 +3996,7 @@ The following are SV. Inverting these to verb-first might be a good thing.
 branch {rename|delete} {BRANCH-PATTERN} [--not] [NEW-NAME]
 legacy {read [<INFILE] | write [>OUTFILE]}
 path [list [>OUTFILE] | rename {PATTERN} [--force] {TARGET}]]
-[SELECTION] reset {create|move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
+[SELECTION] reset {move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME]
 [SELECTION] tag {move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
 ----

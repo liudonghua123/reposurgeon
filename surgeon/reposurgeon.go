@@ -5439,25 +5439,7 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			resets = append(resets, reset)
 		}
 	}
-	if verb == "create" {
-		var target *Commit
-		var ok bool
-		if len(resets) > 0 {
-			croak("one or more resets match %s", sourcepattern)
-			return false
-		}
-		if rs.selection.Size() != 1 {
-			croak("reset create requires a singleton commit set.")
-			return false
-		} else if target, ok = repo.events[rs.selection.Fetch(0)].(*Commit); !ok {
-			croak("create target is not a commit.")
-			return false
-		}
-		reset := newReset(repo, resetname, target.mark, target.legacyID)
-		reset.addColor(colorQSET)
-		repo.addEvent(reset)
-		repo.declareSequenceMutation("reset create")
-	} else if verb == "move" {
+	if verb == "move" {
 		var reset *Reset
 		var target *Commit
 		var ok bool
@@ -6752,7 +6734,7 @@ func (rs *Reposurgeon) DoChangelogs(line string) bool {
 // HelpCreate says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCreate() {
 	rs.helpOutput(`
-[SELECTION] create {{repo|blob|tag} NAME | blob NAME [<INFILE]}
+[SELECTION] create {{repo|blob|tag|reset} NAME | blob NAME [<INFILE]}
 
 With "repo", create an empty repository with a specified name in
 memory. The new repository becomes chosen.  It has no eveents and no
@@ -6775,6 +6757,18 @@ inserted just after the last tag in the repo (or just after the last
 commit if there are no tags).  The tagger, committish, and comment
 fields are copied from the commit's committer, mark, and comment
 fields. The timestamp is incremented by a second for uniqueness.
+
+With "reset" requires a singleton selection which is the associated
+commit for the reset, takes as a first argument the name of the reset
+(which must not exist), and ends with the keyword create. In this case
+the name must be fully qualified, with a refs/heads/ or refs/tags/
+prefix. Note: While this command is provided for the sake of
+completeness, think twice before actually using it.  Normally a reset
+should only be deleted or renamed when its associated branch is, and
+the branch command does this.
+
+When creating blobs, tags, or resets. all Q bits are cleared; then any
+objects created get their Q bit set.
 `)
 }
 
@@ -6805,9 +6799,12 @@ func (rs *Reposurgeon) DoCreate(line string) bool {
 		} else if rs.selection.isDefined() {
 			croak("create blob cannot take a selection set")
 			return false
+		} else if rs.chosen() == nil {
+			croak("create blob requires a loaded repository")
 		}
 		name := parse.args[1]
 		repo := rs.chosen()
+		repo.clearColor(colorQSET)
 		if !regexp.MustCompile("^:[a-zA-Z0-9]+$").MatchString(name) {
 			croak("The mark number (%s) must begin with a colon and contain only alphanumerics.", name)
 			return false
@@ -6825,15 +6822,19 @@ func (rs *Reposurgeon) DoCreate(line string) bool {
 			return false
 		}
 		blob.setContent(content, noOffset)
+		blob.addColor(colorQSET)
 		repo.declareSequenceMutation("adding blob")
 		repo.invalidateNamecache()
 	case "tag":
 		if len(parse.args) < 2 {
 			croak("missing tag name")
 			return false
+		} else if rs.chosen() == nil {
+			croak("create tag requires a loaded repository")
 		}
 		tagname := parse.args[1]
 		repo := rs.chosen()
+		repo.clearColor(colorQSET)
 		if repo.named(tagname).isDefined() {
 			croak("something is already named %s", tagname)
 			return false
@@ -6872,6 +6873,43 @@ func (rs *Reposurgeon) DoCreate(line string) bool {
 		repo.declareSequenceMutation("adding tag")
 		repo.invalidateNamecache()
 		return false
+	case "reset":
+		if len(parse.args) < 2 {
+			croak("missing reset name")
+			return false
+		} else if rs.chosen() == nil {
+			croak("create reset requires a loaded repository")
+		}
+		resetname := parse.args[1]
+		if !regexp.MustCompile("refs/(heads|tags)/.*").MatchString(resetname) {
+			croak("reset name %s is not weel formed", resetname)
+		}
+		repo := rs.chosen()
+		repo.clearColor(colorQSET)
+		var resets int
+		for _, event := range repo.events {
+			reset, ok := event.(*Reset)
+			if ok && reset.ref == resetname {
+				resets++
+			}
+		}
+		var target *Commit
+		var ok bool
+		if resets > 0 {
+			croak("one or more resets match %s", resetname)
+			return false
+		}
+		if rs.selection.Size() != 1 {
+			croak("reset create requires a singleton commit set.")
+			return false
+		} else if target, ok = repo.events[rs.selection.Fetch(0)].(*Commit); !ok {
+			croak("create target is not a commit.")
+			return false
+		}
+		reset := newReset(repo, resetname, target.mark, target.legacyID)
+		reset.addColor(colorQSET)
+		repo.addEvent(reset)
+		repo.declareSequenceMutation("reset create")
 	default:
 		croak("can't create object of unknown type %q.", verb)
 		return false

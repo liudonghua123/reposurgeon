@@ -20,7 +20,7 @@ Content-Path: beta
 Make an example commit using the synthetic beta file
 ------------------------------------------------------------------------
 EOF
-$ reset create refs/heads/master
+$ create reset refs/heads/master
 write -
 shell rm alpha beta
 # end
