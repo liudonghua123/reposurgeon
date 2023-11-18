@@ -2019,10 +2019,7 @@ include::docinclude/tagify.adoc[]
 include::docinclude/reorder.adoc[]
 
 [[branches]]
-=== Branches
-
-// COMMAND
-include::docinclude/branch.adoc[]
+=== Advanced branch operations
 
 // COMMAND
 include::docinclude/branchlift.adoc[]
@@ -3609,9 +3606,9 @@ separate commands. Blob/tag/reset creation used to be
 "{blob|tag|reset} create", not "create {blob|tag|reset}";
 blob/tag/branch/reset deletion used to be "{blob/tag/branch/reset}
 delete", not "delete {blob/tag/branch/reset}".  The command to rename
-repositories was just "rename", not "rename repo"; "rename path" was
-"path rename"; "renane reset" was "reset rename". The "delete path"
-command was named "expunge".
+repositories was just "rename", not "rename repo";
+"rename {path|branch|tag|reset}" was "{path|branch|tag|reset} rename".
+The "delete path" command was named "expunge".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the

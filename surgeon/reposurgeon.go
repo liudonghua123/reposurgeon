@@ -2257,17 +2257,38 @@ func (rs *Reposurgeon) HelpRename() {
 With "repo", renames the currently chosen repo; requires a NEW-NAME
 argument.  Won't do it if there is already one by the new name.
 
+Other subcommands require a PATTERN which can be a string or a
+delimited regexp (with unanchored matching).  NEW-NANE may contain
+back-reference syntax (${1} etc.). See "help regexp" for more
+information about regular expressions. If PATTERN or NEW-NAME are
+wrapped by double quotes they may contain whitespace; the quotes are
+stripped before further interprepretation as a delimited regexp or
+literal string. The --not option inverts the selection for renaming
+
 With "path", rename a path in every fileop of every selected commit.
-The default selection set is all commits. The first argument is
-interpreted as a pattern expression to match against paths (matching
-is anchored); the second may contain back-reference syntax (\1
-etc.). See "help regexp" for more information about regular
-expressions.  If PATTERN or NEW-NAME are wrapped by double quotes they
-may contain whitespace; the quotes are stripped before further
-interprepretation as a delimited regexp or literal string. Ordinarily,
-if the target path already exists in the fileops, or is visible in the
+The default selection set is all commits. The pattern expression to
+matched against paths (matching is anchored); Ordinarily, if the
+target path already exists in the fileops, or is visible in the
 ancestry of the commit, this command throws an error.  With the
 --force option, these checks are skipped.
+
+With "rename", rename ojects that match by name. 
+
+Renaming branches also operates on any associated annotated tags and
+resets. Bear in mind that a Git lightweight tag here is simply a
+branch in the tags/ namespace.
+
+In a branch rename, the third argument may be any token that is a syntactically
+valid branch name (but not the name of an existing branch).  If it does not
+begin with "refs/", then "refs/" is prepended; you should supply "heads/"
+or "tags/" yourself. You cannot rename a branch to the name of an existing branch
+unless they are joined root to tip, making the operation effectively a merge.
+
+Branch rename has some special behavior when the repository source type is
+Subversion. It recognizes tags and resets made from branch-copy commits
+and transforms their names as though they were branch fields in commits.
+
+Rename sets Q bits; true on every object modified, false otherwise.
 `)
 }
 
@@ -2305,6 +2326,119 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 		targetPattern := parse.args[2]
 		force := parse.options.Contains("--force")
 		rs.chosen().pathRename(rs.selection, sourceRE, targetPattern, force)
+	case "branch":
+		parse.flagcheck(parseREPO | parseNOSELECT)
+		repo := rs.chosen()
+
+		removeBranchPrefix := func(branch string) string {
+			if strings.HasPrefix(branch, "refs/") {
+				branch = branch[5:]
+			}
+			return branch
+		}
+		addBranchPrefix := func(branch string) string {
+			if !strings.HasPrefix(branch, "refs/") {
+				return "refs/" + branch
+			}
+			return branch
+		}
+
+		if len(parse.args) < 2 {
+			croak("vranch rename is missing a source pattern")
+			return false
+		}
+		sourcepattern := parse.args[1]
+
+		if len(parse.args) < 3 {
+			croak("branch newname must be nonempty.")
+			return false
+		}
+		newname := parse.args[2]
+
+		rootmap := repo.branchrootmap()
+		tipmap := repo.branchtipmap()
+		tipjoin := func(branch1, branch2 string) bool {
+			return (rootmap[branch1] == tipmap[branch2].firstChild()) || (tipmap[branch1].firstChild() == rootmap[branch2])
+		}
+		newname = removeBranchPrefix(newname)
+		sourcepattern = removeBranchPrefix(sourcepattern)
+		sourceRE := getPattern(sourcepattern)
+		repo.clearColor(colorQSET)
+		for _, branch := range repo.branchset() {
+			branch := removeBranchPrefix(branch)
+			if !sourceRE.MatchString(branch) {
+				continue
+			}
+			subst := addBranchPrefix(GoReplacer(sourceRE, branch, newname))
+			// Intent of this code is to nope out on branch rename target collisions
+			// unlees the branch to be renamed and its target are joined root to tip,
+			// in which case this is effectively a branch merge.
+			if repo.branchset().Contains(subst) && !tipjoin(subst, addBranchPrefix(branch)) {
+				croak("there is already a branch named '%s'.", subst)
+				return false
+			}
+			for _, event := range repo.events {
+				if commit, ok := event.(*Commit); ok {
+					if commit.Branch == addBranchPrefix(branch) {
+						commit.setBranch(subst)
+						commit.addColor(colorQSET)
+					}
+				} else if reset, ok := event.(*Reset); ok {
+					if reset.ref == addBranchPrefix(branch) {
+						reset.ref = subst
+						reset.addColor(colorQSET)
+					}
+				}
+			}
+		}
+		// Things get a little weird and kludgy here. It's the
+		// price we gave to pay for deferring Subversion
+		// branch remapping to be done in gitspace rather than
+		// as a phase in the Subversion reader.
+		//
+		// What we're coping with is the possibility of tags
+		// and resets that were made from Subversion
+		// branch-copy commits. The name and ref fields of
+		// such things are branch IDs with the suffix "-root" or "-tipdelete",
+		// but without a refs/heads leader, and we need to
+		// put the prefix part through the the same
+		// transformation as branch names.
+		//
+		// This pass depends on the fact that we've already done
+		// collision checks for all branch renames.
+		if repo.vcs != nil && repo.vcs.name == "svn" {
+			for _, event := range repo.events {
+				if tag, ok := event.(*Tag); ok {
+					if !(strings.HasSuffix(tag.tagname, "-root") || strings.HasSuffix(tag.tagname, "-tipdelete")) {
+						continue
+					}
+					tagname := removeBranchPrefix(tag.tagname)
+					tagnameParts := strings.Split(tagname, "-")
+					suffix := "-" + tagnameParts[len(tagnameParts)-1]
+					tagname = tagname[:len(tagname)-len(suffix)]
+					tagname = "heads/" + tagname
+					if !sourceRE.MatchString(tagname) {
+						continue
+					}
+					subst := GoReplacer(sourceRE, tagname, newname)
+					tag.tagname = subst[strings.Index(subst, "/")+1:] + suffix
+					tag.addColor(colorQSET)
+				} else if reset, ok := event.(*Reset); ok {
+					resetname := removeBranchPrefix(reset.ref)
+					if !sourceRE.MatchString(resetname) {
+						continue
+					}
+					subst := GoReplacer(sourceRE, resetname, newname)
+					reset.ref = addBranchPrefix(subst)
+					reset.addColor(colorQSET)
+				}
+			}
+		}
+		if n := repo.countColor(colorQSET); n == 0 {
+			croak("no branch fields matched %s", sourceRE)
+		} else {
+			respond("%d objects modified", n)
+		}
 	case "tag":
 		parse.flagcheck(parseREPO | parseALLREPO)
 		if len(parse.args) < 2 {
@@ -5339,155 +5473,7 @@ func (rs *Reposurgeon) HelpBranch() {
 	rs.helpOutput(`
 branch {rename|delete} BRANCH-PATTERN [--not] [NEW-NAME]
 
-Rename or delete matching branches. BRANCH-PATTERN can be a string or
-a delimited regexp (with unanchored matching). If it is a string, it
-should be full reference name like "refs/heads/master".  The string
-should not be quoted.
-
-The command also operates on any associated annotated tags and resets. Git
-lightweight tag here is simply a branch in the tags/ namespace.
-
-The --not option inverts a selection for deletion, deleting all branches other
-than those matched. Deletion also removes all tags and resets associated with
-deleted branches.
-
-For a rename, the third argument may be any token that is a syntactically
-valid branch name (but not the name of an existing branch).  If it does not
-begin with "refs/", then "refs/" is prepended; you should supply "heads/"
-or "tags/" yourself.  In it, references to match parts in BRANCH-PATTERN will
-be expanded. You cannot rename a branch to the name of an existing branch
-unless they are joined root to tip, making the operation effectively a merge.
-
-Branch rename has some special behavior when the repository source type is
-Subversion. It recognizes tags and resets made from branch-copy commits
-and transforms their names as though they were branch fields in commits.
-
-Branch rename sets Q bits; true on every object modified, false otherwise.
 `)
-}
-
-// DoBranch renames a branch or deletes it.
-func (rs *Reposurgeon) DoBranch(line string) bool {
-	parse := rs.newLineParse(line, "branch", parseNOSELECT|parseNEEDARG, nil)
-
-	repo := rs.chosen()
-
-	removeBranchPrefix := func(branch string) string {
-		if strings.HasPrefix(branch, "refs/") {
-			branch = branch[5:]
-		}
-		return branch
-	}
-	addBranchPrefix := func(branch string) string {
-		if !strings.HasPrefix(branch, "refs/") {
-			return "refs/" + branch
-		}
-		return branch
-	}
-
-	if verb := parse.args[0]; verb == "rename" {
-		if len(parse.args) < 2 {
-			croak("vranch rename is missing a source pattern")
-			return false
-		}
-		sourcepattern := parse.args[1]
-
-		if len(parse.args) < 3 {
-			croak("branch newname must be nonempty.")
-			return false
-		}
-		newname := parse.args[2]
-
-		rootmap := repo.branchrootmap()
-		tipmap := repo.branchtipmap()
-		tipjoin := func(branch1, branch2 string) bool {
-			return (rootmap[branch1] == tipmap[branch2].firstChild()) || (tipmap[branch1].firstChild() == rootmap[branch2])
-		}
-		newname = removeBranchPrefix(newname)
-		sourcepattern = removeBranchPrefix(sourcepattern)
-		sourceRE := getPattern(sourcepattern)
-		repo.clearColor(colorQSET)
-		for _, branch := range repo.branchset() {
-			branch := removeBranchPrefix(branch)
-			if !sourceRE.MatchString(branch) {
-				continue
-			}
-			subst := addBranchPrefix(GoReplacer(sourceRE, branch, newname))
-			// Intent of this code is to nope out on branch rename target collisions
-			// unlees the branch to be renamed and its target are joined root to tip,
-			// in which case this is effectively a branch merge.
-			if repo.branchset().Contains(subst) && !tipjoin(subst, addBranchPrefix(branch)) {
-				croak("there is already a branch named '%s'.", subst)
-				return false
-			}
-			for _, event := range repo.events {
-				if commit, ok := event.(*Commit); ok {
-					if commit.Branch == addBranchPrefix(branch) {
-						commit.setBranch(subst)
-						commit.addColor(colorQSET)
-					}
-				} else if reset, ok := event.(*Reset); ok {
-					if reset.ref == addBranchPrefix(branch) {
-						reset.ref = subst
-						reset.addColor(colorQSET)
-					}
-				}
-			}
-		}
-		// Things get a little weird and kludgy here. It's the
-		// price we gave to pay for deferring Subversion
-		// branch remapping to be done in gitspace rather than
-		// as a phase in the Subversion reader.
-		//
-		// What we're coping with is the possibility of tags
-		// and resets that were made from Subversion
-		// branch-copy commits. The name and ref fields of
-		// such things are branch IDs with the suffix "-root" or "-tipdelete",
-		// but without a refs/heads leader, and we need to
-		// put the prefix part through the the same
-		// transformation as branch names.
-		//
-		// This pass depends on the fact that we've already done
-		// collision checks for all branch renames.
-		if repo.vcs != nil && repo.vcs.name == "svn" {
-			for _, event := range repo.events {
-				if tag, ok := event.(*Tag); ok {
-					if !(strings.HasSuffix(tag.tagname, "-root") || strings.HasSuffix(tag.tagname, "-tipdelete")) {
-						continue
-					}
-					tagname := removeBranchPrefix(tag.tagname)
-					tagnameParts := strings.Split(tagname, "-")
-					suffix := "-" + tagnameParts[len(tagnameParts)-1]
-					tagname = tagname[:len(tagname)-len(suffix)]
-					tagname = "heads/" + tagname
-					if !sourceRE.MatchString(tagname) {
-						continue
-					}
-					subst := GoReplacer(sourceRE, tagname, newname)
-					tag.tagname = subst[strings.Index(subst, "/")+1:] + suffix
-					tag.addColor(colorQSET)
-				} else if reset, ok := event.(*Reset); ok {
-					resetname := removeBranchPrefix(reset.ref)
-					if !sourceRE.MatchString(resetname) {
-						continue
-					}
-					subst := GoReplacer(sourceRE, resetname, newname)
-					reset.ref = addBranchPrefix(subst)
-					reset.addColor(colorQSET)
-				}
-			}
-		}
-		if n := repo.countColor(colorQSET); n == 0 {
-			croak("no branch fields matched %s", sourceRE)
-		} else {
-			respond("%d objects modified", n)
-		}
-	} else {
-		croak("unknown verb '%s' in branch command.", verb)
-		return false
-	}
-
-	return false
 }
 
 // HelpTag says "Shut up, golint!"

@@ -106,7 +106,6 @@ BNF_TOPICS = \
 	append \
 	authors \
 	assign \
-	branch \
 	branchlift \
 	changelogs \
 	checkout \
