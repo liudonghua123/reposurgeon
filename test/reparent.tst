@@ -4,13 +4,13 @@ set flag relax
 read <simple.fi
 set flag interactive
 127 inspect
-127..$ manifest
+127..$ list manifest
 127,29 reparent
 127 inspect
-127..$ manifest
+127..$ list manifest
 129,3 reparent --rebase
 129 inspect
-129 manifest
+129 list manifest
 
 129 reparent
 @par(129) resolve parents of root commit
@@ -20,13 +20,13 @@ set flag interactive
 # this next one should fail because it would create a cycle
 :123,:121 reparent --use-order
 :121 inspect
-:121 manifest
+:121 list manifest
 # swap the order of :123 and :121
 :119,:123 reparent --use-order
 :123 inspect
-:123 manifest
+:123 list manifest
 (:119..:123)|(:119..:121) list index
 :123,:121 reparent --use-order
 :121 inspect
-:121 manifest
+:121 list manifest
 (:119..:123)|(:119..:121) list index

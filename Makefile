@@ -140,7 +140,6 @@ BNF_TOPICS = \
 	list \
 	log \
 	logfile \
-	manifest \
 	merge \
 	msgin \
 	msgout \

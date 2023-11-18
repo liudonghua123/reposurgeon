@@ -126,7 +126,7 @@ test
                  # First, literal command numbers (1-origin)
                  match = re.match("[0-9]+", self.line)
                  if match:
-101,103 manifest
+101,103 list manifest
 Event 101 ===============================================================
 commit refs/tags/annotated-sample
 mark :108
@@ -149,7 +149,7 @@ reposurgeon -> :109
 reposurgeon.xml -> :97
 test/Makefile -> :68
 test/simple.dump -> :48
-116 manifest
+116 list manifest
 Event 116 ===============================================================
 commit refs/heads/master
 mark :123
@@ -161,7 +161,7 @@ reposurgeon -> :122
 reposurgeon.xml -> :114
 test/Makefile -> :68
 test/simple.dump -> :48
-116 manifest /^reposurgeon/
+116 list manifest /^reposurgeon/
 Event 116 ===============================================================
 commit refs/heads/master
 mark :123

@@ -1827,9 +1827,6 @@ include::docinclude/sizes.adoc[]
 === Examining tree states
 
 // COMMAND
-include::docinclude/manifest.adoc[]
-
-// COMMAND
 include::docinclude/checkout.adoc[]
 
 // COMMAND
@@ -3938,7 +3935,7 @@ help [COMMAND]
 history
 {SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 [SELECTION] lint [--OPTION...] [>OUTFILE]
-[SELECTION] list [commits|tags|stamps|index|paths] [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|index|manifest|paths] [PATTERN] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge
 [SELECTION] msgin [--create] [<INFILE]
@@ -4015,7 +4012,6 @@ when {TIMESTAMP}
 Should these be subcommands of list?
 
 ----
-[SELECTION] manifest [PATTERN] [>OUTFILE]
 names [>OUTFILE]
 [SELECTION] sizes [>OUTFILE]
 stats [>OUTFILE]

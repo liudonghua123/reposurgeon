@@ -233,7 +233,7 @@ Create branch4 by a normal copy of trunk
 
 Event 22 ================================================================
 done
-manifest
+list manifest
 Event 6 =================================================================
 # Legacy-ID: 2
 commit refs/heads/master

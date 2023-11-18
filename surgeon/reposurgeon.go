@@ -1496,7 +1496,7 @@ func (rs *Reposurgeon) DoCount(lineIn string) bool {
 // HelpList says "Shut up, golint!"
 func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
-[SELECTION] list [commits|tags|stamps|index|paths] [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|index|manifest|paths] [PATTERN] [>OUTFILE]
 
 With "commits" or no subcommand, display commits in a human-friendly
 format; the first column is raw event numbers, the second a timestamp
@@ -1517,6 +1517,15 @@ summary field varying by type.  For a branch or tag it's the
 reference; for a commit it's the commit branch; for a blob it's a
 space-separated list of the repository path of the files with the blob
 as content.
+
+With "manifest", print commit path lists. Takes an optional selection
+set argument defaulting to all commits, and an optional pattern
+expression (with anchored matching). For each commit in the selection
+set, print the mapping of all paths in that commit tree to the
+corresponding blob marks, mirroring what files would be created in a
+checkout of the commit. If a regular expression PATTERN is given, only print
+"path -> mark" lines for paths matching it. See "help regexp" for more
+information about regular expressions.
 
 With "paths", list all paths touched by fileops in the selection
 set (which defaults to the entire repo).
@@ -1620,6 +1629,50 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			}
 			if control.getAbort() {
 				break
+			}
+		}
+	case "manifest":
+		parse.flagcheck(parseALLREPO)
+		var filterFunc = func(s string) bool { return true }
+		if len(parse.args) > 1 {
+			filterRE := getPattern(parse.args[1])
+			filterFunc = func(s string) bool {
+				return filterRE.MatchString(s)
+			}
+		}
+		events := rs.chosen().events
+		for it := rs.selection.Iterator(); it.Next(); {
+			ei := it.Value()
+			commit, ok := events[ei].(*Commit)
+			if !ok {
+				continue
+			}
+			header := fmt.Sprintf("Event %d, ", ei+1)
+			header = header[:len(header)-2]
+			header += " " + strings.Repeat("=", 72-len(header)) + control.lineSep
+			fmt.Fprint(parse.stdout, header)
+			if commit.legacyID != "" {
+				fmt.Fprintf(parse.stdout, "# Legacy-ID: %s\n", commit.legacyID)
+			}
+			fmt.Fprintf(parse.stdout, "commit %s\n", commit.Branch)
+			if commit.mark != "" {
+				fmt.Fprintf(parse.stdout, "mark %s\n", commit.mark)
+			}
+			fmt.Fprint(parse.stdout, control.lineSep)
+			type ManifestItem struct {
+				path  string
+				entry *FileOp
+			}
+			manifestItems := make([]ManifestItem, 0)
+			commit.manifest().iter(func(path string, pentry interface{}) {
+				entry := pentry.(*FileOp)
+				if filterFunc(path) {
+					manifestItems = append(manifestItems, ManifestItem{path, entry})
+				}
+			})
+			sort.Slice(manifestItems, func(i, j int) bool { return manifestItems[i].path < manifestItems[j].path })
+			for _, item := range manifestItems {
+				fmt.Fprintf(parse.stdout, "%s -> %s\n", item.path, item.entry.ref)
 			}
 		}
 	default:
@@ -4955,71 +5008,6 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 		repo.delete(newSelectionSet(sourceReset), nil, control.baton)
 	}
 	repo.declareSequenceMutation("debranch operation")
-	return false
-}
-
-// HelpManifest says "Shut up, golint!"
-func (rs *Reposurgeon) HelpManifest() {
-	rs.helpOutput(`
-[SELECTION] manifest [PATTERN] [>OUTFILE]
-
-Print commit path lists. Takes an optional selection set argument
-defaulting to all commits, and an optional pattern expression (with
-anchored matching). For each commit in the selection set, print the
-mapping of all paths in that commit tree to the corresponding blob
-marks, mirroring what files would be created in a checkout of the
-commit. If a regular expression is given, only print "path -> mark"
-lines for paths matching it. See "help regexp" for more information
-about regular expressions.
-`)
-}
-
-// DoManifest prints all files (matching the regex) in the selected commits trees.
-func (rs *Reposurgeon) DoManifest(line string) bool {
-	parse := rs.newLineParse(line, "manifest", parseALLREPO|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	var filterFunc = func(s string) bool { return true }
-	if len(parse.args) != 0 {
-		filterRE := getPattern(parse.args[0])
-		filterFunc = func(s string) bool {
-			return filterRE.MatchString(s)
-		}
-	}
-	events := rs.chosen().events
-	for it := rs.selection.Iterator(); it.Next(); {
-		ei := it.Value()
-		commit, ok := events[ei].(*Commit)
-		if !ok {
-			continue
-		}
-		header := fmt.Sprintf("Event %d, ", ei+1)
-		header = header[:len(header)-2]
-		header += " " + strings.Repeat("=", 72-len(header)) + control.lineSep
-		fmt.Fprint(parse.stdout, header)
-		if commit.legacyID != "" {
-			fmt.Fprintf(parse.stdout, "# Legacy-ID: %s\n", commit.legacyID)
-		}
-		fmt.Fprintf(parse.stdout, "commit %s\n", commit.Branch)
-		if commit.mark != "" {
-			fmt.Fprintf(parse.stdout, "mark %s\n", commit.mark)
-		}
-		fmt.Fprint(parse.stdout, control.lineSep)
-		type ManifestItem struct {
-			path  string
-			entry *FileOp
-		}
-		manifestItems := make([]ManifestItem, 0)
-		commit.manifest().iter(func(path string, pentry interface{}) {
-			entry := pentry.(*FileOp)
-			if filterFunc(path) {
-				manifestItems = append(manifestItems, ManifestItem{path, entry})
-			}
-		})
-		sort.Slice(manifestItems, func(i, j int) bool { return manifestItems[i].path < manifestItems[j].path })
-		for _, item := range manifestItems {
-			fmt.Fprintf(parse.stdout, "%s -> %s\n", item.path, item.entry.ref)
-		}
-	}
 	return false
 }
 

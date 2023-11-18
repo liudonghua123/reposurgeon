@@ -16,7 +16,7 @@ from :123
 M 100755 :124 reposurgeon
 M 100644 :125 reposurgeon.xml
 
-127..$ manifest
+127..$ list manifest
 Event 127 ===============================================================
 commit refs/heads/master
 mark :126
@@ -64,7 +64,7 @@ M 100644 :68 test/Makefile
 M 100644 :48 test/simple.dump
 M 100644 :50 theory.txt
 
-127..$ manifest
+127..$ list manifest
 Event 127 ===============================================================
 commit refs/heads/master
 mark :126
@@ -101,7 +101,7 @@ Compute the correct default set for the index command.
 from :2
 M 100755 :127 reposurgeon
 
-129 manifest
+129 list manifest
 Event 129 ===============================================================
 commit refs/heads/master
 mark :128
@@ -131,7 +131,7 @@ Document a failed attempt.
 from :119
 M 100755 :120 reposurgeon
 
-:121 manifest
+:121 list manifest
 Event 122 ===============================================================
 commit refs/heads/master
 mark :121
@@ -165,7 +165,7 @@ M 100644 :68 test/Makefile
 M 100644 :48 test/simple.dump
 M 100644 :50 theory.txt
 
-:123 manifest
+:123 list manifest
 Event 124 ===============================================================
 commit refs/heads/master
 mark :123
@@ -205,7 +205,7 @@ M 100644 :68 test/Makefile
 M 100644 :48 test/simple.dump
 M 100644 :50 theory.txt
 
-:121 manifest
+:121 list manifest
 Event 124 ===============================================================
 commit refs/heads/master
 mark :121

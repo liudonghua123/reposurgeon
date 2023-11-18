@@ -10,9 +10,9 @@ list paths
 !ls foobar
 !rm -fr foobar
 101,103 diff
-101,103 manifest 
-116 manifest 
-116 manifest /^reposurgeon/
+101,103 list manifest 
+116 list manifest 
+116 list manifest /^reposurgeon/
 :2 setfield comment "The quick brown fox jumped over the lazy dog.\n"
 :2 setperm 100755 rs
 :2 setfield author "J. Fred Muggs <muggs@foobar.com>"

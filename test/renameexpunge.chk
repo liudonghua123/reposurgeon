@@ -1,4 +1,4 @@
-Check that manifest includes just sample2
+Check that list manifest includes just sample2
 Event 6 =================================================================
 commit refs/heads/master
 mark :4

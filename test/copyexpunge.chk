@@ -1,4 +1,4 @@
-Check that manifest includes sample and sample2
+Check that list manifest includes sample and sample2
 Event 6 =================================================================
 commit refs/heads/master
 mark :4

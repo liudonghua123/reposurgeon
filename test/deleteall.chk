@@ -1,6 +1,6 @@
 read <deleteall.fi
 set flag interactive
-:13 manifest
+:13 list manifest
 Event 17 ================================================================
 commit refs/heads/samplebranch2
 mark :13
