@@ -490,20 +490,29 @@ func (lp *LineParse) respond(msg string, args ...interface{}) {
 	control.baton.printLogString(content + control.lineSep)
 }
 
-func delimitedRegexp(in string) (out string, re bool) {
-	leader, leaderSize := utf8.DecodeRuneInString(in)
-	trailer, trailerSize := utf8.DecodeLastRuneInString(in)
-	delimited := len(in) >= 3 && leader == trailer && unicode.IsPunct(leader)
+// getPattern preprocesses a delimited regexp to meet local conventions
+func (lp *LineParse) getPattern(sourcepattern string, ptype string) *regexp.Regexp {
+	// This could be a global function rather than a method; it
+	// doesn't use any parser state. It's done this way to express
+	// the fact that you really shouldn't be calling this unless
+	// you've called newLineParse first.  Also, in the future we
+	// may want to pass option flags that change behavior here.
+	leader, leaderSize := utf8.DecodeRuneInString(sourcepattern)
+	trailer, trailerSize := utf8.DecodeLastRuneInString(sourcepattern)
+	delimited := len(sourcepattern) >= 3 && leader == trailer && unicode.IsPunct(leader)
 	if delimited {
-		in = in[leaderSize : len(in)-trailerSize]
+		sourcepattern = sourcepattern[leaderSize : len(sourcepattern)-trailerSize]
 	}
 	isRe := delimited && leader != 39 // ASCII single quote
-	return in, isRe
-}
-
-func getPattern(sourcepattern string) *regexp.Regexp {
-	sourcepattern, isRe := delimitedRegexp(sourcepattern)
 	if !isRe {
+		// We pass in "text", "path" or "refname".
+		// At the moment "refname" is the only one to get
+		// special processing.  "text" is intended to
+		// mean no special processing should be performed.
+		// "path" holds pur options open for the future.
+		if ptype == "refname" {
+			sourcepattern = nameToRef(sourcepattern)
+		}
 		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
 	}
 	sourceRE, err := regexp.Compile(sourcepattern)
@@ -1617,7 +1626,7 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 		parse.flagcheck(parseALLREPO)
 		var filterFunc = func(s string) bool { return true }
 		if len(parse.args) > 1 {
-			filterRE := getPattern(parse.args[1])
+			filterRE := parse.getPattern(parse.args[1], "path")
 			filterFunc = func(s string) bool {
 				return filterRE.MatchString(s)
 			}
@@ -2348,7 +2357,7 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 			return false
 		}
 		sourcePattern := parse.args[1]
-		sourceRE := getPattern(sourcePattern)
+		sourceRE := parse.getPattern(sourcePattern, "path")
 		if len(parse.args) < 3 {
 			croak("no target specified in path rename")
 			return false
@@ -2392,7 +2401,7 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 		}
 		newname = removeBranchPrefix(newname)
 		sourcepattern = removeBranchPrefix(sourcepattern)
-		sourceRE := getPattern(sourcepattern)
+		sourceRE := parse.getPattern(sourcepattern, "text")
 		repo.clearColor(colorQSET)
 		for _, branch := range repo.branchset() {
 			branch := removeBranchPrefix(branch)
@@ -2475,20 +2484,10 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 			croak("missing tag pattern")
 			return false
 		}
+		sourceRE := parse.getPattern(parse.args[1], "text")
 
 		repo := rs.chosen()
 		repo.clearColor(colorQSET)
-
-		sourcepattern := parse.args[1]
-		sourcepattern, isRe := delimitedRegexp(sourcepattern)
-		if !isRe {
-			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
-		}
-		sourceRE, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak(err.Error())
-			return false
-		}
 
 		// Collect all matching tags in the selection set
 		tags := make([]*Tag, 0)
@@ -2499,7 +2498,7 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 			}
 		}
 		if len(tags) == 0 {
-			croak("no tag matches %s.", sourcepattern)
+			croak("no tag matches %s.", sourceRE.String())
 			return false
 		}
 
@@ -2539,38 +2538,25 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 			croak("missing reset pattern")
 			return false
 		}
-
 		resetname := parse.args[1]
-
-		sourcepattern, isRe := delimitedRegexp(resetname)
-		if !isRe {
-			sourcepattern = "^" + regexp.QuoteMeta(nameToRef(sourcepattern)) + "$"
-		}
-		var err error
-		sourceRE, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak(err.Error())
-			return false
-		}
+		sourceRE := parse.getPattern(resetname, "refname")
 
 		repo := rs.chosen()
 		repo.clearColor(colorQSET)
+
 		resets := make([]*Reset, 0)
 		selection := rs.selection
-		if !selection.isDefined() {
-			selection = rs.repo.all()
-		}
 		for it := selection.Iterator(); it.Next(); {
 			reset, ok := repo.events[it.Value()].(*Reset)
 			if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
 				resets = append(resets, reset)
 			}
 		}
-
 		if len(resets) == 0 {
-			croak("no resets match %s", sourcepattern)
+			croak("no resets match %s", sourceRE.String())
 			return false
 		}
+
 		if len(parse.args) < 3 {
 			croak("missing new reset name")
 			return false
@@ -3150,7 +3136,7 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 	if _, haveID := parse.OptVal("--id"); haveID {
 		filterRegexp = regexp.MustCompile("Committer:|Committer-Date:|Check-Text:")
 	} else if s, present := parse.OptVal("--filter"); present {
-		filterRegexp = getPattern(s)
+		filterRegexp = parse.getPattern(s, "text")
 	}
 	f := func(p *LineParse, i int, e Event) string {
 		// this is pretty stupid; pretend you didn't see it
@@ -3910,7 +3896,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			croak("required expunge pattern argument is missing.")
 			return false
 		}
-		err := rs.chosen().expunge(rs.selection, getPattern(parse.args[1]),
+		err := rs.chosen().expunge(rs.selection, parse.getPattern(parse.args[1], "path"),
 			!parse.options.Contains("--not"), parse.options.Contains("--notagify"), control.baton)
 		if err != nil {
 			respond(err.Error())
@@ -3923,15 +3909,8 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			return false
 		}
 		sourcepattern := parse.args[1]
-		sourcepattern, isRe := delimitedRegexp(sourcepattern)
-		if !isRe {
-			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
-		}
-		sourceRE, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak(err.Error())
-			return false
-		}
+		sourceRE := parse.getPattern(sourcepattern, "text")
+
 		// Collect all matching tags in the selection set
 		tags := make([]*Tag, 0)
 		for it := rs.selection.Iterator(); it.Next(); {
@@ -3961,19 +3940,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			return false
 		}
 		sourcepattern := parse.args[1]
-		// Can't use getPattern here because we need to add the branch prefix.
-		sourcepattern, isRe := delimitedRegexp(sourcepattern)
-		if !isRe {
-			if !strings.HasPrefix(sourcepattern, "refs/") {
-				sourcepattern = "refs/" + sourcepattern
-			}
-			sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
-		}
-		branchRE, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak("in branch command: %v", err)
-			return false
-		}
+		branchRE := parse.getPattern(sourcepattern, "refname")
 		shouldDelete := func(branch string) bool {
 			return branchRE.MatchString(branch) == !parse.options.Contains("--not")
 		}
@@ -3987,17 +3954,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			return false
 		}
 		resetname := parse.args[1]
-
-		sourcepattern, isRe := delimitedRegexp(resetname)
-		if !isRe {
-			sourcepattern = "^" + regexp.QuoteMeta(nameToRef(sourcepattern)) + "$"
-		}
-		var err error
-		sourceRE, err := regexp.Compile(sourcepattern)
-		if err != nil {
-			croak(err.Error())
-			return false
-		}
+		sourceRE := parse.getPattern(resetname, "refname")
 
 		repo.clearColor(colorQSET)
 		resets := make([]*Reset, 0)
@@ -4008,7 +3965,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			}
 		}
 		if len(resets) == 0 {
-			croak("no resets match %s", sourcepattern)
+			croak("no resets match %s", sourceRE.String())
 			return false
 		}
 		var tip *Commit
@@ -5391,17 +5348,11 @@ func (rs *Reposurgeon) DoMove(line string) bool {
 		return false
 	}
 	sourcepattern := parse.args[1]
-	sourcepattern, isRe := delimitedRegexp(sourcepattern)
-	if !isRe {
-		if otype == "reset" {
-			sourcepattern = nameToRef(sourcepattern)
-		}
-		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
-	}
-	sourceRE, err := regexp.Compile(sourcepattern)
-	if err != nil {
-		croak(err.Error())
-		return false
+	var sourceRE *regexp.Regexp
+	if otype == "reset" {
+		sourceRE = parse.getPattern(sourcepattern, "refname")
+	} else {
+		sourceRE = parse.getPattern(sourcepattern, "text")
 	}
 
 	// Validate the operation
