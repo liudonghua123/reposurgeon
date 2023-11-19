@@ -1194,7 +1194,7 @@ Corresponding subcommands are these:
 	command without arguments. The list is in part extracted from the
 	Go runtime and is subject to change.
 
-For documentation on the Go porofiler used by the live and start modes, see
+For documentation on the Go profiler used by the live and start modes, see
 
 https://github.com/google/pprof/blob/master/doc/README.md
 `)
@@ -2299,7 +2299,7 @@ target path already exists in the fileops, or is visible in the
 ancestry of the commit, this command throws an error.  With the
 --force option, these checks are skipped.
 
-With "rename", rename ojects that match by name. 
+With "rename", rename onjects that match by name. 
 
 Renaming branches also operates on any associated annotated tags and
 resets. Bear in mind that a Git lightweight tag here is simply a
@@ -4244,7 +4244,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 // FIXME: Odd syntax
 func (rs *Reposurgeon) HelpRemove() {
 	rs.helpOutput(`
-[SELECTION] remove [DMRCN] OP [to SELECTION]
+[SELECTION] remove {deletes | [DMRCN] PATH | INDEX ] [to TARGET]
 
 From a specified commit, remove a specified fileop. The syntax:
 
@@ -4332,6 +4332,8 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 				return false
 			}
 		}
+		// Sigh, no, we can't get ride of the "to" clause.
+		// The problem is that an M op needs to drag a nlob with it.
 		target := -1
 		if len(parse.args) > argindex {
 			verb := popToken()
