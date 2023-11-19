@@ -6450,34 +6450,32 @@ func (rs *Reposurgeon) DoDo(ctx context.Context, line string) bool {
 		return false
 	}
 	name := parse.args[0]
-	macro, present := rs.definitions[name]
-	if !present {
-		croak("'%s' is not a defined macro", name)
-		return false
-	}
-	args := parse.args[1:]
-	replacements := make([]string, 2*len(args))
-	for i, arg := range args {
-		replacements = append(replacements, fmt.Sprintf("%%{%d}", i), arg)
-	}
-	body := strings.NewReplacer(replacements...).Replace(strings.Join(macro, "\n"))
-	doSelection := rs.selection
-
-	scanner := bufio.NewScanner(strings.NewReader(body))
-	for scanner.Scan() {
-		defline := scanner.Text()
-		// If a leading portion of the expansion body is a selection
-		// expression, use it.  Otherwise we'll restore whatever
-		// selection set came before the do keyword.
-		expansion := rs.cmd.PreCmd(ctx, defline)
-		if !rs.selection.isDefined() {
-			rs.selection = doSelection
+	if macro, present := rs.definitions[name]; present {
+		args := parse.args[1:]
+		replacements := make([]string, 2*len(args))
+		for i, arg := range args {
+			replacements = append(replacements, fmt.Sprintf("%%{%d}", i), arg)
 		}
-		// Call the base method so RecoverableExceptions
-		// won't be caught; we want them to abort macros.
-		rs.cmd.OneCmd(ctx, expansion)
-	}
+		body := strings.NewReplacer(replacements...).Replace(strings.Join(macro, "\n"))
+		doSelection := rs.selection
 
+		scanner := bufio.NewScanner(strings.NewReader(body))
+		for scanner.Scan() {
+			defline := scanner.Text()
+			// If a leading portion of the expansion body is a selection
+			// expression, use it.  Otherwise we'll restore whatever
+			// selection set came before the do keyword.
+			expansion := rs.cmd.PreCmd(ctx, defline)
+			if !rs.selection.isDefined() {
+				rs.selection = doSelection
+			}
+			// Call the base method so RecoverableExceptions
+			// won't be caught; we want them to abort macros.
+			rs.cmd.OneCmd(ctx, expansion)
+		}
+	} else {
+		croak("'%s' is not a defined macro or acxxsible script.", name)
+	}
 	return false
 }
 
