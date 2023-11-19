@@ -1,4 +1,4 @@
-tag move annotated :15
+move tag annotated :15
 <annotated> list inspect
 Event 34 ================================================================
 tag annotated

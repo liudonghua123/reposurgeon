@@ -2299,7 +2299,7 @@ target path already exists in the fileops, or is visible in the
 ancestry of the commit, this command throws an error.  With the
 --force option, these checks are skipped.
 
-With "rename", rename onjects that match by name. 
+With "rename", rename objects that match by name. 
 
 Renaming branches also operates on any associated annotated tags and
 resets. Bear in mind that a Git lightweight tag here is simply a
@@ -2315,6 +2315,9 @@ Branch rename has some special behavior when the repository source type is
 Subversion. It recognizes tags and resets made from branch-copy commits
 and transforms their names as though they were branch fields in commits.
 
+When a reset is renamed, commit branch fields matching the tag are
+renamed with it to match.
+
 Rename sets Q bits; true on every object modified, false otherwise.
 `)
 }
@@ -2322,7 +2325,7 @@ Rename sets Q bits; true on every object modified, false otherwise.
 // DoRename changes the name of a repository.
 func (rs *Reposurgeon) DoRename(line string) bool {
 	parse := rs.newLineParse(line, "rename", parseNEEDARG, nil)
-	switch verb := parse.args[0]; verb {
+	switch otype := parse.args[0]; otype {
 	case "repo":
 		parse.flagcheck(parseNOSELECT)
 		if len(parse.args) < 2 {
@@ -2600,6 +2603,8 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 				commit.addColor(colorQSET)
 			}
 		}
+	default:
+		croak("rename object %s is not one of repo, path, tag, or reset.", otype)
 	}
 	return false
 }
@@ -3845,7 +3850,9 @@ text literal, each reset's name is matched if RESET-PATTERN is either
 the entire reference (refs/heads/FOO or refs/tags/FOO for some some
 value of FOO) or the basename (e.g. FOO), or a suffix of the form
 heads/FOO or tags/FOO. An unqualified basename is assumed to refer to
-a branch in refs/heads/.
+a branch in refs/heads/. When a reset is deleted, matching branch
+fields are changed to match the branch of the unique descendant of the
+tip commit of the associated branch, if there is one.
 
 With "path", expunge files from the selected portion of the repo history; the
 default is the entire history.  The argument to this command is a
@@ -3886,14 +3893,12 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 
 	repo := rs.chosen()
 	repo.clearColor(colorQSET)
-	if len(parse.args) == 0 {
-		parse.flagcheck(parseNEEDSELECT)
-		parse.options.Add("--delete")
-		repo.squash(rs.selection, parse.options, control.baton)
-		return false
+	otype := "commit"
+	if len(parse.args) > 0 {
+		otype = parse.args[0]
 	}
 
-	switch verb := parse.args[0]; verb {
+	switch otype {
 	case "commit":
 		parse.flagcheck(parseNEEDSELECT)
 		parse.options.Add("--delete")
@@ -4028,7 +4033,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 		}
 		repo.declareSequenceMutation("reset delete")
 	default:
-		croak("object type must be commit, tag, reset, or branch.")
+		croak("delete object type %s must be commit, tag, reset, or branch.", otype)
 	}
 	return false
 }
@@ -5347,224 +5352,111 @@ func (rs *Reposurgeon) DoReorder(line string) bool {
 	return false
 }
 
-// HelpBranch says "Shut up, golint!"
-func (rs *Reposurgeon) HelpBranch() {
+// HelpMove says "Shut up, golint!"
+func (rs *Reposurgeon) HelpMove() {
 	rs.helpOutput(`
-branch {rename|delete} BRANCH-PATTERN [--not] [NEW-NAME]
+[SELECTION] move {tag|reset} [PATTERN] [--not] [SINGLETON]
 
+Move annotated tags or resets.
+
+The PATTERN argument is a pattern expression matching a set of tags or
+resets (unanchored matching).  The option "--not" takes the complement
+of the set impiled by the pattern. The second argument must be a
+singleton selection set designating a commit.
+
+With the qulifier "tag", attach all matching tags to the target commit.
+
+With the qualifier "reset", attach all matching resets to the target
+commit.  If PATTERN is a text literal, each reset's name is matched if
+PATTERN is either the entire reference (refs/heads/FOO or
+refs/tags/FOO for some some value of FOO) or the basename (e.g. FOO),
+or a suffix of the form heads/FOO or tags/FOO. An unqualified basename
+is assumed to refer to a branch in refs/heads/. When a reset is moved,
+no branch fields are changed.
+
+All Q bits are cleared; then any tags ore resets that wwre moved, get
+their Q bit set.
 `)
 }
 
-// HelpTag says "Shut up, golint!"
-func (rs *Reposurgeon) HelpTag() {
-	rs.helpOutput(`
-[SELECTION] tag {create|move|rename|delete} [TAG-PATTERN] [--not] [NEW-NAME|SINGLETON]
-
-Move, rename, or delete annotated tags.
-
-The TAG-PATTERN argument is a pattern expression matching a set of
-tags (unanchored matching).  The subcommand must be one of the verbs
-'move', 'rename', or 'delete'. The option "--not" tajkes the
-complement of the set if tags impiled by the pattern.
-
-For a 'move', a second argument must be a singleton selection set. For
-a 'rename', the third argument may be any token that is a syntactically
-valid tag name (but not the name of an existing tag).  When TAG-PATTERN
-is a regexp, NEW-NAME may contain references to portions of the match.
-Errors are thrown for wildcarding that would produce name collisions
-
-All Q bits are cleared; then any tags made by create or touched by move or
-rename, get their Q bit set.
-`)
-}
-
-// DoTag moves a tag to point to a specified commit, or renames it, or deletes it.
-func (rs *Reposurgeon) DoTag(line string) bool {
+// DoMove moves a tag or reset to point to a specified commit, or renames it, or deletes it.
+func (rs *Reposurgeon) DoMove(line string) bool {
 	parse := rs.newLineParse(line, "tag", parseALLREPO|parseNEEDARG, nil)
 	repo := rs.chosen()
-	verb := parse.args[0]
 
+	otype := parse.args[0]
 	repo.clearColor(colorQSET)
 	if len(parse.args) < 2 {
-		croak("missing tag pattern")
+		croak("missing move source pattern")
 		return false
 	}
 	sourcepattern := parse.args[1]
 	sourcepattern, isRe := delimitedRegexp(sourcepattern)
 	if !isRe {
+		if otype == "reset" {
+			sourcepattern = nameToRef(sourcepattern)
+		}
 		sourcepattern = "^" + regexp.QuoteMeta(sourcepattern) + "$"
-	} else if verb == "create" {
-		croak("cannot reset create from a regular expression")
-		return false
 	}
 	sourceRE, err := regexp.Compile(sourcepattern)
 	if err != nil {
 		croak(err.Error())
-		return false
-	}
-
-	// Collect all matching tags in the selection set
-	tags := make([]*Tag, 0)
-	for it := rs.selection.Iterator(); it.Next(); {
-		event := repo.events[it.Value()]
-		if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) == !parse.options.Contains("--not") {
-			tags = append(tags, tag)
-		}
-	}
-	if len(tags) == 0 {
-		croak("no tag matches %s.", sourcepattern)
 		return false
 	}
 
 	// Validate the operation
+	if len(parse.args) < 3 {
+		croak("missing target name")
+		return false
+	} else if len(parse.args) >= 4 {
+		croak("too many arguments - whitespace in singleton selection?")
+	}
+	scope := rs.selection
+	rs.setSelectionSet(parse.args[2])
+	moveto := rs.selection
+
 	var target *Commit
-	var newname string
-	if verb == "move" {
-		if len(parse.args) < 3 {
-			croak("missing tag pattern")
-			return false
-		} else if len(parse.args) >= 4 {
-			croak("too many arguments - whitespace in singleton selection?")
-		}
-		rs.setSelectionSet(parse.args[2])
-
-		var ok bool
-		if rs.selection.Size() != 1 {
-			croak("tag move requires a singleton commit set.")
-			return false
-		} else if target, ok = repo.events[rs.selection.Fetch(0)].(*Commit); !ok {
-			croak("move target is not a commit.")
-			return false
-		}
-	} else if verb == "rename" {
-		if len(parse.args) < 3 {
-			croak("missing new tag name.")
-			return false
-		}
-		newname = parse.args[2]
-
-		if repo.named(newname).isDefined() {
-			croak("something is already named %s", newname)
-			return false
-		}
-	} else if verb != "delete" {
-		croak("unknown verb '%s' in tag command.", verb)
+	var ok bool
+	if moveto.Size() != 1 {
+		croak("move %s requires a singleton commit set.", otype)
+		return false
+	} else if target, ok = repo.events[moveto.Fetch(0)].(*Commit); !ok {
+		croak("move target is not a commit.")
 		return false
 	}
 
-	// Do it
-	control.baton.startProcess("tag"+verb, "")
-	for i, tag := range tags {
-		if verb == "move" {
+	if otype == "tag" {
+		// Collect all matching tags in the selection set
+		tags := make([]*Tag, 0)
+		for it := scope.Iterator(); it.Next(); {
+			event := repo.events[it.Value()]
+			if tag, ok := event.(*Tag); ok && sourceRE.MatchString(tag.tagname) == !parse.options.Contains("--not") {
+				tags = append(tags, tag)
+			}
+		}
+		if len(tags) == 0 {
+			croak("no tag matches %s.", sourcepattern)
+			return false
+		}
+
+		// Do it
+		control.baton.startProcess(otype+"move", "")
+		for _, tag := range tags {
 			tag.forget()
 			tag.remember(repo, target.mark)
 			tag.addColor(colorQSET)
-		} else if verb == "rename" {
-			possible := GoReplacer(sourceRE, tag.tagname, newname)
-			if i > 0 && possible == tags[i-1].tagname {
-				croak("tag name collision, not renaming.")
-				return false
+			control.baton.twirl()
+		}
+	} else if otype == "reset" {
+		// Collect all matching resets in the selection set
+		resets := make([]*Reset, 0)
+		for it := scope.Iterator(); it.Next(); {
+			reset, ok := repo.events[it.Value()].(*Reset)
+			if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
+				resets = append(resets, reset)
 			}
-			tag.tagname = possible
-			tag.addColor(colorQSET)
 		}
-		control.baton.twirl()
-	}
-	if n := repo.countColor(colorQSET); n == 0 {
-		croak("no tag names matched %s", sourceRE)
-	} else {
-		respond("%d objects modified", n)
-	}
-	control.baton.endProcess()
-
-	return false
-}
-
-// HelpReset says "Shut up, golint!"
-func (rs *Reposurgeon) HelpReset() {
-	rs.helpOutput(`
-[SELECTION] reset {move|rename|delete} [RESET-PATTERN] [--not] [NEW-NAME|SINGLETON]
-
-Note: While this command is provided for the sake of completeness, think
-twice before actually using it.  Normally a reset should only be deleted
-or renamed when its associated branch is, and the branch command does this.
-
-Create, move, rename, or delete resets. Create is a special case; it
-requires a singleton selection which is the associated commit for the
-reset, takes as a first argument the name of the reset (which must not
-exist), and ends with the keyword create. In this case the name must be 
-fully qualified, with a refs/heads/ or refs/tags/ prefix.
-
-In the other modes, the RESET-PATTERN finds by text match existing
-resets within the selection.  If RESET-PATTERN is a delimited regexp,
-the match is to the regexp (unanchored matching); --not inverts this,
-selecting all non-matching resets.
-
-If RESET-PATTERN is a text literal, each reset's name is matched if 
-RESET-PATTERN is either the entire reference (refs/heads/FOO or refs/tags/FOO
-for some some valueof FOO) or the basename (e.g. FOO), or a suffix of the form
-heads/FOO or tags/FOO. An unqualified basename is assumed to refer to a branch
-in refs/heads/.
-
-The second argument must be one of the verbs 'move' or 'rename'
-The default selection is all events.
-
-For a 'move', a SINGLETON argument must be a singleton selection set. For
-a 'rename', the third argument may be any token that can be interpreted
-as a valid reset name (but not the name of an existing
-reset). For a 'delete', no third argument is required.
-
-When a reset is renamed, commit branch fields matching the tag are
-renamed with it to match.  When a reset is deleted, matching branch
-fields are changed to match the branch of the unique descendant of the
-tip commit of the associated branch, if there is one.  When a reset is
-moved, no branch fields are changed.
-
-All Q bits are cleared; then any resets made by create, or touched by move
-or rename, get their Q bit set.
-`)
-}
-
-// DoReset moves a reset to point to a specified commit, or renames it, or deletes it.
-func (rs *Reposurgeon) DoReset(line string) bool {
-	parse := rs.newLineParse(line, "reset", parseREPO|parseNEEDARG, nil)
-	repo := rs.chosen()
-
-	verb := parse.args[0]
-
-	if len(parse.args) < 2 {
-		croak("missing reset pattern")
-		return false
-	}
-	resetname := parse.args[1]
-
-	sourcepattern, isRe := delimitedRegexp(resetname)
-	if !isRe {
-		sourcepattern = "^" + regexp.QuoteMeta(nameToRef(sourcepattern)) + "$"
-	}
-	var err error
-	sourceRE, err := regexp.Compile(sourcepattern)
-	if err != nil {
-		croak(err.Error())
-		return false
-	}
-
-	repo.clearColor(colorQSET)
-	resets := make([]*Reset, 0)
-	selection := rs.selection
-	if !selection.isDefined() {
-		selection = rs.repo.all()
-	}
-	for it := selection.Iterator(); it.Next(); {
-		reset, ok := repo.events[it.Value()].(*Reset)
-		if ok && sourceRE.MatchString(reset.ref) == !parse.options.Contains("--not") {
-			resets = append(resets, reset)
-		}
-	}
-	if verb == "move" {
 		var reset *Reset
-		var target *Commit
-		var ok bool
 		if len(resets) == 0 {
 			croak("no such reset as %s", sourcepattern)
 		}
@@ -5574,32 +5466,21 @@ func (rs *Reposurgeon) DoReset(line string) bool {
 			croak("can't move multiple resets")
 			return false
 		}
-		if len(parse.args) < 3 {
-			croak("missing target location")
-			return false
-		} else if len(parse.args) >= 4 {
-			croak("too many arguments - whitespace in singleton selection?")
-		}
-		rs.setSelectionSet(parse.args[2])
-		if rs.selection.Size() != 1 {
-			croak("reset move requires a singleton commit set.")
-			return false
-		} else if target, ok = repo.events[rs.selection.Fetch(0)].(*Commit); !ok {
-			croak("move target is not a commit.")
-			return false
-		}
 		reset.forget()
 		reset.remember(repo, target.mark)
 		reset.addColor(colorQSET)
 		repo.declareSequenceMutation("reset move")
 	} else {
-		croak("unknown verb '%s' in reset command.", verb)
+		croak("unknown event type %s, neither tag nor reset", otype)
+		return false
 	}
 	if n := repo.countColor(colorQSET); n == 0 {
-		croak("no reset names matched %s", sourceRE)
+		croak("no %s names matched %s", otype, sourceRE)
 	} else {
-		respond("%d objects modified", n)
+		respond("%d %ss movedx", n, otype)
 	}
+	control.baton.endProcess()
+
 	return false
 }
 
@@ -6821,7 +6702,7 @@ objects created get their Q bit set.
 // DoCreate makes a repository with a specified name.
 func (rs *Reposurgeon) DoCreate(line string) bool {
 	parse := rs.newLineParse(line, "create", parseNOOPTS|parseNEEDARG, orderedStringSet{"stdin"})
-	switch verb := parse.args[0]; verb {
+	switch otype := parse.args[0]; otype {
 	case "repo":
 		if len(parse.args) < 2 {
 			croak("create repo requires a repository name argument.")
@@ -6957,7 +6838,7 @@ func (rs *Reposurgeon) DoCreate(line string) bool {
 		repo.addEvent(reset)
 		repo.declareSequenceMutation("reset create")
 	default:
-		croak("can't create object of unknown type %q.", verb)
+		croak("can't create object of unknown type %q.", otype)
 		return false
 	}
 	return false

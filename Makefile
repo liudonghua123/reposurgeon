@@ -140,6 +140,7 @@ BNF_TOPICS = \
 	log \
 	logfile \
 	merge \
+	move \
 	msgin \
 	msgout \
 	operators \
@@ -154,7 +155,6 @@ BNF_TOPICS = \
 	rename \
 	renumber \
 	reorder \
-	reset \
 	resolve \
 	script \
 	set \
@@ -167,7 +167,6 @@ BNF_TOPICS = \
 	split \
 	stats \
 	strip \
-	tag \
 	tagify \
 	timeoffset \
 	timequake \

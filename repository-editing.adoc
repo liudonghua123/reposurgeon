@@ -2003,18 +2003,6 @@ include::docinclude/branchlift.adoc[]
 // COMMAND
 include::docinclude/debranch.adoc[]
 
-[[tag-reset]]
-=== Tags and resets
-
-// COMMAND
-include::docinclude/tag.adoc[]
-
-// COMMAND
-include::docinclude/reset.adoc[]
-
-// COMMAND
-include::docinclude/dedup.adoc[]
-
 [[splitmerge]]
 === Repository splitting and merging
 
@@ -2168,6 +2156,12 @@ sections that predate the era of ubiquitous NTP time.
 
 [[misc-surgical]]
 === Miscellanea
+
+// COMMAND
+include::docinclude/move.adoc[]
+
+// COMMAND
+include::docinclude/dedup.adoc[]
 
 // COMMAND
 include::docinclude/renumber.adoc[]
@@ -3566,25 +3560,23 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
-In versions 4.38 and earlier, there was no "view" or "clone" command.
-The command-line parser was fragile and ad-hoc, without consistent
-application of double-quoting. The =E event selector didn't yet exist.
-There was a read --use-uuid option which has been retired. Negation
-was not yet supported in pathsets. The regex, path rename, branch
-rename, and tag rename commands used Python-style rather than Go-style
-match references. Macro argument formals did not yet have a %
-prefix. The split command syntax was incompatibly different.  The
-"set" and "clear" commands didn't take a subcommand verb.  There was a
+In versions 4.38 and earlier, The DSL was substantially different The
+command-line parser was fragile and ad-hoc, without consistent
+application of double-quoting. there was no "view" or "clone" command.
+The =E event selector didn't yet exist.  There was a read --use-uuid
+option which has been retired. Negation was not yet supported in
+pathsets. The regex, path rename, branch rename, and tag rename
+commands used Python-style rather than Go-style match
+references. Macro argument formals did not yet have a % prefix. The
+split command syntax was incompatibly different.  The "set" and
+"clear" commands didn't take a subcommand verb.  There was a
 "readlimit" command doing what "set readlimit" now does. The
 "elapsed", "memory", and "sizeof" subcommands of "show" used to be
 separate commands. Blob/tag/reset creation used to be
-"{blob|tag|reset} create", not "create {blob|tag|reset}";
-blob/tag/branch/reset deletion used to be "{blob/tag/branch/reset}
-delete", not "delete {blob/tag/branch/reset}".  The command to rename
-repositories was just "rename", not "rename repo";
-"rename {path|branch|tag|reset}" was "{path|branch|tag|reset} rename".
-The "delete path" command was named "expunge".  The subcommands of
-"list" were separate commands.
+"{blob|tag|reset} create", not "create {blob|tag|reset}"; similarly
+for delete, rename, and move. The command to rename repositories was
+just "rename", not "rename repo"; The "delete path" command was named
+"expunge".  The subcommands of "list" were separate commands.
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3927,12 +3919,14 @@ history
 [SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge
+[SELECTION] move {tag|reset} [--not] RESET-PATTERN [NEW-NAME]
 [SELECTION] msgin [--create] [<INFILE]
 [SELECTION] msgout [--filter=PATTERN] [--blobs]
 prefer [VCS-NAME]
 preserve [PATH...]
 print [TEXT...] [>OUTFILE]
 quit
+read [--quiet] [ --format=fossil ] [<INFILE | - | DIRECTORY]
 rebuild [DIRECTORY]
 renumber
 [SELECTION] reorder [--quiet]
@@ -3951,6 +3945,7 @@ unite [--prune] [REPO-NAME...]
 {SELECTION} unmerge
 unpreserve [PATH...]
 view [directory]
+[SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout] [>OUTFILE|-|DIRECTORY]
 ----
 
 Simple and VS:
@@ -3974,8 +3969,6 @@ The following are SV. Inverting these to verb-first might be a good thing.
 ----
 [SELECTION] authors {read <INFILE | write >OUTFILE}
 legacy {read [<INFILE] | write [>OUTFILE]}
-[SELECTION] reset {move [--not] RESET-PATTERN [NEW-NAME]
-[SELECTION] tag {move} [TAG-PATTERN] [--not] [NEW-NAME]
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
 ----
 

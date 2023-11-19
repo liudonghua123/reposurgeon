@@ -1,6 +1,6 @@
 ## Tag move test
 read <sample1.fi
 set flag echo
-tag move annotated :15
+move tag annotated :15
 <annotated> list inspect
 write -

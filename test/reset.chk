@@ -8,10 +8,10 @@ read <be-bookmarks.fi
     27 branch    :19    refs/heads/master
     28 branch    :22    refs/heads/master
     29 branch    :22    refs/heads/D
-reset move D :6
+move reset D :6
 delete reset A
 rename reset B Z
-27 reset move master :10
+27 move reset master :10
 =R list index
      2 branch      -    refs/heads/master
     24 branch    :10    refs/heads/Z
@@ -24,18 +24,17 @@ rename reset B Z
 delete reset X
 reposurgeon: no resets match ^refs/heads/X$
 # error: move multiple resets
-reset move master :15
+move reset master :15
 reposurgeon: can't move multiple resets
 # error: non-singleton target
-reset move D :6,:10,:15
-reposurgeon: reset move requires a singleton commit set.
+move reset D :6,:10,:15
+reposurgeon: move reset requires a singleton commit set.
 # error: empty new name
 rename reset Z
 reposurgeon: missing new reset name
 # error: reference collision
 rename reset Z D
 reposurgeon: reset reference collision, not renaming.
-# error: bogus verb
-reset fizzle Z
-reposurgeon: unknown verb 'fizzle' in reset command.
-reposurgeon: no reset names matched ^refs/heads/Z$
+# error: bogus object type
+move fizzle Z :15
+reposurgeon: unknown event type fizzle, neither tag nor reset
