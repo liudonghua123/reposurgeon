@@ -105,7 +105,7 @@ do
     errs)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "$interactive" "script ${tst}" >/dev/null ;;
     *)     legend=$(echo "${legend}" | sed -e 's/## //')
 	   cat </dev/null >/tmp/tapdiff$$
-	   if ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "script ${tst} ${arg}" 2>&1 | diff -u "${chk}" -  >/tmp/tapdiff$$ 2>&1 && [ ! -s /tmp/tapdiff$$ ]
+	   if ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "do ${tst} ${arg}" 2>&1 | diff -u "${chk}" -  >/tmp/tapdiff$$ 2>&1 && [ ! -s /tmp/tapdiff$$ ]
 	   then
 	       echo "ok - ${directive}${legend}"
 	       exit 0

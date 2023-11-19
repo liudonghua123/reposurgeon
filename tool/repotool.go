@@ -121,7 +121,7 @@ default: {{.Project}}-{{.TargetVCS}}
 
 # Build the repository from the stream dump
 {{.Project}}-{{.TargetVCS}}: {{.Project}}.{{.SourceVCS}} {{.Project}}.opts {{.Project}}.lift {{.Project}}.map $(EXTRAS)
-	$(REPOSURGEON) $(VERBOSITY) 'logfile $(LOGFILE)' 'script {{.Project}}.opts' "read $(READ_OPTIONS) <{{.Project}}.{{.SourceVCS}}" 'authors read <{{.Project}}.map' 'sourcetype {{.SourceVCS}}' 'prefer git' 'script {{.Project}}.lift' 'legacy write >{{.Project}}.fo' 'rebuild {{.Project}}-{{.TargetVCS}}'
+	$(REPOSURGEON) $(VERBOSITY) 'logfile $(LOGFILE)' 'do {{.Project}}.opts' "read $(READ_OPTIONS) <{{.Project}}.{{.SourceVCS}}" 'authors read <{{.Project}}.map' 'sourcetype {{.SourceVCS}}' 'prefer git' 'do {{.Project}}.lift' 'legacy write >{{.Project}}.fo' 'rebuild {{.Project}}-{{.TargetVCS}}'
 
 # Build a stream dump from the local mirror
 {{.Project}}.{{.SourceVCS}}: {{.Project}}-mirror

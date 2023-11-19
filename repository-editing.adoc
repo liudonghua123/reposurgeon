@@ -130,7 +130,7 @@ experimenting until you got a conversion that suits your tastes and
 needs. `"script"` command allows to read such command list from a file.
 
 --------------------------
-$ reposurgeon "script projectscript.lift"
+$ reposurgeon "do projectscript.lift"
 --------------------------
 
 As a motivating example, the script below does a Subversion-to-Git
@@ -2408,17 +2408,16 @@ include::docinclude/clear.adoc[]
 [[macros]]
 === Variables, macros, and scripts
 
+There are two different way to package command sequences for
+re-execution; scripts and macros. Both are invoked by the same "do"
+command. Scripts are the facility you can use use to build and store
+coversion recipes as you develop them.
+
 Occasionally you will need to issue a large number of complex surgical
 commands of very similar form, and it's convenient to be able to
-package that form so you don't need to do a lot of error-prone typing.
-For those occasions, reposurgeon supports simple
+package that form as a text template so you don't need to do a lot of
+error-prone typing.  For those occasions, reposurgeon supports simple
 forms of named variables and macro expansion.
-
-// COMMAND
-include::docinclude/assign.adoc[]
-
-// COMMAND
-include::docinclude/unassign.adoc[]
 
 // COMMAND
 include::docinclude/define.adoc[]
@@ -2427,10 +2426,13 @@ include::docinclude/define.adoc[]
 include::docinclude/do.adoc[]
 
 // COMMAND
-include::docinclude/undefine.adoc[]
+include::docinclude/assign.adoc[]
 
 // COMMAND
-include::docinclude/script.adoc[]
+include::docinclude/unassign.adoc[]
+
+// COMMAND
+include::docinclude/undefine.adoc[]
 
 // COMMAND
 include::docinclude/print.adoc[]
@@ -3577,6 +3579,7 @@ separate commands. Blob/tag/reset creation used to be
 for delete, rename, and move. The command to rename repositories was
 just "rename", not "rename repo"; The "delete path" command was named
 "expunge".  The subcommands of "list" were separate commands.
+There was a "script" command separate from "do",
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3984,7 +3987,6 @@ The following are S, but probably shouldn't change:
 ----
 [SELECTION] changelogs [BASENAME-PATTERN]
 ignores [--rename] [--translate] [--defaults]
-script {PATH} [ARG...]
 sourcetype [VCS-NAME]
 [SELECTION] timeoffset {OFFSET}
 [SELECTION] timequake [--tick]

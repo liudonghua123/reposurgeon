@@ -156,7 +156,6 @@ BNF_TOPICS = \
 	renumber \
 	reorder \
 	resolve \
-	script \
 	set \
 	setfield \
 	setperm \

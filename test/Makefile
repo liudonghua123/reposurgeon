@@ -122,7 +122,7 @@ $(COMMAND_TARGETS): command-check-%: %.tst
 command-buildcheck: $(GENERATEDSVN) $(GENERATEDGIT)
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "script $${file}.tst testing123" >$${file}.chk \
+	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "do $${file}.tst testing123" >$${file}.chk \
 		2>&1 || exit 1; \
 	done
 

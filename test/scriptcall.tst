@@ -1,5 +1,5 @@
 ## Test nested script calls
 print "Before"
-script argtest.tst flapdoodle
-script i18n.tst
+do argtest.tst flapdoodle
+do i18n.tst
 print "After"
