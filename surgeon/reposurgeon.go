@@ -2102,16 +2102,12 @@ func (rs *Reposurgeon) CompleteSourcetype(text string) []string {
 // DoSourcetype reports or selects the current repository's source type.
 func (rs *Reposurgeon) DoSourcetype(line string) bool {
 	parse := rs.newLineParse(line, "sourcetype", parseREPO|parseNOSELECT|parseNOOPTS, nil)
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
 	repo := rs.chosen()
 	if len(parse.args) == 0 {
 		if rs.chosen().vcs != nil {
 			fmt.Fprintf(control.baton, "%s: %s\n", repo.name, repo.vcs.name)
 		} else {
-			fmt.Fprintf(control.baton, "%s: no preferred type.\n", repo.name)
+			fmt.Fprintf(control.baton, "%s: no source type.\n", repo.name)
 		}
 	} else {
 		known := ""
@@ -5082,16 +5078,17 @@ from the highest member (child) to the lowest (parent).
 This command will throw an error if you try to make a merge link to a 
 parentless (e.g. root) commit, as that would produce an invalid
 fast-import stream.
+
+If the command succeedsm all Q bits are cleared, then the Q bits
+of the two commits are set. 
 `)
 }
 
 // DoMerge is the command handler for the "merge" command.
-func (rs *Reposurgeon) DoMerge(_line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
-	commits := rs.chosen().commits(rs.selection)
+func (rs *Reposurgeon) DoMerge(line string) bool {
+	rs.newLineParse(line, "merge", parseREPO|parseALLREPO|parseNOARGS|parseNOOPTS, nil)
+	repo := rs.chosen()
+	commits := repo.commits(rs.selection)
 	if len(commits) < 2 {
 		croak("merge requires a selection set with at least two commits.")
 		return false
@@ -5103,10 +5100,13 @@ func (rs *Reposurgeon) DoMerge(_line string) bool {
 		croak("refusing to create commit with merge link but no parent.")
 		return false
 	}
+	repo.clearColor(colorQSET)
 	if late.mark < early.mark {
 		late, early = early, late
 	}
 	late.addParentCommit(early)
+	early.addColor(colorQSET)
+	late.addColor(colorQSET)
 	//earlyID = fmt.Sprintf("%s (%s)", early.mark, early.Branch)
 	//lateID = fmt.Sprintf("%s (%s)", late.mark, late.Branch)
 	//respond("%s added as a parent of %s", earlyID, lateID)
@@ -5125,27 +5125,29 @@ selection set given to unmerge and {first parent} is a set resolving to that
 commit's first parent, but doesn't need you to find the first parent yourself,
 saving time and avoiding errors when nearby surgery would make a manual first
 parent argument stale.
+
+If the command succeedsm all Q bits are cleared, then the Q bits
+of the unmerged commit is set. 
 `)
 }
 
 // DoUnmerge says "Shut up, golint!"
-func (rs *Reposurgeon) DoUnmerge(_line string) bool {
-	if rs.chosen() == nil {
-		croak("no repo has been chosen.")
-		return false
-	}
+func (rs *Reposurgeon) DoUnmerge(line string) bool {
+	rs.newLineParse(line, "unmerge", parseREPO|parseALLREPO|parseNOARGS|parseNOOPTS, nil)
 	if rs.selection.Size() != 1 {
 		croak("unmerge requires a single commit.")
 		return false
 	}
+	repo := rs.chosen()
+	repo.clearColor(colorQSET)
 	event := rs.chosen().events[rs.selection.Fetch(0)]
 	if commit, ok := event.(*Commit); !ok {
 		croak("unmerge target is not a commit.")
 	} else {
 		commit.setParents(commit.parents()[:1])
+		commit.addColor(colorQSET)
 	}
 	return false
-
 }
 
 // HelpReparent says "Shut up, golint!"
@@ -5623,6 +5625,9 @@ defaults.  This command will error out when the VCS type selectec by
 prefer has no default ignore patterns (git and hg, in particular).  It
 will also error out when it knows the import tool has already set
 default patterns.
+
+All Q bits are cleared, then the Q bit of each modified commit or blob
+is set.
 `)
 }
 
@@ -5657,6 +5662,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 		return true
 	}
 	repo := rs.chosen()
+	repo.clearColor(colorQSET)
 	for _, verb := range parse.options {
 		if verb == "--defaults" {
 			if rs.preferred.styleflags.Contains("import-defaults") {
@@ -5687,6 +5693,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 					blob := newBlob(repo)
 					blob.setContent([]byte(rs.preferred.dfltignores), noOffset)
 					blob.mark = ":insert"
+					blob.addColor(colorQSET)
 					repo.insertEvent(blob, repo.eventToIndex(earliest), "ignore-blob creation")
 					repo.declareSequenceMutation("ignore creation")
 					newop := newFileOp(rs.chosen())
@@ -5709,6 +5716,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 									rs.preferred.ignorename)
 								setAttr(commit.fileops[idx], attr, newpath)
 								changecount++
+								commit.addColor(colorQSET)
 							}
 						}
 					}
@@ -5725,6 +5733,8 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 						if !bytes.HasPrefix(blob.getContent(), []byte("syntax: glob\n")) {
 							blob.setContent([]byte("syntax: glob\n"+string(blob.getContent())), noOffset)
 							changecount++
+							blob.addColor(colorQSET)
+
 						}
 					}
 				}
