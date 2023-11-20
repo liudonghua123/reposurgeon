@@ -1414,47 +1414,6 @@ func (rs *Reposurgeon) DoShow(line string) bool {
 // Information-gathering
 //
 
-// HelpStats says "Shut up, golint!"
-func (rs *Reposurgeon) HelpStats() {
-	rs.helpOutput(`
-stats [>OUTFILE]
-
-Report object counts for the loaded repository.
-`)
-}
-
-// DoStats reports information on repositories.
-func (rs *Reposurgeon) DoStats(line string) bool {
-	parse := rs.newLineParse(line, "stats", parseALLREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	repo := rs.chosen()
-	var blobs, commits, tags, resets, passthroughs int
-	for it := rs.selection.Iterator(); it.Next(); {
-		i := it.Value()
-		event := repo.events[i]
-		switch event.(type) {
-		case *Blob:
-			blobs++
-		case *Tag:
-			tags++
-		case *Reset:
-			resets++
-		case *Passthrough:
-			passthroughs++
-		case *Commit:
-			commits++
-		}
-	}
-	fmt.Fprintf(parse.stdout, "%s: %.0fK, %d events, %d blobs, %d commits, %d tags, %d resets, %s.\n",
-		repo.name, float64(repo.size())/1000.0, len(repo.events),
-		blobs, commits, tags, resets,
-		rfc3339(repo.readtime))
-	if repo.sourcedir != "" {
-		fmt.Fprintf(parse.stdout, "  Loaded from %s\n", repo.sourcedir)
-	}
-	return false
-}
-
 // HelpCount says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCount() {
 	rs.helpOutput(`
@@ -1476,7 +1435,7 @@ func (rs *Reposurgeon) DoCount(lineIn string) bool {
 // HelpList says "Shut up, golint!"
 func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
-[SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
+[SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names|stats|sizes] [PATTERN] [>OUTFILE]
 
 With "commits" or no subcommand, display commits in a human-friendly
 format; the first column is raw event numbers, the second a timestamp
@@ -1518,6 +1477,16 @@ set (which defaults to the entire repo).
 With "names", list all known symbolic names of branches and tags. 
 Tells you what things are legal within angle brackets and
 parentheses.
+
+With "stats", report object counts for the loaded repository.
+
+With "sizes", report on data volume per branch; takes a selection set,
+defaulting to all events. The numbers tally the size of uncompressed
+blobs, commit and tag comments, and other metadata strings (a blob is
+counted each time a commit points at it).  Not an exact measure of
+storage size: intended mainly as a way to get information on how to
+efficiently partition a repository that has become large enough to be
+unwieldy.
 
 Any list command can be safely interrupted with ^C, returning you to the
 prompt.
@@ -1686,83 +1655,90 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 
 			}
 		}
+	case "stats":
+		parse.flagcheck(parseALLREPO)
+		repo := rs.chosen()
+		var blobs, commits, tags, resets, passthroughs int
+		for it := rs.selection.Iterator(); it.Next(); {
+			i := it.Value()
+			event := repo.events[i]
+			switch event.(type) {
+			case *Blob:
+				blobs++
+			case *Tag:
+				tags++
+			case *Reset:
+				resets++
+			case *Passthrough:
+				passthroughs++
+			case *Commit:
+				commits++
+			}
+		}
+		fmt.Fprintf(parse.stdout, "%s: %.0fKiB, %d events, %d blobs, %d commits, %d tags, %d resets, %s.\n",
+			repo.name, float64(repo.size())/1024.0, len(repo.events),
+			blobs, commits, tags, resets,
+			rfc3339(repo.readtime))
+		if repo.sourcedir != "" {
+			fmt.Fprintf(parse.stdout, "  Loaded from %s\n", repo.sourcedir)
+		}
+	case "sizes":
+		parse.flagcheck(parseALLREPO)
+		repo := rs.chosen()
+		sizes := make(map[string]int)
+		for it := rs.selection.Iterator(); it.Next(); {
+			i := it.Value()
+			if commit, ok := repo.events[i].(*Commit); ok {
+				if _, ok := sizes[commit.Branch]; !ok {
+					sizes[commit.Branch] = 0
+				}
+				sizes[commit.Branch] += len(commit.committer.String())
+				for _, author := range commit.authors {
+					sizes[commit.Branch] += len(author.String())
+				}
+				sizes[commit.Branch] += len(commit.Comment)
+				for _, fileop := range commit.operations() {
+					if fileop.op == opM {
+						if !strings.HasPrefix(fileop.ref, ":") {
+							// Skip submodule refs
+							continue
+						}
+						ref := repo.markToEvent(fileop.ref)
+						if ref == nil {
+							croak("internal error: %s should be a blob reference", fileop.ref)
+							continue
+						}
+						sizes[commit.Branch] += int(ref.(*Blob).size)
+					}
+				}
+			} else if tag, ok := repo.events[i].(*Tag); ok {
+				commit := repo.markToEvent(tag.committish).(*Commit)
+				if commit == nil {
+					croak("internal error: target of tag %s is nil", tag.tagname)
+					continue
+				}
+				if _, ok := sizes[commit.Branch]; !ok {
+					sizes[commit.Branch] = 0
+				}
+				sizes[commit.Branch] += len(tag.tagger.String())
+				sizes[commit.Branch] += len(tag.Comment)
+			}
+		}
+		total := 0
+		for _, v := range sizes {
+			total += v
+		}
+		sz := func(n int, s string) {
+			fmt.Fprintf(parse.stdout, "%12dKiB    %2.2f%%    %s\n",
+				n/1024, float64(n*100.0)/float64(total), s)
+		}
+		for key, val := range sizes {
+			sz(val, key)
+		}
+		sz(total, "")
 	default:
 		croak("unknown subcommand '%s' in list command.", mode)
 	}
-	return false
-}
-
-// HelpSizes says "Shut up, golint!"
-func (rs *Reposurgeon) HelpSizes() {
-	rs.helpOutput(`
-[SELECTION] sizes [>OUTFILE]
-
-Print a report on data volume per branch; takes a selection set,
-defaulting to all events. The numbers tally the size of uncompressed
-blobs, commit and tag comments, and other metadata strings (a blob is
-counted each time a commit points at it).  Not an exact measure of
-storage size: intended mainly as a way to get information on how to
-efficiently partition a repository that has become large enough to be
-unwieldy.
-`)
-}
-
-// DoSizes reports branch relative sizes.
-func (rs *Reposurgeon) DoSizes(line string) bool {
-	parse := rs.newLineParse(line, "sizes", parseALLREPO|parseNOARGS|parseNOOPTS, orderedStringSet{"stdout"})
-	defer parse.Closem()
-	repo := rs.chosen()
-	sizes := make(map[string]int)
-	for it := rs.selection.Iterator(); it.Next(); {
-		i := it.Value()
-		if commit, ok := repo.events[i].(*Commit); ok {
-			if _, ok := sizes[commit.Branch]; !ok {
-				sizes[commit.Branch] = 0
-			}
-			sizes[commit.Branch] += len(commit.committer.String())
-			for _, author := range commit.authors {
-				sizes[commit.Branch] += len(author.String())
-			}
-			sizes[commit.Branch] += len(commit.Comment)
-			for _, fileop := range commit.operations() {
-				if fileop.op == opM {
-					if !strings.HasPrefix(fileop.ref, ":") {
-						// Skip submodule refs
-						continue
-					}
-					ref := repo.markToEvent(fileop.ref)
-					if ref == nil {
-						croak("internal error: %s should be a blob reference", fileop.ref)
-						continue
-					}
-					sizes[commit.Branch] += int(ref.(*Blob).size)
-				}
-			}
-		} else if tag, ok := repo.events[i].(*Tag); ok {
-			commit := repo.markToEvent(tag.committish).(*Commit)
-			if commit == nil {
-				croak("internal error: target of tag %s is nil", tag.tagname)
-				continue
-			}
-			if _, ok := sizes[commit.Branch]; !ok {
-				sizes[commit.Branch] = 0
-			}
-			sizes[commit.Branch] += len(tag.tagger.String())
-			sizes[commit.Branch] += len(tag.Comment)
-		}
-	}
-	total := 0
-	for _, v := range sizes {
-		total += v
-	}
-	sz := func(n int, s string) {
-		fmt.Fprintf(parse.stdout, "%12d\t%2.2f%%\t%s\n",
-			n, float64(n*100.0)/float64(total), s)
-	}
-	for key, val := range sizes {
-		sz(val, key)
-	}
-	sz(total, "")
 	return false
 }
 
@@ -2224,7 +2200,7 @@ func (rs *Reposurgeon) DoChoose(line string) bool {
 		if newOrderedStringSet(rs.reponames()...).Contains(parse.args[0]) {
 			rs.choose(rs.repoByName(parse.args[0]))
 			if control.isInteractive() {
-				rs.DoStats(parse.args[0])
+				rs.DoList("stats")
 			}
 		} else {
 			croak("no such repo as %s", parse.args[0])
@@ -3066,7 +3042,7 @@ directory.  If the target directory is nonempty its contents are
 backed up to a save directory.  Files and directories on the
 repository's preservation list are copied back from the backup directory
 after repo rebuild. The default preserve list depends on the
-repository type, and can be displayed with the "stats" command.
+repository type, and can be displayed with the "preserve" command.
 
 If reposurgeon has a nonempty legacy map, it will be written to a file
 named "legacy-map" in the repository subdirectory as though by a

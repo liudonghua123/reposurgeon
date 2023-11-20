@@ -3997,8 +3997,6 @@ when {TIMESTAMP}
 Should these be subcommands of list?
 
 ----
-[SELECTION] sizes [>OUTFILE]
-stats [>OUTFILE]
 timings [MARK-NAME] [>OUTFILE]
 ----
 
