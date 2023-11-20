@@ -2473,14 +2473,10 @@ include::docinclude/gc.adoc[]
 [[diagnostics]]
 === Diagnostics
 
-These commands control the level and destination
-of diagnostic logging.
+The destination of diagnostic logging is set by "set logfile"
 
 // COMMAND
 include::docinclude/log.adoc[]
-
-// COMMAND
-include::docinclude/logfile.adoc[]
 
 [[debugging]]
 === Debugging
@@ -3563,7 +3559,7 @@ changes to the command language don't have a high cost in pain to
 users, and the maintainers feel free to make them whenever improvement
 seems possible.  But just in case, such changes are recorded here.
 
-In versions 4.38 and earlier, The DSL was substantially different The
+In versions 4.38 and earlier, the DSL was substantially different The
 command-line parser was fragile and ad-hoc, without consistent
 application of double-quoting. there was no "view" or "clone" command.
 The =E event selector didn't yet exist.  There was a read --use-uuid
@@ -3572,15 +3568,15 @@ pathsets. The regex, path rename, branch rename, and tag rename
 commands used Python-style rather than Go-style match
 references. Macro argument formals did not yet have a % prefix. The
 split command syntax was incompatibly different.  The "set" and
-"clear" commands didn't take a subcommand verb.  There was a
-"readlimit" command doing what "set readlimit" now does. The
-"elapsed", "memory", and "sizeof" subcommands of "show" used to be
-separate commands. Blob/tag/reset creation used to be
+"clear" commands didn't take a subcommand verb.  There were "logfile"
+"readlimit" command doing what "set logfile" and "set readlimit" now
+does. The "elapsed", "memory", and "sizeof" subcommands of "show" used
+to be separate commands. Blob/tag/reset creation used to be
 "{blob|tag|reset} create", not "create {blob|tag|reset}"; similarly
 for delete, rename, and move. The command to rename repositories was
 just "rename", not "rename repo"; The "delete path" command was named
-"expunge".  The subcommands of "list" were separate commands.
-There was a "script" command separate from "do",
+"expunge".  The subcommands of "list" were separate commands.  There
+was a "script" command separate from "do",
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3956,7 +3952,7 @@ Simple and VS:
 
 ----
 clear flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
-clear readlimit
+clear {logfile|readlimit}
 [SELECTION] create {repo NAME|blob NAME [<INFILE]|tag NAME|reset NAME}
 {SELECTION} delete [--quiet] {commit | {path|tag|branch|reset} [--not|--notagify] PATTERN}
 [SELECTION] filter {dedos|shell|regexp|replace} [TEXT-OR-REGEXP]
@@ -3964,7 +3960,7 @@ profile {live|start|save|bench} [PORT | SUBJECT [FILENAME]]
 [SELECTION] remove {deletes | [DMRCN] PATH | INDEX ]
 [SELECTION] rename {repo | path PATTERN [--force] | {path|branch|tag|reset} [--not] PATTERN}} NEW-NAME
 set flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
-set readlimit VALUE
+set {logfile|readlimit} VALUE
 show {elapsed|memory|sizeof} [>OUTFILE]
 ----
 
@@ -3979,8 +3975,8 @@ legacy {read [<INFILE] | write [>OUTFILE]}
 The following are S and should probably be attached to some verb:
 
 ----
-logfile [PATH]
 [SELECTION] references
+timings [MARK-NAME] [>OUTFILE]
 ----
 
 The following are S, but probably shouldn't change:
@@ -3993,12 +3989,6 @@ sourcetype [VCS-NAME]
 [SELECTION] timequake [--tick]
 version [EXPECT]
 when {TIMESTAMP}
-----
-
-Should these be subcommands of list?
-
-----
-timings [MARK-NAME] [>OUTFILE]
 ----
 
 In a revised, more verb-centered syntax, the key verbs would probably

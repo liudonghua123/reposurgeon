@@ -4,7 +4,7 @@
 # when we implemented struct header checking on fast-import streams,
 # because it didn't produce a psrseable stream.
 trap 'rm -fr  /tmp/foo$$ /tmp/bar$$' EXIT HUP INT QUIT TERM 
-reposurgeon "log +properties" "logfile /tmp/foo$$" "read <dircopyprop.svn"
+reposurgeon "log +properties" "set logfile /tmp/foo$$" "read <dircopyprop.svn"
 sed </tmp/foo$$ "/^[^Z]*Z:/s///" >/tmp/bar$$	# Strip off the date stamp
 cat >/tmp/chk$$ <<EOF
  r3.1~trunk/testdir/foo properties set:

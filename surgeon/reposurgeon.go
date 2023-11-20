@@ -82,8 +82,7 @@ func (ctx *Control) init() {
 		}
 	}
 	baton := newBaton(control.isInteractive(), batonLogFunc)
-	var b interface{} = baton
-	ctx.logfp = b.(io.Writer)
+	ctx.logfp = baton
 	ctx.baton = baton
 	signal.Notify(control.signals, os.Interrupt)
 	go func() {
@@ -6286,11 +6285,16 @@ func getOptionNames() []string {
 // HelpSet says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSet() {
 	rs.helpOutput(fmt.Sprintf(`
-set {flag[s] [%s]+ | readlimit [limit]}
+set {flag[s] [%s]+ | logfile [PATH] | readlimit [limit]}
 
-"set flag" sets one or more (tab-completed) boolean option to control
+"set flag" sets one or more (tab-completed) options to control
 reposurgeon's behavior.  With no arguments, displays the state of all
 flags.  Do "help options" to see the available options.
+
+"set logfile": Error, warning, and diagnostic messages are normally emitted to
+standard error.  This command, with a nonempty PATH argument, directs
+them to the specified file instead. The PATH may be a bare token or a
+double-quoted string. Without an argument, reports what logfile is set.
 
 "set readlimit" sets a maximum number of commits to read from a stream.
 If the limit is reached before EOF it will be logged. Mainly useful
@@ -6308,6 +6312,7 @@ func (rs *Reposurgeon) CompleteSet(text string) []string {
 			out = append(out, x[0])
 		}
 	}
+	out = append(out, "logfile")
 	out = append(out, "readlimit")
 	sort.Strings(out)
 	return out
@@ -6350,6 +6355,24 @@ func (rs *Reposurgeon) DoSet(line string) bool {
 		fallthrough
 	case "flags":
 		tweakFlagOptions(parse.args[1:], true)
+	case "logfile":
+		if len(parse.args) > 1 {
+			fp, err := os.OpenFile(filepath.Clean(parse.args[1]), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
+			if err != nil {
+				respond("log file open failed: %v", err)
+			} else {
+				var i interface{} = fp
+				control.logfp = i.(io.Writer)
+			}
+		}
+		if len(parse.args) == 1 || control.isInteractive() {
+			switch v := control.logfp.(type) {
+			case *os.File:
+				respond("logfile %s", v.Name())
+			case *Baton:
+				respond("logfile stdout")
+			}
+		}
 	case "readlimit":
 		if len(parse.args) < 2 {
 			respond("readlimit %d\n", control.readLimit)
@@ -6377,6 +6400,8 @@ clear {flag[s] [%s]+ | readlimit [limit]}
 behavior.  With no arguments, displays the state of all flags.
 Do "help options" to see the available options.
 
+"clear logfile" redirects logging output to the default, stdout.
+
 "clear readlimit" removes any readlimit that has been set.
 `, strings.Join(getOptionNames(), "|")))
 }
@@ -6397,11 +6422,16 @@ func (rs *Reposurgeon) CompleteClear(text string) []string {
 // DoClear is the handler for the "clear" command.
 func (rs *Reposurgeon) DoClear(line string) bool {
 	parse := rs.newLineParse(line, "clear", parseNOSELECT|parseNOOPTS, nil)
-	if verb := parse.args[0]; verb == "readlimit" {
+	switch verb := parse.args[0]; verb {
+	case "logfile":
+		control.logfp = control.baton
+	case "readlimit":
 		control.readLimit = 0
-	} else if verb == "flags" || verb == "flag" {
+	case "flags":
+		fallthrough
+	case "flag":
 		tweakFlagOptions(parse.args[1:], false)
-	} else {
+	default:
 		croak(`"clear" needs a "flag" or "flags" or "readlimit" subcommand.`)
 	}
 	return false
@@ -7628,43 +7658,6 @@ breakout:
 			}
 		}
 		respond(out)
-	}
-	return false
-}
-
-// HelpLogfile says "Shut up, golint!"
-func (rs *Reposurgeon) HelpLogfile() {
-	rs.helpOutput(`
-logfile [PATH]
-
-Error, warning, and diagnostic messages are normally emitted to
-standard error.  This command, with a nonempty PATH argument, directs
-them to the specified file instead. The PATH may be a bare token or a
-double-quoted string.
-
-Without an argument, reports what logfile is set.
-`)
-}
-
-// DoLogfile is the handler for the "logfile" command.
-func (rs *Reposurgeon) DoLogfile(line string) bool {
-	parse := rs.newLineParse(line, "logfile", parseNOSELECT|parseNOOPTS, nil)
-	if len(parse.args) > 0 {
-		fp, err := os.OpenFile(filepath.Clean(parse.args[0]), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, userReadWriteMode)
-		if err != nil {
-			respond("log file open failed: %v", err)
-		} else {
-			var i interface{} = fp
-			control.logfp = i.(io.Writer)
-		}
-	}
-	if len(parse.args) == 0 || control.isInteractive() {
-		switch v := control.logfp.(type) {
-		case *os.File:
-			respond("logfile %s", v.Name())
-		case *Baton:
-			respond("logfile stdout")
-		}
 	}
 	return false
 }

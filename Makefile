@@ -138,7 +138,6 @@ BNF_TOPICS = \
 	lint \
 	list \
 	log \
-	logfile \
 	merge \
 	move \
 	msgin \
