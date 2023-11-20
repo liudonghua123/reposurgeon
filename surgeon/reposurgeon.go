@@ -6857,7 +6857,7 @@ Mine ChangeLog files for authorship data.
 Takes a selection set.  If no set is specified, process all
 changelogs.  An optional following argument is a pattern expression to
 match the basename of files that should be treated as changelogs; the
-default is "/^ChangeLog$/". The match is unanchored. See "help regexp"
+default is "/ChangeLog$/". The match is unanchored. See "help regexp"
 for more information about regular expressions.
 
 This command assumes that changelogs are in the format used by FSF

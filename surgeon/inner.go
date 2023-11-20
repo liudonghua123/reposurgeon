@@ -8653,7 +8653,7 @@ func canonicalizeInlineAddress(line string) (bool, string, string, string) {
 	return true, pre, fmt.Sprintf("<%s>", strings.TrimSpace(email)), post
 }
 
-func (repo *Repository) processChangelogs(selection selectionSet, line string, baton *Baton) (bool, int, int, int, int) {
+func (repo *Repository) processChangelogs(selection selectionSet, pattern string, baton *Baton) (bool, int, int, int, int) {
 	cm, cd := 0, 0
 	var errLock sync.Mutex
 	errlines := make([]string, 0)
@@ -8764,11 +8764,11 @@ func (repo *Repository) processChangelogs(selection selectionSet, line string, b
 	evts := new(Safecounter) // shared between threads, for progression only
 	cc := new(Safecounter)
 	cl := new(Safecounter)
-	logpattern := "/^ChangeLog$/"
-	if line != "" {
-		logpattern = line
+	logpattern := "/ChangeLog$/"
+	if pattern != "" {
+		logpattern = pattern
 	}
-	if len(line) >= 2 && line[0] != line[len(line)-1] {
+	if len(pattern) >= 2 && pattern[0] != pattern[len(pattern)-1] {
 		croak("regular expression requires matching start and end delimiters")
 		return false, 0, 0, 0, 0
 	}
