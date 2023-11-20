@@ -1,6 +1,7 @@
 = reposurgeon project news =
 
 Repository head::
+     Major overhaul of the DSL syntax.
      Make --quiet an effective option when reading repositories.
      Added "view" command for GUI browsing of repositories.
      Fixed a deep bug in the graft and unite commands.
@@ -10,18 +11,12 @@ Repository head::
      Added Content-Path and Content-Name support to msgin --create.
      Added =E selector for branch root commits.
      Added "clone" command.
-     Command arguments can now be "-quoted strinds containing whitespace.
      Graceful recovery from transcode errors.
      Macro argument formal change from {0}, {1}, {2}... to %{0}, %{1}, %{2}...
      Move to Go-style match references (${1}) from Python ones (\1).
-     Simplified syntax of split command.
      repotool initialize becomes repotool makemake.
-     Handle "progress" directive in fast-import streams.
      Tested support for reading darcs repositories.
-     When enabling logging flags, the "+" syntax is now optional.
-     "set" and "clear" are now "set flag" and "clear flag".
-     The "readlimit" command has been merged into "set readlimit".
-     "tag create" becomes "creare tag". 
+     The ignores command sets Q bits
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
