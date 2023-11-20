@@ -1195,9 +1195,10 @@ syntax) are fatal, and (3) each command-line argument beginning with
 `--help` and `--version` will work as expected).
 
 Also, in interactive mode, Ctrl-P and Ctrl-N will be available to
-scroll through your command history, and tab completion of both command
-keywords and name arguments (wherever that makes semantic sense) is
-available.
+scroll through your command history, and tab completion of command
+keywords, options, and arguments (wherever that makes semantic sense) is
+available. Entering a tab just after the command keyword will show you
+subcommands and options. 
 
 It is expected that interactive mode will be used mainly for exploring
 repository metadata, while conversion experiments will be captured in
@@ -3897,22 +3898,22 @@ Most commands are simple and V:
 {SELECTION} add { "D" {PATH} | "M" {PERM} {MARK} {PATH} | "R" {SOURCE} {TARGET} | "C" {SOURCE} {TARGET} }
 [SELECTION] append [--rstrip] {TEXT}
 {SELECTION} assign [--singleton] [NAME]
-branchlift {SOURCEBRANCH} {PATHPREFIX} [NEWNAME]
+branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]
 {SELECTION} checkout
 choose [REPO-NAME]
 [SELECTION] coalesce [--debug] [TIMEFUZZ]
 {SELECTION} count [>OUTFILE]
-debranch {SOURCE-BRANCH} [TARGET-BRANCH]
+debranch SOURCE-BRANCH [TARGET-BRANCH]
 [SELECTION] dedup
 define [NAME [TEXT]]
 {SELECTION} diff [>OUTFILE]
 {SELECTION} divide
-do {MACRO-NAME} [ARG...]
+do MACRO-NAME [ARG...]
 drop [REPO-NAME]
 exit [>OUTFILE]
 gc [GOGC]
 [SELECTION] gitify
-[SELECTION] graft [--prune] {REPO-NAME}
+[SELECTION] graft [--prune] REPO-NAME
 [SELECTION] graph [>OUTFILE]
 [SELECTION] hash [--tree] [>OUTFILE]
 help [COMMAND]
@@ -3934,16 +3935,16 @@ rebuild [DIRECTORY]
 renumber
 [SELECTION] reorder [--quiet]
 {SELECTION} resolve
-[SELECTION] setfield {FIELD} {VALUE}
-{SELECTION} setperm {PERM} [PATH...]
+[SELECTION] setfield FIELD VALUE
+{SELECTION} setperm PERM [PATH...]
 shell [COMMAND-TEXT]
 [SELECTION] split [ --path ] PATH-OR-INDEX
 [SELECTION] squash [POLICY-FLAGS...]
 [SELECTION] strip {--reduce|--blobs|--obscure}
 [SELECTION] tagify [ --tagify-merges | --canonicalize | --tipdeletes ]
-[SELECTION] transcode {ENCODING}
-unassign {NAME}
-undefine {MACRO-NAME}
+[SELECTION] transcode ENCODING
+unassign NAME
+undefine MACRO-NAME
 unite [--prune] [REPO-NAME...]
 {SELECTION} unmerge
 unpreserve [PATH...]

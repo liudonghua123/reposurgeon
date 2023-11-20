@@ -981,6 +981,11 @@ Example:
 `)
 }
 
+// CompleteAssign is a completion hook over assign options
+func (rs *Reposurgeon) CompleteAssign(text string) []string {
+	return []string{"--singleton"}
+}
+
 // DoAssign is the handler for the "assign" command,
 func (rs *Reposurgeon) DoAssign(line string) bool {
 	parse := rs.newLineParse(line, "assign", parseREPO, nil)
@@ -1209,6 +1214,11 @@ https://github.com/google/pprof/blob/master/doc/README.md
 `)
 }
 
+// CompleteProfile is a completion hook over profile modes
+func (rs *Reposurgeon) CompleteProfile(text string) []string {
+	return []string{"live", "start", "save", "bench"}
+}
+
 // DoProfile is the handler for the "profile" command.
 func (rs *Reposurgeon) DoProfile(line string) bool {
 	parse := rs.newLineParse(line, "profile", parseNOSELECT|parseNOOPTS, nil)
@@ -1343,6 +1353,11 @@ This command is for developer use when optimizing structure packing to
 reduce memory use. It is probably not of interest to ordinary
 reposurgeon users.
 `)
+}
+
+// CompleteShow is a completion hook over show modes
+func (rs *Reposurgeon) CompleteShow(text string) []string {
+	return []string{"elapsed", "memory", "sizeof"}
 }
 
 // DoShow is the handler for the "memory" command.
@@ -1491,6 +1506,11 @@ unwieldy.
 Any list command can be safely interrupted with ^C, returning you to the
 prompt.
 `)
+}
+
+// CompleteList is a completion hook over list modes
+func (rs *Reposurgeon) CompleteList(text string) []string {
+	return []string{"commits", "tags", "stamps", "inspect", "index", "manifest", "paths", "names", "stats", "sizes"}
 }
 
 // DoList generates a human-friendly listing of events.
@@ -1740,6 +1760,11 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 		croak("unknown subcommand '%s' in list command.", mode)
 	}
 	return false
+}
+
+// CompleteLint is a completion hook over lint option abbreviations
+func (rs *Reposurgeon) CompleteLint(text string) []string {
+	return []string{"--d", "--c", "--r", "--a", "--u", "--i", "--o"}
 }
 
 // HelpLint says "Shut up, golint!"
@@ -2307,6 +2332,11 @@ Rename sets Q bits; true on every object modified, false otherwise.
 `)
 }
 
+// CompleteRename is a completion hook over rename option abbreviations and modes
+func (rs *Reposurgeon) CompleteRename(text string) []string {
+	return []string{"repo", "path", "branch", "tag", "reset", "--force", "--not"}
+}
+
 // DoRename changes the name of a repository.
 func (rs *Reposurgeon) DoRename(line string) bool {
 	parse := rs.newLineParse(line, "rename", parseNEEDARG, nil)
@@ -2658,6 +2688,11 @@ have been omitted.
 `)
 }
 
+// CompleteRead is a completion hook over read options
+func (rs *Reposurgeon) CompleteRead(text string) []string {
+	return []string{"--format=", "--quiet"}
+}
+
 // DoRead reads in a repository for surgery.
 func (rs *Reposurgeon) DoRead(line string) bool {
 	parse := rs.newLineParse(line, "read", parseNOSELECT, []string{"stdin"})
@@ -2763,6 +2798,11 @@ directory is created and the repository written into it.
 Property extensions will be omitted if the importer for the
 preferred repository type cannot digest them.
 `)
+}
+
+// CompleteWrite is a completion hook over write options
+func (rs *Reposurgeon) CompleteWrite(text string) []string {
+	return []string{"--caallout", "--format=", "--legacy", "--noincremental"}
 }
 
 // DoWrite streams out the results of repo surgery.
@@ -3190,6 +3230,11 @@ otherwise.
 `)
 }
 
+// CompleteMsgin is a completion hook over msgin options
+func (rs *Reposurgeon) CompleteMsgin(text string) []string {
+	return []string{"--create", "--empty-only", "--relax"}
+}
+
 // DoMsgin accepts a message-box file representing event metadata and update from it.
 func (rs *Reposurgeon) DoMsgin(line string) bool {
 	parse := rs.newLineParse(line, "msgin", parseREPO|parseNOARGS, orderedStringSet{"stdin"})
@@ -3262,6 +3307,11 @@ Some examples:
 =C filter replace "/Elendil/Ar-Pharazon the Golden/"
 ----
 `)
+}
+
+// CompleteFilter is a completion hook over filter modes
+func (rs *Reposurgeon) CompleteFilter(text string) []string {
+	return []string{"dedos", "regexp", "replace", "shekk"}
 }
 
 type filterCommand struct {
@@ -3650,6 +3700,11 @@ Example:
 `)
 }
 
+// CompleteAppend is a completion hook over append options
+func (rs *Reposurgeon) CompleteAppend(text string) []string {
+	return []string{"--legacy", "--rstrip"}
+}
+
 // DoAppend appends a specified line to comments in the specified selection set.
 func (rs *Reposurgeon) DoAppend(line string) bool {
 	parse := rs.newLineParse(line, "append", parseREPO|parseNEEDSELECT, nil)
@@ -3712,6 +3767,11 @@ Example:
 =C prepend --legacy "Legacy-Id: %%LEGACY%%\n"
 ---------
 `)
+}
+
+// CompletePrepend is a completion hook over prepend options
+func (rs *Reposurgeon) CompletePrepend(text string) []string {
+	return []string{"--legacy", "--lstrip"}
 }
 
 // DoPrepend prepends a specified line to comments in the specified selection set.
@@ -3782,7 +3842,7 @@ func (rs *Reposurgeon) DoSquash(line string) bool {
 // HelpDelete says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDelete() {
 	rs.helpOutput(`
-{SELECTION} delete [--quiet] {commit | {tag|branch|reset} [--not] PATTERN}
+{SELECTION} delete [--quiet] {commit | {path|tag|branch|reset} [--not] PATTERN}
 
 With "commit" or mo subcommand, delete a selection set of events.
 Requires an explicit selection set.  Tags, resets, and passthroughs
@@ -3847,6 +3907,11 @@ path set are not deleted.
 This command clears all Q bits. The "path" mode then sets true on any commit
 which lost fileops but was not entirely deleted.
 `)
+}
+
+// CompleteDelete is a completion hook over delete modes snd options
+func (rs *Reposurgeon) CompleteDelete(text string) []string {
+	return []string{"cmmit", "path", "tag", "branch", "reset", "--quiet", "--not"}
 }
 
 // DoDelete is the handler for the "delete" command.
@@ -3969,6 +4034,11 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 		croak("delete object type %s must be commit, tag, reset, or branch.", otype)
 	}
 	return false
+}
+
+// CompleteCoalesce is a completion hook over coalesce options
+func (rs *Reposurgeon) CompleteCoalesce(text string) []string {
+	return []string{"--debug"}
 }
 
 // HelpCoalesce says "Shut up, golint!"
@@ -4198,6 +4268,11 @@ cannot be combined with 'deletes'.
 Sets Q bits: true for each commit modified and blob with altered 
 references, false otherwise.
 `)
+}
+
+// CompleteRemove is a completion hook over rempve keywords
+func (rs *Reposurgeon) CompleteRemove(text string) []string {
+	return []string{"deletes", "--filter", "to"}
 }
 
 // DoRemove deletes a fileop from a specified commit.
@@ -4619,21 +4694,6 @@ func (rs *Reposurgeon) DoDivide(line string) bool {
 	return false
 }
 
-// HelpExpunge says "Shut up, golint!"
-func (rs *Reposurgeon) HelpExpunge() {
-	rs.helpOutput(`
-[SELECTION] expunge [--not|--notagify] PATH-PATTERN
-
-`)
-}
-
-// DoExpunge expunges files from the chosen repository.
-func (rs *Reposurgeon) DoExpunge(line string) bool {
-	parse := rs.newLineParse(line, "expunge", parseALLREPO, nil)
-	defer parse.Closem()
-	return false
-}
-
 // HelpSplit says "Shut up, golint!"
 func (rs *Reposurgeon) HelpSplit() {
 	rs.helpOutput(`
@@ -4702,6 +4762,11 @@ func (rs *Reposurgeon) DoSplit(line string) bool {
 	}
 	respond("new commits are events %d and %d.", where+1, where+2)
 	return false
+}
+
+// CompleteUnite is a completion hook over unite options
+func (rs *Reposurgeon) CompleteUnite(text string) []string {
+	return []string{"--prune"}
 }
 
 // HelpUnite says "Shut up, golint!"
@@ -4832,6 +4897,19 @@ source branch are removed.
 `)
 }
 
+// CompleteDebranch is a completion hook across branch names
+func (rs *Reposurgeon) CompleteDebranch(text string) []string {
+	repo := rs.chosen()
+	out := make([]string, 0)
+	if repo != nil {
+		for _, key := range repo.branchset() {
+			out = append(out, key)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 // DoDebranch turns a branch into a subdirectory.
 func (rs *Reposurgeon) DoDebranch(line string) bool {
 	parse := rs.newLineParse(line, "debranch", parseREPO|parseNOSELECT|parseNOOPTS, nil)
@@ -4925,17 +5003,26 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 	return false
 }
 
+// CompleteTagify is a completion hook over tagify options
+func (rs *Reposurgeon) CompleteTagify(text string) []string {
+	return []string{"--canonicalize", "--tagify-merges", "--tipdeletes"}
+}
+
 // HelpTagify says "Shut up, golint!"
 func (rs *Reposurgeon) HelpTagify() {
 	rs.helpOutput(`
 [SELECTION] tagify [ --tagify-merges | --canonicalize | --tipdeletes ]
 
-Search for empty commits and turn them into tags. Takes an optional selection
-set argument defaulting to all commits. For each commit in the selection set,
-turn it into a tag with the same message and author information if it has no
-fileops. By default merge commits are not considered, even if they have no
-fileops (thus no tree differences with their first parent). To change that, see
-the '--tagify-merges' option.
+Search for empty commits and turn them into tags. May be useful in
+cleaning up Subversion conversions that had previously been lifted with
+cvs2svn.
+
+Takes an optional selection set argument defaulting to all
+commits. For each commit in the selection set, turn it into a tag with
+the same message and author information if it has no fileops. By
+default merge commits are not considered, even if they have no fileops
+(thus no tree differences with their first parent). To change that,
+see the '--tagify-merges' option.
 
 The name of the generated tag will be 'emptycommit-<ident>', where <ident>
 is generated from the legacy ID of the deleted commit, or from its
@@ -5065,7 +5152,7 @@ func (rs *Reposurgeon) DoUnmerge(_line string) bool {
 // HelpReparent says "Shut up, golint!"
 func (rs *Reposurgeon) HelpReparent() {
 	rs.helpOutput(`
-SELECTION reparent [--user-order] [--rebase]
+SELECTION reparent [--use-order] [--rebase]
 
 Changes the parent list of a commit.  Takes a selection set, zero or
 more option arguments, and an optional policy argument.
@@ -5136,6 +5223,11 @@ Options:
         the tree contents of all descendants can be modified as a
         result.
 `)
+}
+
+// CompleteReoarent is a completion hook over reparent options
+func (rs *Reposurgeon) CompleteReoarent(text string) []string {
+	return []string{"--use-order", "--rebase"}
 }
 
 // DoReparent is the ommand handler for the "reparent" command.
@@ -5312,6 +5404,11 @@ their Q bit set.
 `)
 }
 
+// CompleteMove is a completion hook over move modes and options
+func (rs *Reposurgeon) CompleteMove(text string) []string {
+	return []string{"--tag", "--reset", "--not"}
+}
+
 // DoMove moves a tag or reset to point to a specified commit, or renames it, or deletes it.
 func (rs *Reposurgeon) DoMove(line string) bool {
 	parse := rs.newLineParse(line, "tag", parseALLREPO|parseNEEDARG, nil)
@@ -5434,6 +5531,19 @@ new branch true, all others false.
 `)
 }
 
+// CompleteBranchlift is a completion hook across branch names
+func (rs *Reposurgeon) CompleteBranchlift(text string) []string {
+	repo := rs.chosen()
+	out := make([]string, 0)
+	if repo != nil {
+		for _, key := range repo.branchset() {
+			out = append(out, key)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 // DoBranchlift lifts a directory to become a branch
 func (rs *Reposurgeon) DoBranchlift(line string) bool {
 	parse := rs.newLineParse(line, "branchlift", parseREPO|parseNOSELECT|parseNOOPTS, nil)
@@ -5510,11 +5620,16 @@ prepend a 'syntax: glob' header if the preferred type is hg.
 If --defaults is present, the command attempts to prepend these
 default patterns to all ignore files. If no ignore file is created by
 the first commit, it will be modified to create one containing the
-defaults.  This command will error out on prefer types that have no
-default ignore patterns (git and hg, in particular).  It will also
-error out when it knows the import tool has already set default
-patterns.
+defaults.  This command will error out when the VCS type selectec by
+prefer has no default ignore patterns (git and hg, in particular).  It
+will also error out when it knows the import tool has already set
+default patterns.
 `)
+}
+
+// CompleteIgnores is a completion hook over ignore options
+func (rs *Reposurgeon) CompleteIgnores(text string) []string {
+	return []string{"--rename", "--translate", "--defaults"}
 }
 
 // DoIgnores manipulates ignore patterns in the repo.
@@ -5724,6 +5839,11 @@ Available actions are:
 `)
 }
 
+// CompleteAttributions is a completion hook over attributions options
+func (rs *Reposurgeon) CompleteAttributions(text string) []string {
+	return []string{"append", "prepend", "resolve", "set", "show"}
+}
+
 // DoAttribution inspects, modifies, adds, and removes commit and tag attributions.
 func (rs *Reposurgeon) DoAttribution(line string) bool {
 	repo := rs.chosen()
@@ -5870,6 +5990,11 @@ reposurgeon currently knows about.
 `)
 }
 
+// CompleteAuthors is a completion hook over authors modes
+func (rs *Reposurgeon) CompleteAuthors(text string) []string {
+	return []string{"read", "write"}
+}
+
 // DoAuthors applies or dumps author-mapping file.
 func (rs *Reposurgeon) DoAuthors(line string) bool {
 	selection := rs.selection
@@ -5908,6 +6033,11 @@ selection set. The 'read' variant reads from standard input or a
 <-redirected filename; the 'write' variant writes to standard
 output or a >-redirected filename.
 `)
+}
+
+// CompleteLegacy is a completion hook over legacy modes
+func (rs *Reposurgeon) CompleteLegacy(text string) []string {
+	return []string{"read", "write"}
 }
 
 // DoLegacy apply a reference-mapping file.
@@ -6178,6 +6308,7 @@ func (rs *Reposurgeon) CompleteSet(text string) []string {
 			out = append(out, x[0])
 		}
 	}
+	out = append(out, "readlimit")
 	sort.Strings(out)
 	return out
 }
@@ -6258,6 +6389,7 @@ func (rs *Reposurgeon) CompleteClear(text string) []string {
 			out = append(out, x[0])
 		}
 	}
+	out = append(out, "readlimit")
 	sort.Strings(out)
 	return out
 }
@@ -6780,6 +6912,11 @@ objects created get their Q bit set.
 `)
 }
 
+// CompleteCreate is a completion hook over create modes
+func (rs *Reposurgeon) CompleteCreate(text string) []string {
+	return []string{"repo", "blob", "tag", "reset"}
+}
+
 // DoCreate makes a repository with a specified name.
 func (rs *Reposurgeon) DoCreate(line string) bool {
 	parse := rs.newLineParse(line, "create", parseNOOPTS|parseNEEDARG, orderedStringSet{"stdin"})
@@ -6984,6 +7121,11 @@ content from leaking forward.
 Information about symlinks in the tarball is preserved; if written out 
 as a Git repository, the result will have those symlinks.
 `)
+}
+
+// CompleteIncorporate is a completion hook over incorporate modes
+func (rs *Reposurgeon) CompleteIncorporate(text string) []string {
+	return []string{"--after", "--date", "--firewall="}
 }
 
 // DoIncorporate creates a new commit from a tarball.
