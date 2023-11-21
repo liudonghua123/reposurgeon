@@ -5866,6 +5866,9 @@ Available actions are:
 
     Implemented mainly for regression testing, but may be useful for exploring
     the selection-set language.
+
+All modes of this command clear Q bits, then set them on each commit or tag
+that is actually modified.
 `)
 }
 
@@ -5919,6 +5922,7 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 		defer state.release()
 		return selparser.evaluate(machine, state)
 	})
+	repo.clearColor(colorQSET)
 	if action == "show" {
 		if len(args) > 0 {
 			croak("'show' takes no arguments")

@@ -1458,7 +1458,7 @@ type attrEditAttr interface {
 	name() string
 	email() string
 	date() Date
-	assign(name, email string, date Date)
+	assign(name, email string, date Date) bool
 	remove(Event)
 	insert(after bool, e Event, a Attribution)
 }
@@ -1475,7 +1475,8 @@ func (p *attrEditMixin) name() string  { return p.a.fullname }
 func (p *attrEditMixin) email() string { return p.a.email }
 func (p *attrEditMixin) date() Date    { return p.a.date }
 
-func (p *attrEditMixin) assign(name, email string, date Date) {
+func (p *attrEditMixin) assign(name, email string, date Date) bool {
+	changed := p.a.fullname != name || p.a.email != email || p.a.date != date
 	if len(name) != 0 {
 		p.a.fullname = name
 	}
@@ -1485,6 +1486,7 @@ func (p *attrEditMixin) assign(name, email string, date Date) {
 	if !date.isZero() {
 		p.a.date = date
 	}
+	return changed
 }
 
 func (p *attrEditMixin) minOne(desc string) {
@@ -1526,6 +1528,7 @@ func (p *attrEditAuthor) desc() string { return "author" }
 
 func (p *attrEditAuthor) remove(e Event) {
 	c := e.(*Commit)
+	c.addColor(colorQSET)
 	v := c.authors
 	copy(v[p.pos:], v[p.pos+1:])
 	v[len(v)-1] = Attribution{}
@@ -1534,6 +1537,7 @@ func (p *attrEditAuthor) remove(e Event) {
 
 func (p *attrEditAuthor) insert(after bool, e Event, a Attribution) {
 	c := e.(*Commit)
+	c.addColor(colorQSET)
 	newpos := p.pos
 	if after {
 		newpos++
@@ -1784,7 +1788,9 @@ func (p *AttributionEditor) doAssign(eventNo int, e Event, attrs []attrEditAttr,
 		panic(throw("command", "no attribution selected"))
 	}
 	for it := sel.Iterator(); it.Next(); {
-		attrs[it.Value()].assign(name, email, date)
+		if attrs[it.Value()].assign(name, email, date) {
+			e.addColor(colorQSET)
+		}
 	}
 }
 
