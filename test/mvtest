@@ -1,0 +1,21 @@
+#!/bin/sh
+# Rename a test pair
+from="$1"
+to="$2"
+if [ -z "$from" ] || [ -z "$to" ]
+then
+	echo "mvtest: requires two arguments"
+	exit 1
+elif [ -f "${to}.tst" ] || [ -f "${to}.chk" ]
+then
+	echo "mvtest: refusing to step on the ${to} pair."
+	exit 1
+elif [ -f "${from}.tst" ] && [ -f "${from}.chk" ]
+then
+	git mv "${from}.tst" "${to}.tst" && git mv "${from}.chk" "${to}.chk"
+else
+	echo "mvtest: no pair with stem ${from}"
+	exit 1
+fi
+
+# end

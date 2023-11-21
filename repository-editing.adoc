@@ -1801,16 +1801,9 @@ include::docinclude/view.adoc[]
 include::docinclude/lint.adoc[]
 
 N[[statistics]]
-=== Statistics
-
-// COMMAND
-include::docinclude/stats.adoc[]
 
 // COMMAND
 include::docinclude/count.adoc[]
-
-// COMMAND
-include::docinclude/sizes.adoc[]
 
 [[examining-tree-states]]
 === Examining tree states

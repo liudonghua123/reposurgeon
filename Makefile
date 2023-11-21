@@ -159,7 +159,6 @@ BNF_TOPICS = \
 	setperm \
 	shell \
 	show \
-	sizes \
 	sourcetype \
 	split \
 	stampify \
@@ -254,7 +253,7 @@ test:
 
 lint:
 	golint -set_exit_status ./...
-	shellcheck -f gcc repobench test/fi-to-fi test/liftcheck test/singlelift test/svn-to-git test/svn-to-svn test/delver test/*.sh test/*test
+	shellcheck -f gcc repobench test/fi-to-fi test/liftcheck test/singlelift test/svn-to-git test/svn-to-svn test/delver test/*.sh test/*test test/mvtest
 
 fmt:
 	gofmt -s -w .
