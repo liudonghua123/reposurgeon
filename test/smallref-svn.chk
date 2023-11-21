@@ -43,8 +43,8 @@ commit refs/heads/master
 #legacy-id 3
 mark :5
 committer esr <esr> 1566919328 +0000
-data 60
-The point of this commit is the reference cookie: [[SVN:2]]
+data 75
+The point of this commit is the reference cookie: 2019-08-27T15:18:57Z!esr
 from :3
 M 100644 :4 README
 
