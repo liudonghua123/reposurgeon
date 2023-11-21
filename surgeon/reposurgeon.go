@@ -4905,6 +4905,9 @@ branch, becoming the history of a subdirectory with the name of the source
 branch. Any trailing segment of a branch name is accepted as a synonym for
 it; thus 'master' is the same as 'refs/heads/master'.  Any resets of the
 source branch are removed.
+
+Clears all Q bits, then sets the Q bit of avery commit that has its branch
+firld modified.
 `)
 }
 
@@ -4959,7 +4962,7 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 	found2:
 	}
 	// Now that the arguments are in proper form, implement
-	// Now that the arguments are in proper form, implement
+	repo.clearColor(colorQSET)
 	stip := repo.markToIndex(branches[source].mark)
 	scommits := repo.ancestors(stip)
 	scommits.Add(stip)
@@ -4999,7 +5002,9 @@ func (rs *Reposurgeon) DoDebranch(line string) bool {
 			}
 			commit.setParentMarks(append(lastParent, trailingMarks...))
 		}
-		commit.setBranch(target)
+		if commit.setBranch(target) {
+			commit.addColor(colorQSET)
+		}
 		lastParent = []string{commit.mark}
 	}
 	for i, event := range rs.repo.events {
@@ -5416,7 +5421,7 @@ or a suffix of the form heads/FOO or tags/FOO. An unqualified basename
 is assumed to refer to a branch in refs/heads/. When a reset is moved,
 no branch fields are changed.
 
-All Q bits are cleared; then any tags ore resets that wwre moved, get
+All Q bits are cleared; then any tags ore resets that were moved, get
 their Q bit set.
 `)
 }

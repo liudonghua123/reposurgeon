@@ -2759,9 +2759,11 @@ func (commit *Commit) date() Date {
 	return commit.committer.date
 }
 
-// setBranch sets the repo's branch field.
-func (commit *Commit) setBranch(branch string) {
+// setBranch sets the repo's branch field, returning true iff it was changed.
+func (commit *Commit) setBranch(branch string) bool {
+	changed := commit.Branch != branch
 	commit.Branch = branch
+	return changed
 }
 
 // operations returns a list of ileops associated with this commit;
