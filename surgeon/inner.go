@@ -2833,16 +2833,6 @@ func (commit *Commit) discardOpsBeforeLastDeleteAll() {
 	}
 }
 
-// bump increments the timestamps on this commit to avoid time collisions.
-func (commit *Commit) bump(i int) {
-	delta := time.Second * time.Duration(i)
-	commit.committer.date.timestamp = commit.committer.date.timestamp.Add(delta)
-	for _, author := range commit.authors {
-		author.date.timestamp = author.date.timestamp.Add(delta)
-	}
-	commit.hash.invalidate()
-}
-
 // clone replicates this commit, copying everything that can be pulled by value
 func (commit *Commit) clone(repo *Repository) *Commit {
 	// What we get to pull over is: repo, mark, attributions, comment, branch
@@ -2977,7 +2967,7 @@ func (commit *Commit) emailOut(modifiers orderedStringSet,
 	return msg.String()
 }
 
-// actionStamp controls how a commit stamp is made.
+// actionStamp controls how an action stamp is made.
 func (commit *Commit) actionStamp() string {
 	// Prefer the author stamp because that doesn't change when patches
 	// are replayed onto a repository, while the commit stamp will.
@@ -2985,6 +2975,17 @@ func (commit *Commit) actionStamp() string {
 		return commit.authors[0].actionStamp()
 	}
 	return commit.committer.actionStamp()
+}
+
+// bump increments the timestamps on this commit to avoid action-stamp collisions.
+func (commit *Commit) bump(i int) {
+	delta := time.Second * time.Duration(i)
+	if len(commit.authors) == 0 {
+		commit.committer.date.timestamp = commit.committer.date.timestamp.Add(delta)
+	} else {
+		commit.authors[0].date.timestamp = commit.authors[0].date.timestamp.Add(delta)
+	}
+	commit.hash.invalidate()
 }
 
 func stringSliceEqual(a, b []string) bool {
