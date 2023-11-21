@@ -6088,37 +6088,39 @@ func (rs *Reposurgeon) DoLegacy(line string) bool {
 	return false
 }
 
-// HelpReferences says "Shut up, golint!"
-func (rs *Reposurgeon) HelpReferences() {
+// HelpStampify says "Shut up, golint!"
+func (rs *Reposurgeon) HelpStampify() {
 	rs.helpOutput(`
-[SELECTION] references
+[SELECTION] stampify
 
-Transform native commit-reference cookies into action stamps. You
+Transform commit-reference cookies into action stamps. You
 can specify a selection set of commits to be operated on; the default
 is all commits.
 
-This command expects to find cookies consisting of the leading string '[[',
-followed by a VCS identifier (currently SVN or CVS) followed by
-VCS-dependent information, followed by ']]'.
-
-An action stamp pointing at the corresponding commit is substituted
-when possible.
+This command expects to find cookies consisting of the leading string
+'[[', followed by a VCS identifier (e.g SVN, CVS, GIT) followed by
+VCS-dependent information, followed by ']]'. An action stamp pointing
+at the corresponding commit is substituted when possible.
 
 Enables writing of the legacy-reference map when the
 repo is written or rebuilt.
 
-Sets Q bits: true if a commit's comment was modified by a reference
+After running this commant, it is good practice to do "lint -u"
+to check for stamp collisions, and if necessary a "timequake"
+to fix them up.
+
+Sets Q bits: true if a commit's comment was modified by
 lift, false on all other events.
 `)
 }
 
-// DoReferences looks for things that might be CVS or Subversion revision references.
-func (rs *Reposurgeon) DoReferences(line string) bool {
-	rs.newLineParse(line, "references", parseALLREPO|parseNOARGS|parseNOOPTS, nil)
+// DoStampify looks for things that might be CVS or Subversion revision references.
+func (rs *Reposurgeon) DoStampify(line string) bool {
+	rs.newLineParse(line, "stampify", parseALLREPO|parseNOARGS|parseNOOPTS, nil)
 	repo := rs.chosen()
-	hits := repo.liftReferences(rs.selection)
+	hits := repo.stampify(rs.selection)
 	repo.writeLegacy = true
-	respond("%d references resolved.", hits)
+	respond("%d reference cookies stampified.", hits)
 	return false
 }
 

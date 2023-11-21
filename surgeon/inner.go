@@ -6510,8 +6510,10 @@ func (repo *Repository) walkEvents(selection selectionSet, hook func(i int, even
 	}
 }
 
-// liftReferences replaces delimited reference cookies with action stamps
-func (repo *Repository) liftReferences(selection selectionSet) int {
+var stampRE *regexp.Regexp = regexp.MustCompile("<[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]![^@]+@[^>]*>")
+
+// stampify replaces delimited reference cookies with action stamps
+func (repo *Repository) stampify(selection selectionSet) int {
 	repo.clearColor(colorQSET)
 	dollarMap := repo.parseDollarCookies()
 	hits := 0

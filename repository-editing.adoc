@@ -200,7 +200,7 @@ EOF
 # Change cookies like [[SVN:2]] into action stamps that are independent
 # of the VCS in use. A typical action stamp looks like this:
 # <jrh@random.org!2006-08-14T02:34:56Z>
-references
+stampify
 
 # Sometimes it's useful to drop files from the repo that should
 # never have been checked in. 1..$ - selects all commits.
@@ -781,7 +781,7 @@ you will need a DOT rendering program and an image viewer.
 Unfortunately, for large repositories the sheer size of the graph image
 makes this impractical.
 
-See the documentation of the `<<references_cmd>>` command for details
+See the documentation of the `<<stampify_cmd>>` command for details
 on how fix up Subversion and CVS changeset references in comments so
 they're still meaningful.
 
@@ -2314,14 +2314,14 @@ repository files, and (3) the _.git/cvs-revisions_
 created by '```git cvsimport```'.
 
 The detailed sequence for lifting possible references is this: first,
-find possible CVS and Subversion references with the
-`<<references_cmd>>` or `=N` visibility set; then replace them with
-equivalent delimoited cookies; then run `<<references_cmd>>` to turn the
-cookies into action stamps (using the information in the
-legacy-reference map) without having to do the lookup by hand.
+find possible CVS and Subversion references with the `=N` visibility
+set; then replace them with equivalent delimited cookies; then run
+`<<stampify_cmd>>` to turn the cookies into action stamps (using the
+information in the legacy-reference map) without having to do the
+lookup by hand.
 
 // COMMAND
-include::docinclude/references.adoc[]
+include::docinclude/stampify.adoc[]
 
 It is not guaranteed that every such reference will be resolved,
 or even that any at all will be. Normally all references in history
@@ -3573,7 +3573,9 @@ be "{blob|tag|reset} create", not "create {blob|tag|reset}"; similarly
 for delete, rename, and move. The command to rename repositories was
 just "rename", not "rename repo"; The "delete path" command was named
 "expunge".  The subcommands of "list" were separate commands.  There
-was a "script" command separate from "do",
+was a "script" command separate from "do". The "reference list"
+command was removed (it duplicated the =N delector); "references
+lift" became "stampify".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3933,6 +3935,7 @@ renumber
 shell [COMMAND-TEXT]
 [SELECTION] split [ --path ] PATH-OR-INDEX
 [SELECTION] squash [POLICY-FLAGS...]
+[SELECTION] stampify
 [SELECTION] strip {--reduce|--blobs|--obscure}
 [SELECTION] tagify [ --tagify-merges | --canonicalize | --tipdeletes ]
 [SELECTION] transcode ENCODING
@@ -3972,7 +3975,6 @@ legacy {read [<INFILE] | write [>OUTFILE]}
 The following are S and should probably be attached to some verb:
 
 ----
-[SELECTION] references
 timings [MARK-NAME] [>OUTFILE]
 ----
 

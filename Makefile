@@ -149,7 +149,6 @@ BNF_TOPICS = \
 	print \
 	quit \
 	rebuild \
-	references \
 	remove \
 	rename \
 	renumber \
@@ -163,7 +162,7 @@ BNF_TOPICS = \
 	sizes \
 	sourcetype \
 	split \
-	stats \
+	stampify \
 	strip \
 	tagify \
 	timeoffset \

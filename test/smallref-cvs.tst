@@ -34,6 +34,6 @@ from :4
 
 done
 EOF
-references
+stampify
 prefer git
 write -

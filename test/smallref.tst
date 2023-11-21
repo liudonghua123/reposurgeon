@@ -1,5 +1,5 @@
 ## Reference-cookie substitution
 read <smallref.svn
-references
+stampify
 prefer git
 write -
