@@ -1,3 +1,8 @@
+set flag quiet
+read <expunge.svn
+1..$ delete path :^releases/v1.0/.*:
+reposurgeon: at 8, expunging M releases/v1.0/VERSION
+write
 #reposurgeon sourcetype svn
 blob
 mark :1
@@ -61,6 +66,5 @@ data 48
 we finally released. party tonight at my place!
 from :5
 M 100644 :6 dev/VERSION
-M 100644 :6 releases/v1.0/VERSION
 
 done
