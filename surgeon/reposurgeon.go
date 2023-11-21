@@ -6859,7 +6859,7 @@ func (rs *Reposurgeon) DoTimequake(line string) bool {
 		if event.parentCount() == 1 {
 			parents := event.parents()
 			if parent, ok := parents[0].(*Commit); ok {
-				if event.committer.date.timestamp.Equal(parent.committer.date.timestamp) {
+				if event.actionStamp() == parent.actionStamp() {
 					event.bump(1)
 					event.addColor(colorQSET)
 					modified++

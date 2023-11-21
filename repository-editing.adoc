@@ -197,9 +197,11 @@ Check-Text: Referring back to r2.
 Referring back to [[SVN:2]].
 EOF
 
-# Change cookies like [[SVN:2]] into action stamps that are independent
+# Ensure that all author dates are unique, bunping where necessary. Then
+# change cookies like [[SVN:2]] into action stamps that are independent
 # of the VCS in use. A typical action stamp looks like this:
-# <jrh@random.org!2006-08-14T02:34:56Z>
+# "jrh@random.org!2006-08-14T02:34:56Z".
+timequake
 stampify
 
 # Sometimes it's useful to drop files from the repo that should
