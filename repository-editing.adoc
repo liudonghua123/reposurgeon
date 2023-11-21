@@ -3895,7 +3895,7 @@ Most commands are simple and V:
 [SELECTION] append [--rstrip] {TEXT}
 {SELECTION} assign [--singleton] [NAME]
 branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]
-{SELECTION} checkout
+{SELECTION} checkout DIRECTORY
 choose [REPO-NAME]
 [SELECTION] coalesce [--debug] [TIMEFUZZ]
 {SELECTION} count [>OUTFILE]

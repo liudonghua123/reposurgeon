@@ -7522,6 +7522,7 @@ functions are defined:
 | @pre() | events before the argument set
 | @suc() | events after the argument set
 | @srt() | sort the argument set by event number.
+| @rev() | reverse the selection set
 |===================================================================
 `)
 }
