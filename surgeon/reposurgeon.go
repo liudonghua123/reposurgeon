@@ -3569,6 +3569,9 @@ dates. The former sets the author's name and email address (assuming
 the value can be parsed for both), copying the committer
 timestamp. The author's timezone may be deduced from the email
 address.
+
+Clears all Q bits, then sets them only on events that are actually
+modified.
 `)
 }
 
@@ -3587,9 +3590,13 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 		croak("while setting field: %v", err)
 		return false
 	}
+	repo.clearColor(colorQSET)
 	for it := rs.selection.Iterator(); it.Next(); {
 		event := repo.events[it.Value()]
 		if _, ok := getAttr(event, field); ok {
+			if v, ok := getAttr(event, field); ok && v != value {
+				event.addColor(colorQSET)
+			}
 			setAttr(event, field, value)
 			if event.isCommit() {
 				event.(*Commit).hash.invalidate()
@@ -3598,6 +3605,9 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 			if field == "Author" {
 				attr := value + " " + commit.committer.date.String()
 				newattr, _ := newAttribution(attr)
+				if newattr.String() != commit.authors[0].String() {
+					event.addColor(colorQSET)
+				}
 				commit.authors[0] = *newattr
 			} else if field == "Commitdate" {
 				newdate, err := newDate(value)
@@ -3605,12 +3615,18 @@ func (rs *Reposurgeon) DoSetfield(line string) bool {
 					croak(err.Error())
 					return false
 				}
+				if newdate.String() != commit.committer.date.String() {
+					event.addColor(colorQSET)
+				}
 				commit.committer.date = newdate
 			} else if field == "Authdate" {
 				newdate, err := newDate(value)
 				if err != nil {
 					croak(err.Error())
 					return false
+				}
+				if newdate.String() != commit.authors[0].date.String() {
+					event.addColor(colorQSET)
 				}
 				commit.authors[0].date = newdate
 			}
