@@ -1333,7 +1333,7 @@ func (rs *Reposurgeon) DoTiming(line string) bool {
 // HelpShow says "Shut up, golint!"
 func (rs *Reposurgeon) HelpShow() {
 	rs.helpOutput(`
-show {elapsed|memory|sizeof} [>OUTFILE]
+show {elapsed|memory|sizeof|when TIMESTAMP} [>OUTFILE]
 
 The "show" command generates reports that do not require a repository
 to be loaded.
@@ -1351,6 +1351,14 @@ trailing padding is required for instances in an array of the structs.
 This command is for developer use when optimizing structure packing to
 reduce memory use. It is probably not of interest to ordinary
 reposurgeon users.
+
+With "when", try to interpret the input line as a timestamp and
+interconvert between Git and RFC3339 format - can be useful when
+eyeballing export streams. Git timestamps (integer Unix time plus TZ)
+are supported; so are bare numbers which are interpreted as seconds
+since UTC (as if they were Git timestamps with a +0000 time offset).
+Also expects several variants of RFC1123Z dates, including Git log
+format.
 `)
 }
 
@@ -1365,6 +1373,8 @@ func (rs *Reposurgeon) DoShow(line string) bool {
 	defer parse.Closem()
 
 	switch verb := parse.args[0]; verb {
+	case "elapsed":
+		parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
 	case "memory":
 		var memStats runtime.MemStats
 		debug.FreeOSMemory()
@@ -1372,8 +1382,22 @@ func (rs *Reposurgeon) DoShow(line string) bool {
 		const MB = 1e6
 		parse.respond("Heap: %.2fMB  High water: %.2fMB",
 			float64(memStats.HeapAlloc)/MB, float64(memStats.TotalAlloc)/MB)
-	case "elapsed":
-		parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
+	case "when":
+		if len(parse.args) < 2 {
+			croak("a supported date format is required.")
+			return false
+		}
+		line = strings.Join(parse.args[1:], " ")
+		if _, err := strconv.Atoi(parse.args[1]); err == nil && len(parse.args) == 2 {
+			line = strings.TrimSpace(line) + " +0000"
+		}
+		if d, err := newDate(line); err != nil {
+			croak("unrecognized date format %q", line)
+		} else if strings.Contains(parse.args[0], "Z") {
+			parse.respond(d.String())
+		} else {
+			parse.respond(d.rfc3339() + " = " + d.rfc1123())
+		}
 	case "sizeof":
 		// For developer use when optimizing structure packing to reduce memory use
 		// const MaxUint = ^uint(0)
@@ -4579,36 +4603,6 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 	return false
 }
 
-// HelpWhen says "Shut up, golint!"
-func (rs *Reposurgeon) HelpWhen() {
-	rs.helpOutput(`
-when TIMESTAMP
-
-Interconvert between git timestamps (integer Unix time plus TZ) and
-RFC3339 format.  Takes one argument, autodetects the format.  Useful
-when eyeballing export streams.  Also accepts any other supported
-date format and converts to RFC3339.
-`)
-}
-
-// DoWhen is the command handler for the "when" command.
-func (rs *Reposurgeon) DoWhen(line string) (StopOut bool) {
-	parse := rs.newLineParse(line, "when", parseNOSELECT|parseNOOPTS, nil)
-	if len(parse.args) == 0 {
-		croak("a supported date format is required.")
-		return false
-	}
-	d, err := newDate(parse.args[0])
-	if err != nil {
-		croak("unrecognized date format")
-	} else if strings.Contains(parse.args[0], "Z") {
-		control.baton.printLogString(d.String())
-	} else {
-		control.baton.printLogString(d.rfc3339())
-	}
-	return false
-}
-
 // HelpDivide says "Shut up, golint!"
 func (rs *Reposurgeon) HelpDivide() {
 	rs.helpOutput(`
@@ -7442,7 +7436,7 @@ user.
 
 Commands are distinguished by a command keyword.  Most take a
 selection set immediately before it; see "help selection" for details.
-Some commands have a following subcommand verb.
+Some commands have a following subcommand keyword.
 
 Many commands take additional arguments after the command (and
 subcommand, if present). Arguments can be either bare tokens or string
@@ -7481,6 +7475,7 @@ recognized as the former it will be treated as the latter.  If the
 delimited regular wxpression starts and ends with ASCII single quotes,
 those will be stripped off and the result treated as a literal string.
 
+Command lines beginning with "#" are treated as comments and ignored.
 If a command line has a trailing portion that begins with one or more
 whitespace characters followed by "#" and is not inside a string, that
 trailing portion is ignored.

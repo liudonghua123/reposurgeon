@@ -18,3 +18,8 @@ list paths
 :2 setfield author "J. Fred Muggs <muggs@foobar.com>"
 # Stream enough parts to verify the setfield and setperm operations
 :2 list inspect
+# Following three line should render to the same RFC3339Z stamp
+show when 1287754582 +0400
+show when 1287754582 +0000
+show when 1287754582
+show when 2010-10-22T13:36:22Z

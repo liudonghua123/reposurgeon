@@ -176,8 +176,7 @@ BNF_TOPICS = \
 	unmerge \
 	unpreserve \
 	version \
-	view \
-	when
+	view
 UNANCHORED_TOPICS = \
 	functions \
 	options \

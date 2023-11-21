@@ -2170,9 +2170,6 @@ include::docinclude/renumber.adoc[]
 // COMMAND
 include::docinclude/transcode.adoc[]
 
-// COMMAND
-include::docinclude/when.adoc[]
-
 [[artifact-removal]]
 == Artifact handling
 
@@ -3570,9 +3567,9 @@ references. Macro argument formals did not yet have a % prefix. The
 split command syntax was incompatibly different.  The "set" and
 "clear" commands didn't take a subcommand verb.  There were "logfile"
 "readlimit" command doing what "set logfile" and "set readlimit" now
-does. The "elapsed", "memory", and "sizeof" subcommands of "show" used
-to be separate commands. Blob/tag/reset creation used to be
-"{blob|tag|reset} create", not "create {blob|tag|reset}"; similarly
+does. The "elapsed", "memory", "when", and "sizeof" subcommands of
+"show" used to be separate commands. Blob/tag/reset creation used to
+be "{blob|tag|reset} create", not "create {blob|tag|reset}"; similarly
 for delete, rename, and move. The command to rename repositories was
 just "rename", not "rename repo"; The "delete path" command was named
 "expunge".  The subcommands of "list" were separate commands.  There
@@ -3961,7 +3958,7 @@ profile {live|start|save|bench} [PORT | SUBJECT [FILENAME]]
 [SELECTION] rename {repo | path PATTERN [--force] | {path|branch|tag|reset} [--not] PATTERN}} NEW-NAME
 set flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
 set {logfile|readlimit} VALUE
-show {elapsed|memory|sizeof} [>OUTFILE]
+show {elapsed|memory|sizeof|when TIMESTAMP} [>OUTFILE]
 ----
 
 The following are SV. Inverting these to verb-first might be a good thing.
@@ -3988,7 +3985,6 @@ sourcetype [VCS-NAME]
 [SELECTION] timeoffset {OFFSET}
 [SELECTION] timequake [--tick]
 version [EXPECT]
-when {TIMESTAMP}
 ----
 
 In a revised, more verb-centered syntax, the key verbs would probably
@@ -4007,7 +4003,7 @@ write repo >OUTFILE
 ---
 
 Unfortunately these would make repository loads unpleasantly verbose,
-cpnflicting with "short and simple for common commands".
+conflicting with "short and simple for common commands".
 
 == Credits
 

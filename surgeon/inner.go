@@ -922,6 +922,10 @@ func rfc3339(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
+func rfc1123(t time.Time) string {
+	return t.UTC().Format(time.RFC1123Z)
+}
+
 var gitDateRE = regexp.MustCompile(`^[0-9]+\s*[+-][0-9]+$`)
 var zoneOffsetRE = regexp.MustCompile(`^([-+]?[0-9]{2})([0-9]{2})$`)
 
