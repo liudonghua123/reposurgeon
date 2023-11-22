@@ -155,6 +155,7 @@ BNF_TOPICS = \
 	rename \
 	renumber \
 	reorder \
+	reparent \
 	resolve \
 	set \
 	setfield \
@@ -192,8 +193,7 @@ SHORTFORM = \
 	write
 # These are all the non-regular topics
 EXCEPTIONS = \
-	attribution \
-	reparent
+	attribution
 # Most of the command descriptions in Repository editing are reposurgeon's embedded
 # help, lightly massaged into asciidoc format. This is how to generate them.
 docincludes: surgeon/reposurgeon.go reposurgeon repository-editing.adoc

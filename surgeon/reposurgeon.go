@@ -583,7 +583,7 @@ func (rs *Reposurgeon) helpOutput(help string) {
 		// blank separator line, and one or more
 		// blank-line-separated paragraphs of running text.
 		lines := strings.Split(help, "\n")
-		if lines[len(lines)-1] == "" {
+		for lines[len(lines)-1] == "" {
 			lines = lines[:len(lines)-1]
 		}
 		os.Stdout.WriteString(lines[0] + "::\n")
@@ -1180,8 +1180,9 @@ given it prints out the available types of profiles.
 
 With "live", starts an http server on the specified port which serves
 the profiling data. If no port is specified, it defaults to port
-1234. Use in combination with pprof, with a command like 'go tool pprof 
--http=":8080" http://localhost:1234/debug/pprof/<subject>'.
+1234. Use in combination with pprof, with a command like
+
+go tool pprof -http=":8080" http://localhost:1234/debug/pprof/<subject>
 
 With "start", starts the named profiler, and tells it to save to the
 named file, which will be overwritten. Currently only the cpu and
@@ -1200,7 +1201,6 @@ output format may change as repobench does. Runs a garbage-collect
 before reporting so the figure will better reflect storage currently
 held in loaded repositories; this will not affect the reported
 high-water mark.
-
 `)
 }
 
@@ -5160,71 +5160,64 @@ SELECTION reparent [--use-order] [--rebase]
 Changes the parent list of a commit.  Takes a selection set, zero or
 more option arguments, and an optional policy argument.
 
-Selection set:
+The selection set must resolve to one or more commits.  The
+selected commit with the highest event number (not necessarily the
+last one selected) is the commit to modify.  The remainder of the
+selected commits, if any, become its parents:  the selected commit
+with the lowest event number (which is not necessarily the first
+one selected) becomes the first parent, the selected commit with
+second lowest event number becomes the second parent, and so on.
+All original parent links are removed.  Examples:
 
-    The selection set must resolve to one or more commits.  The
-    selected commit with the highest event number (not necessarily the
-    last one selected) is the commit to modify.  The remainder of the
-    selected commits, if any, become its parents:  the selected commit
-    with the lowest event number (which is not necessarily the first
-    one selected) becomes the first parent, the selected commit with
-    second lowest event number becomes the second parent, and so on.
-    All original parent links are removed.  Examples:
+----
+# this makes 17 the parent of 33
+17,33 reparent
 
-        # this makes 17 the parent of 33
-        17,33 reparent
+# this also makes 17 the parent of 33
+33,17 reparent
 
-        # this also makes 17 the parent of 33
-        33,17 reparent
+# this makes 33 a root (parentless) commit
+33 reparent
 
-        # this makes 33 a root (parentless) commit
-        33 reparent
+# this makes 33 an octopus merge commit.  its first parent
+# is commit 15, second parent is 17, and third parent is 22
+22,33,15,17 reparent
+----
 
-        # this makes 33 an octopus merge commit.  its first parent
-        # is commit 15, second parent is 17, and third parent is 22
-        22,33,15,17 reparent
+With --use-order, use the selection order to determine which selected
+commit is the commit to modify and which are the parents (and if there
+are multiple parents, their order).  The last selected commit (not
+necessarily the one with the highest event number) is the commit to
+modify, the first selected commit (not necessarily the one with the
+lowest event number) becomes the first parent, the second selected
+commit becomes the second parent, and so on.  Examples:
 
-Options:
+----
+# this makes 33 the parent of 17
+33,17 reparent --use-order
 
-    --use-order
+# this makes 17 an octopus merge commit.  its first parent
+# is commit 22, second parent is 33, and third parent is 15
+22,33,15,17 reparent --use-order
+----
 
-        Use the selection order to determine which selected commit is
-        the commit to modify and which are the parents (and if there
-        are multiple parents, their order).  The last selected commit
-        (not necessarily the one with the highest event number) is the
-        commit to modify, the first selected commit (not necessarily
-        the one with the lowest event number) becomes the first
-        parent, the second selected commit becomes the second parent,
-        and so on.  Examples:
+Because ancestor commit events must appear before their
+descendants, giving a commit with a low event number a parent
+with a high event number triggers a re-sort of the events.  A
+re-sort assigns different event numbers to some or all of the
+events.  Re-sorting only works if the reparenting does not
+introduce any cycles.  To swap the order of two commits that
+have an ancestor-descendant relationship without introducing a
+cycle during the process, you must reparent the descendant
+commit first.
 
-            # this makes 33 the parent of 17
-            33|17 reparent --use-order
-
-            # this makes 17 an octopus merge commit.  its first parent
-            # is commit 22, second parent is 33, and third parent is 15
-            22,33,15|17 reparent --use-order
-
-        Because ancestor commit events must appear before their
-        descendants, giving a commit with a low event number a parent
-        with a high event number triggers a re-sort of the events.  A
-        re-sort assigns different event numbers to some or all of the
-        events.  Re-sorting only works if the reparenting does not
-        introduce any cycles.  To swap the order of two commits that
-        have an ancestor-descendant relationship without introducing a
-        cycle during the process, you must reparent the descendant
-        commit first.
-
-    --rebase
-
-	By default, the manifest of the reparented commit is computed
-	before modifying it; a 'deleteall' and some fileops are prepended
-	so that the manifest stays unchanged even when the first parent
-	has been changed.  This behavior can be changed by specifying a
-	policy flag:
-
-        Inhibits the default behavior -- no 'deleteall' is issued and
-        the tree contents of all descendants can be modified as a
-        result.
+With "--rebase", change the way the manifest of the reparented commit
+is generated. By default, the manifest of the reparented commit is
+computed before modifying it; a "deleteall" and some fileops are
+prepended so that the manifest stays unchanged even when the first
+parent has been changed. The --rebase flag inhibits the default
+behavior -- no 'deleteall' is issued and the tree contents of all
+descendants can be modified as a result.
 `)
 }
 
