@@ -170,7 +170,7 @@ func respond(msg string, args ...interface{}) {
 // screenwidth returns the current width of the terminal window.
 func screenwidth() int {
 	width := 80
-	if !control.flagOptions["fakeuser"] && term.IsTerminal(int(os.Stdin.Fd())) {
+	if term.IsTerminal(int(os.Stdin.Fd())) {
 		var err error
 		width, _, err = term.GetSize(0)
 		if err != nil {
@@ -6325,8 +6325,7 @@ make the output easier to read.
 anything up to and including making demons fly out of your nose.
 `},
 	{"fakeuser",
-		`Disable some features that cause output to vary depending screen width 
-and the ID of the invoking user. Use in regression-test loads.
+		`Fake the ID of the invoking user. Use in regression-test loads.
 `},
 	{"interactive",
 		`Enable interactive responses even when not on a tty.
