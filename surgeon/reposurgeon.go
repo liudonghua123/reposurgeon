@@ -4815,7 +4815,7 @@ func (rs *Reposurgeon) DoUnite(line string) bool {
 		croak("unite requires two or more repo name arguments")
 		return false
 	}
-	rs.unite(factors, parse.options.toStringSet())
+	rs.unite(factors, parse.options.Contains("--prune"))
 	if control.isInteractive() && !control.flagOptions["quiet"] {
 		rs.DoChoose("")
 	}
@@ -4878,7 +4878,7 @@ func (rs *Reposurgeon) DoGraft(line string) bool {
 		}
 	}
 	// OK, we've got the two repos and the graft point.  Do it.
-	rs.chosen().graft(graftRepo, graftPoint, parse.options.toStringSet())
+	rs.chosen().graft(graftRepo, graftPoint, parse.options.Contains("--prune"))
 	rs.removeByName(graftRepo.name)
 	return false
 }

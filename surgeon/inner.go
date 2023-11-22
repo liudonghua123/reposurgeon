@@ -6769,6 +6769,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 	pushforward := policy.Contains("--pushforward") || (!delete && !pushback)
 	coalesce := !policy.Contains("--no-coalesce")
 	delblobs := policy.Contains("--blobs")
+	emptyonly := policy.Contains("--empty-only")
 	// Sanity checks
 	if !dquiet {
 		for it := selected.Iterator(); it.Next(); {
@@ -6934,8 +6935,8 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 					// Also prepend event's
 					// comment, ignoring empty log
 					// messages.
-					if policy.Contains("--empty-only") && !emptyComment(child.Comment) {
-						croak(fmt.Sprintf("--empty is on and %s comment is nonempty", child.idMe()))
+					if emptyonly && !emptyComment(child.Comment) {
+						croak(fmt.Sprintf("--empty-only is on and %s comment is nonempty", child.idMe()))
 					}
 					child.Comment = composeComment(commit.Comment, child.Comment)
 					altered = append(altered, child)
@@ -7000,7 +7001,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 				parent.fileops = append(parent.fileops, myOperations...)
 				fileopsWerePushed = true
 				// Also append child"s comment to its parent"s
-				if policy.Contains("--empty-only") && !emptyComment(parent.Comment) {
+				if emptyonly && !emptyComment(parent.Comment) {
 					croak(fmt.Sprintf("--empty is on and %s comment is nonempty", parent.idMe()))
 				}
 				parent.Comment = composeComment(parent.Comment,
@@ -7840,7 +7841,7 @@ func (repo *Repository) absorb(other *Repository) {
 const invalidGraftIndex = -1
 
 // Graft a repo on to this one at a specified point.
-func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options stringSet) error {
+func (repo *Repository) graft(graftRepo *Repository, graftPoint int, prune bool) error {
 	var persist map[string]string
 	var anchor *Commit
 	var ok bool
@@ -7866,7 +7867,7 @@ func (repo *Repository) graft(graftRepo *Repository, graftPoint int, options str
 		graftroot.addParentByMark(anchor.mark)
 
 	}
-	if options.Contains("--prune") {
+	if prune {
 		// Prepend a deleteall. Roots have nothing upline to preserve.
 		delop := newFileOp(repo)
 		delop.construct(deleteall)
@@ -10253,7 +10254,7 @@ func (rl *RepositoryList) cut(early *Commit, late *Commit) bool {
 }
 
 // Unite multiple repos into a union repo.
-func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
+func (rl *RepositoryList) unite(factors []*Repository, prune bool) {
 	for _, x := range factors {
 		if len(x.commits(undefinedSelectionSet)) == 0 {
 			croak(fmt.Sprintf("empty factor %s", x.name))
@@ -10325,7 +10326,7 @@ func (rl *RepositoryList) unite(factors []*Repository, options stringSet) {
 		// ancestral stock to persist in the
 		// grafted branch unless they have
 		// modify ops in the branch root.
-		if options.Contains("--prune") {
+		if prune {
 			fileop := newFileOp(union)
 			fileop.construct(deleteall)
 			root.setOperations(append([]*FileOp{fileop}, root.operations()...))

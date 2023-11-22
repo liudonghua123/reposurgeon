@@ -1,2 +1,2 @@
 reposurgeon: msgin: nonempty comment at commit@:2 (input 1 of 1), bailing out
-reposurgeon: --empty is on and commit@:4 comment is nonempty
+reposurgeon: --empty-only is on and commit@:4 comment is nonempty
