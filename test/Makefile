@@ -93,7 +93,7 @@ MESSAGEBOX_TARGETS=$(patsubst %,messagebox-%,$(wildcard *.fi))
 
 # Stream roundtripping tests
 $(ROUNDTRIP_TARGETS): roundtrip-%: %
-	@($(REPOSURGEON) "$(TESTOPT)" "read -; write -" <$< | tapdiffer "$< roundtrip" $<) || echo "$@" >>$(FAILLOG);
+	@($(REPOSURGEON) "$(TESTOPT)" "read <$<; write -" | tapdiffer "$< roundtrip" $<) || echo "$@" >>$(FAILLOG);
 $(ROUNDTRIP_COMPRESS_TARGETS): roundtrip-compress-%: %
 	@($(REPOSURGEON) "$(TESTOPT)" "set flag compress" "read -; write -" <$< | tapdiffer "$< compressed roundtrip" $<) || echo "$@" >>$(FAILLOG);
 $(MESSAGEBOX_TARGETS): messagebox-%: %
