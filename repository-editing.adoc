@@ -3911,10 +3911,8 @@ help [COMMAND]
 history
 {SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 [SELECTION] lint [--OPTION...] [>OUTFILE]
-[SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge
-[SELECTION] move {tag|reset} [--not] PATTERN [NEW-NAME]
 [SELECTION] msgin [--create] [<INFILE]
 [SELECTION] msgout [--filter=PATTERN] [--blobs]
 prefer [VCS-NAME]
@@ -3950,10 +3948,12 @@ Simple and VS:
 clear flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
 clear {logfile|readlimit}
 [SELECTION] create {repo NAME|blob NAME [<INFILE]|tag NAME|reset NAME}
-{SELECTION} delete [--quiet] {commit | {path|tag|branch|reset} [--not|--notagify] PATTERN}
+{SELECTION} delete {commit | {path|tag|branch|reset} [--quiet|--not|--notagify] PATTERN]}
 [SELECTION] filter {dedos|shell|regexp|replace} [TEXT-OR-REGEXP]
+[SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
+[SELECTION] move {tag|reset} [--not] PATTERN [NEW-NAME]
 profile {live|start|save|bench} [PORT | SUBJECT [FILENAME]]
-[SELECTION] remove {deletes | [DMRCN] PATH | INDEX ]
+[SELECTION] remove {deletes | [DMRCN] PATH | INDEX ]}
 [SELECTION] rename {repo | path PATTERN [--force] | {path|branch|tag|reset} [--not] PATTERN}} NEW-NAME
 set flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
 set {logfile|readlimit} VALUE
