@@ -1477,9 +1477,10 @@ format; the first column is raw event numbers, the second a timestamp
 in UTC. If the repository has legacy IDs, they will be displayed in
 the third column. The leading portion of the comment follows.
 
-With "tags", display tags and resets: three fields, an event number
-and a type and a name.  Branch tip commits associated with tags are
-also displayed with the type field 'commit'.
+With "tags", display tags of both kinds, annotated and resets in the
+tags namespace. Three fields, an event number and a type and a name.
+Branch tip commits associated with tags are also displayed with the
+type field 'commit'.
 
 With "stamps", display full action stamps corresponding to commits in
 a select.  The stamp is followed by the first line of the commit
