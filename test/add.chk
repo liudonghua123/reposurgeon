@@ -1,4 +1,6 @@
+Expect invalid-mode message on next line
 reposurgeon: invalid mode 100444 in add command
+Expect failure message on next line
 reposurgeon: :8 already has an op for .gitignore or wibble
 blob
 mark :1
