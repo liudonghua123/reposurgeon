@@ -1,66 +1,66 @@
 
 # error: no repo
-attribution
+attribute
 reposurgeon: no repo has been chosen
 
 read <multitag.fi
 
 # error: parse failure
-attribution missing "quotation mark
-reposurgeon: attribution command has unbalanced quotes
+attribute missing "quotation mark
+reposurgeon: attribute command has unbalanced quotes
 
 # error: no event selection
-attribution delete
+attribute delete
 reposurgeon: no selection
 
 # error: no commits or tags selected
-=R | =B attribution
+=R | =B attribute
 reposurgeon: no commits or tags in selection
 
 # error: unrecognized action
-1..$ attribution bogus
+1..$ attribute bogus
 reposurgeon: unrecognized action: bogus
 
-:2..:4 attribution 2 resolve
+:2..:4 attribute 2 resolve
      3     :2 [2]
      5     :4 [2]
-:2..:4 attribution $ resolve
+:2..:4 attribute $ resolve
      3     :2 [2]
      5     :4 [2]
-:2..:4 attribution 1..$ resolve
+:2..:4 attribute 1..$ resolve
      3     :2 [1, 2]
      5     :4 [1, 2]
-:2..:4 attribution 1,$ resolve
+:2..:4 attribute 1,$ resolve
      3     :2 [1, 2]
      5     :4 [1, 2]
-:2..:4 attribution 1 | 2 resolve
+:2..:4 attribute 1 | 2 resolve
      3     :2 [1, 2]
      5     :4 [1, 2]
-:2..:4 attribution 1 & (2) resolve
+:2..:4 attribute 1 & (2) resolve
      3     :2 []
      5     :4 []
-:2..:4 attribution ~2 resolve
+:2..:4 attribute ~2 resolve
      3     :2 [1]
      5     :4 [1]
-:2..:4 attribution @min(1..$) resolve
+:2..:4 attribute @min(1..$) resolve
      3     :2 [1]
      5     :4 [1]
-:2..:4 attribution @max(1..$) resolve
+:2..:4 attribute @max(1..$) resolve
      3     :2 [2]
      5     :4 [2]
-:2..:4 attribution @amp(1) resolve
+:2..:4 attribute @amp(1) resolve
      3     :2 [1, 2]
      5     :4 [1, 2]
-:2..:4 attribution @pre(2) resolve
+:2..:4 attribute @pre(2) resolve
      3     :2 [1]
      5     :4 [1]
-:2..:4 attribution @suc(1) resolve
+:2..:4 attribute @suc(1) resolve
      3     :2 [2]
      5     :4 [2]
-:2..:4 attribution @srt(2,1) resolve
+:2..:4 attribute @srt(2,1) resolve
      3     :2 [1, 2]
      5     :4 [1, 2]
-1..$ attribution @amp(~1) resolve label
+1..$ attribute @amp(~1) resolve label
 label:      3     :2 [1, 2]
 label:      5     :4 [1, 2]
 label:      6     :5 [1, 2]
@@ -68,28 +68,28 @@ label:      9      - []
 label:     10      - []
 
 # error: bogus selection (tag has only "tagger" attribution at index 1)
-10 attribution 2 resolve
+10 attribute 2 resolve
 reposurgeon: element 2 out of range (event 10, mark -)
 
-1..$ attribution =C resolve committer only
+1..$ attribute =C resolve committer only
 committer only:      3     :2 [1]
 committer only:      5     :4 [1]
 committer only:      6     :5 [1]
 committer only:      9      - []
 committer only:     10      - []
-1..$ attribution =A resolve author only
+1..$ attribute =A resolve author only
 author only:      3     :2 [2]
 author only:      5     :4 [2]
 author only:      6     :5 [2]
 author only:      9      - []
 author only:     10      - []
-1..$ attribution =T resolve tagger only
+1..$ attribute =T resolve tagger only
 tagger only:      3     :2 []
 tagger only:      5     :4 []
 tagger only:      6     :5 []
 tagger only:      9      - [1]
 tagger only:     10      - [1]
-1..$ attribution =CAT resolve all
+1..$ attribute =CAT resolve all
 all:      3     :2 [1, 2]
 all:      5     :4 [1, 2]
 all:      6     :5 [1, 2]
@@ -97,27 +97,27 @@ all:      9      - [1]
 all:     10      - [1]
 
 # error: bogus visibility flag
-1..$ attribution =X resolve
+1..$ attribute =X resolve
 reposurgeon: garbled type mask at 'X resolve'
 
-@min(=C) attribution /Julien/ resolve match any
+@min(=C) attribute /Julien/ resolve match any
 match any:      3     :2 [1, 2]
-@min(=C) attribution /Julien/n resolve match name
+@min(=C) attribute /Julien/n resolve match name
 match name:      3     :2 [1, 2]
-@min(=C) attribution /frnchfrgg/e resolve match email
+@min(=C) attribute /frnchfrgg/e resolve match email
 match email:      3     :2 [1, 2]
-@min(=C) attribution /Julien/e resolve name not match email
+@min(=C) attribute /Julien/e resolve name not match email
 name not match email:      3     :2 []
-@min(=C) attribution /frnchfrgg/n resolve email not match name
+@min(=C) attribute /frnchfrgg/n resolve email not match name
 email not match name:      3     :2 []
-@min(=C) attribution /nomatch/ resolve no match
+@min(=C) attribute /nomatch/ resolve no match
 no match:      3     :2 []
 
 # error bogus regex match flag
-@min(=C) attribution /Julien/x resolve
+@min(=C) attribute /Julien/x resolve
 reposurgeon: unknown textsearch flag (event 3, mark :2)
 
-attribution
+attribute
      3     :2  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
@@ -126,7 +126,7 @@ attribution
      6     :5  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
      9      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253847 +0100
     10      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253834 +0100
-attribution show
+attribute show
      3     :2  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
@@ -135,7 +135,7 @@ attribution show
      6     :5  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
      9      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253847 +0100
     10      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253834 +0100
-1..$ attribution show
+1..$ attribute show
      3     :2  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
@@ -144,85 +144,85 @@ attribution show
      6     :5  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
      9      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253847 +0100
     10      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253834 +0100
-=C attribution 2 show
+=C attribute 2 show
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      5     :4  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
      6     :5  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
-=T attribution 1 show
+=T attribute 1 show
      9      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253847 +0100
     10      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253834 +0100
-@max(=C) attribution =A show
+@max(=C) attribute =A show
      6     :5  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
-# empty attribution selection
-@max(=T) attribution =A show
+# empty attribute selection
+@max(=T) attribute =A show
 
 #error: incorrect number of arguments
-attribution show bogus
+attribute show bogus
 reposurgeon: 'show' takes no arguments
 
-:2 attribution show
+:2 attribute show
      3     :2  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
-:2 attribution =C set 2017-03-21T01:23:45Z
-:2 attribution show
+:2 attribute =C set 2017-03-21T01:23:45Z
+:2 attribute show
      3     :2  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1490059425 +0000
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
-:2 attribution =C set sunshine@sunshineco.com
-:2 attribution show
+:2 attribute =C set sunshine@sunshineco.com
+:2 attribute show
      3     :2  1:committer Julien _FrnchFrgg_ RIVAUD <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
-:2 attribution =C set "Eric Sunshine"
-:2 attribution show
+:2 attribute =C set "Eric Sunshine"
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253480 +0100
-:2 attribution @min(=A) set "1234567890 +0500" sunshine@sunshineco.com "Eric Sunshine"
-:2 attribution show
+:2 attribute @min(=A) set "1234567890 +0500" sunshine@sunshineco.com "Eric Sunshine"
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric Sunshine <sunshine@sunshineco.com> 1234567890 +0500
-:2 attribution =A set "Eric S. Raymond" esr@thyrsus.com
-:2 attribution show
+:2 attribute =A set "Eric S. Raymond" esr@thyrsus.com
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric S. Raymond <esr@thyrsus.com> 1234567890 +0500
-:2 attribution =A set sunshine@sunshineco.com 2017-03-21T01:23:45Z
-:2 attribution show
+:2 attribute =A set sunshine@sunshineco.com 2017-03-21T01:23:45Z
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric S. Raymond <sunshine@sunshineco.com> 1490059425 +0000
 
 # error: incorrect number of arguments or repeated arguments
-1..$ attribution set
+1..$ attribute set
 reposurgeon: 'set' requires at least one of: name, email, date
-1..$ attribution set Name email@example.com "1234567890 +0500" junk
+1..$ attribute set Name email@example.com "1234567890 +0500" junk
 reposurgeon: 'set' requires at least one of: name, email, date
-1..$ attribution set Name1 email@example.com Name2
+1..$ attribute set Name1 email@example.com Name2
 reposurgeon: extra name: Name2
-1..$ attribution set email1@example.com Name email2@example.com
+1..$ attribute set email1@example.com Name email2@example.com
 reposurgeon: extra email: email2@example.com
-1..$ attribution set "1234567890 +0500" Name 2017-03-21T01:23:45Z
+1..$ attribute set "1234567890 +0500" Name 2017-03-21T01:23:45Z
 reposurgeon: extra timestamp: 2017-03-21T01:23:45Z
 
-:5 attribution show
+:5 attribute show
      6     :5  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
      6     :5  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
-:5 attribution =A delete
-:5 attribution show
+:5 attribute =A delete
+:5 attribute show
      6     :5  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
-# no attribution selection: delete all authors
-:4 attribution show
+# no attribute selection: delete all authors
+:4 attribute show
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
      5     :4  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
-:4 attribution delete
-:4 attribution show
+:4 attribute delete
+:4 attribute show
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
 # multiple events
-1..$ attribution show
+1..$ attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric S. Raymond <sunshine@sunshineco.com> 1490059425 +0000
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
      6     :5  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
      9      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253847 +0100
     10      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253834 +0100
-1..$ attribution =A delete
-1..$ attribution show
+1..$ attribute =A delete
+1..$ attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
      6     :5  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253584 +0100
@@ -230,36 +230,36 @@ reposurgeon: extra timestamp: 2017-03-21T01:23:45Z
     10      -  1:tagger    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253834 +0100
 
 # error: incorrect number of arguments
-1..$ attribution delete bogus
+1..$ attribute delete bogus
 reposurgeon: 'delete' takes no arguments
 # error: no event selection
-attribution =A delete
+attribute =A delete
 reposurgeon: no selection
 # error: cannot delete mandatory committer or tagger
-@max(=C) attribution =C delete
+@max(=C) attribute =C delete
 reposurgeon: unable to delete committer (1 needed)
-@max(=T) attribution =T delete
+@max(=T) attribute =T delete
 reposurgeon: unable to delete tagger (1 needed)
 
-:2 attribution show
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
-:2 attribution append "Eric S. Raymond" esr@thyrsus.com "1234567890 +0500"
-:2 attribution show
+:2 attribute append "Eric S. Raymond" esr@thyrsus.com "1234567890 +0500"
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric S. Raymond <esr@thyrsus.com> 1234567890 +0500
-:2 attribution append "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
-:2 attribution show
+:2 attribute append "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric S. Raymond <esr@thyrsus.com> 1234567890 +0500
      3     :2  3:author    Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
-:2 attribution /sunshine/ & =A prepend "Micky Mouse" toon@disney.com 1979-04-01T12:12:12Z
-:2 attribution show
+:2 attribute /sunshine/ & =A prepend "Micky Mouse" toon@disney.com 1979-04-01T12:12:12Z
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric S. Raymond <esr@thyrsus.com> 1234567890 +0500
      3     :2  3:author    Micky Mouse <toon@disney.com> 291816732 +0000
      3     :2  4:author    Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
-:2 attribution /esr/e prepend Example example@example.com "1234567890 +0500"
-:2 attribution show
+:2 attribute /esr/e prepend Example example@example.com "1234567890 +0500"
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Example <example@example.com> 1234567890 +0500
      3     :2  3:author    Eric S. Raymond <esr@thyrsus.com> 1234567890 +0500
@@ -267,38 +267,38 @@ reposurgeon: unable to delete tagger (1 needed)
      3     :2  5:author    Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
 
 # error: incorrect number of arguments
-1..$ attribution prepend
+1..$ attribute prepend
 reposurgeon: 'prepend' requires at least one of: name, email; date is optional
-1..$ attribution append Name email@example.com "1234567890 +0500" junk
+1..$ attribute append Name email@example.com "1234567890 +0500" junk
 reposurgeon: 'append' requires at least one of: name, email; date is optional
 # error: no event selection
-attribution =A prepend
+attribute =A prepend
 reposurgeon: no selection
 # error: cannot add committer or tagger (only 1 allowed)
-@max(=C) attribution =C prepend "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
+@max(=C) attribute =C prepend "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
 reposurgeon: unable to add committer (only 1 allowed)
-@max(=T) attribution =T append "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
+@max(=T) attribute =T append "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
 reposurgeon: unable to add tagger (only 1 allowed)
 # error: cannot add author to tag
-@max(=T) attribution append "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
+@max(=T) attribute append "Eric Sunshine" sunshine@sunshineco.com 2017-03-21T01:23:45Z
 reposurgeon: unable to add author to tag
 
-:2 attribution show
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Example <example@example.com> 1234567890 +0500
      3     :2  3:author    Eric S. Raymond <esr@thyrsus.com> 1234567890 +0500
      3     :2  4:author    Micky Mouse <toon@disney.com> 291816732 +0000
      3     :2  5:author    Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
-:2 attribution =A prepend "Eric Sunshine"
-:2 attribution show
+:2 attribute =A prepend "Eric Sunshine"
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric Sunshine <sunshine@sunshineco.com> 1234567890 +0500
      3     :2  3:author    Example <example@example.com> 1234567890 +0500
      3     :2  4:author    Eric S. Raymond <esr@thyrsus.com> 1234567890 +0500
      3     :2  5:author    Micky Mouse <toon@disney.com> 291816732 +0000
      3     :2  6:author    Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
-:2 attribution =A append esr@thyrsus.com
-:2 attribution show
+:2 attribute =A append esr@thyrsus.com
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric Sunshine <sunshine@sunshineco.com> 1234567890 +0500
      3     :2  3:author    Example <example@example.com> 1234567890 +0500
@@ -306,8 +306,8 @@ reposurgeon: unable to add author to tag
      3     :2  5:author    Micky Mouse <toon@disney.com> 291816732 +0000
      3     :2  6:author    Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  7:author    Eric S. Raymond <esr@thyrsus.com> 1490059425 +0000
-:2 attribution /disney/e append Pluto othertoon@disney.com
-:2 attribution show
+:2 attribute /disney/e append Pluto othertoon@disney.com
+:2 attribute show
      3     :2  1:committer Eric Sunshine <sunshine@sunshineco.com> 1490059425 +0000
      3     :2  2:author    Eric Sunshine <sunshine@sunshineco.com> 1234567890 +0500
      3     :2  3:author    Example <example@example.com> 1234567890 +0500
@@ -318,17 +318,17 @@ reposurgeon: unable to add author to tag
      3     :2  8:author    Eric S. Raymond <esr@thyrsus.com> 1490059425 +0000
 
 # infer author name and date from committer
-:4 attribution show
+:4 attribute show
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
-:4 attribution append frnchfrgg@free.fr
-:4 attribution show
+:4 attribute append frnchfrgg@free.fr
+:4 attribute show
      5     :4  1:committer Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
      5     :4  2:author    Julien _FrnchFrgg_ RIVAUD <frnchfrgg@free.fr> 1364253523 +0100
 
 # error: unable to infer name, email
-:4 attribution append 2017-03-21T01:23:45Z
+:4 attribute append 2017-03-21T01:23:45Z
 reposurgeon: unable to infer missing name and email
-:4 attribution prepend Nobody
+:4 attribute prepend Nobody
 reposurgeon: unable to infer email for Nobody
-:4 attribution append nobody@nowhere.com
+:4 attribute append nobody@nowhere.com
 reposurgeon: unable to infer name for nobody@nowhere.com

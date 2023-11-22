@@ -847,7 +847,7 @@ func (commit *Commit) findSuccessors(path string) []string {
 //
 // All optional arguments and keywords follow any required arguments
 // and keywords.  There are two exceptions to this rule, in
-// the "attribution" and "remove" commands; these sometimes have
+// the "attribute" and "remove" commands; these sometimes have
 // required arguments following optionals.  Also, "tag" and "reset"
 // have two different sequences not very well expressed in the BNF -
 // the create case requires one string or bareword newname, while move
@@ -5743,11 +5743,11 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 	return false
 }
 
-// HelpAttribution says "Shut up, golint!"
+// HelpAttribute says "Shut up, golint!"
 // FIXME: Odd syntax
-func (rs *Reposurgeon) HelpAttribution() {
+func (rs *Reposurgeon) HelpAttribute() {
 	rs.helpOutput(`
-[SELECTION] attribution [ATTR-SELECTION] SUBCOMMAND [ARG...]
+[SELECTION] attribute [ATTR-SELECTION] SUBCOMMAND [ARG...]
 
 Inspect, modify, add, and remove commit and tag attributions.
 
@@ -5776,26 +5776,26 @@ selection upon which to operate.
 
 Available actions are:
 
-[SELECTION] attribution [ATTR-SELECTION] [show] [>file]
+[SELECTION] attribute [ATTR-SELECTION] [show] [>file]
     Inspect the selected attributions of the specified events (commits and
     tags). The 'show' keyword is optional. If no attribution selection
     expression is given, defaults to all attributions. If no event selection
     is specified, defaults to all events. Supports > redirection.
 
-{SELECTION} attribution ATTR-SELECTION set NAME [EMAIL] [DATE]
-{SELECTION} attribution ATTR-SELECTION set [NAME] EMAIL [DATE]
-{SELECTION} attribution ATTR-SELECTION set [NAME] [EMAIL] DATE
+{SELECTION} attribute ATTR-SELECTION set NAME [EMAIL] [DATE]
+{SELECTION} attribute ATTR-SELECTION set [NAME] EMAIL [DATE]
+{SELECTION} attribute ATTR-SELECTION set [NAME] [EMAIL] DATE
     Assign NAME, EMAIL, DATE to the selected attributions. As a
     convenience, if only some fields need to be changed, the others can be
     omitted. Arguments NAME, EMAIL, and DATE can be given in any order.
 
-{SELECTION} attribution delete
+{SELECTION} attribute delete
     Delete the selected attributions. As a convenience, deletes all authors if
     <selection> is not given. It is an error to delete the mandatory committer
     and tagger attributions of commit and tag events, respectively.
 
-{SELECTION} attribution [ATTR-SELECTION] prepend NAME [EMAIL] [DATE]
-{SELECTION} attribution [ATTR-SELECTION] prepend [NAME] EMAIL [DATE]
+{SELECTION} attribute [ATTR-SELECTION] prepend NAME [EMAIL] [DATE]
+{SELECTION} attribute [ATTR-SELECTION] prepend [NAME] EMAIL [DATE]
     Insert a new attribution before the first attribution named by SELECTION.
     The new attribution has the same type ('committer', 'author', or 'tagger')
     as the one before which it is being inserted. Arguments NAME, EMAIL,
@@ -5813,8 +5813,8 @@ Available actions are:
     It is presently an error to insert a new committer or tagger attribution.
     To change a committer or tagger, use 'setfield' instead.
 
-{SELECTION} attribution [ATTR-SELECTION] append {NAME} [EMAIL] [DATE]
-{SELECTION} attribution [ATTR-SELECTION] append [NAME] {EMAIL} [DATE]
+{SELECTION} attribute [ATTR-SELECTION] append {NAME} [EMAIL] [DATE]
+{SELECTION} attribute [ATTR-SELECTION] append [NAME] {EMAIL} [DATE]
     Insert a new attribution after the last attribution named by SELECTION.
     The new attribution has the same type ('committer', 'author', or 'tagger')
     as the one after which it is being inserted. Arguments NAME, EMAIL,
@@ -5832,7 +5832,7 @@ Available actions are:
     It is presently an error to insert a new committer or tagger attribution.
     To change a committer or tagger, use 'setfield' instead.
 
-{SELECTION} attribution ATTR-SELECTION resolve [>file] [LABEL-TEXT...]
+{SELECTION} attribute ATTR-SELECTION resolve [>file] [LABEL-TEXT...]
     Does nothing but resolve an attribution selection-set expression for the
     selected events and echo the resulting attribution-number set to standard
     output. The remainder of the line after the command is used as a label for
@@ -5846,13 +5846,13 @@ that is actually modified.
 `)
 }
 
-// CompleteAttributions is a completion hook over attributions options
-func (rs *Reposurgeon) CompleteAttributions(text string) []string {
+// CompleteAttributes is a completion hook over attribute options
+func (rs *Reposurgeon) CompleteAttributes(text string) []string {
 	return []string{"append", "prepend", "resolve", "set", "show"}
 }
 
-// DoAttribution inspects, modifies, adds, and removes commit and tag attributions.
-func (rs *Reposurgeon) DoAttribution(line string) bool {
+// DoAttribute inspects, modifies, adds, and removes commit and tag attributions.
+func (rs *Reposurgeon) DoAttribute(line string) bool {
 	repo := rs.chosen()
 	if repo == nil {
 		croak("no repo has been chosen")
@@ -5860,7 +5860,7 @@ func (rs *Reposurgeon) DoAttribution(line string) bool {
 	}
 	selparser := newAttrEditSelParser()
 	machine, rest := selparser.compile(line)
-	parse := rs.newLineParse(rest, "attribution", parseNOOPTS, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(rest, "attribute", parseNOOPTS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	var action string
 	args := []string{}
@@ -7609,7 +7609,7 @@ Do set negation with prefix "~"; it has higher precedence than
 func (rs *Reposurgeon) HelpRegexp() {
 	rs.helpOutputMisc(`
 The pattern expressions used in event selections and various commands
-(attribution, expunge, filter, msgout, path) are those of the Go 
+(attribute, expunge, filter, msgout, path) are those of the Go
 language.
 
 Normally patterns intended to be interpreted as regular expressions

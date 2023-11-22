@@ -251,7 +251,7 @@ repository() {
 	    trap 'rm -f /tmp/stream$$' EXIT HUP INT QUIT TERM
 	    case "${repotype}" in
 		git) git fast-export -q --all >/tmp/streamm$$;;
-		bzr|brz) "${repotype}" fast-export -q | reposurgeon 'read -' 'timequake --tick' '1..$ attribution =C set "Fred J. Foonly" fred@foonly.org' "write >/tmp/stream$$";;
+		bzr|brz) "${repotype}" fast-export -q | reposurgeon 'read -' 'timequake --tick' '1..$ attribute =C set "Fred J. Foonly" fred@foonly.org' "write >/tmp/stream$$";;
 		svn)
 		    spacer=' '
 		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086

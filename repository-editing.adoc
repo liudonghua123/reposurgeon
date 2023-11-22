@@ -1962,8 +1962,8 @@ include::docinclude/msgin.adoc[]
 // COMMAND
 include::docinclude/setfield.adoc[]
 
-[[attribution_cmd,attribution]]
-[SELECTION] attribution [ATTR-SELECTION] {show|set|delete|prepend|append} [ARG...]::
+[[attribute_cmd,attribute]]
+[SELECTION] attribute [ATTR-SELECTION] {show|set|delete|prepend|append} [ARG...]::
    Inspect, modify, add, and remove commit and tag attributions.
 +
 Attributions upon which to operate are selected in much the same way as
@@ -3126,8 +3126,8 @@ There's no way you can discriminate by time in an authors file.
 But there's a different technique that will work.  Like this:
 
 ----
-1..<2010-90-15T00:00:00Z> & /^fred$/C attribution =C|=A set "Fred Foonly" "fred1@foonly.org"
-<2010-90-15T00:00:00Z>..$ & /^fred$/C attribution =C|=A set "Fred J. Muggs" "fred2@foonly.org"
+1..<2010-90-15T00:00:00Z> & /^fred$/C attribute =C|=A set "Fred Foonly" "fred1@foonly.org"
+<2010-90-15T00:00:00Z>..$ & /^fred$/C attribute =C|=A set "Fred J. Muggs" "fred2@foonly.org"
 /fred[12]/C list inspect
 ----
 
@@ -3135,7 +3135,7 @@ The third command allows you to check that the previous two produced
 a sane-looking result.
 
 Part of the trick here is knowing that if you only set name and email
-fields with an attribution command the date field is left unchanged.
+fields with an attribute command the date field is left unchanged.
 
 If you needed to handle more than one of these collisions, you
 might consider a slightly different approach that illustrates
@@ -3143,8 +3143,8 @@ how to write and use a multiline macro:
 
 ----
 define splitAttribution {
-1..<{1}> & /^%{0}$/C attribution =C|=A set "%{2}" "%{2}"
-<{1}>..$ & /^%{0}$/C attribution =C|=A set "%{3}" "%{3}"
+1..<{1}> & /^%{0}$/C attribute =C|=A set "%{2}" "%{2}"
+<{1}>..$ & /^%{0}$/C attribute =C|=A set "%{3}" "%{3}"
 }
 do splitAttribution fred 2010-90-15T00:00:00Z fred1 fred2
 ----
@@ -3503,7 +3503,8 @@ just "rename", not "rename repo"; The "delete path" command was named
 "expunge".  The subcommands of "list" were separate commands.  There
 was a "script" command separate from "do". The "reference list"
 command was removed (it duplicated the =N delector); "references
-lift" became "stampify"; "timings" became "checkpoint". 
+lift" became "stampify"; "timings" became "checkpoint"; "attribution"
+bnecomes "attribute". 
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3878,6 +3879,7 @@ view [directory]
 Simple and VS:
 
 ----
+[SELECTION] attribute [ATTR-SELECTION] SUBCOMMAND [ARG...]
 clear flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
 clear {logfile|readlimit}
 [SELECTION] create {repo NAME|blob NAME [<INFILE]|tag NAME|reset NAME}
@@ -3898,7 +3900,6 @@ The following are SV. Inverting these to verb-first might be a good thing.
 ----
 [SELECTION] authors {read <INFILE | write >OUTFILE}
 legacy {read [<INFILE] | write [>OUTFILE]}
-[SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
 ----
 
 The following are S, but probably shouldn't change:
@@ -3960,7 +3961,7 @@ Eric Sunshine <sunshine@sunshineco.com>::
    Converted selection parser, which evaluated an expression while parsing it,
    to a compile/evaluate paradigm in which a selection expression can be
    compiled once and evaluated many times.
-   Added '<<attribution_cmd>>' command.
+   Added '<<attribute_cmd>>' command.
    Added '<<reorder_cmd>>' command.
    Assisted Python to Go port.
 
