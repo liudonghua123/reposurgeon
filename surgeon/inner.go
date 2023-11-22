@@ -2,7 +2,7 @@
 // Also, the code for deserializing a dump fuile to a DAG and
 // serializing a DAG to a dump file.  Nothing in here is dependent on
 // the DSL surface syntax or Kommandant.  It does assume logit(),
-// announce(), croak(), respond(), throw() and catch() do sane things.
+// croak(), respond(), throw() and catch() do sane things.
 // Many functions are passed a Baton reference so they can ship
 // progress reports.
 
@@ -3361,11 +3361,10 @@ func (commit *Commit) addCallout(mark string) {
 	commit._parentNodes = append(commit._parentNodes, newCallout(mark))
 }
 
-func (commit *Commit) insertParent(idx int, mark string) {
+func (commit *Commit) insertParent(idx int, mark string) bool {
 	newparent := commit.repo.markToEvent(mark)
 	if newparent == nil {
-		croak("invalid mark %s passed to insertParent", mark)
-		return
+		return false
 	}
 	// Stupid slice tricks: https://github.com/golang/go/wiki/SliceTricks
 	commit._parentNodes = append(commit._parentNodes[:idx], append([]CommitLike{newparent.(*Commit)}, commit._parentNodes[idx:]...)...)
@@ -3374,6 +3373,7 @@ func (commit *Commit) insertParent(idx int, mark string) {
 		newparent.(*Commit).addChild(commit)
 	}
 	commit.invalidateManifests()
+	return true
 }
 
 func (commit *Commit) removeParent(event CommitLike) {
@@ -7886,7 +7886,9 @@ func (repo *Repository) graft(graftRepo *Repository, graftPoint int, prune bool)
 				if attach.Size() == 1 {
 					commit.removeParent(parent)
 					newparent := repo.events[attach.Fetch(0)]
-					commit.insertParent(idx, newparent.getMark())
+					if !commit.insertParent(idx, newparent.getMark()) {
+						croak("invalid mark %s passed to insertParent", newparent.getMark())
+					}
 				} else {
 					unresolved = append(unresolved, parentMark)
 				}
@@ -10136,7 +10138,9 @@ func (rl *RepositoryList) cutConflict(early *Commit, late *Commit) (bool, int, e
 
 // Undo a cut operation and clear all colors.
 func (repo *Repository) cutClear(early *Commit, late *Commit, cutIndex int) {
-	late.insertParent(cutIndex, early.mark)
+	if !late.insertParent(cutIndex, early.mark) {
+		croak("invalid mark %s passed to insertParent", early.mark)
+	}
 	for _, event := range repo.events {
 		event.setColor(0)
 	}
