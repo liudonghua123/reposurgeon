@@ -148,6 +148,7 @@ BNF_TOPICS = \
 	prepend \
 	preserve \
 	print \
+	profile \
 	quit \
 	rebuild \
 	remove \
@@ -192,7 +193,6 @@ SHORTFORM = \
 # These are all the non-regular topics
 EXCEPTIONS = \
 	attribution \
-	profile \
 	reparent
 # Most of the command descriptions in Repository editing are reposurgeon's embedded
 # help, lightly massaged into asciidoc format. This is how to generate them.

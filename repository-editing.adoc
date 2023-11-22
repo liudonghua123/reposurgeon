@@ -2504,14 +2504,8 @@ include::docinclude/show.adoc[]
 // COMMAND
 include::docinclude/checkpoint.adoc[]
 
-[[profile_cmd,profile]]
-profile [live|start|save|bench] [PORT | SUBJECT [FILENAME]]::
-    Profiling is enabled by default, but viewing the profile data
-    requires either starting the HTTP server with '```profile live```', or
-    saving it to a file with '```profile save```'. When no arguments are
-    given it prints out the available types of profiles.  '```profile
-    bench```' has an internal helper for the repobench script. There
-    is more detailed documentation on this command in the embedded help.
+// COMMAND
+include::docinclude/profile.adoc[]
 
 // COMMAND
 include::docinclude/exit.adoc[]

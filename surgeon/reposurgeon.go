@@ -1161,52 +1161,46 @@ func stopTracing() {
 // HelpProfile says "Shut up, golint!"
 func (rs *Reposurgeon) HelpProfile() {
 	rs.helpOutput(`
-profile [live|start|save|bench] [PORT | SUBJECT [FILENAME]]
+profile [live PORT | start SUBJECT FILENAME | save SUBJECT [FILENAME] | bench]
 
 Manages data collection for profiling.
 
-Corresponding subcommands are these:
-
-    profile live [PORT]
-
-	Starts an http server on the specified port which serves
-	the profiling data. If no port is specified, it defaults
-	to port 1234. Use in combination with pprof:
-
-	    go tool pprof -http=":8080" http://localhost:1234/debug/pprof/<subject>
-
-    profile start SUBJECT FILENAME
-
-	Starts the named profiler, and tells it to save to the named
-	file, which will be overwritten. Currently only the cpu and
-	trace profilers require you to explicitly start them; all the
-	others start automatically. For the others, the filename is
-	stored and used to automatically save the profile before
-	reposurgeon exits.
-
-    profile save SUBJECT [FILENAME]
-
-	Saves the data from the named profiler to the named file, which
-	will be overwritten. If no filename is specified, this will fall
-	back to the filename previously stored by 'profile start'.
-
-    profile bench
-
-	Report elapsed time and memory usage in the format expected by 
-	repobench. Note: this comment is not intended for interactive
-	use or to be used by scripts other than repobench.  The output
-	format may change as repobench does.
-
-	Runs a garbage-collect before reporting so the figure will
-	better reflect storage currently held in loaded repositories;
-	this will not affect the reported high-water mark.
-	For a list of available profile subjects, call the profile
-	command without arguments. The list is in part extracted from the
-	Go runtime and is subject to change.
+For a list of available profile subjects, call the profile
+command without arguments. The list is in part extracted from the
+Go runtime and is subject to change.
 
 For documentation on the Go profiler used by the live and start modes, see
 
 https://github.com/google/pprof/blob/master/doc/README.md
+
+Profiling is enabled by default, but viewing the profile data
+requires either starting the HTTP server with "profile live", or
+saving it to a file with "profile save". When no arguments are
+given it prints out the available types of profiles.
+
+With "live", starts an http server on the specified port which serves
+the profiling data. If no port is specified, it defaults to port
+1234. Use in combination with pprof, with a command like 'go tool pprof 
+-http=":8080" http://localhost:1234/debug/pprof/<subject>'.
+
+With "start", starts the named profiler, and tells it to save to the
+named file, which will be overwritten. Currently only the cpu and
+trace profilers require you to explicitly start them; all the others
+start automatically. For the others, the filename is stored and used
+to automatically save the profile before reposurgeon exits.
+
+With "save", saves the data from the named profiler to the named file, which
+will be overwritten. If no filename is specified, this will fall
+back to the filename previously stored by 'profile start'.
+
+With "bench", report elapsed time and memory usage in the format
+expected by repobench. Note: this comment is not intended for
+interactive use or to be used by scripts other than repobench.  The
+output format may change as repobench does. Runs a garbage-collect
+before reporting so the figure will better reflect storage currently
+held in loaded repositories; this will not affect the reported
+high-water mark.
+
 `)
 }
 
