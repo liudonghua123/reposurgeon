@@ -2502,7 +2502,7 @@ Profiling commands are:
 include::docinclude/show.adoc[]
 
 // COMMAND
-include::docinclude/timing.adoc[]
+include::docinclude/checkpoint.adoc[]
 
 [[profile_cmd,profile]]
 profile [live|start|save|bench] [PORT | SUBJECT [FILENAME]]::
@@ -3570,7 +3570,7 @@ just "rename", not "rename repo"; The "delete path" command was named
 "expunge".  The subcommands of "list" were separate commands.  There
 was a "script" command separate from "do". The "reference list"
 command was removed (it duplicated the =N delector); "references
-lift" became "stampify".
+lift" became "stampify"; "timings" became "checkpoint". 
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -3890,6 +3890,7 @@ Most commands are simple and V:
 {SELECTION} assign [--singleton] [NAME]
 branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]
 {SELECTION} checkout DIRECTORY
+checkpoint [MARK-NAME] [>OUTFILE]
 choose [REPO-NAME]
 [SELECTION] coalesce [--changelog] [--debug] [TIMEFUZZ]
 {SELECTION} count [>OUTFILE]
@@ -3965,12 +3966,6 @@ The following are SV. Inverting these to verb-first might be a good thing.
 [SELECTION] authors {read <INFILE | write >OUTFILE}
 legacy {read [<INFILE] | write [>OUTFILE]}
 [SELECTION] attributions [ATTR-SELECTION] SUBCOMMAND [ARG...]
-----
-
-The following are S and should probably be attached to some verb:
-
-----
-timings [MARK-NAME] [>OUTFILE]
 ----
 
 The following are S, but probably shouldn't change:

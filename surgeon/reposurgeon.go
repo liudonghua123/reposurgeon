@@ -1303,10 +1303,10 @@ func (rs *Reposurgeon) DoProfile(line string) bool {
 	return false
 }
 
-// HelpTiming says "Shut up, golint!"
-func (rs *Reposurgeon) HelpTiming() {
+// HelpCheckpoint says "Shut up, golint!"
+func (rs *Reposurgeon) HelpCheckpoint() {
 	rs.helpOutput(`
-timings [MARK-NAME] [>OUTFILE]
+checkpoint [MARK-NAME] [>OUTFILE]
 
 Report phase-timing results from analysis of the current repository.
 
@@ -1316,9 +1316,9 @@ long-running conversion recipes.
 `)
 }
 
-// DoTiming reports repo-analysis times
-func (rs *Reposurgeon) DoTiming(line string) bool {
-	parse := rs.newLineParse(line, "timing", parseREPO|parseNOSELECT|parseNOOPTS, orderedStringSet{"stdout"})
+// DoCheckpoint reports repo-analysis times
+func (rs *Reposurgeon) DoCheckpoint(line string) bool {
+	parse := rs.newLineParse(line, "checkpoint", parseREPO|parseNOSELECT|parseNOOPTS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	if len(parse.args) > 0 {
 		rs.chosen().timings = append(rs.chosen().timings, TimeMark{parse.args[0], time.Now()})

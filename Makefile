@@ -109,6 +109,7 @@ BNF_TOPICS = \
 	branchlift \
 	changelogs \
 	checkout \
+	checkpoint \
 	choose \
 	clear \
 	clone \
@@ -166,7 +167,6 @@ BNF_TOPICS = \
 	tagify \
 	timeoffset \
 	timequake \
-	timing \
 	transcode \
 	unassign \
 	undefine \
