@@ -122,8 +122,7 @@ $(COMMAND_TARGETS): command-check-%: %.tst
 command-buildcheck: $(GENERATEDSVN) $(GENERATEDGIT)
 	@for file in $(COMMAND_LOADS); do \
 	    echo "Remaking $${file}.chk"; \
-	    $(REPOSURGEON) $(BUILDOPT) "$(TESTOPT)" "do $${file}.tst testing123" >$${file}.chk \
-		2>&1 || exit 1; \
+	    singletest -q -b -a testing123 $${file}; \
 	done
 
 # Regression-test loading from Subversion

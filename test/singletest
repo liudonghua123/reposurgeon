@@ -105,8 +105,8 @@ do
 
     # Take input from /dev/null so we won't have a screenwidth dependency.
     case $mode in
-    build) "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set flag serial" "$experimental" "$interactive" "do ${tst}" </dev/null >"${chk}" 2>&1 ;;
-    view)  "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "$interactive" "do ${tst}" </dev/null 2>&1 ;;
+    build) "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set flag serial" "$experimental" "$interactive" "do ${tst} ${arg}" </dev/null >"${chk}" 2>&1 ;;
+    view)  "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "$interactive" "do ${tst} ${arg}" </dev/null 2>&1 ;;
     errs)  "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "$interactive" "do ${tst}" </dev/null >/dev/null ;;
     *)     legend=$(echo "${legend}" | sed -e 's/## //')
 	   cat </dev/null >/tmp/tapdiff$$
