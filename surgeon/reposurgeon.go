@@ -6293,6 +6293,62 @@ func (rs *Reposurgeon) DoDiff(line string) bool {
 // Setting options
 //
 
+var optionFlags = [...][2]string{
+	{"asciidoc",
+		`Dump help items using asciiidoc definition markup.
+`},
+	{"canonicalize",
+		`If set, import stream reads and msgin will canonicalize comments
+by replacing CR-LF with LF, stripping leading and trailing whitespace, and then
+appending a LF. This behavior inverts if the crlf option is on - LF is replaced
+with Cr-LF and CR-LF is appended.
+`},
+	{"crlf",
+		`If set, expect CR-LF line endings on text input and emit them on
+output. Comment canonicalization will map LF to CR-LF.
+`},
+	{"compress",
+		`Use compression for on-disk copies of blobs. Accepts an increase
+in repository read and write time in order to reduce the amount of
+disk space required while editing; this may be useful for large
+repositories. No effect if the edit input was a dump stream; in that
+case, reposurgeon doesn't make on-disk blob copies at all (it points
+into sections of the input stream instead).
+`},
+	{"echo",
+		`Echo commands before executing them. Setting this in test scripts may 
+make the output easier to read.
+`},
+	{"experimental",
+		`This flag is reserved for developer use.  If you set it, it could do
+anything up to and including making demons fly out of your nose.
+`},
+	{"fakeuser",
+		`Disable some features that cause output to vary depending screen width 
+and the ID of the invoking user. Use in regression-test loads.
+`},
+	{"interactive",
+		`Enable interactive responses even when not on a tty.
+`},
+	{"materialize",
+		`Force creation of content blobs on disk when reading a stream file,
+even when it is randomly accessible and the metadata could point at extents in the file.
+Use in regression-test loads to exercise handling of materialized blobs.
+`},
+	{"progress",
+		`Enable fancy progress messages even when not on a tty.
+`},
+	{"quiet",
+		`Suppress time-varying parts of reports.
+`},
+	{"relax",
+		`Continue script execution on error, do not bail out.
+`},
+	{"serial",
+		`Disable parallelism in code. Use for generating test loads.
+`},
+}
+
 // HelpOptions says "Shut up, golint!"
 func (rs *Reposurgeon) HelpOptions() {
 	for _, opt := range optionFlags {
