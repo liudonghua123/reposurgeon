@@ -1,5 +1,5 @@
 ## Test incorporate command with input redirect
-set flag faketime
+set flag fakeuser
 read <min.fi
 @min(=C) incorporate <<EOF
 sample.tar

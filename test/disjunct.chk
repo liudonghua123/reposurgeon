@@ -1,5 +1,5 @@
 
-set flag faketime
+set flag fakeuser
 
 read <sample1.fi
 

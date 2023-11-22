@@ -1,5 +1,5 @@
 ## Test recovery from malformed search
-set flag faketime
+set flag fakeuser
 set flag relax
 read <simple.fi
 list

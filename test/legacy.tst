@@ -1,5 +1,5 @@
 ## Legacy-ID pattern-matching
-set flag faketime
+set flag fakeuser
 read <<EOF
 blob
 mark :1

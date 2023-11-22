@@ -1,6 +1,6 @@
 ## Test the macro facility
 set flag echo
-set flag faketime
+set flag fakeuser
 read <simple.fi
 set flag interactive
 print "Test that we can define and see macro definitions"
