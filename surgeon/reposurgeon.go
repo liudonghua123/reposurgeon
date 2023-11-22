@@ -2378,8 +2378,7 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 			croak("missing source pattern in path rename command")
 			return false
 		}
-		sourcePattern := parse.args[1]
-		sourceRE := parse.getPattern(sourcePattern, "path")
+		sourceRE := parse.getPattern(parse.args[1], "path")
 		if len(parse.args) < 3 {
 			croak("no target specified in path rename")
 			return false
@@ -3981,8 +3980,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			croak("missing tag pattern")
 			return false
 		}
-		sourcepattern := parse.args[1]
-		sourceRE := parse.getPattern(sourcepattern, "text")
+		sourceRE := parse.getPattern(parse.args[1], "text")
 
 		// Collect all matching tags in the selection set
 		tags := make([]*Tag, 0)
@@ -3993,7 +3991,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			}
 		}
 		if len(tags) == 0 {
-			croak("no tag matches %s.", sourcepattern)
+			croak("no tag matches %s.", sourceRE.String())
 			return false
 		}
 
@@ -4026,8 +4024,7 @@ func (rs *Reposurgeon) DoDelete(line string) bool {
 			croak("missing reset pattern")
 			return false
 		}
-		resetname := parse.args[1]
-		sourceRE := parse.getPattern(resetname, "refname")
+		sourceRE := parse.getPattern(parse.args[1], "refname")
 
 		repo.clearColor(colorQSET)
 		resets := make([]*Reset, 0)
