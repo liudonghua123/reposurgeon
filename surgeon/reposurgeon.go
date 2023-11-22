@@ -858,9 +858,6 @@ func (commit *Commit) findSuccessors(path string) []string {
 //
 // No command has more than three arguments (excluding syntactic
 // keywords), except for those ending with string/bareword lists.
-//
-// All uses of alternation in the BNF are a choice of keywords, except
-// in the "add", "attribution", "path", and "split" commands.
 
 // DoEOF is the handler for end of command input.
 func (rs *Reposurgeon) DoEOF(lineIn string) bool {
@@ -1372,7 +1369,7 @@ func (rs *Reposurgeon) DoShow(line string) bool {
 	parse := rs.newLineParse(line, "show", parseNOSELECT|parseNOOPTS|parseNEEDARG, orderedStringSet{"stdout"})
 	defer parse.Closem()
 
-	switch verb := parse.args[0]; verb {
+	switch mode := parse.args[0]; mode {
 	case "elapsed":
 		parse.respond("elapsed time %v.", time.Now().Sub(rs.startTime))
 	case "memory":
@@ -1443,7 +1440,7 @@ func (rs *Reposurgeon) DoShow(line string) bool {
 		fmt.Fprintf(control.baton, "raw modulus:      %-5d\n", len(seq.color)*len(seq.item))
 		fmt.Fprintf(control.baton, "modulus/phi:      %-5d\n", int((float64(len(seq.color)*len(seq.item)))/phi))
 	default:
-		croak("unknown show subcommand %q.", verb)
+		croak("unknown show subcommand %q.", mode)
 	}
 	return false
 }
@@ -4079,13 +4076,13 @@ func (rs *Reposurgeon) CompleteCoalesce(text string) []string {
 // HelpCoalesce says "Shut up, golint!"
 func (rs *Reposurgeon) HelpCoalesce() {
 	rs.helpOutput(`
-[SELECTION] coalesce [--debug] [TIMEFUZZ]
+[SELECTION] coalesce [--changelog] [--debug] [TIMEFUZZ]
 
 Scan the selection set (defaulting to all) for runs of commits with
 identical comments close to each other in time (this is a common form
 of scar tissues in repository up-conversions from older file-oriented
-version-control systems).  Merge these cliques by pushing their
-fileops and tags up to the last commit, in order.
+version-control systems, notably CVS).  Merge these cliques by pushing
+their fileops and tags up to the last commit, in order.
 
 The optional argument, if present, is a maximum time separation in
 seconds; the default is 90 seconds.
@@ -4507,9 +4504,10 @@ Apply a time offset to all time/date stamps in the selected set.  An offset
 argument is required; it may be in the form [+-]ss, [+-]mm:ss or [+-]hh:mm:ss.
 The leading sign is optional. With no argument, the default is 1 second.
 
-Optionally you may also specify another argument in the form [+-]hhmm, a
-timezone literal to apply.  To apply a timezone without an offset, use
-an offset literal of 0, +0 or -0.
+Optionally you may also specify another argument in the form [+-]hhmm,
+a timezone literal to apply tio each attribution in the range.  To
+apply a timezone without an offset, use an offset literal of 0, +0 or
+-0.
 `)
 }
 
@@ -5678,8 +5676,8 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 	}
 	repo := rs.chosen()
 	repo.clearColor(colorQSET)
-	for _, verb := range parse.options {
-		if verb == "--defaults" {
+	for _, option := range parse.options {
+		if option == "--defaults" {
 			if rs.preferred.styleflags.Contains("import-defaults") {
 				croak("importer already set default ignores")
 				return false
@@ -5719,7 +5717,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 				}
 				respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
 			}
-		} else if verb == "--rename" {
+		} else if option == "--rename" {
 			changecount := 0
 			for _, commit := range repo.commits(undefinedSelectionSet) {
 				for idx, fileop := range commit.operations() {
@@ -5740,7 +5738,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 			respond("%d ignore files renamed (%s -> %s).",
 				changecount, rs.ignorename, rs.preferred.ignorename)
 			rs.ignorename = rs.preferred.ignorename
-		} else if verb == "--translate" {
+		} else if option == "--translate" {
 			changecount := 0
 			for _, event := range repo.events {
 				if blob, ok := event.(*Blob); ok && isIgnore(blob) {
@@ -5756,7 +5754,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 			}
 			respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
 		} else {
-			croak("unknown option %s in ignores line", verb)
+			croak("unknown option %s in ignores line", option)
 			return false
 		}
 	}
@@ -6381,7 +6379,7 @@ func tweakFlagOptions(args []string, val bool) {
 // DoSet is the handler for the "set" command.
 func (rs *Reposurgeon) DoSet(line string) bool {
 	parse := rs.newLineParse(line, "set", parseNOSELECT|parseNOOPTS|parseNEEDARG, nil)
-	switch verb := parse.args[0]; verb {
+	switch mode := parse.args[0]; mode {
 	case "flag":
 		fallthrough
 	case "flags":
@@ -6453,7 +6451,7 @@ func (rs *Reposurgeon) CompleteClear(text string) []string {
 // DoClear is the handler for the "clear" command.
 func (rs *Reposurgeon) DoClear(line string) bool {
 	parse := rs.newLineParse(line, "clear", parseNOSELECT|parseNOOPTS, nil)
-	switch verb := parse.args[0]; verb {
+	switch mode := parse.args[0]; mode {
 	case "logfile":
 		control.logfp = control.baton
 	case "readlimit":

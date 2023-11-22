@@ -3891,7 +3891,7 @@ Most commands are simple and V:
 branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]
 {SELECTION} checkout DIRECTORY
 choose [REPO-NAME]
-[SELECTION] coalesce [--debug] [TIMEFUZZ]
+[SELECTION] coalesce [--changelog] [--debug] [TIMEFUZZ]
 {SELECTION} count [>OUTFILE]
 debranch SOURCE-BRANCH [TARGET-BRANCH]
 [SELECTION] dedup
@@ -3913,7 +3913,7 @@ history
 [SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge
-[SELECTION] move {tag|reset} [--not] RESET-PATTERN [NEW-NAME]
+[SELECTION] move {tag|reset} [--not] PATTERN [NEW-NAME]
 [SELECTION] msgin [--create] [<INFILE]
 [SELECTION] msgout [--filter=PATTERN] [--blobs]
 prefer [VCS-NAME]
