@@ -12,7 +12,8 @@ experimental=""
 serial=""
 mode=diffing
 log=""
-while getopts a:bhil:nosx opt
+logto="echo"
+while getopts a:bhil:noqsx opt
 do
     case $opt in
 	a) arg=$OPTARG;;
@@ -21,6 +22,7 @@ do
 	l) log="log $OPTARG" ;;
 	n) mode=errs;;
 	o) mode=view;;
+	q) logto=":";;
 	s) serial="set flag serial";;
 	x) experimental="set flag experimental";;
 	*) cat <<EOF
@@ -42,6 +44,8 @@ With -l, set log bits (only with -o)
 With -n, pass out stderr but consume stdout.
 
 With -o, dump the test output rather than diffing against the checkfile
+
+With -q, suppress logging of the test legend to stderr
 
 With -s, set the serial flag to disable parallelism
 
@@ -101,9 +105,9 @@ do
 
     # Take input from /dev/null so we won't have a screenwidth dependency.
     case $mode in
-    build) echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set flag serial" "$experimental" "$interactive" "do ${tst}" </dev/null >"${chk}" 2>&1 ;;
-    view)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "$interactive" "do ${tst}" </dev/null 2>&1 ;;
-    errs)  echo "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "$interactive" "do ${tst}" </dev/null >/dev/null ;;
+    build) "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "set flag serial" "$experimental" "$interactive" "do ${tst}" </dev/null >"${chk}" 2>&1 ;;
+    view)  "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$log" "$serial" "$experimental" "$interactive" "do ${tst}" </dev/null 2>&1 ;;
+    errs)  "${logto}" "${legend}" >&2; ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "$interactive" "do ${tst}" </dev/null >/dev/null ;;
     *)     legend=$(echo "${legend}" | sed -e 's/## //')
 	   cat </dev/null >/tmp/tapdiff$$
 	   if ${REPOSURGEON:-reposurgeon} "$serial" "$experimental" "do ${tst} ${arg}" 2>&1 | diff -u "${chk}" -  >/tmp/tapdiff$$ 2>&1 && [ ! -s /tmp/tapdiff$$ ]
