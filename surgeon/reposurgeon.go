@@ -1801,14 +1801,23 @@ well-formed as DVCS IDs, (6) multiple child links with identical
 branch labels descending from the same commit, (7) time and
 action-stamp collisions.
 
-Options to issue only partial reports are supported; "lint --options"
-or "lint --o" lists them.
-
 The options and output format of this command are unstable; they may
 change without notice as more sanity checks are added.
 
 This command sets Q bits; true where a potential problem was reported,
 false otherwise.
+
+Options to issue only partial reports are supported:
+
+----
+ --deletealls    --d     report mid-branch deletealls
+ --connected     --c     report disconnected commits
+ --roots         --r     report on multiple roots
+ --attributions  --a     report on anomalies in usernames and attributions
+ --uniqueness    --u     report on collisions among action stamps
+ --cvsignores    --i     report if .cvsignore files are present
+----
+
 `)
 }
 
@@ -1816,18 +1825,6 @@ false otherwise.
 func (rs *Reposurgeon) DoLint(line string) (StopOut bool) {
 	parse := rs.newLineParse(line, "lint", parseALLREPO|parseNOARGS, orderedStringSet{"stdout"})
 	defer parse.Closem()
-	if parse.options.Contains("--options") || parse.options.Contains("--o") {
-		fmt.Fprint(parse.stdout, `
---deletealls    --d     report mid-branch deletealls
---connected     --c     report disconnected commits
---roots         --r     report on multiple roots
---attributions  --a     report on anomalies in usernames and attributions
---uniqueness    --u     report on collisions among action stamps
---cvsignores    --i     report if .cvsignore files are present
---options       --o     list available options
-`[1:])
-		return false
-	}
 
 	checkDeletealls := parse.options.Contains("--deletealls") || parse.options.Contains("--d")
 	checkRoots := parse.options.Empty() || parse.options.Contains("--roots") || parse.options.Contains("--r")

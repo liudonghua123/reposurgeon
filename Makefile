@@ -192,7 +192,6 @@ SHORTFORM = \
 # These are all the non-regular topics
 EXCEPTIONS = \
 	attribution \
-	lint \
 	profile \
 	reparent
 # Most of the command descriptions in Repository editing are reposurgeon's embedded
