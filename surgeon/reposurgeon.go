@@ -508,7 +508,7 @@ func (lp *LineParse) getPattern(sourcepattern string, ptype string) *regexp.Rege
 		// At the moment "refname" is the only one to get
 		// special processing.  "text" is intended to
 		// mean no special processing should be performed.
-		// "path" holds pur options open for the future.
+		// "path" holds our options open for the future.
 		if ptype == "refname" {
 			sourcepattern = nameToRef(sourcepattern)
 		}
@@ -1494,12 +1494,12 @@ as content.
 
 With "manifest", print commit path lists. Takes an optional selection
 set argument defaulting to all commits, and an optional pattern
-expression (with anchored matching). For each commit in the selection
-set, print the mapping of all paths in that commit tree to the
-corresponding blob marks, mirroring what files would be created in a
-checkout of the commit. If a regular expression PATTERN is given, only print
-"path -> mark" lines for paths matching it. See "help regexp" for more
-information about regular expressions.
+expression. For each commit in the selection set, print the mapping of
+all paths in that commit tree to the corresponding blob marks,
+mirroring what files would be created in a checkout of the commit. If
+a regular expression PATTERN is given, only print "path -> mark" lines
+for paths matching it. See "help regexp" for more information about
+regular expressions.
 
 With "paths", list all paths touched by fileops in the selection
 set (which defaults to the entire repo).
@@ -2302,20 +2302,20 @@ func (rs *Reposurgeon) HelpRename() {
 With "repo", renames the currently chosen repo; requires a NEW-NAME
 argument.  Won't do it if there is already one by the new name.
 
-Other subcommands require a PATTERN which can be a string or a
-delimited regexp (with unanchored matching).  NEW-NANE may contain
-back-reference syntax (${1} etc.). See "help regexp" for more
-information about regular expressions. If PATTERN or NEW-NAME are
-wrapped by double quotes they may contain whitespace; the quotes are
-stripped before further interprepretation as a delimited regexp or
-literal string. The --not option inverts the selection for renaming
+Other subcommands require a PATTERN which is a pattern expression.
+NEW-NANE may contain back-reference syntax (${1} etc.). See "help
+regexp" for more information about regular expressions. If PATTERN or
+NEW-NAME are wrapped by double quotes they may contain whitespace; the
+quotes are stripped before further interprepretation as a delimited
+regexp or literal string. The --not option inverts the selection for
+renaming
 
 With "path", rename a path in every fileop of every selected commit.
 The default selection set is all commits. The pattern expression to
-matched against paths (matching is anchored); Ordinarily, if the
-target path already exists in the fileops, or is visible in the
-ancestry of the commit, this command throws an error.  With the
---force option, these checks are skipped.
+matched against paths; Ordinarily, if the target path already exists
+in the fileops, or is visible in the ancestry of the commit, this
+command throws an error.  With the --force option, these checks are
+skipped.
 
 With "rename", rename objects that match by name. 
 
@@ -3131,8 +3131,8 @@ May have an option --filter, followed by a pattern expression
 (unachored matching).  If this is given, only headers with names
 matching it are emitted.  In this control the name of the header
 includes its trailing colon.  The value of the option must be a
-pattern expression and is anchored. See "help regexp" for information
-on the regexp syntax.
+pattern expression. See "help regexp" for information on the regexp
+syntax.
 
 Blobs may be included in the output with the option --blobs.
 
@@ -3284,14 +3284,13 @@ to standard output.
 
 With the verb regex, the remainder of the line is expected to be a Go
 regular expression substitution written as /from/to/ with C-like
-backslash escapes interpreted in 'to'. Matching is unanchored. Any
-punctuation character will work as a delimiter in place of the /; this
-makes it easier to use / in patterns. Ordinarily only the first such
-substitution is performed; putting 'g' after the slash replaces
-globally, and a numeric literal gives the maximum number of
-substitutions to perform. Other flags available restrict substitution
-scope - 'c' for comment text only, 'C' for committer name only, 'a'
-for author names only.
+backslash escapes interpreted in 'to'. Any punctuation character will
+work as a delimiter in place of the /; this makes it easier to use /
+in patterns. Ordinarily only the first such substitution is performed;
+putting 'g' after the slash replaces globally, and a numeric literal
+gives the maximum number of substitutions to perform. Other flags
+available restrict substitution scope - 'c' for comment text only, 'C'
+for committer name only, 'a' for author names only.
 
 With the verb replace, the behavior is like regex but the expressions are
 not interpreted as regular expressions. (This is slightly faster).
@@ -3875,16 +3874,16 @@ associated with commits requires this. A delete is equivalent to a
 squash with the --delete flag.
 
 All other subcommands require a selercyed repository and a
-BRANCH-PATTERN argument which can be a string or a delimited regexp
-(with unanchored matching); with the option --not, invert the match.
+BRANCH-PATTERN argument which is a pattern expression; with the option
+--not, invert the match.
 
 With "tag" requires a TAG-PATTERN argument that is a pattern
-expression matching a set of annotated tags (unanchored matching).
-Matching tags are deleted.  Giving a regular expression rather than a
-plain string is useful for mass deletion of junk tags such as those
-derived from CVS branch-root tags.  The option "--not" takes the
-complement of the set of tags implied by the TAG-PATTERN. Deletions
-can be restricted by a selection set in the normal way.
+expression matching a set of annotated tags.  Matching tags are
+deleted.  Giving a regular expression rather than a plain string is
+useful for mass deletion of junk tags such as those derived from CVS
+branch-root tags.  The option "--not" takes the complement of the set
+of tags implied by the TAG-PATTERN. Deletions can be restricted by a
+selection set in the normal way.
 
 With "branch", if the pattern does not begin with "refs/", that is
 prepended. Matching branches are deleted. Associated tags and resets
@@ -3899,9 +3898,9 @@ a branch in refs/heads/. When a reset is deleted, matching branch
 fields are changed to match the branch of the unique descendant of the
 tip commit of the associated branch, if there is one.
 
-With "path", expunge files from the selected portion of the repo history; the
-default is the entire history.  The argument to this command is a
-pattern expression matching paths (anchored match). If the pattern is
+With "path", expunge files from the selected portion of the repo
+history; the default is the entire history.  The argument to this
+command is a pattern expression matching paths. If the pattern is
 enclosed by double quotes it may contain spaces; the double quotes are
 stripped off before it is interpreted as a delimited regexp or literal
 string.
@@ -5381,9 +5380,9 @@ func (rs *Reposurgeon) HelpMove() {
 Move annotated tags or resets.
 
 The PATTERN argument is a pattern expression matching a set of tags or
-resets (unanchored matching).  The option "--not" takes the complement
-of the set impiled by the pattern. The second argument must be a
-singleton selection set designating a commit.
+resets.  The option "--not" takes the complement of the set impiled by
+the pattern. The second argument must be a singleton selection set
+designating a commit.
 
 With the qulifier "tag", attach all matching tags to the target commit.
 
@@ -7609,28 +7608,36 @@ Do set negation with prefix "~"; it has higher precedence than
 func (rs *Reposurgeon) HelpRegexp() {
 	rs.helpOutputMisc(`
 The pattern expressions used in event selections and various commands
-(attribute, expunge, filter, msgout, path) are those of the Go
+(attribute, changelos, delete, filter, list, move, msgout, rename) are
+either literal strings or use the regular-expression syntax of the Go
 language.
 
-Normally patterns intended to be interpreted as regular expressions
-are wrapped in slashes (e.g. /foobar/ matches any text containing the
-string "foobar"), but any punctuation character other than single
+Patterns intended to be interpreted as regular expressions are
+normally wrapped in slashes (e.g. /foobar/ matches any text containing
+the string "foobar"), but any punctuation character other than single
 quote will work as a delimiter in place of the /; this makes it easier
-to use an actual / in patterns.  Matched single quote delimiters mean
-the literal should be interpreted as plain text, suppressing
-interpretation of regexp special characters and requiring an anchored,
-entire match.
+to use an actual / in patterns.
+
+In this case matching is unanchored - any match to a substring of the
+search space succeeds. You can use ^ and $ to anchor a regular
+expression to the beginning or end of the search space.
+
+Matched single quote delimiters mean the literal should be interpreted
+as plain text, suppressing interpretation of regexp special characters
+and requiring an anchored, entire match. The pattern is also
+interpreted as a literal string requiring an anchored, entire match if
+the start and end character are different.
+
+Whwn interpreting a pattern expression after the command verb, string
+double quotes are atripped off first and so not affect whether it 
+is interpreted as a regexp as a literal string. However, such a 
+double-quoted string may contin whitespace and still be interpreted
+as a single argument.
 
 Pattern expressions following the command verb may not contain literal
-whitespace; use \s or \t if you need to. Event-selection
-regexps (before the command) may contain literal whitespace.
-
-Some regular expressions, notably those for things like pathnames, are
-anchored; that is, they must match the emtirety of their target rather
-than just some substring of it. When a regular expression is not
-anchored, you can use ^ and $ to anchor it to the beginning or end of
-the search space. The command help will tell you whether or not an
-anchored match is required.
+whitespace unless string-quoted; use \s or \t if you need to, or
+string-quote the expression. Event-selection regexps (before the
+command) may contain literal whitespace.
 
 Some commands support regular expression flags, and some even add
 additional flags over the standard set. The documentation for each
