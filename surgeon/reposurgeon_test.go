@@ -84,6 +84,70 @@ func TestRegexp(t *testing.T) {
 	}
 }
 
+func TestIgnoreCompatibility(t *testing.T) {
+	type testEntry struct {
+		line  string
+		vcs   string
+		match bool
+	}
+	tests := []testEntry{
+		// CVS
+		{"#Comment", "cvs", false},
+		{"foobar", "cvs", true},
+		{"*.a", "cvs", true},
+		{"!*.a", "cvs", false},
+		{".py[co]", "cvs", true},
+		{".netrc~", "cvs", true},
+		{"x[a-z]y", "cvs", false},
+		{"x[!0-9]y", "cvs", false},
+		// SVN
+		{"#Comment", "svn", true},
+		{"foobar", "svn", true},
+		{"*.a", "svn", true},
+		{"!*.a", "svn", false},
+		{".py[co]", "svn", true},
+		{".netrc~", "svn", true},
+		{"x[a-z]y", "svn", true},
+		{"x[!0-9]y", "svn", true},
+		// bzr/brz
+		{"#Comment", "bzr", true},
+		{"foobar", "bzr", true},
+		{"*.a", "bzr", true},
+		{"!*.a", "bzr", false},
+		{".py[co]", "bzr", true},
+		{".netrc~", "bzr", true},
+		{"x[a-z]y", "bzr", false},
+		{"x[!0-9]y", "bzr", false},
+		// git
+		{"#Comment", "git", true},
+		{"foobar", "git", true},
+		{"*.a", "git", true},
+		{"!*.a", "git", true},
+		{".py[co]", "git", true},
+		{".netrc~", "git", true},
+		{"x[a-z]y", "git", true},
+		{"x[!0-9]y", "svn", true},
+		// src
+		{"#Comment", "src", true},
+		{"foobar", "src", true},
+		{"*.a", "src", true},
+		{"!*.a", "src", true},
+		{".py[co]", "src", true},
+		{".netrc~", "src", true},
+		{"x[a-z]y", "src", true},
+		{"x[!0-9]y", "src", true},
+		//darcs
+		{"foobar", "darcs", true},
+		{".netrc", "darcs", false},
+	}
+	for testnum, item := range tests {
+		if v := checkIgnoreSyntaxLine(item.vcs, item.line); (v != nil) == item.match {
+			t.Errorf("TestIgnore %d, %s %q: expected %v, saw %v",
+				testnum, item.vcs, item.line, item.match, v)
+		}
+	}
+}
+
 func TestShlex(t *testing.T) {
 	type testEntry struct {
 		text  string

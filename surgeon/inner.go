@@ -9995,6 +9995,197 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 	repo.delete(deletia, nil, control.baton)
 }
 
+/*
+ * Ignore syntax
+ */
+
+func checkIgnoreSyntaxLine(vcsname string, text string) error {
+	// CVS: https://www.gnu.org/software/trans-coord/manual/cvs/html_node/cvsignore.html
+	// svn: https://tortoisesvn.net/docs/release/TortoiseSVN_en/tsvn-dug-ignore.html
+	// darcs: https://darcs.net/Using/Configuration#boring
+	// bzr/brz: https://documentation.help/Bazaar-help/controlling_registration.html
+	// hg: https://www.selenic.com/mercurial/hgignore.5.html
+	// bk: https://www.selenic.com/mercurial/hgignore.5.html
+	// SCCS and RCS don't have an ignore facility.
+	//
+	// There are several levels of generic glob syntax
+	// 1. *?[] without dash available in ranges (CVS, bk, hg, bzr, brz)
+	// 2. *?[-] with dash and !-negation available in ranges (svn, src).
+	//    This is glob(3) regexps.
+	// 3. Add leading negation (git).
+	//
+	// In hg and git, \ can escape glob characters
+	//
+	runeFilter := func(input string, filter func(rune) bool) string {
+		var result []rune
+
+		for _, r := range input {
+			if filter(r) {
+				result = append(result, r)
+			}
+		}
+		return string(result)
+	}
+
+	// All the characters in the most basic Unix glob syntax,
+	// without ! and ranges which some VCSes don't support. Plus
+	// "." which is always legal and treated as a path extension
+	// separator.  Plus "~" which is never treated like anything but
+	// a letter because everybody has to ignore Emacs backup
+	// files.
+	const basicPunct = "*[]?~."
+
+	removeBasicGlob := func(txt string) string {
+		// Strip out all characters in basic glob expressions.
+		// Note, this does not include ! for negation.
+		return runeFilter(txt, func(r rune) bool {
+			return !unicode.IsLetter(r) && !unicode.IsNumber(r) && !strings.Contains(basicPunct, string(r))
+		})
+	}
+
+	// Ignore blank lines. This may not work in CVS, but
+	// we never expect to be lifting to CVS.
+	if strings.TrimSpace(text) == "" {
+		return nil
+	}
+
+	// Barf on some CVS peculiarities
+	if vcsname == "cvs" {
+		if strings.HasPrefix(text, "#") {
+			return errors.New("CVS does not have # comments")
+		}
+		if strings.Contains(text, " ") {
+			return errors.New("CVS treats spaces as pattern separators")
+		}
+	}
+
+	// All VCSses after CVS have #-led commwnts
+	if strings.HasPrefix(text, "#") {
+		return nil
+	}
+
+	// darcs uses full regexps rather than glob(3) or a stupider
+	// version of glob(3), so any remaining punctuation character
+	// (including /) means this pattern line needs hand-hacking.
+	// Note: this could fail if wer're sarting from hg's RE syntax,
+	// but we can't tell because hg documentatiun is so horrible.
+	if vcsname == "darcs" && runeFilter(text, unicode.IsPunct) != "" {
+		return errors.New("darcs ignre-pattern REs are incompatible")
+	}
+
+	// Some VCSes support full glob(3) syntax with ranges and
+	// negated ranges. Strip that out now if we're lifting to one
+	// of those.
+	//
+	// Note: it is quite possible this list should be longer and
+	// include more of {CVS, bk, hg, bzr, brz} but older VCSes are
+	// terrible about documenting their entire ignore syntax -
+	// they tend to document by example and only give the simplest
+	// examples. Fortunately the consequenced of getting this
+	// wrong aren't serious - spurious warnings.
+	if vcsname == "svn" || vcsname == "git" || vcsname == "src" {
+		text = strings.Replace(text, "[!", "[", -1)
+		text = strings.Replace(text, "-", "", -1)
+	}
+	// We're past anything that can masquerade as a basic glob
+	// pattern.  Every remaining VCS that has ignores at all supports
+	// basic globs. So pass out anything that looks like a basic glob.
+	deglobbed := removeBasicGlob(text)
+	//fmt.Fprintf(os.Stderr, "%s: deglobbed %q is %q\n", vcsname, text, deglobbed)
+	if deglobbed == "" {
+		return nil
+	}
+
+	// Some VCSes also support negation. If that's all hat's left after
+	// stripping out basic glob characters, we're fine.
+	if deglobbed[0] == '!' && (vcsname != "git" && vcsname != "src") {
+		return errors.New("pattern negation isn't supported")
+	}
+	deglobbed = runeFilter(deglobbed, func(r rune) bool { return string(r) != "!" })
+
+	// If it's still nonempty after all recognizable characters
+	// have been stripped, throw back an indication that
+	// hand-hacking is needed. Alas, this is going to throw back
+	// any pattern that contains a slash.
+	if deglobbed != "" {
+		return errors.New("unrecognized pattern syntax")
+	}
+
+	return nil
+
+}
+
+// IgnoreProblem descruibes a place where an ignore file may
+// require hand-patching.
+type IgnoreProblem struct {
+	paths  orderedStringSet
+	mark   string
+	line   string
+	lineno int
+	err    error
+}
+
+func (repo *Repository) translateIgnores(selection selectionSet, preferred *VCS, translate bool) ([]IgnoreProblem, int) {
+	out := make([]IgnoreProblem, 0)
+	ignorecount := 0
+	repo.clearColor(colorQSET)
+	for _, event := range repo.events {
+		if b, ok := event.(*Blob); ok {
+			paths := b.paths(nil)
+			fmt.Printf("blob %s, paths\n", b.mark)
+			// Ugh, this breaks the orderedStringSet layering a but
+			if strings.HasSuffix(paths[0], repo.vcs.ignorename) {
+				ignorecount++
+				translated := ""
+				blobcontent := string(b.getContent())
+				if preferred.name == "hg" && translate {
+					const hgHeader = "syntax: glob\n"
+					if !strings.HasPrefix(hgHeader, blobcontent) {
+						blobcontent = hgHeader + blobcontent
+					}
+				}
+				for ln, line := range strings.Split(blobcontent, "\n") {
+					if err := checkIgnoreSyntaxLine(preferred.name, line); err != nil {
+						translated += line + "\n"
+					} else {
+						translated += "#" + line + "\n"
+						var oops IgnoreProblem
+						oops.paths = paths
+						oops.mark = b.getMark()
+						oops.line = line
+						oops.lineno = ln + 1
+						oops.err = err
+						out = append(out, oops)
+						b.addColor(colorQSET)
+					}
+				}
+				if translate {
+					b.setContent([]byte(translated), noOffset)
+				}
+			}
+		}
+	}
+	if translate {
+		// Rename ignore files
+		for _, commit := range repo.commits(undefinedSelectionSet) {
+			for idx, fileop := range commit.operations() {
+				for _, attr := range []string{"Path", "Source", "Target"} {
+					oldpath, ok := getAttr(fileop, attr)
+					if ok {
+						if ok && strings.HasSuffix(oldpath, repo.vcs.ignorename) {
+							newpath := filepath.Join(filepath.Dir(oldpath),
+								preferred.ignorename)
+							setAttr(commit.fileops[idx], attr, newpath)
+							commit.addColor(colorQSET)
+						}
+					}
+				}
+			}
+		}
+	}
+	return out, ignorecount
+}
+
 // A RepositoryList is a repository list with selection and access by name.
 type RepositoryList struct {
 	repo     *Repository
