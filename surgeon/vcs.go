@@ -55,12 +55,12 @@ type VCS struct {
 	prenuke      orderedStringSet // Things to be removed from staging
 	authormap    string           // Where importer might drop an authormap
 	ignorename   string           // Where the ignore patterns live
-	cookies      []regexp.Regexp  // How to recognize a possible commit reference
 	project      string           // VCS project URL
 	notes        string           // Notes and caveats
 	// Hidden members
-	checkignore string // how to tell if directory is a checkout
-	idformat    string // ID display string format
+	cookies     []regexp.Regexp // How to recognize a possible commit reference
+	checkignore string          // how to tell if directory is a checkout
+	idformat    string          // ID display string format
 	// One last visible member
 	dfltignores string // Default ignore patterns
 }
@@ -120,10 +120,10 @@ func (vcs VCS) String() string {
 		fmt.Sprintf("      Prenuke: %s\n", vcs.prenuke.String()) +
 		fmt.Sprintf("     Preserve: %s\n", vcs.preserve.String()) +
 		fmt.Sprintf("    Authormap: %s\n", vcs.authormap) +
-		fmt.Sprintf("      Ignores: %s\n", realignores.String()) +
+		fmt.Sprintf("   Ignorename: %s\n", vcs.ignorename) +
 		fmt.Sprintf("      Project: %s\n", vcs.project) +
 		fmt.Sprintf("        Notes: %s\n", notes) +
-		fmt.Sprintf("   Ignorename: %s\n", vcs.ignorename)
+		fmt.Sprintf("      Ignores: %s\n", realignores.String())
 }
 
 // Used for pre-compiling regular expressions at module load time
