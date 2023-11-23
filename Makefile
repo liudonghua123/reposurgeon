@@ -143,7 +143,6 @@ BNF_TOPICS = \
 	move \
 	msgin \
 	msgout \
-	operators \
 	prefer \
 	prepend \
 	preserve \
@@ -179,6 +178,7 @@ BNF_TOPICS = \
 	view
 UNANCHORED_TOPICS = \
 	functions \
+	operators \
 	options \
 	redirection \
 	regexp \

@@ -3781,8 +3781,8 @@ reposurgeon.
 
 == Notes on the DSL
 
-The syntax of the reposurgeomn DSL evolved ad hoc as more capabilities
-were glued onto the tool. The result is something of an irregular mess
+The syntax of the reposurgeon DSL evolved ad hoc as more capabilities
+were glued onto the tool. The result has been something of an irregular mess
 that is difficult for uses to wrap their heads around even with good
 documentation.
 
@@ -3794,20 +3794,15 @@ objectives:
 
 . Most commands have the form of a simple verb. (V). Some have the
   form verb-subject (VS) or verb-subject-object (VSO). Some have the
-  form subject-verb (SV). Some are subject nouns (S). Some are harder
-  to classify. Ideally we want a simpler and more uniform morphology.
+  form subject-verb (SV). Some are subject nouns (S).
+  We want the simplest and most uniform morphology possible.
 
 . Group commands so the language is easier to remember and document.
 
-. The distinction between things done with policy flags vs. things
-  done with subcommand ketwords is not very principled. Use subcommand
-  keywords more for alternative modes, as opposed to policy bits that
-  can be set several at a time.
+. Use subcommand keywords for alternative modes, as opposed to
+  policy bits that can be set several at a time.
 
 . Keep commonly-used commands short and simple.
-
-. Avoid using the same verb for VS commands that may have
-  a selection set and must not have a selection set.
 
 A relatively recent advance at the end of the 4.x release
 series was implementing uniform argument-tokenization rules across all
@@ -3816,11 +3811,11 @@ replaced differeng tokenization rules in different commands.
 
 The state of play...
 
-Most commands are simple and V:
+Most commands are V:
 
 ----
 {SELECTION} add { "D" {PATH} | "M" {PERM} {MARK} {PATH} | "R" {SOURCE} {TARGET} | "C" {SOURCE} {TARGET} }
-[SELECTION] append [--rstrip] {TEXT}
+SELECTION append [--rstrip] {TEXT}
 {SELECTION} assign [--singleton] [NAME]
 branchlift SOURCEBRANCH PATHPREFIX [NEWNAME]
 {SELECTION} checkout DIRECTORY
@@ -3850,6 +3845,7 @@ log [[+-]LOG-CLASS]...
 [SELECTION] msgin [--create] [<INFILE]
 [SELECTION] msgout [--filter=PATTERN] [--blobs]
 prefer [VCS-NAME]
+SELECTION prepend [--rstrip] {TEXT}
 preserve [PATH...]
 print [TEXT...] [>OUTFILE]
 quit
@@ -3876,7 +3872,7 @@ view [directory]
 [SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout] [>OUTFILE|-|DIRECTORY]
 ----
 
-Simple and VS:
+VS:
 
 ----
 [SELECTION] attribute [ATTR-SELECTION] SUBCOMMAND [ARG...]
@@ -3886,23 +3882,31 @@ clear {logfile|readlimit}
 {SELECTION} delete {commit | {path|tag|branch|reset} [--quiet|--not|--notagify] PATTERN]}
 [SELECTION] filter {dedos|shell|regexp|replace} [TEXT-OR-REGEXP]
 [SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names] [PATTERN] [>OUTFILE]
-[SELECTION] move {tag|reset} [--not] PATTERN [NEW-NAME]
 profile {live|start|save|bench} [PORT | SUBJECT [FILENAME]]
-[SELECTION] remove {deletes | [DMRCN] PATH | INDEX ]}
-[SELECTION] rename {repo | path PATTERN [--force] | {path|branch|tag|reset} [--not] PATTERN}} NEW-NAME
 set flag [canonicalize|crlf|compress|echo|experimental|interactive|progress|serial|faketime|quiet]+
 set {logfile|readlimit} VALUE
 show {elapsed|memory|sizeof|when TIMESTAMP} [>OUTFILE]
 ----
 
-The following are SV. Inverting these to verb-first might be a good thing.
+VSO:
+
+----
+[SELECTION] move {tag|reset} [--not] PATTERN [NEW-NAME]
+[SELECTION] remove {deletes | [DMRCN] PATH | INDEX ] [to TARGET]
+[SELECTION] rename {repo | path PATTERN [--force] | {path|branch|tag|reset} [--not] PATTERN}} NEW-NAME
+----
+
+The following are SV. Inverting these to verb-first might be a good
+thing. Unfortunately this would make the embedded help for the read
+and write verbs a big heterogenous mess.
 
 ----
 [SELECTION] authors {read <INFILE | write >OUTFILE}
 legacy {read [<INFILE] | write [>OUTFILE]}
 ----
 
-The following are S, but probably shouldn't change:
+The following are S, and there's no obvious way to
+move them to a verb-first form:
 
 ----
 [SELECTION] changelogs [BASENAME-PATTERN]
@@ -3912,24 +3916,6 @@ sourcetype [VCS-NAME]
 [SELECTION] timequake [--tick]
 version [EXPECT]
 ----
-
-In a revised, more verb-centered syntax, the key verbs would probably
-be: list read write create move rename delete add.  Here are some
-possible verbifications:
-
----
-read authors <INFILE
-read legacy <INFILE
-read message <INFILE
-read repo <INFILE
-write authors >OUTFILE
-write legacy >OUTFILE
-write message >OUTFILE
-write repo >OUTFILE
----
-
-Unfortunately these would make repository loads unpleasantly verbose,
-conflicting with "short and simple for common commands".
 
 == Credits
 
