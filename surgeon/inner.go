@@ -4716,10 +4716,15 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 					// a commit subpart.
 					continue
 				} else {
-					// Dodgy bzr autodetection hook...
+					// Dodgy bzr/brz autodetection hook. It's
+					// OK that we're going to false-match on brz
+					// here; if we're reading from a brz repo
+					// we will already have picked up a strong hint.
+					// But that does mean this needs to be a weak
+					// hint, not a strong one.
 					if sp.repo.vcs == nil {
 						if commit.hasProperties() && commit.properties.has("branch-nick") {
-							sp.repo.hint("", "bzr", true)
+							sp.repo.hint("", "bzr", false)
 						}
 					}
 					sp.pushback(line)
@@ -6242,8 +6247,11 @@ func (repo *Repository) fastExport(selection selectionSet,
 			// actually have the extension features their export
 			// streams declare.  Without this check git fast-import
 			// barfs on declarations for unused features.
-			if strings.HasPrefix(passthrough.text, "feature") && !target.extensions.Contains(strings.Fields(passthrough.text)[1]) {
-				continue
+			if strings.HasPrefix(passthrough.text, "feature") {
+				fields := strings.Fields(passthrough.text)
+				if target != nil && len(fields) > 1 && !target.extensions.Contains(fields[1]) {
+					continue
+				}
 			}
 		}
 		if logEnable(logUNITE) {
