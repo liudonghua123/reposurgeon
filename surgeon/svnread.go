@@ -1046,7 +1046,7 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	timeit("renumbering")
 
 	// Treat this in-core state as though it was read from an SVN repo
-	sp.repo.hint("svn", "", true)
+	sp.repo.hint("svn", true)
 }
 
 func svnFilterProperties(ctx context.Context, sp *StreamParser, options stringSet, baton *Baton) {

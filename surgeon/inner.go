@@ -4427,7 +4427,7 @@ func (sp *StreamParser) fiReadline() []byte {
 				// --reposurgeon mode.
 				fields := strings.Fields(string(line))
 				if fields[1] == "sourcetype" && len(fields) == 3 {
-					sp.repo.hint("", fields[2], true)
+					sp.repo.hint(fields[2], true)
 				}
 			}
 			continue
@@ -4724,7 +4724,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 					// hint, not a strong one.
 					if sp.repo.vcs == nil {
 						if commit.hasProperties() && commit.properties.has("branch-nick") {
-							sp.repo.hint("", "bzr", false)
+							sp.repo.hint("bzr", false)
 						}
 					}
 					sp.pushback(line)
@@ -4856,7 +4856,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 		}
 	}
 	if !sp.lastcookie.isEmpty() {
-		sp.repo.hint("", sp.lastcookie.implies(), false)
+		sp.repo.hint(sp.lastcookie.implies(), false)
 	}
 }
 
@@ -5090,7 +5090,6 @@ type Repository struct {
 	readtime    time.Time
 	vcs         *VCS
 	stronghint  bool
-	hintlist    []Hint
 	sourcedir   string
 	seekstream  *os.File
 	basedir     string
@@ -5125,7 +5124,6 @@ func newRepository(name string) *Repository {
 	repo := new(Repository)
 	repo.name = name
 	repo.readtime = time.Now()
-	repo.hintlist = make([]Hint, 0)
 	repo.preserveSet = newOrderedStringSet()
 	repo.legacyMap = make(map[string]*Commit)
 	repo.assignments = make(map[string]selectionSet)
@@ -5146,9 +5144,7 @@ func (repo *Repository) clone() *Repository {
 	newRepo := *repo
 	newRepo.name += "-clone"
 	newRepo.readtime = time.Now()
-	// vcs and stronghint got copied
-	newRepo.hintlist = append([]Hint(nil), repo.hintlist...)
-	// sourcedir, seekstream, basedir, uuid, and writeLegacy got copied
+	// vcs, sourcedir, seekstream, basedir, uuid, and writeLegacy got copied
 	newRepo.preserveSet = repo.preserveSet.Clone()
 	newRepo.legacyMap = make(map[string]*Commit) // temporary - do a copy someday
 	newRepo.legacyCount = 0
@@ -5376,36 +5372,21 @@ func (repo *Repository) makedir(legend string) {
 	}
 }
 
-// Hint is a hint about what kind of VCS we're in from looking at magic cookies.
-type Hint struct {
-	cookie string
-	vcs    string
-}
-
-func (repo *Repository) hint(clue1 string, clue2 string, strong bool) bool {
-	// Hint what the source of this repository might be.
-	newhint := false
-	for _, item := range repo.hintlist {
-		if item.cookie == clue1 && item.vcs == clue2 {
-			newhint = false
-			break
-		}
-	}
-	if newhint && repo.stronghint && strong {
+// hint - registers a hint about what the source of this repository might be.
+// We set it from either the first strong hint or the last weak hint.
+func (repo *Repository) hint(clue string, strong bool) {
+	if (repo.vcs != nil) && clue != repo.vcs.name && repo.stronghint && strong {
 		if logEnable(logSHOUT) {
-			shout("new hint %s conflicts with old %s", clue1, repo.hintlist[len(repo.hintlist)-1])
+			shout("new hint %s conflicts with old %s", clue, repo.vcs.name)
 		}
-		return false
+		return
 	}
-	if !repo.stronghint && clue2 != "" {
-		repo.vcs = findVCS(clue2)
+	// Set the sourcetype if we have not previously
+	// seen a strong hint.
+	if !repo.stronghint && clue != "" {
+		repo.vcs = findVCS(clue)
 	}
-	if newhint {
-		repo.hintlist = append(repo.hintlist, Hint{clue1, clue2})
-	}
-	notify := newhint && !repo.stronghint
 	repo.stronghint = repo.stronghint || strong
-	return notify
 }
 
 func (repo *Repository) size() int {
@@ -8163,7 +8144,7 @@ func readRepo(source string, options stringSet, preferred *VCS, extractor Extrac
 					program, abspath(source))
 			}
 		}
-		repo.hint("", vcs.name, true)
+		repo.hint(vcs.name, true)
 		repo.preserveSet = vcs.preserve
 		suppressBaton := control.flagOptions["progress"] && repo.exportStyle().Contains("export-progress")
 		commandControl := map[string]string{"basename": filepath.Base(repo.sourcedir)}
