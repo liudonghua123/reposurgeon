@@ -9997,22 +9997,39 @@ func (repo *Repository) reduce(ignoreFileops bool) {
  * Ignore syntax
  */
 
+var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_#]")
+
 func checkIgnoreSyntaxLine(vcsname string, text string) error {
 	// CVS: https://www.gnu.org/software/trans-coord/manual/cvs/html_node/cvsignore.html
 	// svn: https://tortoisesvn.net/docs/release/TortoiseSVN_en/tsvn-dug-ignore.html
+	// Git: https://git-scm.com/docs/gitignore
 	// darcs: https://darcs.net/Using/Configuration#boring
 	// bzr/brz: https://documentation.help/Bazaar-help/controlling_registration.html
 	// hg: https://www.selenic.com/mercurial/hgignore.5.html
-	// bk: https://www.selenic.com/mercurial/hgignore.5.html
+	// bk: https://www.bitkeeper.org/man/ignore.html
+	// mtn: https://www.monotone.ca/docs/Regexps.html
 	// SCCS and RCS don't have an ignore facility.
+	// POSIX fnmatch(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
+	// POSIX glob(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/glob.html
+	// Python glob(3): https://docs.python.org/3/library/glob.html
 	//
-	// There are several levels of generic glob syntax
-	// 1. *?[] without dash available in ranges (CVS, bk, hg, bzr, brz)
-	// 2. *?[-] with dash and !-negation available in ranges (svn, src).
-	//    This is glob(3) regexps.
+	// There are several levels of generic glob syntax:
+	// 1. *?[] without dash available in ranges (bk, hg, bzr, brz)
+	// 2. *?[-] with dash and !-negation available in ranges (CVS,
+	//    svn, src) and backslash escaping. This is POSIX fnmatch(3)
+	//    regexps, though you have to dig pretty hard to find the
+	//    part of the standard that describes dash ranges.
 	// 3. Add leading negation (git).
 	//
-	// In hg and git, \ can escape glob characters
+	// There are some complications around / relating to whuch of
+	// the following rules is applied:
+	//
+	// A. Matches are unanchored, can be a trailing segmments of a path.
+	// B. Matches are anchored to the repository root.
+	// C. Matches are anchored to the directory where the ignore file is.
+	// D. * amd ? wildcards cannot match a following slash.
+	//
+	// The presence of a / in a path nay change which rule applies,
 	//
 	runeFilter := func(input string, filter func(rune) bool) string {
 		var result []rune
@@ -10028,14 +10045,16 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 	// All the characters in the most basic Unix glob syntax,
 	// without ! and ranges which some VCSes don't support. Plus
 	// "." which is always legal and treated as a path extension
-	// separator.  Plus "~" which is never treated like anything but
-	// a letter because everybody has to ignore Emacs backup
-	// files.
-	const basicPunct = "*[]?~."
+	// separator.  Plus "~" which is never treated like anything
+	// but a letter because everybody has to ignore Emacs backup
+	// files. Plus a couple of other non-specials. The list of
+	// safe printables to strip out could probab;y be longer, but
+	// use of them in filenames is so rare that throwing a waening
+	// is probably best.
+	const basicPunct = "*[]?~_.#"
 
 	removeBasicGlob := func(txt string) string {
-		// Strip out all characters in basic glob expressions.
-		// Note, this does not include ! for negation.
+		// Note, this does not include stripping out ! for negation.
 		return runeFilter(txt, func(r rune) bool {
 			return !unicode.IsLetter(r) && !unicode.IsNumber(r) && !strings.Contains(basicPunct, string(r))
 		})
@@ -10062,39 +10081,84 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 		return nil
 	}
 
-	// darcs uses full regexps rather than glob(3) or a stupider
-	// version of glob(3), so any remaining punctuation character
+	// darcs and mtn use full regexps rather than any version of
+	// fnmatch(3)/glob(3), so any remaining punctuation character
 	// (including /) means this pattern line needs hand-hacking.
-	// Note: this could fail if wer're sarting from hg's RE syntax,
-	// but we can't tell because hg documentatiun is so horrible.
-	if vcsname == "darcs" && runeFilter(text, unicode.IsPunct) != "" {
-		return errors.New("darcs ignre-pattern REs are incompatible")
+	// It isn't clear what the path root is for matching, but
+	// it's most likely the repository root.
+	//
+	// Note: this could fail if we're starting from hg's RE syntax
+	// - it *might* actually be compatible but we can't tell
+	// because the hg documentation is so horrible. mtn says it
+	// matches using PCRE.
+	if (vcsname == "darcs" || vcsname == "mtn") && runeFilter(text, unicode.IsPunct) != "" {
+		return errors.New("darcs ignore-pattern REs are incompatible")
 	}
 
-	// Some VCSes support full glob(3) syntax with ranges and
-	// negated ranges. Strip that out now if we're lifting to one
-	// of those.
+	// Most VCSes may treat a / at the beginning or end
+	// of a pattern or after a dot, but do not treat medial slashes
+	// specially. So we get rid of those here.
+	//
+	// Inspection of the GNU CVS soirce code reveals that it
+	// never interpets slashes. It is unclear
+	//
+	// bzr/brz is an exception, it specifically documents that it
+	// normally follows rule A, but  medial slash forces rule B.
+	//
+	// src is an exception for a different reason; it has no
+	// concept of a repository root and rule B appiles, so any /
+	// at all in a pattern is a crash landing.
+	//
+	// git nornally follows rule A, but a beginning or medial
+	// slash forces rule B.
+	if !(vcsname == "bzr" || vcsname == "brz" || vcsname == "src" || vcsname == "git") {
+		text = medialSlash.ReplaceAllString(text, "")
+	}
+
+	// Some VCSes support full fnmatch(3)/glob(3) syntax with
+	// ranges and negated ranges. An undocumented variable what
+	// special handling of . is enabled. We'll strip the range
+	// extension syntax out now if we're lifting to one of those.
+	//
+	// CVS uses a local implementation of fnmatch(3) with no
+	// option flags. Subversion uses glob(3); src uses Python's
+	// glob library.  Git documentation mentions fnmatch(3) and
+	// the FNM_PATHNAME flag - it follows rule D.
 	//
 	// Note: it is quite possible this list should be longer and
-	// include more of {CVS, bk, hg, bzr, brz} but older VCSes are
+	// include more of {bk, hg, bzr, brz}, but older VCSes are
 	// terrible about documenting their entire ignore syntax -
 	// they tend to document by example and only give the simplest
 	// examples. Fortunately the consequenced of getting this
 	// wrong aren't serious - spurious warnings.
-	if vcsname == "svn" || vcsname == "git" || vcsname == "src" {
+	//
+	// Just to make things more confusing, there are different
+	// versions of the fnmatch library, not all of them have the
+	// same features, and not all document everything they
+	// support. The Python fnmatch library doesn't document its
+	// support for dash ranges.
+	//
+	if vcsname == "cvs" || vcsname == "svn" || vcsname == "git" || vcsname == "src" {
 		text = strings.Replace(text, "[!", "[", -1)
+		text = strings.Replace(text, "[^", "[", -1)
 		text = strings.Replace(text, "-", "", -1)
 	}
 	// We're past anything that can masquerade as a basic glob
 	// pattern.  Every remaining VCS that has ignores at all supports
-	// basic globs. So pass out anything that looks like a basic glob.
+	// basic globs. So strip out anything that looks like a basic glob.
 	deglobbed := removeBasicGlob(text)
-	//fmt.Fprintf(os.Stderr, "%s: deglobbed %q is %q\n", vcsname, text, deglobbed)
 	if deglobbed == "" {
 		return nil
 	}
 
-	// Some VCSes also support negation. If that's all hat's left after
+	// Any use of \ throws a warning. We cou;d probab;y be less twitchy about
+	// this (even CVS does the right thing), but if you're actually using this
+	// feature you probab;y need to reconsider your life choices.
+	if strings.Contains(text, `\`) {
+		return errors.New("backslash in ignore patterbs is not portable")
+	}
+
+	// Some VCSes also support prefix negation. If that's all hat's left after
 	// stripping out basic glob characters, we're fine.
 	if deglobbed[0] == '!' && (vcsname != "git" && vcsname != "src") {
 		return errors.New("pattern negation isn't supported")
@@ -10113,7 +10177,7 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 
 }
 
-// IgnoreProblem descruibes a place where an ignore file may
+// IgnoreProblem describes a place where an ignore file may
 // require hand-patching.
 type IgnoreProblem struct {
 	paths  orderedStringSet
@@ -10123,30 +10187,59 @@ type IgnoreProblem struct {
 	err    error
 }
 
-func (repo *Repository) translateIgnores(selection selectionSet, preferred *VCS, translate bool) ([]IgnoreProblem, int) {
+func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]IgnoreProblem, int) {
 	out := make([]IgnoreProblem, 0)
 	ignorecount := 0
 	repo.clearColor(colorQSET)
+
+	translateLine := func(line string, _preferred *VCS) string {
+		// Someday we night try doing nontrivial things here
+		return "#" + line
+	}
+
+	insertHeader := func(blobcontent string, preferred *VCS) string {
+		header := ""
+		if preferred.name == "hg" {
+			const hgHeader = "syntax: glob\n"
+			if !strings.HasPrefix(hgHeader, blobcontent) {
+				blobcontent = hgHeader + blobcontent
+			}
+		}
+		return header
+	}
+
 	for _, event := range repo.events {
 		if b, ok := event.(*Blob); ok {
 			paths := b.paths(nil)
 			fmt.Printf("blob %s, paths\n", b.mark)
 			// Ugh, this breaks the orderedStringSet layering a but
-			if strings.HasSuffix(paths[0], repo.vcs.ignorename) {
+			basename := filepath.Base(paths[0])
+			// The obvious thing to check basename against would be repo.vcs.name.
+			// The problem is that we don't have any guarantee that the exporter
+			// haan't already renamed the ignore files to match Git convention.
+			// We shouldn't even assume that the repository has a soucytype set.
+			// Instead, check and translate everything that migh be an ignore file.
+			//
+			// This could produce unexpected results in three known cases:
+			//
+			// 1. cvs-fast-export ships a stream that sets a CVS sourcetype but
+			//    has .gitignores in it.
+			//
+			// 2. A CVS repository with .cvsignore files got lifted to Subversion
+			//    without the .cvsignore files removed.  This logic will fire on those.
+			//
+			// 3. A subversion repository with .gitignores created by git-svn. This
+			//    will fire on those too.
+			//
+			if ignoremap[basename] != nil {
 				ignorecount++
-				translated := ""
 				blobcontent := string(b.getContent())
-				if preferred.name == "hg" && translate {
-					const hgHeader = "syntax: glob\n"
-					if !strings.HasPrefix(hgHeader, blobcontent) {
-						blobcontent = hgHeader + blobcontent
-					}
-				}
+				translated := insertHeader(blobcontent, preferred)
 				for ln, line := range strings.Split(blobcontent, "\n") {
-					if err := checkIgnoreSyntaxLine(preferred.name, line); err != nil {
+					if err := checkIgnoreSyntaxLine(preferred.name, line); err == nil {
 						translated += line + "\n"
 					} else {
-						translated += "#" + line + "\n"
+						translated += translateLine(line, preferred) + "\n"
 						var oops IgnoreProblem
 						oops.paths = paths
 						oops.mark = b.getMark()
@@ -10154,11 +10247,11 @@ func (repo *Repository) translateIgnores(selection selectionSet, preferred *VCS,
 						oops.lineno = ln + 1
 						oops.err = err
 						out = append(out, oops)
-						b.addColor(colorQSET)
 					}
 				}
-				if translate {
+				if translate && translated != blobcontent {
 					b.setContent([]byte(translated), noOffset)
+					b.addColor(colorQSET)
 				}
 			}
 		}

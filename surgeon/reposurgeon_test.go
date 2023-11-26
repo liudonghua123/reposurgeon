@@ -98,8 +98,8 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"!*.a", "cvs", false},
 		{".py[co]", "cvs", true},
 		{".netrc~", "cvs", true},
-		{"x[a-z]y", "cvs", false},
-		{"x[!0-9]y", "cvs", false},
+		{"x[a-z]y", "cvs", true},
+		{"x[!0-9]y", "cvs", true},
 		// SVN
 		{"#Comment", "svn", true},
 		{"foobar", "svn", true},
