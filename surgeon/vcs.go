@@ -145,6 +145,7 @@ func (vcs VCS) hasReference(comment []byte) bool {
 }
 
 var vcstypes []VCS
+var ignoremap map[string]*VCS
 
 // This one is special because it's used directly in the Subversion
 // dump parser, as well as in the VCS capability table.
@@ -706,6 +707,14 @@ core
 			notes:        "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
 			idformat:     "%s",
 		},
+	}
+
+	// We'll use this to deduce the types of streams that contain ignore files.
+	ignoremap = make(map[string]*VCS)
+	for i, vcs := range vcstypes {
+		if vcs.ignorename != "" {
+			ignoremap[vcs.ignorename] = &vcstypes[i]
+		}
 	}
 }
 

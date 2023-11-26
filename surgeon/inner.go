@@ -4698,6 +4698,15 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 					} else {
 						// 100644, 100755, 120000.
 						sp.fiParseFileop(fileop)
+						// Deduce the source type from the basename
+						// of any ignore file blob. Has to be a weak hint
+						// because cvs-fast-export renames .cvsignore
+						// files to .gitignores before reposurgeon gets to
+						// see it.
+						basename := filepath.Base(fileop.Path)
+						if m := ignoremap[basename]; m != nil {
+							sp.repo.hint(m.name, false)
+						}
 					}
 					commit.appendOperation(fileop)
 				} else if line[0] == opN {
