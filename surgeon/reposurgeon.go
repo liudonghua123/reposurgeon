@@ -5711,41 +5711,13 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 				respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
 			}
 		} else if option == "--rename" {
-			changecount := 0
-			for _, commit := range repo.commits(undefinedSelectionSet) {
-				for idx, fileop := range commit.operations() {
-					for _, attr := range []string{"Path", "Source", "Target"} {
-						oldpath, ok := getAttr(fileop, attr)
-						if ok {
-							if ok && strings.HasSuffix(oldpath, rs.ignorename) {
-								newpath := filepath.Join(filepath.Dir(oldpath),
-									rs.preferred.ignorename)
-								setAttr(commit.fileops[idx], attr, newpath)
-								changecount++
-								commit.addColor(colorQSET)
-							}
-						}
-					}
-				}
-			}
-			respond("%d ignore files renamed (%s -> %s).",
-				changecount, rs.ignorename, rs.preferred.ignorename)
-			rs.ignorename = rs.preferred.ignorename
+			// Remove this.
 		} else if option == "--translate" {
-			changecount := 0
-			for _, event := range repo.events {
-				if blob, ok := event.(*Blob); ok && isIgnore(blob) {
-					if rs.preferred.name == "hg" {
-						if !bytes.HasPrefix(blob.getContent(), []byte("syntax: glob\n")) {
-							blob.setContent([]byte("syntax: glob\n"+string(blob.getContent())), noOffset)
-							changecount++
-							blob.addColor(colorQSET)
-
-						}
-					}
-				}
-			}
+			problems, changecount := repo.translateIgnores(rs.preferred, true)
 			respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
+			for _, issue := range problems {
+				respond("%s, line %d = %q: %s", issue.mark, issue.lineno, issue.line, issue.err)
+			}
 		} else {
 			croak("unknown option %s in ignores line", option)
 			return false
