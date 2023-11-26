@@ -6,7 +6,7 @@ ignores --defaults
 # Next line should reveal a generated ignore blob and its fileop
 :2,:3 list inspect
 prefer hg
-ignores --rename --translate
+ignores --translate
 clear flag interactive
 write -
 

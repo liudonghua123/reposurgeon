@@ -5608,21 +5608,18 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 // HelpIgnores says "Shut up, golint!"
 func (rs *Reposurgeon) HelpIgnores() {
 	rs.helpOutput(`
-ignores [--rename] [--translate] [--defaults]
+ignores [--translate] [--defaults]
 
 Intelligent handling of ignore-pattern files.
 
 This command fails if no repository has been selected or no preferred write
 type has been set for the repository.  It does not take a selection set.
 
-If --rename is present, this command attempts to rename all
-ignore-pattern files to whatever is appropriate for the preferred type
-- e.g. .gitignore for git, .hgignore for hg, etc.  This option does
-not cause any translation of the ignore files it renames.
-
 If --translate is present, syntax translation of each ignore file is
-attempted. At present, the only transformation the code knows is to
-prepend a 'syntax: glob' header if the preferred type is hg.
+attempted. Pattern lines it can't translarte get commented out;
+interactively. these are reported. Then all ignore-pattern are renamed
+files to whatever is appropriate for the preferred type -
+e.g. .gitignore for git, .hgignore for hg, etc.
 
 If --defaults is present, the command attempts to prepend these
 default patterns to all ignore files. If no ignore file is created by
@@ -5710,8 +5707,6 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 				}
 				respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
 			}
-		} else if option == "--rename" {
-			// Remove this.
 		} else if option == "--translate" {
 			problems, changecount := repo.translateIgnores(rs.preferred, true)
 			respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))

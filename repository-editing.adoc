@@ -3908,7 +3908,7 @@ move them to a verb-first form:
 
 ----
 [SELECTION] changelogs [BASENAME-PATTERN]
-ignores [--rename] [--translate] [--defaults]
+ignores [--translate] [--defaults]
 sourcetype [VCS-NAME]
 [SELECTION] timeoffset {OFFSET}
 [SELECTION] timequake [--tick]
