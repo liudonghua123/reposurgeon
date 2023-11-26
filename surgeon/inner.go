@@ -10015,6 +10015,9 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 	//
 	// There are several levels of generic glob syntax:
 	// 1. *?[] without dash available in ranges (bk, hg, bzr, brz)
+	//    In the case of bzr, lack of - support has been verified by looking at
+	//    the source code. The hg documentation says in uses shell globbing,
+	//    wich doesm't have dash ranges,
 	// 2. *?[-] with dash and !-negation available in ranges (CVS,
 	//    svn, src) and backslash escaping. This is POSIX fnmatch(3)
 	//    regexps, though you have to dig pretty hard to find the
@@ -10027,7 +10030,7 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 	// A. Matches are unanchored, can be a trailing segmments of a path.
 	// B. Matches are anchored to the repository root.
 	// C. Matches are anchored to the directory where the ignore file is.
-	// D. * amd ? wildcards cannot match a following slash.
+	// D. * and ? wildcards cannot match a following slash.
 	//
 	// The presence of a / in a path nay change which rule applies,
 	//
@@ -10081,6 +10084,11 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 		return nil
 	}
 
+	// If a pattern doesn't contain [] syntax, - isn't special.
+	if !strings.Contains(text, "[") && !strings.Contains(text, "]") {
+		text = strings.Replace(text, "-", "", -1)
+	}
+
 	// darcs and mtn use full regexps rather than any version of
 	// fnmatch(3)/glob(3), so any remaining punctuation character
 	// (including /) means this pattern line needs hand-hacking.
@@ -10092,15 +10100,20 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 	// because the hg documentation is so horrible. mtn says it
 	// matches using PCRE.
 	if (vcsname == "darcs" || vcsname == "mtn") && runeFilter(text, unicode.IsPunct) != "" {
-		return errors.New("darcs ignore-pattern REs are incompatible")
+		return errors.New("darcs/mtn ignore-pattern REs are incompatible")
 	}
 
+	if !(vcsname == "bzr" || vcsname == "brz") && strings.HasPrefix("RE:", text) {
+		return errors.New("bzr/brz RE: syntax needs to be translated by hand")
+	}
+
+	// Inspection of the GNU CVS soirce code reveals that it
+	// never interprets slashes. It is unclear what path-matching
+	// rule it follows.
+	//
 	// Most VCSes may treat a / at the beginning or end
 	// of a pattern or after a dot, but do not treat medial slashes
 	// specially. So we get rid of those here.
-	//
-	// Inspection of the GNU CVS soirce code reveals that it
-	// never interpets slashes. It is unclear
 	//
 	// bzr/brz is an exception, it specifically documents that it
 	// normally follows rule A, but  medial slash forces rule B.
@@ -10143,6 +10156,7 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 		text = strings.Replace(text, "[^", "[", -1)
 		text = strings.Replace(text, "-", "", -1)
 	}
+
 	// We're past anything that can masquerade as a basic glob
 	// pattern.  Every remaining VCS that has ignores at all supports
 	// basic globs. So strip out anything that looks like a basic glob.
@@ -10151,16 +10165,16 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 		return nil
 	}
 
-	// Any use of \ throws a warning. We cou;d probab;y be less twitchy about
+	// Any use of \ throws a warning. We cou;d probably be less twitchy about
 	// this (even CVS does the right thing), but if you're actually using this
 	// feature you probab;y need to reconsider your life choices.
 	if strings.Contains(text, `\`) {
 		return errors.New("backslash in ignore patterbs is not portable")
 	}
 
-	// Some VCSes also support prefix negation. If that's all hat's left after
+	// Some VCSes also support prefix negation. If that's all that's left after
 	// stripping out basic glob characters, we're fine.
-	if deglobbed[0] == '!' && (vcsname != "git" && vcsname != "src") {
+	if deglobbed[0] == '!' && (vcsname != "git" && vcsname != "src" && vcsname != "bzr" && vcsname != "brz") {
 		return errors.New("pattern negation isn't supported")
 	}
 	deglobbed = runeFilter(deglobbed, func(r rune) bool { return string(r) != "!" })
@@ -10198,20 +10212,19 @@ func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]Igno
 	}
 
 	insertHeader := func(blobcontent string, preferred *VCS) string {
-		header := ""
+		inserted := ""
 		if preferred.name == "hg" {
 			const hgHeader = "syntax: glob\n"
-			if !strings.HasPrefix(hgHeader, blobcontent) {
-				blobcontent = hgHeader + blobcontent
+			if !strings.HasPrefix(blobcontent, hgHeader) {
+				inserted = hgHeader
 			}
 		}
-		return header
+		return inserted
 	}
 
 	for _, event := range repo.events {
 		if b, ok := event.(*Blob); ok {
 			paths := b.paths(nil)
-			fmt.Printf("blob %s, paths\n", b.mark)
 			// Ugh, this breaks the orderedStringSet layering a but
 			basename := filepath.Base(paths[0])
 			// The obvious thing to check basename against would be repo.vcs.name.
@@ -10234,7 +10247,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]Igno
 			if ignoremap[basename] != nil {
 				ignorecount++
 				blobcontent := string(b.getContent())
-				translated := insertHeader(blobcontent, preferred)
+				translated := ""
 				for ln, line := range strings.Split(blobcontent, "\n") {
 					if err := checkIgnoreSyntaxLine(preferred.name, line); err == nil {
 						translated += line + "\n"
@@ -10249,6 +10262,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]Igno
 						out = append(out, oops)
 					}
 				}
+				translated = insertHeader(blobcontent, preferred) + translated
 				if translate && translated != blobcontent {
 					b.setContent([]byte(translated), noOffset)
 					b.addColor(colorQSET)
@@ -10261,9 +10275,9 @@ func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]Igno
 		for _, commit := range repo.commits(undefinedSelectionSet) {
 			for idx, fileop := range commit.operations() {
 				for _, attr := range []string{"Path", "Source", "Target"} {
-					oldpath, ok := getAttr(fileop, attr)
-					if ok {
-						if ok && strings.HasSuffix(oldpath, repo.vcs.ignorename) {
+					if oldpath, ok := getAttr(fileop, attr); ok {
+						basename := filepath.Base(oldpath)
+						if ignoremap[basename] != nil {
 							newpath := filepath.Join(filepath.Dir(oldpath),
 								preferred.ignorename)
 							setAttr(commit.fileops[idx], attr, newpath)

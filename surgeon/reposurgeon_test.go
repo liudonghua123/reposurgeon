@@ -113,7 +113,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"#Comment", "bzr", true},
 		{"foobar", "bzr", true},
 		{"*.a", "bzr", true},
-		{"!*.a", "bzr", false},
+		{"!*.a", "bzr", true},
 		{".py[co]", "bzr", true},
 		{".netrc~", "bzr", true},
 		{"x[a-z]y", "bzr", false},
