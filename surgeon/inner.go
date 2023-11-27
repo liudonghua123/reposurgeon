@@ -2494,6 +2494,10 @@ func (fileop *FileOp) clone(newRepo *Repository) *FileOp {
 	return newop
 }
 
+func (fileop FileOp) isIgnore() *VCS {
+	return ignoremap[filepath.Base(fileop.Path)]
+}
+
 // Callout is a stub object for callout marks in incomplete repository segments.
 type Callout struct {
 	mark   string
@@ -4703,8 +4707,7 @@ func (sp *StreamParser) parseFastImport(options stringSet, baton *Baton, filesiz
 						// because cvs-fast-export renames .cvsignore
 						// files to .gitignores before reposurgeon gets to
 						// see it.
-						basename := filepath.Base(fileop.Path)
-						if m := ignoremap[basename]; m != nil {
+						if m := fileop.isIgnore(); m != nil {
 							sp.repo.hint(m.name, false)
 						}
 					}
@@ -10222,13 +10225,12 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 		return inserted
 	}
 
-	isIgnore := func(blob *Blob) bool {
+	isIgnoreBlob := func(blob *Blob) bool {
 		if len(blob.opset) == 0 {
 			return false
 		}
 		for fop := range blob.opset {
-			basename := filepath.Base(fop.Path)
-			if ignoremap[basename] == nil {
+			if fop.isIgnore() == nil {
 				return false
 			}
 		}
@@ -10236,26 +10238,18 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 	}
 	repo.clearColor(colorQSET)
 	if defaults {
-		// Modify existing ignore files
-		for _, event := range repo.events {
-			if blob, ok := event.(*Blob); ok && isIgnore(blob) {
-				blob.setContent([]byte(preferred.dfltignores+string(blob.getContent())), -1)
-				//changecount++
-			}
-		}
 		// Create an early ignore file if required.
 		// Do not move this before the modification pass!
 		earliest := repo.earliestCommit()
 		hasIgnoreBlob := false
 		for _, fileop := range earliest.operations() {
-			basename := filepath.Base(fileop.Path)
-			if fileop.op == opM && ignoremap[basename] != nil {
+			if fileop.op == opM && fileop.isIgnore() != nil {
 				hasIgnoreBlob = true
 			}
 		}
 		if !hasIgnoreBlob {
 			blob := newBlob(repo)
-			blob.setContent([]byte(preferred.dfltignores), noOffset)
+			blob.setContent([]byte(""), noOffset)
 			blob.mark = ":insert"
 			blob.addColor(colorQSET)
 			repo.insertEvent(blob, repo.eventToIndex(earliest), "ignore-blob creation")
@@ -10270,14 +10264,13 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 
 	for _, event := range repo.events {
 		if b, ok := event.(*Blob); ok {
-			paths := b.paths(nil)
-			// Ugh, this breaks the orderedStringSet layering a but
-			basename := filepath.Base(paths[0])
-			// The obvious thing to check basename against would be repo.vcs.name.
-			// The problem is that we don't have any guarantee that the exporter
-			// haan't already renamed the ignore files to match Git convention.
+			// The obvious thing to check basename against would be against the
+			// ignorename for the repository's sourcetype. The problem with this
+			// is that we don't have any guarantee that the exporter has not
+			// already renamed the ignore files to match Git convention.
 			// We shouldn't even assume that the repository has a soucytype set.
 			// Instead, check and translate everything that migh be an ignore file.
+
 			//
 			// This could produce unexpected results in three known cases:
 			//
@@ -10290,10 +10283,13 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 			// 3. A subversion repository with .gitignores created by git-svn. This
 			//    will fire on those too.
 			//
-			if ignoremap[basename] != nil {
+			if isIgnoreBlob(b) {
 				ignorecount++
 				blobcontent := string(b.getContent())
 				translated := blobcontent
+				if defaults {
+					translated = preferred.dfltignores + blobcontent
+				}
 				if translate {
 					translated = ""
 					for ln, line := range strings.Split(blobcontent, "\n") {
@@ -10306,7 +10302,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 								translated += line + "\n"
 							}
 							var oops IgnoreProblem
-							oops.paths = paths
+							oops.paths = b.paths(nil)
 							oops.mark = b.getMark()
 							oops.line = line
 							oops.lineno = ln + 1
