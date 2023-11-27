@@ -10247,27 +10247,30 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 			if ignoremap[basename] != nil {
 				ignorecount++
 				blobcontent := string(b.getContent())
-				translated := ""
-				for ln, line := range strings.Split(blobcontent, "\n") {
-					if err := checkIgnoreSyntaxLine(preferred.name, line); err == nil {
-						translated += line + "\n"
-					} else {
-						if translate {
-							translated += translateLine(line, preferred) + "\n"
-						} else {
+				translated := blobcontent
+				if translate {
+					translated = ""
+					for ln, line := range strings.Split(blobcontent, "\n") {
+						if err := checkIgnoreSyntaxLine(preferred.name, line); err == nil {
 							translated += line + "\n"
+						} else {
+							if translate {
+								translated += translateLine(line, preferred) + "\n"
+							} else {
+								translated += line + "\n"
+							}
+							var oops IgnoreProblem
+							oops.paths = paths
+							oops.mark = b.getMark()
+							oops.line = line
+							oops.lineno = ln + 1
+							oops.err = err
+							out = append(out, oops)
 						}
-						var oops IgnoreProblem
-						oops.paths = paths
-						oops.mark = b.getMark()
-						oops.line = line
-						oops.lineno = ln + 1
-						oops.err = err
-						out = append(out, oops)
 					}
+					translated = insertHeader(blobcontent, preferred) + translated
 				}
-				translated = insertHeader(blobcontent, preferred) + translated
-				if writeout && translated != blobcontent {
+				if writeout && (translated != blobcontent) {
 					b.setContent([]byte(translated), noOffset)
 					b.addColor(colorQSET)
 				}

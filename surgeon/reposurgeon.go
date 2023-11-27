@@ -5667,7 +5667,6 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 	repo := rs.chosen()
 	repo.clearColor(colorQSET)
 	var changecount int
-	var problems []IgnoreProblem
 	if parse.options.Contains("--defaults") {
 		if rs.preferred.styleflags.Contains("import-defaults") {
 			croak("importer already set default ignores")
@@ -5681,7 +5680,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 			for _, event := range repo.events {
 				if blob, ok := event.(*Blob); ok && isIgnore(blob) {
 					blob.setContent([]byte(rs.preferred.dfltignores+string(blob.getContent())), -1)
-					changecount++
+					//changecount++
 				}
 			}
 			// Create an early ignore file if required.
@@ -5708,14 +5707,12 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 			}
 		}
 	}
-	if parse.options.Contains("--translate") {
-		problems, changecount = repo.translateIgnores(rs.preferred,
-			parse.options.Contains("--defaults"),
-			parse.options.Contains("--translate"),
-			true)
-		for _, issue := range problems {
-			respond("%s, line %d = %q: %s", issue.mark, issue.lineno, issue.line, issue.err)
-		}
+	problems, changecount := repo.translateIgnores(rs.preferred,
+		parse.options.Contains("--defaults"),
+		parse.options.Contains("--translate"),
+		true)
+	for _, issue := range problems {
+		respond("%s, line %d = %q: %s", issue.mark, issue.lineno, issue.line, issue.err)
 	}
 	respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
 	return false
