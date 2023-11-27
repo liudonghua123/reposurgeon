@@ -10291,7 +10291,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 				ignorecount++
 				blobcontent := string(b.getContent())
 				translated := blobcontent
-				if defaults {
+				if defaults && !strings.HasPrefix(blobcontent, preferred.dfltignores) {
 					translated = preferred.dfltignores + blobcontent
 				}
 				if translate {
