@@ -10002,41 +10002,7 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 
 var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_#]")
 
-func checkIgnoreSyntaxLine(vcsname string, text string) error {
-	// CVS: https://www.gnu.org/software/trans-coord/manual/cvs/html_node/cvsignore.html
-	// svn: https://tortoisesvn.net/docs/release/TortoiseSVN_en/tsvn-dug-ignore.html
-	// Git: https://git-scm.com/docs/gitignore
-	// darcs: https://darcs.net/Using/Configuration#boring
-	// bzr/brz: https://documentation.help/Bazaar-help/controlling_registration.html
-	// hg: https://www.selenic.com/mercurial/hgignore.5.html
-	// bk: https://www.bitkeeper.org/man/ignore.html
-	// mtn: https://www.monotone.ca/docs/Regexps.html
-	// SCCS and RCS don't have an ignore facility.
-	// POSIX fnmatch(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
-	// POSIX glob(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/glob.html
-	// Python glob(3): https://docs.python.org/3/library/glob.html
-	//
-	// There are several levels of generic glob syntax:
-	// 1. *?[] without dash available in ranges (bk, hg, bzr, brz)
-	//    In the case of bzr, lack of - support has been verified by looking at
-	//    the source code. The hg documentation says in uses shell globbing,
-	//    wich doesm't have dash ranges,
-	// 2. *?[-] with dash and !-negation available in ranges (CVS,
-	//    svn, src) and backslash escaping. This is POSIX fnmatch(3)
-	//    regexps, though you have to dig pretty hard to find the
-	//    part of the standard that describes dash ranges.
-	// 3. Add leading negation (git).
-	//
-	// There are some complications around / relating to whuch of
-	// the following rules is applied:
-	//
-	// A. Matches are unanchored, can be a trailing segmments of a path.
-	// B. Matches are anchored to the repository root.
-	// C. Matches are anchored to the directory where the ignore file is.
-	// D. * and ? wildcards cannot match a following slash.
-	//
-	// The presence of a / in a path nay change which rule applies,
-	//
+func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	runeFilter := func(input string, filter func(rune) bool) string {
 		var result []rune
 
@@ -10072,93 +10038,60 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 		return nil
 	}
 
-	// Barf on some CVS peculiarities
-	if vcsname == "cvs" {
-		if strings.HasPrefix(text, "#") {
-			return errors.New("CVS does not have # comments")
-		}
-		if strings.Contains(text, " ") {
-			return errors.New("CVS treats spaces as pattern separators")
-		}
-	}
-
-	// All VCSses after CVS have #-led commwnts
-	if strings.HasPrefix(text, "#") {
+	// We cam't do anything useful if the target synta is regexp-based;
+	// pass it through and hope. This could change someday as it is
+	// theoretically possible to translate globs to regexps.
+	if preferred.hasCapability(ignREGEXP) {
 		return nil
 	}
 
+	// It's all glob syntax past this point.
+
+	// Should happen only on very old CS repos, and then only if
+	// you have an opd version of cvs-fast-export Versions 1.62
+	// and lator mung these separators into linefeeds.
+	if preferred.hasCapability(ignWACKYSPACE) {
+		if strings.Contains(text, " ") {
+			return fmt.Errorf("%s treats spaces as pattern separators", preferred.name)
+		}
+	}
+
+	// Most VCSes have #-led commwnts
+	if strings.HasPrefix(text, "#") {
+		if preferred.hasCapability(ignHASHCOMMENT | ignEXPORTED) {
+			return nil
+		}
+		return fmt.Errorf("%s does not have # comments", preferred.name)
+	}
+
 	// If a pattern doesn't contain [] syntax, - isn't special.
+	// This is true in both glob and regexp syntaxes.
 	if !strings.Contains(text, "[") && !strings.Contains(text, "]") {
 		text = strings.Replace(text, "-", "", -1)
 	}
 
-	// darcs and mtn use full regexps rather than any version of
-	// fnmatch(3)/glob(3), so any remaining punctuation character
-	// (including /) means this pattern line needs hand-hacking.
-	// It isn't clear what the path root is for matching, but
-	// it's most likely the repository root.
-	//
-	// Note: this could fail if we're starting from hg's RE syntax
-	// - it *might* actually be compatible but we can't tell
-	// because the hg documentation is so horrible. mtn says it
-	// matches using PCRE.
-	if (vcsname == "darcs" || vcsname == "mtn") && runeFilter(text, unicode.IsPunct) != "" {
-		return errors.New("darcs/mtn ignore-pattern REs are incompatible")
-	}
-
-	if !(vcsname == "bzr" || vcsname == "brz") && strings.HasPrefix("RE:", text) {
+	// Reject quirks.
+	if !preferred.hasCapability(ignBZRLIKE) && strings.HasPrefix("RE:", text) {
 		return errors.New("bzr/brz RE: syntax needs to be translated by hand")
 	}
-
-	// Inspection of the GNU CVS source code reveals that it
-	// never interprets slashes. It is unclear what path-matching
-	// rule it follows.
-	//
-	// Subversion has per-directory ignore properties and thus normally
-	// follows rule B. It documents using glob(3), which means ? and
-	// * will not match /.
-	//
-	// Most VCSes may treat a / at the beginning or end
-	// of a pattern or after a dot, but do not treat medial slashes
-	// specially. So we get rid of those here.
-	//
-	// bzr/brz is an exception, it specifically documents that it
-	// normally follows rule A, but  medial slash forces rule B.
-	//
-	// src is an exception for a different reason; it has no
-	// concept of a repository root and rule B appiles, so any /
-	// at all in a pattern is a crash landing.
-	//
-	// git nornally follows rule A, but a beginning or medial
-	// slash forces rule B.
-	if !(vcsname == "bzr" || vcsname == "brz" || vcsname == "src" || vcsname == "git") {
-		text = medialSlash.ReplaceAllString(text, "")
+	if !preferred.hasCapability(ignBZRLIKE) && strings.HasPrefix("!!", text) {
+		return errors.New("bzr/brz !! syntax needs to be translated by hand")
+	}
+	if !preferred.hasCapability(ignDOUBLESTAR) && strings.Contains(text, "**") {
+		return errors.New("** syntax needs to be translated by hand")
 	}
 
-	// Some VCSes support full fnmatch(3)/glob(3) syntax with
-	// ranges and negated ranges. An undocumented variable what
-	// special handling of . is enabled. We'll strip the range
-	// extension syntax out now if we're lifting to one of those.
-	//
-	// CVS uses a local implementation of fnmatch(3) with no
-	// option flags. Subversion uses glob(3); src uses Python's
-	// glob library.  Git documentation mentions fnmatch(3) and
-	// the FNM_PATHNAME flag - it follows rule D.
-	//
-	// Note: it is quite possible this list should be longer and
-	// include more of {bk, hg, bzr, brz}, but older VCSes are
-	// terrible about documenting their entire ignore syntax -
-	// they tend to document by example and only give the simplest
-	// examples. Fortunately the consequenced of getting this
-	// wrong aren't serious - spurious warnings.
-	//
-	// Just to make things more confusing, there are different
-	// versions of the fnmatch library, not all of them have the
-	// same features, and not all document everything they
-	// support. The Python fnmatch library doesn't document its
-	// support for dash ranges.
-	//
-	if vcsname == "cvs" || vcsname == "svn" || vcsname == "git" || vcsname == "src" {
+	// If a medial / doesn't change the matching or anchoring rules,
+	// we can drop it.
+	if !preferred.hasCapability(ignSLASHANCHORS | ignFNMPATHNAME) {
+		text = medialSlash.ReplaceAllString(text, "")
+	}
+	// Terminating slash may not be portable
+	if preferred.hasCapability(ignSLASHDIRMATCH) && text[len(text)-1] == '/' {
+		text = text[:len(text)-1]
+	}
+
+	if preferred.hasCapability(ignDASHRANGES) {
 		text = strings.Replace(text, "[!", "[", -1)
 		text = strings.Replace(text, "[^", "[", -1)
 		text = strings.Replace(text, "-", "", -1)
@@ -10172,24 +10105,23 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 		return nil
 	}
 
-	// Any use of \ throws a warning. We cou;d probably be less twitchy about
+	// Any use of \ throws a warning. We could probably be less twitchy about
 	// this (even CVS does the right thing), but if you're actually using this
-	// feature you probab;y need to reconsider your life choices.
+	// feature you probably need to reconsider your life choices.
 	if strings.Contains(text, `\`) {
-		return errors.New("backslash in ignore patterbs is not portable")
+		return errors.New("backslash in ignore patterns is not portable")
 	}
 
 	// Some VCSes also support prefix negation. If that's all that's left after
 	// stripping out basic glob characters, we're fine.
-	if deglobbed[0] == '!' && (vcsname != "git" && vcsname != "src" && vcsname != "bzr" && vcsname != "brz") {
+	if deglobbed[0] == '!' && !preferred.hasCapability(ignNEGATION) {
 		return errors.New("pattern negation isn't supported")
 	}
 	deglobbed = runeFilter(deglobbed, func(r rune) bool { return string(r) != "!" })
 
 	// If it's still nonempty after all recognizable characters
 	// have been stripped, throw back an indication that
-	// hand-hacking is needed. Alas, this is going to throw back
-	// any pattern that contains a slash.
+	// hand-hacking is needed.
 	if deglobbed != "" {
 		return errors.New("unrecognized pattern syntax")
 	}
@@ -10214,7 +10146,13 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 	repo.clearColor(colorQSET)
 
 	translateLine := func(line string, _preferred *VCS) string {
-		// Someday we night try doing nontrivial things here
+		// If the target sytem has glob syntax, comment out
+		// the suspect rule. If it has regexp syntax we cam't
+		// that - pass it through and hope for the besy.
+		if preferred.hasCapability(ignREGEXP) {
+			return line
+		}
+		// Someday we night try doing nontrivial translation here.
 		return "#" + line
 	}
 
@@ -10297,7 +10235,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 				if translate {
 					translated = ""
 					for ln, line := range strings.Split(blobcontent, "\n") {
-						if err := checkIgnoreSyntaxLine(preferred.name, line); err == nil {
+						if err := checkIgnoreSyntaxLine(preferred, line); err == nil {
 							translated += line + "\n"
 						} else {
 							if translate {

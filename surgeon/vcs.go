@@ -61,9 +61,162 @@ type VCS struct {
 	cookies     []regexp.Regexp // How to recognize a possible commit reference
 	checkignore string          // how to tell if directory is a checkout
 	idformat    string          // ID display string format
+	flags       uint            // Capability flags
 	// One last visible member
 	dfltignores string // Default ignore patterns
 }
+
+// Capability flags for grokking ignore file syntax.
+//
+// This is a compilcated and murky area because VCSs are very bad
+// at documenting their actual rules. Here are some references:
+//
+// CVS: https://www.gnu.org/software/trans-coord/manual/cvs/html_node/cvsignore.html
+// svn: https://svnbook.red-bean.com/nightly/en/svn.advanced.props.special.ignore.html
+// Git: https://git-scm.com/docs/gitignore
+// darcs: https://darcs.net/Using/Configuration#boring
+// bzr/brz: https://documentation.help/Bazaar-help/controlling_registration.html
+// hg: https://www.selenic.com/mercurial/hgignore.5.html
+// bk: https://www.bitkeeper.org/man/ignore.html
+// mtn: https://www.monotone.ca/docs/Regexps.html
+// SCCS and RCS don't have an ignore facility.
+// POSIX fnmatch(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
+// POSIX glob(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/glob.html
+// Python glob(3): https://docs.python.org/3/library/glob.html
+//
+// There are two different kinds of ignore-pattern syntax. Most VCSes
+// use some variation on glob(3)/fnmatch(3)' glob(3) is like
+// fnmatch(3) with FNM_NOESCAPE unset but FNM_PATHNAME and FNM_PERIOD
+// set. Some (darcs, mtn) use full regular expressions. One, hg, can
+// use either.
+//
+// There are three levels of generic glob syntax:
+//
+// 1. ignSHELLGLOB (shell globbing): *?[] without dash available in
+// ranges (bk, hg, bzr, brz)  The hg documentation
+// says it uses shell globbing, which doesn't have dash ranges,
+//
+// 2. ignFNMATCH (find globbing): *?[-] with dash and !-negation
+// available in ranges (CVS, svn, src) and backslash escaping. This is
+// POSIX fnmatch(3) regexps, though you have to dig pretty hard to
+// find the part of the standard that describes dash ranges.
+//
+// 3. ignNEGATION: Add leading negation
+//
+// Predicting features from knowing which library is used isn't
+// simple, because POSIX glob(3) optionally has features that
+// original shell globbing did not, inclusing dash ranges,
+//
+// Just to make things more confusing, there are different versions of
+// the fnmatch library, not all of them have the same features, and
+// not all document everything they support. CVS uses a local poty of
+// a very old version. The Python fnmatch library doesn't document its
+// support for dash ranges.
+//
+// There are some complications around / relating to which of
+// the following rules is applied:
+//
+// A. Matches apply to subdirectories - ignRECURSIVE.
+// B. Matches are anchored to the directory where the ignore
+//    file is - ~ignRECURSIVE.
+// C. * and ? wildcards cannot match a following slash -
+//    ignFNMPATHNAME.
+//
+// The presence of a / in a path may change whether A or B applies,
+//
+// Things we know about specific systems:
+//
+// git does an equivalent of fnmatch(3) with FNM_PATHNAME,
+// FNM_NOESCAPE off; thus rule C. Wildcard chracters are ?*[!^-], and
+// !~ negation is supported. Role A applied unless there's an initial
+// or nedial separator, in which case rule B. A / at end of pattern
+// has the special behavior of matching only directories. ** matches
+// any number of directory segments.
+//
+// hg uses globbing or regexps depending on whether "syntax: regexp\n"
+// or "syntax: glob\n" hass been seen most recently. It is not
+// specified which is the default; here we assume it's globs.  The
+// documentation say "Shell-style glob" and there is no evidence in
+// the xamples of support for dash ranges of backslash.  The
+// documentation specifies that patterns a not rooterd, so rule A.
+// The ** wildcard is recognized. Patterns which match a directory are
+// treated as if followed by **.
+//
+// svn documents that it uses glob(3) and says "if you are migrating a
+// CVS working copy to Subversion, you can directly migrate the ignore
+// patterns by using the .cvsignore file as input to the svn propset
+// command."; however this is not true as the implied settingds of
+// FNM_PATHNAME and FNM_PERIOD differ between glob(3) and
+// CVS. Wildcards are ?*[-], it is unknown whether range negation or
+// backslash are actually supported, and unknown whether / changes
+// matching behavior. svn:global-ignore properties (introduced in
+// Subversion 1.8) set in the repository root apply to subdirectories;
+// svn:ignore properties do not. Just to complicate matters, 1.8 and
+// later have svn:global-ignores defaults identical to the previous
+// global-ignores defaults...and "The ignore patterns in the
+// svn:global-ignores property may be delimited with any whitespace
+// (similar to the global-ignores runtime configuration option), not
+// just newlines (as with the svn:ignore property)."!
+//
+// bzr/brz support shell-style globbing; wildcards are *?, though you
+// hve to dig into testcases in the code to verify ?; however prefix
+// negation with ! is supported.  There can be only one ignore file,
+// at the repository root.  Rule A, but an example in the
+// documentation shows that embedded / anchors the pattern to the
+// repository root directory.  It is unknown whether *?  can match /
+// and whether backslash is supported.  The wilcard ** to match any
+// sequence of path segments is supporteed; there's also a unique !!
+// syntax "Patterns prefixed with '!!' act as regular ignore patterns,
+// but have highest precedence, even over the '!'  exception
+// patterns.". An RE: prefix on a pattern line means it should be
+// interpreted as a regular expression.
+//
+// cvs uses a local workalike of fnmatch(3). Wild cards are ?*[!^-]
+// with the FNM_PATHNAME, FNM_NOESCAPE, and FNM_PERIOD flags are *not*
+// set; thus, specials can be escaped with \ and ? *can* match a /.
+// A line consisting of a single ! clears all ignore patterns.
+// These properties have been checked by examination of the source code.
+// "The patterns found in .cvsignore are only valid for the directory
+// that contains them, not for any sub-directories."   Rules B & ~C.
+//
+// darcs and mtn use full regexps rather than any version of
+// fnmatch(3)/glob(3)
+//
+// src uses Python's glob library, so *? not matching / is assumed
+// but hasn't been checked. Its wildcard characters are ?*[!-]
+//
+// bk doesn't document its igbnore syntax at all and the ecamples only
+// show *. Since we never expect to export *to* bk, we'll make the
+// conservative assunmption that supports only old-fashioned shell
+// globbing. "Patterns that do not contain a slash (`/') character are
+// matched against the basename of the file; patterns containing a
+// slash are matched against the pathname of the file relative to the
+// root of the repository.  Using './' at the start of a pattern means
+// the pattern applies only to the repository root."  Rule A, with the
+// ignSLASHANCHORS feaatures.
+//
+// Yes, the capability flags defined below aren't all used. Yet.
+
+// FIXME: svn handling of svn:global-ignores does not match this
+// description - it ceratainly doesn't implement sapce separators.
+
+const (
+	ignBZRLIKE       uint = 1 << iota // bzr or its clone, brz; RE: syntax
+	ignDASHRANGES                     // Ignore patterns allow - ranges within []
+	ignDOUBLESTAR                     // Match multiple path segments
+	ignEXPORTED                       // Ignore patterns are visible via fast-export only
+	ignFNMATCH                        // Find-style globbing with fnmatch(3)
+	ignFNMPATHNAME                    // Glob wildcards can't match /
+	ignFNMPERIOD                      // Leading period requires explicit match
+	ignHASHCOMMENT                    // Has native ignorefile comments led by hash
+	ignNEGATION                       // Ignore patterns allow prefix negation with !
+	ignRECURSIVE                      // Ignore patterns apply to subdirectories
+	ignREGEXP                         // Patterns are full regular expressions
+	ignSHELLGLOB                      // Shell-style globbing without dash ranges
+	ignSLASHANCHORS                   // A . changes matching from rexursive to abchored
+	ignSLASHDIRMATCH                  // Terminal slash matches directories
+	ignWACKYSPACE                     // Spaces are treated as pattern separators
+)
 
 // Constants needed in VCS class methods
 const suffixNumeric = `[0-9]+(\s|[.]\n)`
@@ -169,10 +322,12 @@ func vcsInit() {
 			preserve:     newOrderedStringSet(".git/config", ".git/hooks"),
 			authormap:    ".git/cvs-authors",
 			ignorename:   ".gitignore",
-			dfltignores:  "",
 			cookies:      reMake(`\b[0-9a-f]{6}\b`, `\b[0-9a-f]{40}\b`),
 			project:      "http://git-scm.com/",
 			notes:        "The authormap is not required, but will be used if present.",
+			idformat:     "%s",
+			flags:        ignHASHCOMMENT | ignFNMATCH | ignFNMPATHNAME | ignDASHRANGES | ignNEGATION | ignDOUBLESTAR | ignSLASHANCHORS | ignSLASHDIRMATCH,
+			dfltignores:  "",
 		},
 		{
 			name:         "bzr",
@@ -197,11 +352,12 @@ func vcsInit() {
 			prenuke:      newOrderedStringSet(".bzr/plugins"),
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
-			project:      "http://bazaar.canonical.com/en/",
 			ignorename:   ".bzrignore",
 			cookies:      reMake(tokenNumeric),
+			project:      "http://bazaar.canonical.com/en/",
 			notes:        "Requires the bzr-fast-import plugin.",
 			idformat:     "%s",
+			flags:        ignHASHCOMMENT | ignSHELLGLOB | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
 			dfltignores: `
 # A simulation of bzr default ignores, generated by reposurgeon.
 *.a
@@ -245,6 +401,7 @@ bzr-orphans
 			cookies:      reMake(tokenNumeric),
 			notes:        "Breezy capability is not well tested.",
 			idformat:     "%s",
+			flags:        ignHASHCOMMENT | ignSHELLGLOB | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
 			dfltignores: `
  # A simulation of brz default ignores, generated by reposurgeon.
  *.a
@@ -287,6 +444,7 @@ bzr-orphans
 branch is renamed to 'master'.
 `,
 			idformat:    "%s",
+			flags:       ignHASHCOMMENT | ignSHELLGLOB | ignFNPATHNANE | ignRECURSIVE | ignDOUBLESTAR,
 			dfltignores: "",
 		},
 		{
@@ -313,6 +471,7 @@ branch is renamed to 'master'.
 			project:      "http://darcs.net/",
 			notes:        "Assumes no boringfile preference has been set.",
 			idformat:     "%s",
+			flags:        ignREGEXP,
 			dfltignores: `
 # A simulation of darcs default ignores, generated by reposurgeon.
 # haskell (ghc) interfaces
@@ -438,6 +597,7 @@ core
 				project:      "http://pijul.org/",
 				notes:        "No importer/exporter pair yet.",
 				idformat:     "%s",
+				flags:        ignREGEXP,
 				dfltignores:  ``,
 			},
 		*/
@@ -464,6 +624,7 @@ core
 			project:      "http://www.monotone.ca/",
 			notes:        "Exporter is buggy, occasionally emitting negative timestamps.",
 			idformat:     "%s",
+			flags:        ignREGEXP,
 			dfltignores: `
 *.a
 *.so
@@ -527,6 +688,7 @@ _darcs
 			notes:        "Run from the repository, not a checkout directory.",
 			checkignore:  ".svn",
 			idformat:     "r%s",
+			flags:        ignEXPORTED | ignFNMATCH | ignFNMPATHNAME | ignDASHRANGES | ignRECURSIVE,
 			dfltignores: `# A simulation of Subversion default ignores, generated by reposurgeon.
 *.o
 *.lo
@@ -573,6 +735,7 @@ _darcs
 			notes:        "Requires cvs-fast-export.",
 			checkignore:  "CVS",
 			idformat:     "%s",
+			flags:        ignEXPORTED | ignFNMATCH | ignDASHRANGES | ignWACKYSPACE,
 			dfltignores: `
 # A simulation of cvs default ignores, generated by reposurgeon.
 tags
@@ -627,6 +790,7 @@ core
 			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "",
 			idformat:     "%s",
+			flags:        ignEXPORTED | ignFNMATCH | ignDASHRANGES | ignFNMPATHNAME, // Through src
 		},
 		{
 			name:         "rcs",
@@ -651,6 +815,7 @@ core
 			project:      "https://www.gnu.org/software/rcs/",
 			notes:        "",
 			idformat:     "%s",
+			flags:        ignEXPORTED | ignFNMATCH | ignDASHRANGES | ignFNMPATHNAME, // Through src
 		},
 		{
 			name:         "src",
@@ -676,6 +841,7 @@ core
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
 			idformat:     "%s",
+			flags:        ignHASHCOMMENT | ignFNMATCH | ignDASHRANGES | ignFNMPATHNAME,
 		},
 		{
 			// Styleflags may need tweaking for round-tripping
@@ -702,6 +868,7 @@ core
 			project:      "https://www.bitkeeper.com/",
 			notes:        "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
 			idformat:     "%s",
+			flags:        ignSHELLGLOB | ignRECURSIVE | ignSLASHANCHORS,
 		},
 	}
 
@@ -747,6 +914,10 @@ func identifyRepo(dirname string) *VCS {
 		}
 	}
 	return nil
+}
+
+func (vcs VCS) hasCapability(n uint) bool {
+	return (n & vcs.flags) != 0
 }
 
 // end

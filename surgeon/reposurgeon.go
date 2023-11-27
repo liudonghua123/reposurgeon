@@ -5614,11 +5614,15 @@ Intelligent handling of ignore-pattern files.
 This command fails if no repository has been selected or no preferred write
 type has been set for the repository.  It does not take a selection set.
 
-If --translate is present, syntax translation of each ignore file is
-attempted. Pattern lines it can't translarte get commented out;
-interactively. these are reported. Then all ignore-pattern are renamed
-files to whatever is appropriate for the preferred type -
-e.g. .gitignore for git, .hgignore for hg, etc.
+If --translate is present, and the preferref system has a glob(3)-like
+ignre-pattern syntax, translation of each ignore file is
+attempted. Pattern lines it can't translate get commented out;
+interactively, these are reported. If the target system uses full
+regexps for ignore patterns no translation is attempted.
+
+After this, all ignore-pattern files are renamed to whatever is
+appropriate for the preferred type - e.g. .gitignore for git,
+.hgignore for hg, etc.
 
 If --defaults is present, the command attempts to prepend these
 default patterns to all ignore files. If no ignore file is created by

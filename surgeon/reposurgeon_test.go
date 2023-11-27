@@ -92,7 +92,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 	}
 	tests := []testEntry{
 		// CVS
-		{"#Comment", "cvs", false},
+		{"#Comment", "cvs", true}, // because ignEXPORTED
 		{"foobar", "cvs", true},
 		{"*.a", "cvs", true},
 		{"!*.a", "cvs", false},
@@ -101,7 +101,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"x[a-z]y", "cvs", true},
 		{"x[!0-9]y", "cvs", true},
 		// SVN
-		{"#Comment", "svn", true},
+		{"#Comment", "svn", true}, // because ignEXPORTED
 		{"foobar", "svn", true},
 		{"*.a", "svn", true},
 		{"!*.a", "svn", false},
@@ -131,17 +131,14 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"#Comment", "src", true},
 		{"foobar", "src", true},
 		{"*.a", "src", true},
-		{"!*.a", "src", true},
+		{"!*.a", "src", false},
 		{".py[co]", "src", true},
 		{".netrc~", "src", true},
 		{"x[a-z]y", "src", true},
 		{"x[!0-9]y", "src", true},
-		//darcs
-		{"foobar", "darcs", true},
-		{".netrc", "darcs", false},
 	}
 	for testnum, item := range tests {
-		if v := checkIgnoreSyntaxLine(item.vcs, item.line); (v != nil) == item.match {
+		if v := checkIgnoreSyntaxLine(findVCS(item.vcs), item.line); (v != nil) == item.match {
 			t.Errorf("TestIgnore %d, %s %q: expected %v, saw %v",
 				testnum, item.vcs, item.line, item.match, v)
 		}
