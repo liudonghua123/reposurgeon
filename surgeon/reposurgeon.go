@@ -5666,58 +5666,58 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 	}
 	repo := rs.chosen()
 	repo.clearColor(colorQSET)
-	for _, option := range parse.options {
-		if option == "--defaults" {
-			if rs.preferred.styleflags.Contains("import-defaults") {
-				croak("importer already set default ignores")
-				return false
-			} else if len(rs.preferred.dfltignores) == 0 {
-				croak("no default ignores in %s", rs.preferred.name)
-				return false
-			} else {
-				changecount := 0
-				// Modify existing ignore files
-				for _, event := range repo.events {
-					if blob, ok := event.(*Blob); ok && isIgnore(blob) {
-						blob.setContent([]byte(rs.preferred.dfltignores+string(blob.getContent())), -1)
-						changecount++
-					}
-				}
-				// Create an early ignore file if required.
-				// Do not move this before the modification pass!
-				earliest := repo.earliestCommit()
-				hasIgnoreBlob := false
-				for _, fileop := range earliest.operations() {
-					if fileop.op == opM && strings.HasSuffix(fileop.Path, rs.ignorename) {
-						hasIgnoreBlob = true
-					}
-				}
-				if !hasIgnoreBlob {
-					blob := newBlob(repo)
-					blob.setContent([]byte(rs.preferred.dfltignores), noOffset)
-					blob.mark = ":insert"
-					blob.addColor(colorQSET)
-					repo.insertEvent(blob, repo.eventToIndex(earliest), "ignore-blob creation")
-					repo.declareSequenceMutation("ignore creation")
-					newop := newFileOp(rs.chosen())
-					newop.construct(opM, "100644", ":insert", rs.ignorename)
-					earliest.appendOperation(newop)
-					repo.renumber(1, nil)
-					respond(fmt.Sprintf("initial %s created.", rs.ignorename))
-				}
-				respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
-			}
-		} else if option == "--translate" {
-			problems, changecount := repo.translateIgnores(rs.preferred, true)
-			respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
-			for _, issue := range problems {
-				respond("%s, line %d = %q: %s", issue.mark, issue.lineno, issue.line, issue.err)
-			}
-		} else {
-			croak("unknown option %s in ignores line", option)
+	var changecount int
+	var problems []IgnoreProblem
+	if parse.options.Contains("--defaults") {
+		if rs.preferred.styleflags.Contains("import-defaults") {
+			croak("importer already set default ignores")
 			return false
+		} else if len(rs.preferred.dfltignores) == 0 {
+			croak("no default ignores in %s", rs.preferred.name)
+			return false
+		} else {
+			changecount = 0
+			// Modify existing ignore files
+			for _, event := range repo.events {
+				if blob, ok := event.(*Blob); ok && isIgnore(blob) {
+					blob.setContent([]byte(rs.preferred.dfltignores+string(blob.getContent())), -1)
+					changecount++
+				}
+			}
+			// Create an early ignore file if required.
+			// Do not move this before the modification pass!
+			earliest := repo.earliestCommit()
+			hasIgnoreBlob := false
+			for _, fileop := range earliest.operations() {
+				if fileop.op == opM && strings.HasSuffix(fileop.Path, rs.ignorename) {
+					hasIgnoreBlob = true
+				}
+			}
+			if !hasIgnoreBlob {
+				blob := newBlob(repo)
+				blob.setContent([]byte(rs.preferred.dfltignores), noOffset)
+				blob.mark = ":insert"
+				blob.addColor(colorQSET)
+				repo.insertEvent(blob, repo.eventToIndex(earliest), "ignore-blob creation")
+				repo.declareSequenceMutation("ignore creation")
+				newop := newFileOp(rs.chosen())
+				newop.construct(opM, "100644", ":insert", rs.ignorename)
+				earliest.appendOperation(newop)
+				repo.renumber(1, nil)
+				respond(fmt.Sprintf("initial %s created.", rs.ignorename))
+			}
 		}
 	}
+	if parse.options.Contains("--translate") {
+		problems, changecount = repo.translateIgnores(rs.preferred,
+			parse.options.Contains("--defaults"),
+			parse.options.Contains("--translate"),
+			true)
+		for _, issue := range problems {
+			respond("%s, line %d = %q: %s", issue.mark, issue.lineno, issue.line, issue.err)
+		}
+	}
+	respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
 	return false
 }
 

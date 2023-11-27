@@ -10201,7 +10201,7 @@ type IgnoreProblem struct {
 	err    error
 }
 
-func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]IgnoreProblem, int) {
+func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, writeout bool) ([]IgnoreProblem, int) {
 	out := make([]IgnoreProblem, 0)
 	ignorecount := 0
 	repo.clearColor(colorQSET)
@@ -10252,7 +10252,11 @@ func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]Igno
 					if err := checkIgnoreSyntaxLine(preferred.name, line); err == nil {
 						translated += line + "\n"
 					} else {
-						translated += translateLine(line, preferred) + "\n"
+						if translate {
+							translated += translateLine(line, preferred) + "\n"
+						} else {
+							translated += line + "\n"
+						}
 						var oops IgnoreProblem
 						oops.paths = paths
 						oops.mark = b.getMark()
@@ -10263,7 +10267,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, translate bool) ([]Igno
 					}
 				}
 				translated = insertHeader(blobcontent, preferred) + translated
-				if translate && translated != blobcontent {
+				if writeout && translated != blobcontent {
 					b.setContent([]byte(translated), noOffset)
 					b.addColor(colorQSET)
 				}
