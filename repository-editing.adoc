@@ -178,6 +178,9 @@ tag delete /emptycommit/
 # Delete remnant .cvsignore files from a past life as CVS.
 delete path /.cvsignore$/
 
+# Rename and translate the syntax of ignore files
+ignores --defaults --translate
+
 # Often, your Subversion repository was a CVS repository in a past
 # life. CVS creates tags named with the suffix "-root" to mark branch
 # points for its internal housekeeping, and cv2svn blindly copied them
@@ -2118,45 +2121,6 @@ include::docinclude/authors.adoc[]
 
 [[ignore]]
 === Ignore patterns
-
-reposurgeon recognizes how supported VCSes represent file ignores (CVS
-_.cvsignore_ files lurking untranslated in older Subversion
-repositories, Subversion ignore properties,
-_.gitignore_/_.hgignore_/_.bzrignore_/.brzignore/.srcignore file in
-other systems) and moves ignore declarations among these containers on
-repo input and output. This will be sufficient if the ignore patterns
-are exact filenames.
-
-Translation may not, however, be perfect when the ignore patterns are
-Unix glob patterns or regular expressions. This compatibility table
-describes which patterns will translate; "plain" indicates a plain
-filename with no glob or regexp syntax or negation, "no !" means no
-negated regexps, and "no RE:" means the RE prefix for a regular
-expression does not work.
-
-SCCS and RCS have no ignore files or patterns and are therefore not
-included in the table.
-
-// toggle auto-fill-mode to edit the long lines
-[options="header"]
-|==============================================================================================================
-|            | from CVS | from svn | from git        | from hg | from bzr/brz | from darcs | from SRC | from bk
-|  _to CVS_  | all      | all      | no ! & nonempty | all     | no RE:, no ! | plain      | all      | all
-|  _to svn_  | no !     | all      | no !            | no !    | no RE:. no ! | plain      | all      | all
-|  _to git_  | all      | all      | all             | all     | no RE:       | plain      | all      | all
-|  _to hg_   | no !     | all      | no !            | no !    | no RE:, no ! | plain      | all      | all
-|  _to bzr_  | all      | all      | all             | all     | all          | plain      | all      | all
-| _to darcs_ | plain    | plain    | plain           | plain   | plain        | all        | plain    | plain
-|  _to SRC_  | no !     | all      | no !            | all     | no RE:, no ! | plain      | all      | all
-|==============================================================================================================
-
-The hg rows and columns of the table describe compatibility to
-hg's glob syntax rather than its default regular-expression syntax.
-When writing to an hg repository from any other kind,
-reposurgeon prepends to the output .hgignore a
-'```syntax: glob```' line.
-
-For dealing with unusual cases, there's this:
 
 // COMMAND
 include::docinclude/ignores.adoc[]
