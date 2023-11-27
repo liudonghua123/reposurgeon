@@ -10110,9 +10110,13 @@ func checkIgnoreSyntaxLine(vcsname string, text string) error {
 		return errors.New("bzr/brz RE: syntax needs to be translated by hand")
 	}
 
-	// Inspection of the GNU CVS soirce code reveals that it
+	// Inspection of the GNU CVS source code reveals that it
 	// never interprets slashes. It is unclear what path-matching
 	// rule it follows.
+	//
+	// Subversion has per-directory ignore properties and thus normally
+	// follows rule B. It documents using glob(3), which means ? and
+	// * will not match /.
 	//
 	// Most VCSes may treat a / at the beginning or end
 	// of a pattern or after a dot, but do not treat medial slashes
@@ -10280,8 +10284,8 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 			// 2. A CVS repository with .cvsignore files got lifted to Subversion
 			//    without the .cvsignore files removed.  This logic will fire on those.
 			//
-			// 3. A subversion repository with .gitignores created by git-svn. This
-			//    will fire on those too.
+			// 3. Any Subversion repository, as the stream reader turns per-directory
+			//    ignore propertoes into per-directory .gitignore files.
 			//
 			if isIgnoreBlob(b) {
 				ignorecount++

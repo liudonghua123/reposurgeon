@@ -888,6 +888,8 @@ func newRevisionRecord(nodes []*NodeAction, props OrderedMap, revision revidx) *
 	return rr
 }
 
+var subversionDefaultIgnores string
+
 // Cruft recognizers
 var cvs2svnTagBranchRE = regexp.MustCompile("This commit was manufactured by cvs2svn to create ")
 
@@ -976,6 +978,8 @@ func (sp *StreamParser) svnProcess(ctx context.Context, options stringSet, baton
 	sp.initialize()
 
 	sp.repo.addEvent(newPassthrough(sp.repo, "#reposurgeon sourcetype svn\n"))
+
+	subversionDefaultIgnores = findVCS("svn").dfltignores
 
 	// We may need to create a .gitignore file with built-in SVN ignore patterns
 	if !options.Contains("--no-automatic-ignores") {
