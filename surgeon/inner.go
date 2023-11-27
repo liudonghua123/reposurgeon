@@ -10222,6 +10222,52 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 		return inserted
 	}
 
+	isIgnore := func(blob *Blob) bool {
+		if len(blob.opset) == 0 {
+			return false
+		}
+		for fop := range blob.opset {
+			basename := filepath.Base(fop.Path)
+			if ignoremap[basename] == nil {
+				return false
+			}
+		}
+		return true
+	}
+	repo.clearColor(colorQSET)
+	if defaults {
+		// Modify existing ignore files
+		for _, event := range repo.events {
+			if blob, ok := event.(*Blob); ok && isIgnore(blob) {
+				blob.setContent([]byte(preferred.dfltignores+string(blob.getContent())), -1)
+				//changecount++
+			}
+		}
+		// Create an early ignore file if required.
+		// Do not move this before the modification pass!
+		earliest := repo.earliestCommit()
+		hasIgnoreBlob := false
+		for _, fileop := range earliest.operations() {
+			basename := filepath.Base(fileop.Path)
+			if fileop.op == opM && ignoremap[basename] != nil {
+				hasIgnoreBlob = true
+			}
+		}
+		if !hasIgnoreBlob {
+			blob := newBlob(repo)
+			blob.setContent([]byte(preferred.dfltignores), noOffset)
+			blob.mark = ":insert"
+			blob.addColor(colorQSET)
+			repo.insertEvent(blob, repo.eventToIndex(earliest), "ignore-blob creation")
+			repo.declareSequenceMutation("ignore creation")
+			newop := newFileOp(repo)
+			newop.construct(opM, "100644", ":insert", preferred.ignorename)
+			earliest.appendOperation(newop)
+			repo.renumber(1, nil)
+			respond(fmt.Sprintf("initial %s created.", preferred.ignorename))
+		}
+	}
+
 	for _, event := range repo.events {
 		if b, ok := event.(*Blob); ok {
 			paths := b.paths(nil)
