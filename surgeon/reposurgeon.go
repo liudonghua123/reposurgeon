@@ -535,7 +535,6 @@ type Reposurgeon struct {
 	extractor    Extractor
 	startTime    time.Time
 	logHighwater int
-	ignorename   string
 }
 
 func newReposurgeon() *Reposurgeon {
@@ -5642,14 +5641,11 @@ func (rs *Reposurgeon) CompleteIgnores(text string) []string {
 // DoIgnores manipulates ignore patterns in the repo.
 func (rs *Reposurgeon) DoIgnores(line string) bool {
 	parse := rs.newLineParse(line, "ignores", parseREPO|parseNOSELECT|parseNOARGS, nil)
-	if rs.preferred != nil && rs.ignorename == "" {
-		rs.ignorename = rs.preferred.ignorename
-	}
 	if rs.preferred == nil {
 		croak("preferred repository type has not been set")
 		return false
 	}
-	if rs.ignorename == "" {
+	if rs.preferred.ignorename == "" {
 		croak("preferred repository type has no declared ignorename")
 		return false
 	}
@@ -5670,7 +5666,7 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 	for _, issue := range problems {
 		respond("%s, line %d = %q: %s", issue.mark, issue.lineno, issue.line, issue.err)
 	}
-	respond(fmt.Sprintf("%d %s blobs modified.", changecount, rs.ignorename))
+	respond(fmt.Sprintf("%d blobs modified.", changecount))
 	return false
 }
 
