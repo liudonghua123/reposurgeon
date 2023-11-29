@@ -1082,9 +1082,13 @@ func svnFilterProperties(ctx context.Context, sp *StreamParser, options stringSe
 				node.props.set("svn:ignore", newIgnore)
 			}
 			if node.props.has("svn:global-ignores") {
-				oldIgnore := node.props.get("svn:global-ignores")
-				newIgnore := blankline.ReplaceAllLiteralString(oldIgnore, "")
-				node.props.set("svn:global-ignores", newIgnore)
+				ignores := node.props.get("svn:global-ignores")
+				// Curveball: According to the Subversion book,
+				// spaces in ssvn:global-ignores properties should
+				// be treated as pattern separators.
+				ignores = strings.Replace(ignores, " ", "\n", -1)
+				ignores = blankline.ReplaceAllLiteralString(ignores, "")
+				node.props.set("svn:global-ignores", ignores)
 			}
 			tossThese := make([][2]string, 0)
 			for prop, val := range node.props.dict {
@@ -1385,9 +1389,9 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	// mutate it to a proper git DAG in small steps.
 	//
 	// The only Subversion metadata this does not copy into
-	// commits is per-directory properties. Both svn:ignore and
-	// svn:mergeinfo properties are converted into .gitignore
-	// file operations, though.
+	// commits is per-directory properties. All of svn:ignore,
+	// svn:global-ignores, svn:mergeinfo properties are converted
+	// into .gitignore file operations, though.
 	//
 	// Interpretation of svn:executable is done in this phase.
 	// The commit branch is set here in case the repository is flat
