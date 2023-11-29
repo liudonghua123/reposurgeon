@@ -6482,7 +6482,7 @@ func (repo *Repository) stampify(selection selectionSet) int {
 		getter  func(string) *Commit
 	}
 	getterPairs := []getterPair{
-		{`\[\[CVS:[^:\]]+:[0-9.]+\]\]`,
+		{`\[\[(RCS|SCCS|CVS):[^:\]]+:[0-9.]+\]\]`,
 			func(p string) *Commit {
 				p = p[2 : len(p)-2]
 				key := ""
@@ -6518,7 +6518,7 @@ func (repo *Repository) stampify(selection selectionSet) int {
 				}
 				return nil
 			}},
-		{`\[\[HG:[0-9a-f]+\]\]`,
+		{`\[\[(GIT|HG):[0-9a-f]+\]\]`,
 			func(p string) *Commit {
 				p = p[2 : len(p)-2]
 				return repo.legacyMap[p]
