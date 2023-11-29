@@ -219,9 +219,9 @@ const (
 )
 
 // Constants needed in VCS class methods
-const suffixNumeric = `[0-9]+(\s|[.]\n)`
+const suffixNumeric = `[0-9]+(\s|[.]\s)`
 const tokenNumeric = `\s` + suffixNumeric
-const dottedNumeric = `\s[0-9]+(\.[0-9]+)`
+const dottedNumeric = `\s[0-9]+(\.[0-9]+[.]?)+\s`
 
 // manages tells us if a directory might be managed by this VCS
 func (vcs VCS) manages(dirname string) bool {
@@ -444,7 +444,7 @@ bzr-orphans
 branch is renamed to 'master'.
 `,
 			idformat:    "%s",
-			flags:       ignHASHCOMMENT | ignSHELLGLOB | ignFNPATHNANE | ignRECURSIVE | ignDOUBLESTAR,
+			flags:       ignHASHCOMMENT | ignSHELLGLOB | ignFNMPATHNAME | ignRECURSIVE | ignDOUBLESTAR,
 			dfltignores: "",
 		},
 		{
@@ -730,7 +730,7 @@ _darcs
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
 			ignorename:   "",
-			cookies:      reMake(dottedNumeric, dottedNumeric+`\w`),
+			cookies:      reMake(dottedNumeric),
 			project:      "http://www.catb.org/~esr/cvs-fast-export",
 			notes:        "Requires cvs-fast-export.",
 			checkignore:  "CVS",

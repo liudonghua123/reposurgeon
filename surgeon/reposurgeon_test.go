@@ -140,7 +140,24 @@ func TestIgnoreCompatibility(t *testing.T) {
 	for testnum, item := range tests {
 		if v := checkIgnoreSyntaxLine(findVCS(item.vcs), item.line); (v != nil) == item.match {
 			t.Errorf("TestIgnore %d, %s %q: expected %v, saw %v",
-				testnum, item.vcs, item.line, item.match, v)
+				testnum+1, item.vcs, item.line, item.match, v)
+		}
+	}
+}
+
+func TestCookies(t *testing.T) {
+	type testEntry struct {
+		pattern  string
+		text     string
+		expected bool
+	}
+	tests := []testEntry{
+		{dottedNumeric, " 1.2 ", true},
+	}
+	for testnum, test := range tests {
+		if regexp.MustCompile(test.pattern).MatchString(test.text) != test.expected {
+			t.Errorf("TestCookies %d, %s %q: expected %v",
+				testnum+1, test.pattern, test.text, test.expected)
 		}
 	}
 }
