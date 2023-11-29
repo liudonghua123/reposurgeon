@@ -10,9 +10,7 @@ fail() {
     echo "not ok - $*"
 }
 
-# Temporary warning disable until we check more systems
-# shellcheck disable=SC2043
-for vcs in hg;
+for vcs in git hg bzr;
 do
     if command -v "$vcs" >/dev/null
     then
@@ -30,19 +28,22 @@ do
 	
 	repository init $vcs /tmp/ignoretest$$ 
 	case $vcs in
-	    hg)	
+	    git|hg|bzr|brz)	
 		touch ignorable
-		(${vcs} status | grep '^? ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
-		ignore .hgignore
+		(repository status | grep '?  *ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
 		ignore ignorable
-		require_empty "${vcs} status" "${vcs} basic ignore failed"
+		require_empty "repository status" "${vcs} basic ignore failed"
+		ignore ignor*
+		require_empty "repository status" "${vcs} check for * wildcard failed"
 		ignore ignora?le
-		require_empty "${vcs} status" "${vcs} check for ? wildcard failed"
+		require_empty "repository status" "${vcs} check for ? wildcard failed"
 		ignore ignorab[klm]e
-		require_empty "${vcs} status" "${vcs} check for range syntax failed"
+		require_empty "repository status" "${vcs} check for range syntax failed"
 		ignore ignorab[k-m]e
-		require_empty "${vcs} status" "${vcs} check for dash in ranges failed"
-		echo "ok - all ignore-pattern tests for ${vcs} succeeded." 
+		require_empty "repository status" "${vcs} check for dash in ranges failed"
+		ignore ignorab[!x-z]e
+		require_empty "repository status" "${vcs} check for negated ranges failed"
+		echo "ok - ignore-pattern tests for ${vcs} wrapup." 
 		;;
 	    *)
 		echo "not ok -- no handler for $vcs"

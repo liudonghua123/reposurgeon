@@ -158,6 +158,15 @@ repository() {
 	    esac
 	    ts=10
 	    ;;
+	status)
+	    # Get a one-per-line report of file status
+	    case "${repotype}" in
+		git) git status --porcelain -uall;;
+		hg) "${repotype}" status;;
+		bzr|brz) "${repotype}" status -S;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+	    esac
+	    ;;
 	commit)
 	    # Add or commit content
 	    file="$1"
