@@ -310,7 +310,7 @@ $(REPOTOOL_TARGETS): repotool-test-%:
 	$(SHELL) $*.sh --regress) || echo "$@" >>$(FAILLOG);
 
 # Miscellaneous tests.
-SPORADIC_LOADS := hashcheck workflow-cvs-git workflow-svn-git incrementalcheck svndircopyprop
+SPORADIC_LOADS := hashcheck ignoretest workflow-cvs-git workflow-svn-git incrementalcheck svndircopyprop
 SPORADIC_TARGETS = $(SPORADIC_LOADS:%=sporadic-test-%)
 $(SPORADIC_TARGETS): sporadic-test-%:
 	@$(SHELL) $*.sh || echo "$@" >>$(FAILLOG);

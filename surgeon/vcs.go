@@ -127,20 +127,20 @@ type VCS struct {
 // Things we know about specific systems:
 //
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME,
-// FNM_NOESCAPE off; thus rule C. Wildcard chracters are ?*[!^-], and
+// FNM_NOESCAPE off; thus rule C. Wildcard characters are ?*[!^-], and
 // !~ negation is supported. Role A applied unless there's an initial
 // or nedial separator, in which case rule B. A / at end of pattern
 // has the special behavior of matching only directories. ** matches
 // any number of directory segments.
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
-// or "syntax: glob\n" hass been seen most recently. It is not
-// specified which is the default; here we assume it's globs.  The
-// documentation say "Shell-style glob" and there is no evidence in
-// the xamples of support for dash ranges of backslash.  The
-// documentation specifies that patterns a not rooterd, so rule A.
-// The ** wildcard is recognized. Patterns which match a directory are
-// treated as if followed by **.
+// or "syntax: glob\n" has been seen most recently. It is not
+// specified which is the default; out test suite checks that it's
+// globs.  Wildcards are *?[-]; ?[-] are not documented they are
+// verified by our test suite The documentation specifies that
+// patterns are not rooted, so rule A.  The ** wildcard is
+// recognized. Patterns which match a directory are treated as if
+// followed by **.
 //
 // svn documents that it uses glob(3) and says "if you are migrating a
 // CVS working copy to Subversion, you can directly migrate the ignore
@@ -450,7 +450,7 @@ bzr-orphans
 branch is renamed to 'master'.
 `,
 			idformat:    "%s",
-			flags:       ignHASHCOMMENT | ignSHELLGLOB | ignFNMPATHNAME | ignRECURSIVE | ignDOUBLESTAR,
+			flags:       ignHASHCOMMENT | ignFNMATCH | ignFNMPATHNAME | ignRECURSIVE | ignDOUBLESTAR,
 			dfltignores: "",
 		},
 		{

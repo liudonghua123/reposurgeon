@@ -152,7 +152,7 @@ repository() {
 	    # shellcheck disable=SC2164
 	    cd "${base}" >/dev/null || exit 1;
 	    case "${repotype}" in
-		git|bzr|brz) "${repotype}" init -q;;
+		git|hg|bzr|brz) "${repotype}" init -q;;
 		svn) svnadmin create .; svn co -q "file://$(pwd)" checkout ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac

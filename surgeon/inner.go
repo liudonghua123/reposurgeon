@@ -10158,12 +10158,13 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 
 	insertHeader := func(blobcontent string, preferred *VCS) string {
 		inserted := ""
-		if preferred.name == "hg" {
-			const hgHeader = "syntax: glob\n"
-			if !strings.HasPrefix(blobcontent, hgHeader) {
-				inserted = hgHeader
-			}
-		}
+		// Not necessary - glob is the default hg syntax
+		//if preferred.name == "hg" {
+		//	const hgHeader = "syntax: glob\n"
+		//	if !strings.HasPrefix(blobcontent, hgHeader) {
+		//		inserted = hgHeader
+		//	}
+		//}
 		return inserted
 	}
 
