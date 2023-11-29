@@ -10133,7 +10133,6 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 // IgnoreProblem describes a place where an ignore file may
 // require hand-patching.
 type IgnoreProblem struct {
-	paths  orderedStringSet
 	mark   string
 	line   string
 	lineno int
@@ -10179,6 +10178,36 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 		}
 		return true
 	}
+
+	innerTranslate := func(blobcontent string, id string) string {
+		translated := blobcontent
+		if defaults && !strings.HasPrefix(blobcontent, preferred.dfltignores) {
+			translated = preferred.dfltignores + blobcontent
+		}
+		if translate {
+			translated = ""
+			for ln, line := range strings.Split(blobcontent, "\n") {
+				if err := checkIgnoreSyntaxLine(preferred, line); err == nil {
+					translated += line + "\n"
+				} else {
+					if translate {
+						translated += translateLine(line, preferred) + "\n"
+					} else {
+						translated += line + "\n"
+					}
+					var oops IgnoreProblem
+					oops.mark = id
+					oops.line = line
+					oops.lineno = ln + 1
+					oops.err = err
+					out = append(out, oops)
+				}
+			}
+			translated = insertHeader(blobcontent, preferred) + translated
+		}
+		return translated
+	}
+
 	repo.clearColor(colorQSET)
 	if defaults {
 		// Create an early ignore file if required.
@@ -10229,35 +10258,23 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 			if isIgnoreBlob(b) {
 				ignorecount++
 				blobcontent := string(b.getContent())
-				translated := blobcontent
-				if defaults && !strings.HasPrefix(blobcontent, preferred.dfltignores) {
-					translated = preferred.dfltignores + blobcontent
-				}
-				if translate {
-					translated = ""
-					for ln, line := range strings.Split(blobcontent, "\n") {
-						if err := checkIgnoreSyntaxLine(preferred, line); err == nil {
-							translated += line + "\n"
-						} else {
-							if translate {
-								translated += translateLine(line, preferred) + "\n"
-							} else {
-								translated += line + "\n"
-							}
-							var oops IgnoreProblem
-							oops.paths = b.paths(nil)
-							oops.mark = b.getMark()
-							oops.line = line
-							oops.lineno = ln + 1
-							oops.err = err
-							out = append(out, oops)
-						}
-					}
-					translated = insertHeader(blobcontent, preferred) + translated
-				}
+				translated := innerTranslate(blobcontent, b.idMe())
 				if writeout && (translated != blobcontent) {
 					b.setContent([]byte(translated), noOffset)
 					b.addColor(colorQSET)
+				}
+			}
+		}
+	}
+	for _, commit := range repo.commits(undefinedSelectionSet) {
+		for _, fileop := range commit.operations() {
+			if fileop.isIgnore() != nil && fileop.inline != nil {
+				ignorecount++
+				blobcontent := string(fileop.inline)
+				translated := innerTranslate(blobcontent, commit.idMe()+" (inline)")
+				if writeout && (translated != blobcontent) {
+					fileop.inline = []byte(translated)
+					commit.addColor(colorQSET)
 				}
 			}
 		}
