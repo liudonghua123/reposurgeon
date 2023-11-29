@@ -153,6 +153,20 @@ func TestCookies(t *testing.T) {
 	}
 	tests := []testEntry{
 		{dottedNumeric, " 1.2 ", true},
+		{dottedNumeric, "A1.2 ", false},
+		{dottedNumeric, " 1.2.3 ", true},
+		{dottedNumeric, " 1.2.3\n", true},
+		{dottedNumeric, " 1.2.3. ", true},
+		{tokenNumeric, " 1.2 ", false},
+		{tokenNumeric, " 23 ", true},
+		{tokenNumeric, " 23. ", true},
+		{tokenNumeric, " 23.\n", true},
+		{tokenNumeric, " 23A", false},
+		{tokenNumeric, "A23A", false},
+		{longGitHash, "0102030405060708090A0102030405060708090A ", true},
+		{longGitHash, "0102030405060708090A0102030405060708090A.", true},
+		{shortGitHash, "010203 ", true},
+		{shortGitHash, "010203.", true},
 	}
 	for testnum, test := range tests {
 		if regexp.MustCompile(test.pattern).MatchString(test.text) != test.expected {

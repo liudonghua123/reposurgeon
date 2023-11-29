@@ -218,10 +218,16 @@ const (
 	ignWACKYSPACE                     // Spaces are treated as pattern separators
 )
 
-// Constants needed in VCS class methods
-const suffixNumeric = `[0-9]+(\s|[.]\s)`
-const tokenNumeric = `\s` + suffixNumeric
+// Constants needed in VCS class methods.
+//
+// These are for detecting things that look like revision references.
+// TRThey look a littls strange an the end because we wannt to be able
+// to detect them eitrher surrounded by whitespace or at the end of a
+// sentence.
+const tokenNumeric = `\s[0-9]+(\s|[.][^0-9])`
 const dottedNumeric = `\s[0-9]+(\.[0-9]+[.]?)+\s`
+const shortGitHash = `\b[0-9a-fA-F]{6}[^0-9a-zA-z]`
+const longGitHash = `\b[0-9a-fA-F]{40}[^0-9a-zA-z]`
 
 // manages tells us if a directory might be managed by this VCS
 func (vcs VCS) manages(dirname string) bool {
@@ -322,7 +328,7 @@ func vcsInit() {
 			preserve:     newOrderedStringSet(".git/config", ".git/hooks"),
 			authormap:    ".git/cvs-authors",
 			ignorename:   ".gitignore",
-			cookies:      reMake(`\b[0-9a-f]{6}\b`, `\b[0-9a-f]{40}\b`),
+			cookies:      reMake(shortGitHash, longGitHash),
 			project:      "http://git-scm.com/",
 			notes:        "The authormap is not required, but will be used if present.",
 			idformat:     "%s",
