@@ -10,7 +10,7 @@ fail() {
     echo "not ok - $*"
 }
 
-for vcs in git hg bzr src;
+for vcs in git hg bzr brz src;
 do
     if command -v "$vcs" >/dev/null
     then
@@ -20,31 +20,41 @@ do
 	    repository ignore "${ignorefile}"
 	    repository ignore "$1"
 	}
-	require_empty () {
-	    if [ -n "$($1)" ]; then fail "$2"; fi
+	no_status_output () {
+	    legend="$1"
+	    exceptions="$2"
+	    if [ -n "${exceptions}" ] && expr "$vcs}" : "${exceptions}" >/dev/null
+	    then
+		if [ -z "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly succeeded"; fi
+	    else
+		if [ -n "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly failed"; fi
+	    fi
 	}
 	
-	repository init $vcs /tmp/ignoretest$$ 
+	repository init $vcs /tmp/ignoretest$$
 	case $vcs in
-	    git|hg|bzr|brz|src)	
-		touch ignorable
+	    git|hg|bzr|brz|src)
+		success=yes
+		touch 'ignorable'
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
-		ignore ignorable
-		require_empty "repository status" "${vcs} basic ignore failed"
-		ignore ignor*
-		require_empty "repository status" "${vcs} check for * wildcard failed"
-		ignore ignora?le
-		require_empty "repository status" "${vcs} check for ? wildcard failed"
-		ignore ignorab[klm]e
-		require_empty "repository status" "${vcs} check for range syntax failed"
-		ignore ignorab[k-m]e
-		require_empty "repository status" "${vcs} check for dash in ranges failed"
-		ignore ignorab[!x-z]e
-		require_empty "repository status" "${vcs} check for !-negated ranges failed"
-		# Temporarily appeasing shellcheck.
-		#ignore ignorab[^x-z]e
-		#require_empty "repository status" "${vcs} check for ^-negated ranges failed"
-		echo "ok - ignore-pattern tests for ${vcs} wrapup." 
+		ignore 'ignorable'
+		no_status_output "basic ignore"
+		ignore 'ignor*'
+		no_status_output "check for * wildcard"
+		ignore 'ignora?le'
+		no_status_output "check for ? wildcard" "hg"
+		ignore 'ignorab[klm]e'
+		no_status_output "check for range syntax"
+		ignore 'ignorab[k-m]e'
+		no_status_output "check for dash in ranges"
+		ignore 'ignorab[!x-z]e'
+		no_status_output "check for !-negated ranges" "hg"
+		ignore 'ignorab[^x-z]e'
+		no_status_output "check for ^-negated ranges" "src"
+		if [ "${success}" = "yes" ]
+		then
+		    echo "ok - ignore-pattern tests for ${vcs} went as expected."
+		fi
 		;;
 	    *)
 		echo "not ok -- no handler for $vcs"
