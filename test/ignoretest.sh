@@ -10,7 +10,7 @@ fail() {
     echo "not ok - $*"
 }
 
-for vcs in git hg bzr;
+for vcs in git hg bzr src;
 do
     if command -v "$vcs" >/dev/null
     then
@@ -28,9 +28,9 @@ do
 	
 	repository init $vcs /tmp/ignoretest$$ 
 	case $vcs in
-	    git|hg|bzr|brz)	
+	    git|hg|bzr|brz|src)	
 		touch ignorable
-		(repository status | grep '?  *ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
+		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
 		ignore ignorable
 		require_empty "repository status" "${vcs} basic ignore failed"
 		ignore ignor*
@@ -42,7 +42,9 @@ do
 		ignore ignorab[k-m]e
 		require_empty "repository status" "${vcs} check for dash in ranges failed"
 		ignore ignorab[!x-z]e
-		require_empty "repository status" "${vcs} check for negated ranges failed"
+		require_empty "repository status" "${vcs} check for !-negated ranges failed"
+		ignore ignorab[^x-z]e
+		require_empty "repository status" "${vcs} check for ^-negated ranges failed"
 		echo "ok - ignore-pattern tests for ${vcs} wrapup." 
 		;;
 	    *)
