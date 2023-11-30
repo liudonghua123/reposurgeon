@@ -144,7 +144,6 @@ repository() {
 	    # Initialize repo in specified temporary directory
 	    repotype="$1"
 	    base="$2";
-	    set -e
 	    trap 'rm -fr ${base}' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
 	    rm -fr "${base}";
@@ -154,9 +153,25 @@ repository() {
 	    case "${repotype}" in
 		git|hg|bzr|brz) "${repotype}" init -q;;
 		svn) svnadmin create .; svn co -q "file://$(pwd)" checkout ;;
+		src) mkdir .src;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ts=10
+	    # Make the ignore file available for ignore-pattern tests ignorefile=".${cmd}ignore"
+	    ignorefile=".${repotype}ignore"
+	    case "${repotype}" in
+		brz) ignorefile=".bzrignore";;
+	    esac
+	    ;;
+	ignore)
+	    # Clear or append to the ignpre file
+	    pattern="$1"
+	    if [ -z "${pattern}" ]
+	    then
+		rm -f "${ignorefile}"
+	    else
+		echo "${pattern}" >>"${ignorefile}"
+	    fi
 	    ;;
 	status)
 	    # Get a one-per-line report of file status
@@ -164,6 +179,7 @@ repository() {
 		git) git status --porcelain -uall;;
 		hg) "${repotype}" status;;
 		bzr|brz) "${repotype}" status -S;;
+		src) "${repotype}" status;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
