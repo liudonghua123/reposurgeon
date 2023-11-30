@@ -55,17 +55,29 @@ do
 		ignore 'ignor*'
 		no_status_output "check for * wildcard"
 		ignore 'ignora?le'
-		no_status_output "check for ? wildcard" "hg"
+		no_status_output "check for ? wildcard" "hg"	# ignQUESTION
 		ignore 'ignorab[klm]e'
 		no_status_output "check for range syntax"
 		ignore 'ignorab[k-m]e'
 		no_status_output "check for dash in ranges"
 		ignore 'ignorab[!x-z]e'
-		no_status_output "check for !-negated ranges" "hg"
+		no_status_output "check for !-negated ranges" "hg"	# ignBANGDASH
 		ignore 'ignorab[^x-z]e'
-		no_status_output "check for ^-negated ranges" "src"
+		no_status_output "check for ^-negated ranges" "src"	# ignCARETDASH
 		ignore '\*'
-		no_status_output --nomatch "check for backslash escaping" "b[rz][rz]"
+		no_status_output --nomatch "check for backslash escaping" "b[rz][rz]"	# ignBACKSLASH
+		rm ignorable
+		mkdir a
+		touch a/c
+		# These tests fail because the git and hg status commands
+		# do things that don't fit the rwa
+		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ]
+		then
+		    ignore 'a?c'
+		    no_status_output --nomatch "check for ? not matching /"
+		    ignore '*c'
+		    no_status_output --nomatch "check for * not matching /"
+		fi
 		;;
 	    *)
 		echo "not ok -- no handler for $vcs"

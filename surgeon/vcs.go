@@ -130,7 +130,7 @@ type VCS struct {
 //
 // Things we know about specific systems:
 //
-// git does an equivalent of fnmatch(3) with FNM_PATHNAME,
+// git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
 // FNM_NOESCAPE off; thus rule C. Wildcard characters are ?*[!^-], and
 // !~ negation is supported (all tested). Role A applied unless
 // there's an initial or nedial separator, in which case rule B. A /
@@ -160,14 +160,14 @@ type VCS struct {
 // (similar to the global-ignores runtime configuration option), not
 // just newlines (as with the svn:ignore property)."!
 //
-// bzr/brz support shell-style globbing; wildcards are *?, though you
-// hve to dig into testcases in the code to verify ?; however prefix
-// negation with ! is supported.  There can be only one ignore file,
+// bzr/brz support shell-style globbing; wildcards are *?[!^-] (tested).
+// Backlash escaping is not supported (tested).
+// Negation with ! is supported.  There can be only one ignore file,
 // at the repository root.  Rule A, but an example in the
 // documentation shows that embedded / anchors the pattern to the
-// repository root directory.  It is unknown whether *?  can match /
-// and whether backslash is supported.  The wilcard ** to match any
-// sequence of path segments is supporteed; there's also a unique !!
+// repository root directory.  *?  cannot match / (tested).
+// Backlash is supported (tested). The wilcard ** to match any
+// sequence of path segments is supported; there's also a unique !!
 // syntax "Patterns prefixed with '!!' act as regular ignore patterns,
 // but have highest precedence, even over the '!'  exception
 // patterns.". An RE: prefix on a pattern line means it should be
@@ -184,8 +184,8 @@ type VCS struct {
 // darcs and mtn use full regexps rather than any version of
 // fnmatch(3)/glob(3)
 //
-// src uses Python's glob library, so *? not matching / is assumed
-// but hasn't been checked. Its wildcard characters are ?*[!-]
+// src uses Python's glob library.  Its wildcard characters are ?*[!-]
+// (tested).  *? doesn't match / (tested).
 //
 // bk doesn't document its igbnore syntax at all and the ecamples only
 // show *. Since we never expect to export *to* bk, we'll make the
@@ -195,12 +195,12 @@ type VCS struct {
 // slash are matched against the pathname of the file relative to the
 // root of the repository.  Using './' at the start of a pattern means
 // the pattern applies only to the repository root."  Rule A, with the
-// ignSLASHANCHORS feaatures.
+// ignSLASHANCHORS feature.
 //
 // Yes, the capability flags defined below aren't all used. Yet.
 
 // FIXME: svn handling of svn:global-ignores does not match this
-// description - it ceratainly doesn't implement sapce separators.
+// description.
 
 const (
 	ignBACKSLASH     uint = 1 << iota // Backslash escape glob characters
@@ -457,7 +457,7 @@ bzr-orphans
 branch is renamed to 'master'.
 `,
 			idformat:    "%s",
-			flags:       ignHASHCOMMENT | ignBASEGLOB | ignBACKSLASH | ignFNMPATHNAME | ignCARETDASH | ignRECURSIVE | ignDOUBLESTAR,
+			flags:       ignHASHCOMMENT | ignBASEGLOB | ignBACKSLASH | ignCARETDASH | ignRECURSIVE | ignDOUBLESTAR,
 			dfltignores: "",
 		},
 		{

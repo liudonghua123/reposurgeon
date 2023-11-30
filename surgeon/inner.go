@@ -10027,6 +10027,11 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 		}
 	}
 
+	// This has to be checked before we audit for normal negation
+	if !preferred.hasCapability(ignBZRLIKE) && strings.HasPrefix("!!", text) {
+		return errors.New("bzr/brz !! syntax needs to be translated by hand")
+	}
+
 	// Some VCSes also support prefix negation. If that's all that's left after
 	// stripping out basic glob characters, we're fine.
 	if strings.HasPrefix(text, "!") {
