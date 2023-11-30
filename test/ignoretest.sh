@@ -21,13 +21,24 @@ do
 	    repository ignore "$1"
 	}
 	no_status_output () {
+	    Z=-z
+	    N=-n
+	    if [ "$1" = '--nomatch' ]
+	    then
+		Z=-n
+		N=-z
+		shift
+	    fi
 	    legend="$1"
 	    exceptions="$2"
+	    
 	    if [ -n "${exceptions}" ] && expr "$vcs}" : "${exceptions}" >/dev/null
 	    then
-		if [ -z "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly succeeded"; fi
+		# shellcheck disable=1072,1073,1009
+		if [ $Z "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly succeeded"; fi
 	    else
-		if [ -n "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly failed"; fi
+		# shellcheck disable=1072,1073,1009
+		if [ $N "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly failed"; fi
 	    fi
 	}
 	
@@ -51,6 +62,8 @@ do
 		no_status_output "check for !-negated ranges" "hg"
 		ignore 'ignorab[^x-z]e'
 		no_status_output "check for ^-negated ranges" "src"
+		ignore '\*'
+		no_status_output --nomatch "check for backslash escaping" "b[rz][rz]"
 		if [ "${success}" = "yes" ]
 		then
 		    echo "ok - ignore-pattern tests for ${vcs} went as expected."
