@@ -85,19 +85,23 @@ type VCS struct {
 // Python glob(3): https://docs.python.org/3/library/glob.html
 //
 // There are two different kinds of ignore-pattern syntax. Most VCSes
-// use some variation on glob(3)/fnmatch(3)' glob(3) is like
+// use some variation on glob(3)/fnmatch(3); glob(3) is like
 // fnmatch(3) with FNM_NOESCAPE unset but FNM_PATHNAME and FNM_PERIOD
-// set. Some (darcs, mtn) use full regular expressions. One, hg, can
-// use either.
+// set. Some VCSes (darcs, mtn) use full regular expressions. One (hg)
+// defaults to globbing but can use either.
+
 //
-// There are three levels of generic glob syntax:
+// Alas, generic glob syntax has many variations. After writing test
+// and examing code, we distinguish the following capabilities:
 //
-// 1. ignSHELLGLOB (shell globbing): *?[] without dash available in
-// ranges (bk, hg, bzr, brz)  The hg documentation
-// says it uses shell globbing, which doesn't have dash ranges,
+// 1. ignBASEGLOB (shell globbing): *[-], no ?, no ! or ^ for range negation.
 //
-// 2. ignFNMATCH (find globbing): *?[-] with dash and !-negation
-// available in ranges (CVS, svn, src) and backslash escaping. This is
+// 2. ignBACKSLASH: \ escapes glob characters
+//
+// 3. ignQUESTION: ? for any character.
+
+// 2. ignFNMATCH (find globbing): Add ? and !-negation
+// available in ranges and backslash escaping (). This is
 // POSIX fnmatch(3) regexps, though you have to dig pretty hard to
 // find the part of the standard that describes dash ranges.
 //
@@ -128,24 +132,22 @@ type VCS struct {
 //
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME,
 // FNM_NOESCAPE off; thus rule C. Wildcard characters are ?*[!^-], and
-// !~ negation is supported. Role A applied unless there's an initial
-// or nedial separator, in which case rule B. A / at end of pattern
-// has the special behavior of matching only directories. ** matches
-// any number of directory segments.
+// !~ negation is supported (all tested). Role A applied unless
+// there's an initial or nedial separator, in which case rule B. A /
+// at end of pattern has the special behavior of matching only
+// directories. ** matches any number of directory segments.
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
-// or "syntax: glob\n" has been seen most recently. It is not
-// specified which is the default; out test suite checks that it's
-// globs.  Wildcards are *?[!-]; ?[!-] are not documented they are
-// verified by our test suite The documentation specifies that
-// patterns are not rooted, so rule A.  The ** wildcard is
-// recognized. Patterns which match a directory are treated as if
-// followed by **.
+// or "syntax: glob\n" has been seen most recently. The default globs
+// (tested).  Wildcards are *[^-]; [^-] are not documented but are
+// tested. The documentation specifies that patterns are not rooted,
+// so rule A.  The ** wildcard is recognized. Patterns which match a
+// directory are treated as if followed by **.
 //
 // svn documents that it uses glob(3) and says "if you are migrating a
 // CVS working copy to Subversion, you can directly migrate the ignore
 // patterns by using the .cvsignore file as input to the svn propset
-// command."; however this is not true as the implied settingds of
+// command."; however this is not true as the implied settings of
 // FNM_PATHNAME and FNM_PERIOD differ between glob(3) and
 // CVS. Wildcards are ?*[-], it is unknown whether range negation or
 // backslash are actually supported, and unknown whether / changes
@@ -201,22 +203,27 @@ type VCS struct {
 // description - it ceratainly doesn't implement sapce separators.
 
 const (
-	ignBZRLIKE       uint = 1 << iota // bzr or its clone, brz; RE: syntax
-	ignDASHRANGES                     // Ignore patterns allow - ranges within []
+	ignBACKSLASH     uint = 1 << iota // Backslash escape glob characters
+	ignBANGDASH                       // Negate rangest with !
+	ignBASEGLOB                       // Basic globbing: *[-]
+	ignBZRLIKE                        // bzr or its clone, brz; RE: syntax
+	ignCARETDASH                      // Negate rangest with !
 	ignDOUBLESTAR                     // Match multiple path segments
 	ignEXPORTED                       // Ignore patterns are visible via fast-export only
-	ignFNMATCH                        // Find-style globbing with fnmatch(3)
 	ignFNMPATHNAME                    // Glob wildcards can't match /
 	ignFNMPERIOD                      // Leading period requires explicit match
 	ignHASHCOMMENT                    // Has native ignorefile comments led by hash
 	ignNEGATION                       // Ignore patterns allow prefix negation with !
+	ignQUESTION                       // Allow ? to match any character
 	ignRECURSIVE                      // Ignore patterns apply to subdirectories
 	ignREGEXP                         // Patterns are full regular expressions
-	ignSHELLGLOB                      // Shell-style globbing without dash ranges
 	ignSLASHANCHORS                   // A . changes matching from rexursive to abchored
 	ignSLASHDIRMATCH                  // Terminal slash matches directories
 	ignWACKYSPACE                     // Spaces are treated as pattern separators
 )
+
+// These capabilities come with GNU fmnatch(3)
+const ignFNMATCH = ignBACKSLASH | ignBASEGLOB | ignQUESTION | ignBANGDASH | ignCARETDASH
 
 // Constants needed in VCS class methods.
 //
@@ -332,7 +339,7 @@ func vcsInit() {
 			project:      "http://git-scm.com/",
 			notes:        "The authormap is not required, but will be used if present.",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignFNMATCH | ignFNMPATHNAME | ignDASHRANGES | ignNEGATION | ignDOUBLESTAR | ignSLASHANCHORS | ignSLASHDIRMATCH,
+			flags:        ignHASHCOMMENT | ignFNMATCH | ignFNMPATHNAME | ignNEGATION | ignDOUBLESTAR | ignSLASHANCHORS | ignSLASHDIRMATCH,
 			dfltignores:  "",
 		},
 		{
@@ -363,7 +370,7 @@ func vcsInit() {
 			project:      "http://bazaar.canonical.com/en/",
 			notes:        "Requires the bzr-fast-import plugin.",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignSHELLGLOB | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
+			flags:        ignHASHCOMMENT | ignBASEGLOB | ignQUESTION | ignBANGDASH | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
 			dfltignores: `
 # A simulation of bzr default ignores, generated by reposurgeon.
 *.a
@@ -407,7 +414,7 @@ bzr-orphans
 			cookies:      reMake(tokenNumeric),
 			notes:        "Breezy capability is not well tested.",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignSHELLGLOB | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
+			flags:        ignHASHCOMMENT | ignBASEGLOB | ignQUESTION | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
 			dfltignores: `
  # A simulation of brz default ignores, generated by reposurgeon.
  *.a
@@ -450,7 +457,7 @@ bzr-orphans
 branch is renamed to 'master'.
 `,
 			idformat:    "%s",
-			flags:       ignHASHCOMMENT | ignFNMATCH | ignFNMPATHNAME | ignRECURSIVE | ignDOUBLESTAR,
+			flags:       ignHASHCOMMENT | ignBASEGLOB | ignBACKSLASH | ignFNMPATHNAME | ignCARETDASH | ignRECURSIVE | ignDOUBLESTAR,
 			dfltignores: "",
 		},
 		{
@@ -694,7 +701,7 @@ _darcs
 			notes:        "Run from the repository, not a checkout directory.",
 			checkignore:  ".svn",
 			idformat:     "r%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignFNMPATHNAME | ignDASHRANGES | ignRECURSIVE,
+			flags:        ignEXPORTED | ignBASEGLOB | ignQUESTION | ignFNMPATHNAME | ignRECURSIVE,
 			dfltignores: `# A simulation of Subversion default ignores, generated by reposurgeon.
 *.o
 *.lo
@@ -741,7 +748,7 @@ _darcs
 			notes:        "Requires cvs-fast-export.",
 			checkignore:  "CVS",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignDASHRANGES | ignWACKYSPACE,
+			flags:        ignEXPORTED | ignFNMATCH | ignWACKYSPACE,
 			dfltignores: `
 # A simulation of cvs default ignores, generated by reposurgeon.
 tags
@@ -796,7 +803,7 @@ core
 			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignDASHRANGES | ignFNMPATHNAME, // Through src
+			flags:        ignEXPORTED | ignFNMATCH | ignFNMPATHNAME, // Through src
 		},
 		{
 			name:         "rcs",
@@ -821,7 +828,7 @@ core
 			project:      "https://www.gnu.org/software/rcs/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignDASHRANGES | ignFNMPATHNAME, // Through src
+			flags:        ignEXPORTED | ignFNMATCH | ignFNMPATHNAME, // Through src
 		},
 		{
 			name:         "src",
@@ -847,7 +854,7 @@ core
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignFNMATCH | ignDASHRANGES | ignFNMPATHNAME,
+			flags:        ignHASHCOMMENT | ignBASEGLOB | ignBANGDASH | ignQUESTION | ignBACKSLASH | ignFNMPATHNAME,
 		},
 		{
 			// Styleflags may need tweaking for round-tripping
@@ -874,7 +881,7 @@ core
 			project:      "https://www.bitkeeper.com/",
 			notes:        "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
 			idformat:     "%s",
-			flags:        ignSHELLGLOB | ignRECURSIVE | ignSLASHANCHORS,
+			flags:        ignBASEGLOB | ignRECURSIVE | ignSLASHANCHORS,
 		},
 	}
 

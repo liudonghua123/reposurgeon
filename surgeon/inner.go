@@ -10003,35 +10003,6 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_#]")
 
 func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
-	runeFilter := func(input string, filter func(rune) bool) string {
-		var result []rune
-
-		for _, r := range input {
-			if filter(r) {
-				result = append(result, r)
-			}
-		}
-		return string(result)
-	}
-
-	// All the characters in the most basic Unix glob syntax,
-	// without ! and ranges which some VCSes don't support. Plus
-	// "." which is always legal and treated as a path extension
-	// separator.  Plus "~" which is never treated like anything
-	// but a letter because everybody has to ignore Emacs backup
-	// files. Plus a couple of other non-specials. The list of
-	// safe printables to strip out could probab;y be longer, but
-	// use of them in filenames is so rare that throwing a waening
-	// is probably best.
-	const basicPunct = "*[]?~_.#"
-
-	removeBasicGlob := func(txt string) string {
-		// Note, this does not include stripping out ! for negation.
-		return runeFilter(txt, func(r rune) bool {
-			return !unicode.IsLetter(r) && !unicode.IsNumber(r) && !strings.Contains(basicPunct, string(r))
-		})
-	}
-
 	// Ignore blank lines. This may not work in CVS, but
 	// we never expect to be lifting to CVS.
 	if strings.TrimSpace(text) == "" {
@@ -10056,18 +10027,40 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 		}
 	}
 
+	// Some VCSes also support prefix negation. If that's all that's left after
+	// stripping out basic glob characters, we're fine.
+	if strings.HasPrefix(text, "!") {
+		if preferred.hasCapability(ignNEGATION) {
+			text = text[1:]
+		} else {
+			return errors.New("pattern negation isn't supported")
+		}
+	}
+
+	var exclusions = []struct {
+		flag     uint
+		wildcard string
+		legend   string
+	}{
+		{ignBACKSLASH, `\`, "backslash esaxpes"},
+		{ignQUESTION, `?`, "wildcard"}, // Ugh...could false-match in a range
+		{ignBANGDASH, `!`, "for range negation"},
+		{ignCARETDASH, `^`, "for range negation"},
+		{ignDOUBLESTAR, `**`, "wildcard"},
+	}
+	for _, exclusion := range exclusions {
+		if strings.Contains(text, exclusion.wildcard) && !preferred.hasCapability(exclusion.flag) {
+			return fmt.Errorf("%s does not allow the %q %s",
+				preferred.name, exclusion.wildcard, exclusion.legend)
+		}
+	}
+
 	// Most VCSes have #-led commwnts
 	if strings.HasPrefix(text, "#") {
 		if preferred.hasCapability(ignHASHCOMMENT | ignEXPORTED) {
 			return nil
 		}
 		return fmt.Errorf("%s does not have # comments", preferred.name)
-	}
-
-	// If a pattern doesn't contain [] syntax, - isn't special.
-	// This is true in both glob and regexp syntaxes.
-	if !strings.Contains(text, "[") && !strings.Contains(text, "]") {
-		text = strings.Replace(text, "-", "", -1)
 	}
 
 	// Reject quirks.
@@ -10077,54 +10070,16 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	if !preferred.hasCapability(ignBZRLIKE) && strings.HasPrefix("!!", text) {
 		return errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
-	if !preferred.hasCapability(ignDOUBLESTAR) && strings.Contains(text, "**") {
-		return errors.New("** syntax needs to be translated by hand")
+	if !preferred.hasCapability(ignSLASHDIRMATCH) && text[len(text)-1] == '/' {
+		return fmt.Errorf("terminating slash is't special in %s", preferred.name)
 	}
 
-	// If a medial / doesn't change the matching or anchoring rules,
-	// we can drop it.
-	if !preferred.hasCapability(ignSLASHANCHORS | ignFNMPATHNAME) {
-		text = medialSlash.ReplaceAllString(text, "")
-	}
-	// Terminating slash may not be portable
-	if preferred.hasCapability(ignSLASHDIRMATCH) && text[len(text)-1] == '/' {
-		text = text[:len(text)-1]
+	if !preferred.hasCapability(ignFNMPATHNAME) && strings.Contains(text, `*/`) {
+		return fmt.Errorf("*/ will be surprising in %s", preferred.name)
 	}
 
-	if preferred.hasCapability(ignDASHRANGES) {
-		text = strings.Replace(text, "[!", "[", -1)
-		text = strings.Replace(text, "[^", "[", -1)
-		text = strings.Replace(text, "-", "", -1)
-	}
-
-	// We're past anything that can masquerade as a basic glob
-	// pattern.  Every remaining VCS that has ignores at all supports
-	// basic globs. So strip out anything that looks like a basic glob.
-	deglobbed := removeBasicGlob(text)
-	if deglobbed == "" {
-		return nil
-	}
-
-	// Any use of \ throws a warning. We could probably be less twitchy about
-	// this (even CVS does the right thing), but if you're actually using this
-	// feature you probably need to reconsider your life choices.
-	if strings.Contains(text, `\`) {
-		return errors.New("backslash in ignore patterns is not portable")
-	}
-
-	// Some VCSes also support prefix negation. If that's all that's left after
-	// stripping out basic glob characters, we're fine.
-	if deglobbed[0] == '!' && !preferred.hasCapability(ignNEGATION) {
-		return errors.New("pattern negation isn't supported")
-	}
-	deglobbed = runeFilter(deglobbed, func(r rune) bool { return string(r) != "!" })
-
-	// If it's still nonempty after all recognizable characters
-	// have been stripped, throw back an indication that
-	// hand-hacking is needed.
-	if deglobbed != "" {
-		return errors.New("unrecognized pattern syntax")
-	}
+	// No way to syntax-check ignSLASHANCHORS, it only makes sense
+	// as a translation hint.
 
 	return nil
 

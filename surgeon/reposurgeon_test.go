@@ -108,7 +108,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{".py[co]", "svn", true},
 		{".netrc~", "svn", true},
 		{"x[a-z]y", "svn", true},
-		{"x[!0-9]y", "svn", true},
+		{"x[!0-9]y", "svn", false},
 		// bzr/brz
 		{"#Comment", "bzr", true},
 		{"foobar", "bzr", true},
@@ -116,8 +116,8 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"!*.a", "bzr", true},
 		{".py[co]", "bzr", true},
 		{".netrc~", "bzr", true},
-		{"x[a-z]y", "bzr", false},
-		{"x[!0-9]y", "bzr", false},
+		{"x[a-z]y", "bzr", true},
+		{"x[!0-9]y", "bzr", true},
 		// git
 		{"#Comment", "git", true},
 		{"foobar", "git", true},
@@ -126,7 +126,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{".py[co]", "git", true},
 		{".netrc~", "git", true},
 		{"x[a-z]y", "git", true},
-		{"x[!0-9]y", "svn", true},
+		{"x[!0-9]y", "git", true},
 		// src
 		{"#Comment", "src", true},
 		{"foobar", "src", true},
