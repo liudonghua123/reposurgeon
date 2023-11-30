@@ -136,7 +136,7 @@ type VCS struct {
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
 // or "syntax: glob\n" has been seen most recently. It is not
 // specified which is the default; out test suite checks that it's
-// globs.  Wildcards are *?[-]; ?[-] are not documented they are
+// globs.  Wildcards are *?[!-]; ?[!-] are not documented they are
 // verified by our test suite The documentation specifies that
 // patterns are not rooted, so rule A.  The ** wildcard is
 // recognized. Patterns which match a directory are treated as if
@@ -403,7 +403,7 @@ bzr-orphans
 			preserve:     newOrderedStringSet(),
 			authormap:    "",
 			project:      "https://www.breezy-vcs.org/",
-			ignorename:   ".brzignore",
+			ignorename:   ".bzrignore", // This is not a typo. It *isn't* .brzignore
 			cookies:      reMake(tokenNumeric),
 			notes:        "Breezy capability is not well tested.",
 			idformat:     "%s",
