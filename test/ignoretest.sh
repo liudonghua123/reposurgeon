@@ -10,6 +10,9 @@ fail() {
     echo "not ok - $*"
 }
 
+success=yes
+count=0
+failures=0
 for vcs in git hg bzr brz src;
 do
     if command -v "$vcs" >/dev/null
@@ -31,21 +34,20 @@ do
 	    fi
 	    legend="$1"
 	    exceptions="$2"
-	    
+	    count=$((count+1))
 	    if [ -n "${exceptions}" ] && expr "$vcs}" : "${exceptions}" >/dev/null
 	    then
 		# shellcheck disable=1072,1073,1009
-		if [ $Z "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly succeeded"; fi
+		if [ $Z "$(repository status)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly succeeded"; fi
 	    else
 		# shellcheck disable=1072,1073,1009
-		if [ $N "$(repository status)" ]; then success=no; fail "${vcs} ${legend} unexpectedly failed"; fi
+		if [ $N "$(repository status)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly failed"; fi
 	    fi
 	}
 	
 	repository init $vcs /tmp/ignoretest$$
 	case $vcs in
 	    git|hg|bzr|brz|src)
-		success=yes
 		touch 'ignorable'
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
 		ignore 'ignorable'
@@ -64,16 +66,17 @@ do
 		no_status_output "check for ^-negated ranges" "src"
 		ignore '\*'
 		no_status_output --nomatch "check for backslash escaping" "b[rz][rz]"
-		if [ "${success}" = "yes" ]
-		then
-		    echo "ok - ignore-pattern tests for ${vcs} went as expected."
-		fi
 		;;
 	    *)
 		echo "not ok -- no handler for $vcs"
+		failures=$((failures+1))
 	esac
     else
         printf 'not ok: %s missing # SKIP\n' "$vcs"
+	failures=$((failures+1))
     fi
 done
-#
+
+echo "ok - ${failures} of ${count} ignore-pattern tests failed."
+
+#end
