@@ -135,6 +135,17 @@ seecompare () {
     exit 0
 }
 
+tapdump() {
+    # Dump contents of argument files as a TAP YAML attachment
+    echo "  --- |"
+    # shellcheck disable=SC2068
+    for f in $@
+    do
+	sed <"$f" -e 's/^/  /'
+    done
+    echo "  ..."
+}
+
 repository() {
     # Generic repository constructor
     cmd="$1"

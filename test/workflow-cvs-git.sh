@@ -37,9 +37,7 @@ repotool compare-all hack1-mirror hack1-git >"${TMPDIR}/diff$$"
 if [ -s "${TMPDIR}/diff$$" ]
 then
     echo "not ok - $0: repositories do not compare equal."
-    echo "  --- |"
-    sed <"/tmp/diff$$" -e 's/^/  /'
-    echo "  ..."
+    tapdump "/tmp/diff$$"
     exit 1
 else
     echo "ok - $0: repositories compare equal"

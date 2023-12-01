@@ -33,10 +33,7 @@ repotool compare-all vanilla-secundus-mirror vanilla-secundus-git >"${TMPDIR}/di
 if [ -s "${TMPDIR}/diff$$" ]
 then
     echo "not ok - $0: repositories do not compare equal."
-    echo "  --- |"
-    sed <"/tmp/warnings$$" -e 's/^/  /'
-    sed <"/tmp/diff$$" -e 's/^/  /'
-    echo "  ..."
+    tapdump "/tmp/warnings$$" "/tmp/diff$$"
     exit 1
 else
     echo "ok - $0: repositories compared equal";
