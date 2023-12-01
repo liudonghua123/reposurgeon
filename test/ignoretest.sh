@@ -1,5 +1,9 @@
 #!/bin/sh
 ## Test ignore features
+#
+# Outputs one line of TAP on success.  On failures, muktiple TAP lines
+# each with the offending status-command dump following as a YAML
+# block.
 
 set -e
 
@@ -8,6 +12,7 @@ set -e
 
 fail() {
     echo "not ok - $*"
+    tapdump /tmp/statusout$$
 }
 
 success=yes
@@ -18,6 +23,10 @@ do
     if command -v "$vcs" >/dev/null
     then
 	ignorecheck () {
+	    # Take a pattern, a filename, a legend, and an exception
+	    # regexp.  Stuff the pattern in the ignore file. Run the
+	    # status command.  Success if the output is empty -
+	    # nonempty with the nomatch option.
 	    Z=-z
 	    N=-n
 	    if [ "$1" = '--nomatch' ]
@@ -35,21 +44,25 @@ do
 	    # shellcheck disable=SC2154
 	    repository ignore "${ignorefile}"
 	    repository ignore "${pattern}"
-	    if [ -n "${exceptions}" ] && expr "$vcs}" : "${exceptions}" >/dev/null
+	    repository status >/tmp/statusout$$
+	    if [ -n "${exceptions}" ] && expr "${vcs}" : "${exceptions}" >/dev/null
 	    then
 		# shellcheck disable=1072,1073,1009
-		if [ $Z "$(repository status)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly succeeded"; fi
+		if [ $Z "$(cat /tmp/statusout$$)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly succeeded"; fi
 	    else
 		# shellcheck disable=1072,1073,1009
-		if [ $N "$(repository status)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly failed"; fi
+		if [ $N "$(cat /tmp/statusout$$)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly failed"; fi
 	    fi
+	    rm /tmp/statusout$$
 	}
 	
 	repository init $vcs /tmp/ignoretest$$
-	case $vcs in
+	case ${vcs} in
 	    git|hg|bzr|brz|src)
 		touch 'ignorable'
+		# If this fails something very basic has gone wrong
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
+		# The actual pattern tests start here.
 		ignorecheck 'ignorable' 'ignorable' "basic ignore"
 		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
 		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	# ignQUESTION
@@ -62,7 +75,7 @@ do
 		mkdir foo
 		touch foo/bar
 		# These tests fail because the git and hg status commands
-		# do things that don't fit the rwa
+		# do things that don't fit the test machinery's model.
 		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ]
 		then
 		    ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /"
