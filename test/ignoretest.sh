@@ -17,13 +17,7 @@ for vcs in git hg bzr brz src;
 do
     if command -v "$vcs" >/dev/null
     then
-	ignore () {
-	    repository ignore
-	    # shellcheck disable=SC2154
-	    repository ignore "${ignorefile}"
-	    repository ignore "$1"
-	}
-	no_status_output () {
+	ignorecheck () {
 	    Z=-z
 	    N=-n
 	    if [ "$1" = '--nomatch' ]
@@ -32,9 +26,15 @@ do
 		N=-z
 		shift
 	    fi
-	    legend="$1"
-	    exceptions="$2"
+	    pattern="$1"
+	    match="$2"
+	    legend="$3"
+	    exceptions="$4"
 	    count=$((count+1))
+	    repository ignore
+	    # shellcheck disable=SC2154
+	    repository ignore "${ignorefile}"
+	    repository ignore "${pattern}"
 	    if [ -n "${exceptions}" ] && expr "$vcs}" : "${exceptions}" >/dev/null
 	    then
 		# shellcheck disable=1072,1073,1009
@@ -50,33 +50,23 @@ do
 	    git|hg|bzr|brz|src)
 		touch 'ignorable'
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
-		ignore 'ignorable'
-		no_status_output "basic ignore"
-		ignore 'ignor*'
-		no_status_output "check for * wildcard"
-		ignore 'ignora?le'
-		no_status_output "check for ? wildcard" "hg"	# ignQUESTION
-		ignore 'ignorab[klm]e'
-		no_status_output "check for range syntax"
-		ignore 'ignorab[k-m]e'
-		no_status_output "check for dash in ranges"
-		ignore 'ignorab[!x-z]e'
-		no_status_output "check for !-negated ranges" "hg"	# ignBANGDASH
-		ignore 'ignorab[^x-z]e'
-		no_status_output "check for ^-negated ranges" "src"	# ignCARETDASH
-		ignore '\*'
-		no_status_output --nomatch "check for backslash escaping" "b[rz][rz]"	# ignBACKSLASH
+		ignorecheck 'ignorable' 'ignorable' "basic ignore"
+		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
+		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	# ignQUESTION
+		ignorecheck 'ignorab[klm]e' 'ignorable' "check for range syntax"
+		ignorecheck 'ignorab[k-m]e' 'ignorable' "check for dash in ranges"
+		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg"	# ignBANGDASH
+		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src"	# ignCARETDASH
+		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "b[rz][rz]"	# ignBACKSLASH
 		rm ignorable
-		mkdir a
-		touch a/c
+		mkdir foo
+		touch foo/bar
 		# These tests fail because the git and hg status commands
 		# do things that don't fit the rwa
 		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ]
 		then
-		    ignore 'a?c'
-		    no_status_output --nomatch "check for ? not matching /"
-		    ignore '*c'
-		    no_status_output --nomatch "check for * not matching /"
+		    ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /"
+		    ignorecheck --nomatch '*bar' 'bar' "check for * not matching /"
 		fi
 		;;
 	    *)

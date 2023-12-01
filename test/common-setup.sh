@@ -143,13 +143,13 @@ repository() {
 	init)
 	    # Initialize repo in specified temporary directory
 	    repotype="$1"
-	    base="$2";
-	    trap 'rm -fr ${base}' EXIT HUP INT QUIT TERM
+	    rbasedir="$2";
+	    trap 'rm -fr ${rbasedir}' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
-	    rm -fr "${base}";
-	    mkdir "${base}";
+	    rm -fr "${rbasedir}";
+	    mkdir "${rbasedir}";
 	    # shellcheck disable=SC2164
-	    cd "${base}" >/dev/null || exit 1;
+	    cd "${rbasedir}" >/dev/null || exit 1;
 	    case "${repotype}" in
 		git|hg|bzr|brz) "${repotype}" init -q;;
 		svn) svnadmin create .; svn co -q "file://$(pwd)" checkout ;;
@@ -165,12 +165,12 @@ repository() {
 	    ;;
 	ignore)
 	    # Clear or append to the ignpre file
-	    pattern="$1"
-	    if [ -z "${pattern}" ]
+	    rpattern="$1"
+	    if [ -z "${rpattern}" ]
 	    then
 		rm -f "${ignorefile}"
 	    else
-		echo "${pattern}" >>"${ignorefile}"
+		echo "${rpattern}" >>"${ignorefile}"
 	    fi
 	    ;;
 	status)
@@ -280,7 +280,7 @@ repository() {
 		svn)
 		    spacer=' '
 		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
-		    svnadmin dump -q "." | repocutter -q -t "${base}" testify >/tmp/stream$$
+		    svnadmin dump -q "." | repocutter -q -t "${rbasedir}" testify >/tmp/stream$$
 		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
