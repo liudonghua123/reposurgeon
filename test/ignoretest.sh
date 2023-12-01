@@ -10,29 +10,30 @@ set -e
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-fail() {
-    echo "not ok - $*"
-    tapdump /tmp/statusout$$
-}
-
-success=yes
 count=0
 failures=0
 for vcs in git hg bzr brz src;
 do
     if command -v "$vcs" >/dev/null
     then
+	fail() {
+	    echo "not ok - ${vcs} $*"
+	    if [ -s /tmp/statusout$$ ]
+	    then
+		tapdump /tmp/statusout$$
+	    fi
+	}
 	ignorecheck () {
 	    # Take a pattern, a filename, a legend, and an exception
 	    # regexp.  Stuff the pattern in the ignore file. Run the
 	    # status command.  Success if the output is empty -
 	    # nonempty with the nomatch option.
-	    Z=-z
-	    N=-n
+	    Z=!
+	    N=
 	    if [ "$1" = '--nomatch' ]
 	    then
-		Z=-n
-		N=-z
+		Z=
+		N=!
 		shift
 	    fi
 	    pattern="$1"
@@ -48,10 +49,10 @@ do
 	    if [ -n "${exceptions}" ] && expr "${vcs}" : "${exceptions}" >/dev/null
 	    then
 		# shellcheck disable=1072,1073,1009
-		if [ $Z "$(cat /tmp/statusout$$)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly succeeded"; fi
+		if [ $Z -s "/tmp/statusout$$" ]; then failures=$((failures+1)); fail "${legend} unexpectedly succeeded"; fi
 	    else
 		# shellcheck disable=1072,1073,1009
-		if [ $N "$(cat /tmp/statusout$$)" ]; then failures=$((failures+1)); fail "${vcs} ${legend} unexpectedly failed"; fi
+		if [ $N -s "/tmp/statusout$$" ]; then failures=$((failures+1)); fail "${legend} unexpectedly failed"; fi
 	    fi
 	    rm /tmp/statusout$$
 	}
