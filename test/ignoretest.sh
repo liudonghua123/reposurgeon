@@ -45,7 +45,7 @@ do
 	    # shellcheck disable=SC2154
 	    repository ignore "${ignorefile}"
 	    repository ignore "${pattern}"
-	    repository status >/tmp/statusout$$
+	    repository status >/tmp/statusout$$ 2>&1
 	    if [ -n "${exceptions}" ] && expr "${vcs}" : "${exceptions}" >/dev/null
 	    then
 		# shellcheck disable=1072,1073,1009
@@ -77,6 +77,7 @@ do
 		touch foo/bar
 		# These tests fail because the git and hg status commands
 		# do things that don't fit the test machinery's model.
+		#ignorecheck 'foo/bar' 'bar' "check exact match of path with /"
 		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ]
 		then
 		    ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /"
