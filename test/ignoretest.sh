@@ -37,6 +37,7 @@ do
 		shift
 	    fi
 	    pattern="$1"
+	    # shellcheck disable=SC2034
 	    match="$2"
 	    legend="$3"
 	    exceptions="$4"
@@ -48,13 +49,12 @@ do
 	    repository status >/tmp/statusout$$ 2>&1
 	    if [ -n "${exceptions}" ] && expr "${vcs}" : "${exceptions}" >/dev/null
 	    then
-		# shellcheck disable=1072,1073,1009
+		# shellcheck disable=2057,2086
 		if [ $Z -s "/tmp/statusout$$" ]; then failures=$((failures+1)); fail "${legend} unexpectedly succeeded"; fi
 	    else
-		# shellcheck disable=1072,1073,1009
+		# shellcheck disable=2057,2086
 		if [ $N -s "/tmp/statusout$$" ]; then failures=$((failures+1)); fail "${legend} unexpectedly failed"; fi
 	    fi
-	    rm /tmp/statusout$$
 	}
 	
 	repository init $vcs /tmp/ignoretest$$
@@ -65,6 +65,7 @@ do
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
 		# The actual pattern tests start here.
 		ignorecheck 'ignorable' 'ignorable' "basic ignore"
+		cat /tmp/statusout$$
 		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
 		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	# ignQUESTION
 		ignorecheck 'ignorab[klm]e' 'ignorable' "check for range syntax"
@@ -77,7 +78,10 @@ do
 		touch foo/bar
 		# These tests fail because the git and hg status commands
 		# do things that don't fit the test machinery's model.
-		#ignorecheck 'foo/bar' 'bar' "check exact match of path with /"
+		if [ "${vcs}" != "bzr" ] && [ "${vcs}" != "brz" ]
+		then
+		   ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
+		fi
 		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ]
 		then
 		    ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /"
@@ -92,6 +96,7 @@ do
         printf 'not ok: %s missing # SKIP\n' "$vcs"
 	failures=$((failures+1))
     fi
+    rm /tmp/statusout$$
 done
 
 echo "ok - ${failures} of ${count} ignore-pattern tests failed."
