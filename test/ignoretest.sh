@@ -6,14 +6,20 @@
 # block.
 
 systems="git hg bzr brz src"
-while getopts s: opt
+verbose=no
+restrict=""
+while getopts r:s:v opt
 do
     case $opt in
+	r) restrict="$OPTARG";;
 	s) systems="$OPTARG";;
+	v) verbose=yes;;
 	*) cat <<EOF
 ignoretest.sh - examine ignore-pattern behavior
 
+With -r, restrict tisting to the specified pattern.
 With -s, set the VCSes tested.
+With -v, run in verbose mode, dumping test output.
 EOF
 	   exit 0;;
     esac
@@ -55,12 +61,24 @@ do
 	    match="$2"
 	    legend="$3"
 	    exceptions="$4"
+
+	    if [ -n "${restrict}" ] && [ "${restrict}" != "${pattern}" ]
+	    then
+		return
+	    fi
+
+	    if [ "${verbose}" = "yes" ]
+	    then
+		echo "Test: '${vcs}, ${pattern}' for '${legend}', exceptions '${exceptions}'"
+	    fi
+
 	    count=$((count+1))
 	    repository ignore
 	    # shellcheck disable=SC2154
 	    repository ignore "${ignorefile}"
 	    repository ignore "${pattern}"
 	    repository status >/tmp/statusout$$ 2>&1
+	    
 	    if [ -n "${exceptions}" ] && expr "${vcs}" : "${exceptions}" >/dev/null
 	    then
 		# shellcheck disable=2057,2086
@@ -71,12 +89,12 @@ do
 	    fi
 	}
 	
-	repository init $vcs /tmp/ignoretest$$
+	repository init "$vcs" /tmp/ignoretest$$
 	case ${vcs} in
 	    git|hg|bzr|brz|src)
 		touch 'ignorable'
 		# If this fails something very basic has gone wrong
-		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
+		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "status didn't flag junk file"
 		# The actual pattern tests start here.
 		ignorecheck 'ignorable' 'ignorable' "basic ignore"
 		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
@@ -108,9 +126,14 @@ do
         printf 'not ok: %s missing # SKIP\n' "$vcs"
 	failures=$((failures+1))
     fi
-    rm /tmp/statusout$$
+    rm -f /tmp/statusout$$
 done
 
-echo "ok - ${failures} of ${count} ignore-pattern tests failed."
+if [ "${failures}" = "0" ]
+then
+    echo "ok - ${count} ignore-pattern tests succeeded."
+else
+    echo "not ok - ${failures} of ${count} ignore-pattern tests failed."
+fi
 
 #end
