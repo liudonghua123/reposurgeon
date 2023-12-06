@@ -111,10 +111,10 @@ do
 		# These tests fail because the git and hg status commands
 		# do things that don't fit the test machinery's model.
 		# We might be able to get somewhere with output trimming.
-		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ] && [ "${vcs}" != "bzr" ] && [ "${vcs}" != "brz" ]
+		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "bzr" ] && [ "${vcs}" != "brz" ]
 		then
 		    ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /"
-		    ignorecheck --nomatch '*bar' 'bar' "check for * not matching /"
+		    ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /"
 		fi
 		;;
 	    *)
