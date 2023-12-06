@@ -158,7 +158,9 @@ type VCS struct {
 // global-ignores defaults...and "The ignore patterns in the
 // svn:global-ignores property may be delimited with any whitespace
 // (similar to the global-ignores runtime configuration option), not
-// just newlines (as with the svn:ignore property)."!
+// just newlines (as with the svn:ignore property)."!  Also: "Once an
+// object is under Subversion's control, the ignore pattern mechanisms
+// no longer apply to it."
 //
 // bzr/brz support shell-style globbing; wildcards are *?[!^-] (tested).
 // Backlash escaping is not supported (tested).
@@ -187,7 +189,7 @@ type VCS struct {
 // src uses Python's glob library.  Its wildcard characters are ?*[!-]
 // (tested).  *? doesn't match / (tested).
 //
-// bk doesn't document its igbnore syntax at all and the ecamples only
+// bk doesn't document its ignore syntax at all and the examples only
 // show *. Since we never expect to export *to* bk, we'll make the
 // conservative assunmption that supports only old-fashioned shell
 // globbing. "Patterns that do not contain a slash (`/') character are
