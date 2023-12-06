@@ -5,12 +5,28 @@
 # each with the offending status-command dump following as a YAML
 # block.
 
+systems="git hg bzr brz src"
+while getopts s: opt
+do
+    case $opt in
+	s) systems="$OPTARG";;
+	*) cat <<EOF
+ignoretest.sh - examine ignore-pattern behavior
+
+With -s, set the VCSes tested.
+EOF
+	   exit 0;;
+    esac
+done
+# shellcheck disable=SC2004
+shift $(($OPTIND - 1))
+
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
 count=0
 failures=0
-for vcs in git hg bzr brz src;
+for vcs in ${systems};
 do
     if command -v "$vcs" >/dev/null
     then
