@@ -92,6 +92,7 @@ do
 		echo "not ok -- no handler for $vcs"
 		failures=$((failures+1))
 	esac
+	repository wrap
     else
         printf 'not ok: %s missing # SKIP\n' "$vcs"
 	failures=$((failures+1))

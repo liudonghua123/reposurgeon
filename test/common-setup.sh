@@ -147,15 +147,24 @@ tapdump() {
 }
 
 repository() {
-    # Generic repository constructor
+    # Generic repository-manipulation code
     cmd="$1"
     shift
     case "${cmd}" in
 	init)
 	    # Initialize repo in specified temporary directory
+	    #
+	    # Always pair init and wrap calls.  The issue is that in
+	    # SVN (and CVS, if and when when it's supported), the
+	    # working directory where we need to create and manipulate
+	    # files in between constructor actions is different from
+	    # the sandbox root directory where the masters live (e.g
+	    # where repository init is called).  init is going to put
+	    # us into that directory; wrap backs us out.
+	    #
 	    repotype="$1"
 	    rbasedir="$2";
-	    trap 'rm -fr ${rbasedir}' EXIT HUP INT QUIT TERM
+	    trap 'rm -fr ${rbasedir} /tmp/stream$$' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
 	    rm -fr "${rbasedir}";
 	    mkdir "${rbasedir}";
@@ -163,7 +172,7 @@ repository() {
 	    cd "${rbasedir}" >/dev/null || exit 1;
 	    case "${repotype}" in
 		git|hg|bzr|brz) "${repotype}" init -q;;
-		svn) svnadmin create .; svn co -q "file://$(pwd)" checkout ;;
+		svn) svnadmin create .; svn co -q "file://$(pwd)" working-copy ; tapcd working-copy;;
 		src) mkdir .src;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
@@ -175,30 +184,41 @@ repository() {
 	    esac
 	    ;;
 	ignore)
-	    # Clear or append to the ignpre file
+	    # Clear or append to the ignore file. In Subversion, do the equivalent propset.
+	    # Note: ignore calls are not cumulative, the set of ignores gets replaced each
+	    # time this is called.
 	    rpattern="$1"
-	    if [ -z "${rpattern}" ]
+	    if [ "${repotype}" = "svn" ]
 	    then
-		rm -f "${ignorefile}"
+		if [ -n "${rpattern}" ] && [ "${rpattern}" != '.svnignore' ]
+		then
+		   svn propset -q svn:ignore "${rpattern}" .
+		fi
 	    else
-		echo "${rpattern}" >>"${ignorefile}"
+		if [ -z "${rpattern}" ]
+		then
+		    rm -f "${ignorefile}"
+		else
+		    echo "${rpattern}" >>"${ignorefile}"
+		fi
 	    fi
 	    ;;
 	status)
-	    # Get a one-per-line report of file status
+	    # Get a one-per-line report of file status.  What we want from this is output
+	    # that looks like svn status. 
 	    case "${repotype}" in
 		git) git status --porcelain -uall;;
-		hg) "${repotype}" status;;
+		svn|hg|src) "${repotype}" status;;
 		bzr|brz) "${repotype}" status -S;;
-		src) "${repotype}" status;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
 	commit)
-	    # Add or commit content
+	    # Add or commit content.  Changeset commit, not file
+	    # commit.  If possible, force timestamp and author. When
+	    # it isn't, that has to be cleaned up at export time.
 	    file="$1"
 	    text="$2"
-	    if [ -d "checkout" ]; then cd checkout >/dev/null || exit 1; fi
 	    cat >"${file}"
 	    # Always do the add, ignore errors. Otherwise we'd have to check to see if
 	    # the file is registered each time.
@@ -221,11 +241,9 @@ repository() {
 		    svn commit -q -m "${text}";;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
-	    # shellcheck disable=SC2046,2086
-	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
 	    ;;
 	checkout)
-	    # Checkout branch, creating if necessary
+	    # Checkout branch, creating if necessary.
 	    branch="$1"
 	    case "${repotype}" in
 		git)
@@ -251,8 +269,7 @@ repository() {
 	    esac
 	    ;;
 	mkdir)
-	    # Make a directory or directories in the checkout
-	    if [ -d "checkout" ]; then cd checkout >/dev/null || exit 1; fi
+	    # Make a directory or directories in the working copy
 	    for d in "$@"
 	    do
 		mkdir -p "${d}"
@@ -261,11 +278,9 @@ repository() {
 		    *) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 		esac
 	    done
-	    # shellcheck disable=SC2046,2086
-	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
 	    ;;
 	tag)
-	    # Create a (lightweight) tag
+	    # Create a (lightweight) tag.
 	    tagname="$1"
 	    case "${repotype}" in
 		git|bzr|brz) "${repotype}" tag -q "${tagname}";;
@@ -274,28 +289,32 @@ repository() {
 	    ;;
 	up)
 	    # Update a checkout. Sometimes required to force a commit boundary
-	    if [ -d "checkout" ]; then cd checkout >/dev/null || exit 1; fi
+	    # (I'm looking at you, Subversion.)
 	    case "${repotype}" in
 		svn) svn -q up;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
-	    # shellcheck disable=SC2046,2086
-	    if [ $(basename $(pwd)) = "checkout" ]; then cd .. >/dev/null || exit 1; fi
 	    ;;
 	export)
-	    # Dump export stream.  Clock-neutralize it if we were unable to force timestamps at commit time
-	    trap 'rm -f /tmp/stream$$' EXIT HUP INT QUIT TERM
+	    # Dump export stream.  Clock-neutralize it if we were unable to force timestamps at commit time.
 	    case "${repotype}" in
 		git) git fast-export -q --all >/tmp/streamm$$;;
 		bzr|brz) "${repotype}" fast-export -q | reposurgeon 'read -' 'timequake --tick' '1..$ attribute =C set "Fred J. Foonly" fred@foonly.org' "write >/tmp/stream$$";;
 		svn)
-		    spacer=' '
+		   spacer=' '
+		   (tapcd "${rbasedir}"	# Back to the repository root
 		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
-		    svnadmin dump -q "." | repocutter -q -t "${rbasedir}" testify >/tmp/stream$$
+		    svnadmin dump -q "." | repocutter -q -t "${rbasedir}" testify) >/tmp/stream$$
 		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    echo "${spacer}## $1"; echo "${spacer}# Generated - do not hand-hack!"; cat /tmp/stream$$
+	    ;;
+	wrap)
+	    # We're done. Make sure we've returned to the sandbox root.
+	    case "${repotype}" in
+		svn) tapcd "${rbasedir}";;	# Back out of the working directory
+	    esac
 	    ;;
     esac
 }
