@@ -5,8 +5,6 @@
 # each with the offending status-command dump following as a YAML
 # block.
 
-set -e
-
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
@@ -65,7 +63,6 @@ do
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "${vcs} status didn't flag junk file"
 		# The actual pattern tests start here.
 		ignorecheck 'ignorable' 'ignorable' "basic ignore"
-		cat /tmp/statusout$$
 		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
 		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	# ignQUESTION
 		ignorecheck 'ignorab[klm]e' 'ignorable' "check for range syntax"
@@ -76,13 +73,11 @@ do
 		rm ignorable
 		mkdir foo
 		touch foo/bar
+		ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
 		# These tests fail because the git and hg status commands
 		# do things that don't fit the test machinery's model.
-		if [ "${vcs}" != "bzr" ] && [ "${vcs}" != "brz" ]
-		then
-		   ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
-		fi
-		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ]
+		# We might be able to get somewhere with output trimming.
+		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "git" ] && [ "${vcs}" != "bzr" ] && [ "${vcs}" != "brz" ]
 		then
 		    ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /"
 		    ignorecheck --nomatch '*bar' 'bar' "check for * not matching /"

@@ -205,11 +205,13 @@ repository() {
 	    ;;
 	status)
 	    # Get a one-per-line report of file status.  What we want from this is output
-	    # that looks like svn status. 
+	    # that looks like svn status. Sometimes this involves filtering out junk lines,
+	    # notably as issued for directories (since we're only interested in seeing if
+	    # we can ignore files.)
 	    case "${repotype}" in
 		git) git status --porcelain -uall;;
 		svn|hg|src) "${repotype}" status;;
-		bzr|brz) "${repotype}" status -S;;
+		bzr|brz) "${repotype}" status -S | grep -v '/$';;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
