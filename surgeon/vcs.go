@@ -114,25 +114,24 @@ type VCS struct {
 // inspection.  The "Path match" is yes if * and ? wildcards will
 // *not* match /.
 //
-//           Specials    Path match  !-negation  ignLOOSE  ignFNMDOT
-// git:      *?[^!-]\    yes         yes         yes       no
-// svn:      *?[^!-]\    yes         yes         no        no
-// hg:       *[^-]\      yes         no          yes       no
-// bzr/brz:  *?[^!-]     no          yes         yes       no
-// cvs:      *?[^!-]\    no          no          no        no
-// src:      *?[!-]\     yes         yes         no        yes
+//           Specials    Path match  !-negation  ignLOOSE  ignFNMDOT  ignDSTAR
+// git:      *?[^!-]\    yes         yes         yes       no         yes
+// svn:      *?[^!-]\    yes         yes         no        no         no
+// hg:       *[^-]\      yes         no          yes       no         no
+// bzr/brz:  *?[^!-]     no          yes         yes       no         yes
+// cvs:      *?[^!-]\    no          no          no        no         yes
+// src:      *?[!-]\     yes         yes         no        yes        no
 //
 
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
 // FNM_NOESCAPE. and FNM_PERIOD off. ignLOOSE applies unless there's
 // an initial or nedial separator, in which case rule B. A / at end of
-// pattern has the special behavior of matching only directories. **
-// matches any number of directory segments.
+// pattern has the special behavior of matching only directories.
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
 // or "syntax: glob\n" has been seen most recently. The default is
-// globs (tested). The ** wildcard is recognized. Patterns which
-// match a directory are treated as if followed by **.
+// globs (tested). Patterns which match a directory exclude the
+// entire directory.
 //
 // svn documents that it uses glob(3) and says "if you are migrating a
 // CVS working copy to Subversion, you can directly migrate the ignore
@@ -151,13 +150,12 @@ type VCS struct {
 // pattern mechanisms no longer apply to it."
 //
 // bzr/brz allows only one ignore file, at the repository root.
-// ignLOOSE, but an example in the documentation shows that
-// embedded / anchors the pattern to the repository root
-// directory. The wilcard ** to match any sequence of path segments is
-// supported; there's also a unique !!  syntax "Patterns prefixed with
-// '!!' act as regular ignore patterns, but have highest precedence,
-// even over the '!'  exception patterns.". An RE: prefix on a pattern
-// line means it should be interpreted as a regular expression.
+// ignLOOSE, but an example in the documentation shows that embedded /
+// anchors the pattern to the repository root directory. There's a
+// unique !!  syntax "Patterns prefixed with '!!' act as regular
+// ignore patterns, but have highest precedence, even over the '!'
+// exception patterns.". An RE: prefix on a pattern line means it
+// should be interpreted as a regular expression.
 //
 // cvs uses a local workalike of fnmatch(3).  The FNM_PATHNAME,
 // FNM_NOESCAPE, and FNM_PERIOD flags are *not* set.  A line consisting of

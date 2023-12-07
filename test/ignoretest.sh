@@ -139,7 +139,10 @@ do
 		touch foo/subignorable
 		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src" LOOSE
 		rm foo/subignorable
-		rmdir foo
+		mkdir -p foo/x/y
+		touch foo/x/y/bar
+		ignorecheck 'foo/**/bar' 'bar' "check ** wildcard" "svn|hg|src" DSTAR
+		rm -fr foo
 		printf "\n" >>/tmp/ignoretable$$
 		;;
 	    *)
