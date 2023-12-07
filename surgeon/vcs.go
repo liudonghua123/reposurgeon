@@ -106,10 +106,8 @@ type VCS struct {
 // A. Matches apply to subdirectories - ignRECURSIVE.
 // B. Matches are anchored to the directory where the ignore
 //    file is - ~ignRECURSIVE.
-// C. * and ? wildcards cannot match a following slash -
-//    ignFNMPATHNAME.
 //
-// The presence of a / in a path may change whether A or B applies,
+// The presence of a / in a path may change whether A or B applies.
 //
 // Glob behavior of all of the except cvs is following specials is
 // verified by our test suite. CVS behavior is checked by code
@@ -117,23 +115,23 @@ type VCS struct {
 // *not* match /.
 //
 //           Specials    Path match  !-negation
-// git:      *?[!^-]\    yes         yes
+// git:      *?[^!-]\    yes         yes
 // hg:       *[^-]\      yes         no
-// svn:      *?[!^-]\    yes         yes
-// bzr/brz:  *?[!^-]     no          yes
-// cvs:      ?*[!^-]\    no          no
-// src:      ?*[^-]\     yes         yes
+// svn:      *?[^!-]\    yes         yes
+// bzr/brz:  *?[^!-]     no          yes
+// cvs:      *?[^!-]\    no          no
+// src:      *?[!-]\     yes         yes
 //
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
-// FNM_NOESCAPE off; thus rule C. Rule A applied unless there's an
-// initial or nedial separator, in which case rule B. A / at end of
-// pattern has the special behavior of matching only directories. **
-// matches any number of directory segments.
+// FNM_NOESCAPE off. ignRECURSIVE applies unless there's an initial or
+// nedial separator, in which case rule B. A / at end of pattern has
+// the special behavior of matching only directories. ** matches any
+// number of directory segments.
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
 // or "syntax: glob\n" has been seen most recently. The default is
 // globs (tested). The documentation specifies that patterns are not
-// rooted, so rule A.  The ** wildcard is recognized. Patterns which
+// rooted, so ignRCURSIVE.  The ** wildcard is recognized. Patterns which
 // match a directory are treated as if followed by **.
 //
 // svn documents that it uses glob(3) and says "if you are migrating a
@@ -152,26 +150,26 @@ type VCS struct {
 // Also: "Once an object is under Subversion's control, the ignore
 // pattern mechanisms no longer apply to it."
 //
-// bzr/brz allows only one ignore file, at the repository root.  Rule
-// A, but an example in the documentation shows that embedded /
-// anchors the pattern to the repository root directory. The wilcard
-// ** to match any sequence of path segments is supported; there's
-// also a unique !!  syntax "Patterns prefixed with '!!' act as
-// regular ignore patterns, but have highest precedence, even over the
-// '!'  exception patterns.". An RE: prefix on a pattern line means it
-// should be interpreted as a regular expression.
+// bzr/brz allows only one ignore file, at the repository root.
+// ignRECURSIVE, but an example in the documentation shows that
+// embedded / anchors the pattern to the repository root
+// directory. The wilcard ** to match any sequence of path segments is
+// supported; there's also a unique !!  syntax "Patterns prefixed with
+// '!!' act as regular ignore patterns, but have highest precedence,
+// even over the '!'  exception patterns.". An RE: prefix on a pattern
+// line means it should be interpreted as a regular expression.
 //
 // cvs uses a local workalike of fnmatch(3).  The FNM_PATHNAME,
 // FNM_NOESCAPE, and FNM_PERIOD flags are *not* set.  A line consisting of
 // a single ! clears all ignore patterns. "The patterns found in
 // .cvsignore are only valid for the directory that contains them, not
-// for any sub-directories."  Rules B & ~C.
+// for any sub-directories."  No ignRECURSIVE.
 //
 // darcs and mtn use full regexps rather than any version of
 // fnmatch(3)/glob(3)
 //
 // src uses Python's glob library and inherits those behaviors. It
-// adds support fotr prefix nehation with !.
+// adds support for prefix negation with !.
 //
 // bk doesn't document its ignore syntax at all and the examples only
 // show *. Since we never expect to export *to* bk, we'll make the
