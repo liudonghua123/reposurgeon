@@ -104,7 +104,7 @@ do
 		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg"	# ignBANGDASH
 		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src"	# ignCARETDASH
 		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "b[rz][rz]"	# ignBACKSLASH
-		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg" # ignNEGATION
+		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg"	# ignNEGATION
 		rm ignorable
 		mkdir foo
 		touch foo/bar
@@ -116,6 +116,9 @@ do
 		ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /" "b[rz][rz]"
 		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "b[rz][rz]"
 		rm foo/bar
+		touch foo/subignorable
+		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "s[rv][cn]"	# ignRECURSIVE
+		rm foo/subignorable
 		rmdir foo
 		;;
 	    *)
