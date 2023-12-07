@@ -79,7 +79,7 @@ do
 	    repository ignore "${pattern}"
 	    repository status >/tmp/statusout$$ 2>&1
 	    
-	    if [ -n "${exceptions}" ] && expr "${vcs}" : "${exceptions}" >/dev/null
+	    if [ -n "${exceptions}" ] && (echo "${vcs}" | grep -E "${exceptions}" >/dev/null)
 	    then
 		# shellcheck disable=2057,2086
 		if [ $Z -s "/tmp/statusout$$" ]; then failures=$((failures+1)); fail "${legend} unexpectedly succeeded"; fi
@@ -103,21 +103,21 @@ do
 		ignorecheck 'ignorab[k-m]e' 'ignorable' "check for dash in ranges"
 		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg"	# ignBANGDASH
 		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src"	# ignCARETDASH
-		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "b[rz][rz]"	# ignBACKSLASH
+		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "bzr|brz"	# ignBACKSLASH
 		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg"	# ignNEGATION
 		rm ignorable
 		mkdir foo
 		touch foo/bar
 		if [ "${vcs}" != 'svn' ]
 		then
-		    # Strange failure - should investigated further.
+		    # Strange failure - should investigate further.
 		    ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
 		fi
-		ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /" "b[rz][rz]"
-		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "b[rz][rz]"
+		ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /" "bzr|brz"
+		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "bzr|brz"	# ignFNMPATHNAME
 		rm foo/bar
 		touch foo/subignorable
-		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "s[rv][cn]"	# ignRECURSIVE
+		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src"	# ignRECURSIVE
 		rm foo/subignorable
 		rmdir foo
 		;;
