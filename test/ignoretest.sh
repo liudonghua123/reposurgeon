@@ -8,9 +8,11 @@
 systems="git svn hg bzr brz src"
 verbose=no
 restrict=""
-while getopts r:s:v opt
+flagdump=no
+while getopts dr:s:v opt
 do
     case $opt in
+	d) flagdump=yes;;
 	r) restrict="$OPTARG";;
 	s) systems="$OPTARG";;
 	v) verbose=yes;;
@@ -20,6 +22,7 @@ ignoretest.sh - examine ignore-pattern behavior
 With -r, restrict tisting to the specified pattern.
 With -s, set the VCSes tested.
 With -v, run in verbose mode, dumping test output.
+With -d, dump capabilities as a YAML block after success/
 EOF
 	   exit 0;;
     esac
@@ -32,6 +35,7 @@ shift $(($OPTIND - 1))
 
 count=0
 failures=0
+rm -f /tmp/statusout$$
 for vcs in ${systems};
 do
     if command -v "$vcs" >/dev/null
@@ -61,6 +65,7 @@ do
 	    match="$2"
 	    legend="$3"
 	    exceptions="$4"
+	    flag="$5"
 
 	    if [ -n "${restrict}" ] && [ "${restrict}" != "${pattern}" ]
 	    then
@@ -82,29 +87,41 @@ do
 	    if [ -n "${exceptions}" ] && (echo "${vcs}" | grep -E "${exceptions}" >/dev/null)
 	    then
 		# shellcheck disable=2057,2086
-		if [ $Z -s "/tmp/statusout$$" ]; then failures=$((failures+1)); fail "${legend} unexpectedly succeeded"; fi
+		if [ $Z -s "/tmp/statusout$$" ];
+		then
+		    failures=$((failures+1));
+		    fail "${legend} unexpectedly succeeded";
+		fi
 	    else
 		# shellcheck disable=2057,2086
-		if [ $N -s "/tmp/statusout$$" ]; then failures=$((failures+1)); fail "${legend} unexpectedly failed"; fi
+		if [ $N -s "/tmp/statusout$$" ];
+		then
+		    failures=$((failures+1));
+		    fail "${legend} unexpectedly failed";
+		elif [ -n "${flag}" ]
+		then
+		    printf "\t%s" "${flag}" >>/tmp/ignoretable$$
+		fi
 	    fi
 	}
 	
 	repository init "$vcs" /tmp/ignoretest$$
 	case ${vcs} in
 	    git|hg|bzr|brz|src|svn)
+		printf "%s: " "${vcs}" >>/tmp/ignoretable$$
 		touch 'ignorable'
 		# If this fails something very basic has gone wrong
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "status didn't flag junk file"
 		# The actual pattern tests start here.
 		ignorecheck 'ignorable' 'ignorable' "basic ignore"
 		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
-		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	# ignQUESTION
+		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	QUESTION
 		ignorecheck 'ignorab[klm]e' 'ignorable' "check for range syntax"
 		ignorecheck 'ignorab[k-m]e' 'ignorable' "check for dash in ranges"
-		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg"	# ignBANGDASH
-		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src"	# ignCARETDASH
-		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "bzr|brz"	# ignBACKSLASH
-		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg"	# ignNEGATION
+		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg" BANGDASH
+		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src" CARETDASH
+		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "bzr|brz"	BACKSLASH
+		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg" NEGATION
 		rm ignorable
 		mkdir foo
 		touch foo/bar
@@ -114,15 +131,16 @@ do
 		    ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
 		fi
 		ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /" "bzr|brz"
-		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "bzr|brz"	# ignFNMPATHNAME
+		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "bzr|brz" FNMPATHNAME
 		rm foo/bar
 		touch foo/subignorable
-		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src"	# ignRECURSIVE
+		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src" RECURSIVE
 		rm foo/subignorable
 		rmdir foo
+		printf "\n" >>/tmp/ignoretable$$
 		;;
 	    *)
-		echo "not ok - no handler for ${vcs}"
+		echo "Bail out! No handler for ${vcs}"
 		failures=$((failures+1))
 		exit 1
 	esac
@@ -137,8 +155,13 @@ done
 if [ "${failures}" = "0" ]
 then
     echo "ok - ${count} ignore-pattern tests succeeded."
+    if [ "${flagdump}" = yes ]
+    then
+	tapdump /tmp/ignoretable$$
+    fi
 else
     echo "not ok - ${failures} of ${count} ignore-pattern tests failed."
 fi
+rm -f  /tmp/ignoretable$$
 
 #end
