@@ -114,19 +114,20 @@ type VCS struct {
 // inspection.  The "Path match" is yes if * and ? wildcards will
 // *not* match /.
 //
-//           Specials    Path match  !-negation  ignLOOSE
-// git:      *?[^!-]\    yes         yes         yes
-// svn:      *?[^!-]\    yes         yes         no
-// hg:       *[^-]\      yes         no          yes
-// bzr/brz:  *?[^!-]     no          yes         yes
-// cvs:      *?[^!-]\    no          no          no
-// src:      *?[!-]\     yes         yes         no
+//           Specials    Path match  !-negation  ignLOOSE  ignFNMDOT
+// git:      *?[^!-]\    yes         yes         yes       no
+// svn:      *?[^!-]\    yes         yes         no        no
+// hg:       *[^-]\      yes         no          yes       no
+// bzr/brz:  *?[^!-]     no          yes         yes       no
+// cvs:      *?[^!-]\    no          no          no        no
+// src:      *?[!-]\     yes         yes         no        yes
 //
+
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
-// FNM_NOESCAPE off. ignLOOSE applies unless there's an initial or
-// nedial separator, in which case rule B. A / at end of pattern has
-// the special behavior of matching only directories. ** matches any
-// number of directory segments.
+// FNM_NOESCAPE. and FNM_PERIOD off. ignLOOSE applies unless there's
+// an initial or nedial separator, in which case rule B. A / at end of
+// pattern has the special behavior of matching only directories. **
+// matches any number of directory segments.
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
 // or "syntax: glob\n" has been seen most recently. The default is
@@ -194,7 +195,7 @@ const (
 	ignDSTAR                          // Match multiple path segments
 	ignEXPORT                         // Ignore patterns are visible via fast-export only
 	ignFNMPATH                        // Glob wildcards can't match / (POSIX FNM_PATHNAME)
-	ignFNDOT                          // Leading period requires explicit match (POSIX FNM_PERIOD)
+	ignFNMDOT                         // Leading period requires explicit match (POSIX FNM_PERIOD)
 	ignHASH                           // Has native ignorefile comments led by hash
 	ignNEG                            // Ignore patterns allow prefix negation with !
 	ignQUES                           // Allow ? to match any character
@@ -211,7 +212,7 @@ const ignFNMATCH = ignESC | ignGLOB | ignQUES | ignBANG | ignCARET | ignFNMPATH
 // Constants needed in VCS class methods.
 //
 // These are for detecting things that look like revision references.
-// TRThey look a littls strange an the end because we wannt to be able
+// They look a little strange on the end because we wannt to be able
 // to detect them eitrher surrounded by whitespace or at the end of a
 // sentence.
 const tokenNumeric = `\s[0-9]+(\s|[.][^0-9])`
@@ -786,7 +787,7 @@ core
 			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORT | ignFNMATCH | ignNEG, // Through src
+			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT, // Through src
 		},
 		{
 			name:         "rcs",
@@ -811,7 +812,7 @@ core
 			project:      "https://www.gnu.org/software/rcs/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORT | ignFNMATCH | ignNEG, // Through src
+			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT, // Through src
 		},
 		{
 			name:         "src",
@@ -837,7 +838,7 @@ core
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignHASH | ignGLOB | ignBANG | ignQUES | ignNEG | ignESC | ignFNMPATH,
+			flags:        ignHASH | ignGLOB | ignBANG | ignQUES | ignNEG | ignESC | ignFNMPATH | ignFNMDOT,
 		},
 		{
 			// Styleflags may need tweaking for round-tripping

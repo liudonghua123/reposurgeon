@@ -123,6 +123,9 @@ do
 		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "bzr|brz"	ESC
 		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg" NEG
 		rm ignorable
+		touch .alpha
+		ignorecheck --nomatch '[.]alpha' '.alpha' "explicit-leading-dot required" "git|svn|hg|bzr|brz" FNMDOT
+		rm .alpha
 		mkdir foo
 		touch foo/bar
 		if [ "${vcs}" != 'svn' ]
