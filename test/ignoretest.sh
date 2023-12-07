@@ -115,13 +115,13 @@ do
 		# The actual pattern tests start here.
 		ignorecheck 'ignorable' 'ignorable' "basic ignore"
 		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
-		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	QUESTION
+		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	QUES
 		ignorecheck 'ignorab[klm]e' 'ignorable' "check for range syntax"
 		ignorecheck 'ignorab[k-m]e' 'ignorable' "check for dash in ranges"
-		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg" BANGDASH
-		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src" CARETDASH
-		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "bzr|brz"	BACKSLASH
-		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg" NEGATION
+		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg" BANG
+		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src" CARET
+		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "bzr|brz"	ESC
+		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg" NEG
 		rm ignorable
 		mkdir foo
 		touch foo/bar
@@ -131,10 +131,10 @@ do
 		    ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
 		fi
 		ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /" "bzr|brz"
-		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "bzr|brz" FNMPATHNAME
+		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "bzr|brz" FNMPATH
 		rm foo/bar
 		touch foo/subignorable
-		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src" RECURSIVE
+		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src" LOOSE
 		rm foo/subignorable
 		rmdir foo
 		printf "\n" >>/tmp/ignoretable$$

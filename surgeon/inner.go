@@ -10012,7 +10012,7 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	// We cam't do anything useful if the target synta is regexp-based;
 	// pass it through and hope. This could change someday as it is
 	// theoretically possible to translate globs to regexps.
-	if preferred.hasCapability(ignREGEXP) {
+	if preferred.hasCapability(ignRE) {
 		return nil
 	}
 
@@ -10028,14 +10028,14 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	}
 
 	// This has to be checked before we audit for normal negation
-	if !preferred.hasCapability(ignBZRLIKE) && strings.HasPrefix("!!", text) {
+	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
 		return errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
 
 	// Some VCSes also support prefix negation. If that's all that's left after
 	// stripping out basic glob characters, we're fine.
 	if strings.HasPrefix(text, "!") {
-		if preferred.hasCapability(ignNEGATION) {
+		if preferred.hasCapability(ignNEG) {
 			text = text[1:]
 		} else {
 			return errors.New("pattern negation isn't supported")
@@ -10047,11 +10047,11 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 		wildcard string
 		legend   string
 	}{
-		{ignBACKSLASH, `\`, "backslash esaxpes"},
-		{ignQUESTION, `?`, "wildcard"}, // Ugh...could false-match in a range
-		{ignBANGDASH, `!`, "for range negation"},
-		{ignCARETDASH, `^`, "for range negation"},
-		{ignDOUBLESTAR, `**`, "wildcard"},
+		{ignESC, `\`, "backslash esaxpes"},
+		{ignQUES, `?`, "wildcard"}, // Ugh...could false-match in a range
+		{ignBANG, `!`, "for range negation"},
+		{ignCARET, `^`, "for range negation"},
+		{ignDSTAR, `**`, "wildcard"},
 	}
 	for _, exclusion := range exclusions {
 		if strings.Contains(text, exclusion.wildcard) && !preferred.hasCapability(exclusion.flag) {
@@ -10062,24 +10062,24 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 
 	// Most VCSes have #-led commwnts
 	if strings.HasPrefix(text, "#") {
-		if preferred.hasCapability(ignHASHCOMMENT | ignEXPORTED) {
+		if preferred.hasCapability(ignHASH | ignEXPORT) {
 			return nil
 		}
 		return fmt.Errorf("%s does not have # comments", preferred.name)
 	}
 
 	// Reject quirks.
-	if !preferred.hasCapability(ignBZRLIKE) && strings.HasPrefix("RE:", text) {
+	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("RE:", text) {
 		return errors.New("bzr/brz RE: syntax needs to be translated by hand")
 	}
-	if !preferred.hasCapability(ignBZRLIKE) && strings.HasPrefix("!!", text) {
+	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
 		return errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
 	if !preferred.hasCapability(ignSLASHDIRMATCH) && text[len(text)-1] == '/' {
 		return fmt.Errorf("terminating slash is't special in %s", preferred.name)
 	}
 
-	if !preferred.hasCapability(ignFNMPATHNAME) && strings.Contains(text, `*/`) {
+	if !preferred.hasCapability(ignFNMPATH) && strings.Contains(text, `*/`) {
 		return fmt.Errorf("*/ will be surprising in %s", preferred.name)
 	}
 
@@ -10108,7 +10108,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 		// If the target sytem has glob syntax, comment out
 		// the suspect rule. If it has regexp syntax we cam't
 		// that - pass it through and hope for the besy.
-		if preferred.hasCapability(ignREGEXP) {
+		if preferred.hasCapability(ignRE) {
 			return line
 		}
 		// Someday we night try doing nontrivial translation here.

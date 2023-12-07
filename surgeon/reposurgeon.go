@@ -3271,7 +3271,7 @@ func (rs *Reposurgeon) DoMsgin(line string) bool {
 // HelpFilter says "Shut up, golint!"
 func (rs *Reposurgeon) HelpFilter() {
 	rs.helpOutput(`
-[SELECTION] filter {dedos|shell|regex|replace} [TEXT-OR-REGEXP]
+[SELECTION] filter {dedos|shell|regex|replace} [TEXT-OR-RE]
 
 Run blobs, commit comments and committer/author names, or tag comments
 and tag committer names in the selection set through the filter

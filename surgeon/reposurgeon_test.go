@@ -92,7 +92,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 	}
 	tests := []testEntry{
 		// CVS
-		{"#Comment", "cvs", true}, // because ignEXPORTED
+		{"#Comment", "cvs", true}, // because ignEXPORT
 		{"foobar", "cvs", true},
 		{"*.a", "cvs", true},
 		{"!*.a", "cvs", false},
@@ -101,7 +101,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"x[a-z]y", "cvs", true},
 		{"x[!0-9]y", "cvs", true},
 		// SVN
-		{"#Comment", "svn", true}, // because ignEXPORTED
+		{"#Comment", "svn", true}, // because ignEXPORT
 		{"foobar", "svn", true},
 		{"*.a", "svn", true},
 		{"!*.a", "svn", true},

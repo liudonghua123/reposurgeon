@@ -103,9 +103,9 @@ type VCS struct {
 // There are some complications around / relating to which of
 // the following rules is applied:
 //
-// A. Matches apply to subdirectories - ignRECURSIVE.
+// A. Matches apply to subdirectories - ignLOOSE.
 // B. Matches are anchored to the directory where the ignore
-//    file is - ~ignRECURSIVE.
+//    file is - ~ignLOOSE.
 //
 // The presence of a / in a path may change whether A or B applies.
 //
@@ -114,16 +114,16 @@ type VCS struct {
 // inspection.  The "Path match" is yes if * and ? wildcards will
 // *not* match /.
 //
-//           Specials    Path match  !-negation  ignRECURSIVE
+//           Specials    Path match  !-negation  ignLOOSE
 // git:      *?[^!-]\    yes         yes         yes
-// hg:       *[^-]\      yes         no          yes
 // svn:      *?[^!-]\    yes         yes         no
+// hg:       *[^-]\      yes         no          yes
 // bzr/brz:  *?[^!-]     no          yes         yes
 // cvs:      *?[^!-]\    no          no          no
 // src:      *?[!-]\     yes         yes         no
 //
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
-// FNM_NOESCAPE off. ignRECURSIVE applies unless there's an initial or
+// FNM_NOESCAPE off. ignLOOSE applies unless there's an initial or
 // nedial separator, in which case rule B. A / at end of pattern has
 // the special behavior of matching only directories. ** matches any
 // number of directory segments.
@@ -150,7 +150,7 @@ type VCS struct {
 // pattern mechanisms no longer apply to it."
 //
 // bzr/brz allows only one ignore file, at the repository root.
-// ignRECURSIVE, but an example in the documentation shows that
+// ignLOOSE, but an example in the documentation shows that
 // embedded / anchors the pattern to the repository root
 // directory. The wilcard ** to match any sequence of path segments is
 // supported; there's also a unique !!  syntax "Patterns prefixed with
@@ -186,27 +186,27 @@ type VCS struct {
 // description.
 
 const (
-	ignBACKSLASH     uint = 1 << iota // Backslash escape glob characters
-	ignBANGDASH                       // Negate rangest with !
-	ignBASEGLOB                       // Basic globbing: *[-]
-	ignBZRLIKE                        // bzr or its clone, brz; RE: syntax
-	ignCARETDASH                      // Negate rangest with !
-	ignDOUBLESTAR                     // Match multiple path segments
-	ignEXPORTED                       // Ignore patterns are visible via fast-export only
-	ignFNMPATHNAME                    // Glob wildcards can't match /
-	ignFNMPERIOD                      // Leading period requires explicit match
-	ignHASHCOMMENT                    // Has native ignorefile comments led by hash
-	ignNEGATION                       // Ignore patterns allow prefix negation with !
-	ignQUESTION                       // Allow ? to match any character
-	ignRECURSIVE                      // Ignore patterns apply to subdirectories
-	ignREGEXP                         // Patterns are full regular expressions
-	ignSLASHANCHORS                   // A . changes matching from rexursive to abchored
+	ignESC           uint = 1 << iota // Backslash escape glob characters
+	ignBANG                           // Negate rangest with !
+	ignGLOB                           // Basic globbing: *[-]
+	ignBZR                            // bzr or its clone, brz; RE: syntax
+	ignCARET                          // Negate rangest with !
+	ignDSTAR                          // Match multiple path segments
+	ignEXPORT                         // Ignore patterns are visible via fast-export only
+	ignFNMPATH                        // Glob wildcards can't match / (POSIX FNM_PATHNAME)
+	ignFNDOT                          // Leading period requires explicit match (POSIX FNM_PERIOD)
+	ignHASH                           // Has native ignorefile comments led by hash
+	ignNEG                            // Ignore patterns allow prefix negation with !
+	ignQUES                           // Allow ? to match any character
+	ignLOOSE                          // Ignore patterns apply to subdirectories
+	ignRE                             // Patterns are full regular expressions
+	ignSLASHANCHORS                   // A / changes matching from LOOSE to anchored
 	ignSLASHDIRMATCH                  // Terminal slash matches directories
 	ignWACKYSPACE                     // Spaces are treated as pattern separators
 )
 
 // These capabilities come with GNU fnmatch(3)
-const ignFNMATCH = ignBACKSLASH | ignBASEGLOB | ignQUESTION | ignBANGDASH | ignCARETDASH | ignFNMPATHNAME
+const ignFNMATCH = ignESC | ignGLOB | ignQUES | ignBANG | ignCARET | ignFNMPATH
 
 // Constants needed in VCS class methods.
 //
@@ -322,7 +322,7 @@ func vcsInit() {
 			project:      "http://git-scm.com/",
 			notes:        "The authormap is not required, but will be used if present.",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignFNMATCH | ignNEGATION | ignDOUBLESTAR | ignRECURSIVE | ignSLASHANCHORS | ignSLASHDIRMATCH,
+			flags:        ignHASH | ignFNMATCH | ignNEG | ignDSTAR | ignLOOSE | ignSLASHANCHORS | ignSLASHDIRMATCH,
 			dfltignores:  "",
 		},
 		{
@@ -353,7 +353,7 @@ func vcsInit() {
 			project:      "http://bazaar.canonical.com/en/",
 			notes:        "Requires the bzr-fast-import plugin.",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignBASEGLOB | ignQUESTION | ignBANGDASH | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
+			flags:        ignHASH | ignGLOB | ignQUES | ignBANG | ignNEG | ignLOOSE | ignBZR | ignDSTAR | ignSLASHANCHORS,
 			dfltignores: `
 # A simulation of bzr default ignores, generated by reposurgeon.
 *.a
@@ -397,7 +397,7 @@ bzr-orphans
 			cookies:      reMake(tokenNumeric),
 			notes:        "Breezy capability is not well tested.",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignBASEGLOB | ignQUESTION | ignNEGATION | ignRECURSIVE | ignBZRLIKE | ignDOUBLESTAR | ignSLASHANCHORS,
+			flags:        ignHASH | ignGLOB | ignQUES | ignNEG | ignLOOSE | ignBZR | ignDSTAR | ignSLASHANCHORS,
 			dfltignores: `
  # A simulation of brz default ignores, generated by reposurgeon.
  *.a
@@ -440,7 +440,7 @@ bzr-orphans
 branch is renamed to 'master'.
 `,
 			idformat:    "%s",
-			flags:       ignHASHCOMMENT | ignBASEGLOB | ignBACKSLASH | ignCARETDASH | ignRECURSIVE | ignDOUBLESTAR,
+			flags:       ignHASH | ignGLOB | ignESC | ignCARET | ignLOOSE | ignDSTAR,
 			dfltignores: "",
 		},
 		{
@@ -467,7 +467,7 @@ branch is renamed to 'master'.
 			project:      "http://darcs.net/",
 			notes:        "Assumes no boringfile preference has been set.",
 			idformat:     "%s",
-			flags:        ignREGEXP,
+			flags:        ignRE,
 			dfltignores: `
 # A simulation of darcs default ignores, generated by reposurgeon.
 # haskell (ghc) interfaces
@@ -593,7 +593,7 @@ core
 				project:      "http://pijul.org/",
 				notes:        "No importer/exporter pair yet.",
 				idformat:     "%s",
-				flags:        ignREGEXP,
+				flags:        ignRE,
 				dfltignores:  ``,
 			},
 		*/
@@ -620,7 +620,7 @@ core
 			project:      "http://www.monotone.ca/",
 			notes:        "Exporter is buggy, occasionally emitting negative timestamps.",
 			idformat:     "%s",
-			flags:        ignREGEXP,
+			flags:        ignRE,
 			dfltignores: `
 *.a
 *.so
@@ -684,7 +684,7 @@ _darcs
 			notes:        "Run from the repository, not a checkout directory.",
 			checkignore:  ".svn",
 			idformat:     "r%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignNEGATION,
+			flags:        ignEXPORT | ignFNMATCH | ignNEG,
 			dfltignores: `# A simulation of Subversion default ignores, generated by reposurgeon.
 *.o
 *.lo
@@ -731,7 +731,7 @@ _darcs
 			notes:        "Requires cvs-fast-export.",
 			checkignore:  "CVS",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignWACKYSPACE,
+			flags:        ignEXPORT | ignFNMATCH | ignWACKYSPACE,
 			dfltignores: `
 # A simulation of cvs default ignores, generated by reposurgeon.
 tags
@@ -786,7 +786,7 @@ core
 			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignNEGATION, // Through src
+			flags:        ignEXPORT | ignFNMATCH | ignNEG, // Through src
 		},
 		{
 			name:         "rcs",
@@ -811,7 +811,7 @@ core
 			project:      "https://www.gnu.org/software/rcs/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignNEGATION, // Through src
+			flags:        ignEXPORT | ignFNMATCH | ignNEG, // Through src
 		},
 		{
 			name:         "src",
@@ -837,7 +837,7 @@ core
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignBASEGLOB | ignBANGDASH | ignQUESTION | ignNEGATION | ignBACKSLASH | ignFNMPATHNAME,
+			flags:        ignHASH | ignGLOB | ignBANG | ignQUES | ignNEG | ignESC | ignFNMPATH,
 		},
 		{
 			// Styleflags may need tweaking for round-tripping
@@ -864,7 +864,7 @@ core
 			project:      "https://www.bitkeeper.com/",
 			notes:        "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
 			idformat:     "%s",
-			flags:        ignBASEGLOB | ignRECURSIVE | ignSLASHANCHORS,
+			flags:        ignGLOB | ignLOOSE | ignSLASHANCHORS,
 		},
 	}
 
