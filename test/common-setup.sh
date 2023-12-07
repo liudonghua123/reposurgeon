@@ -210,7 +210,8 @@ repository() {
 	    # we can ignore files.)
 	    case "${repotype}" in
 		git) git status --porcelain -uall;;
-		svn|hg|src) "${repotype}" status;;
+		svn) svn status | grep -v '  *M  *[.]';;
+		hg|src) "${repotype}" status;;
 		bzr|brz) "${repotype}" status -S | grep -v '/$';;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
