@@ -112,23 +112,23 @@ type VCS struct {
 // The presence of a / in a path may change whether A or B applies,
 //
 // Glob behavior of all of the except cvs is following specials is
-// verified by our test suite. cvs behavior js checked by code
-// inspection.  The "Path match" is yes if * and ? will *not* match /.
+// verified by our test suite. CVS behavior is checked by code
+// inspection.  The "Path match" is yes if * and ? wildcards will
+// *not* match /.
 //
-//           Specials    Path match.
-// git:      *?[!^-]\    yes
-// hg:       *[^-]\      yes
-// svn:      *?[!^-]\    yes
-// bzr/brz:  *?[!^-]     no
-// cvs:      ?*[!^-]\    no
-// src:      ?*[^-]\     yes
+//           Specials    Path match  !-negation
+// git:      *?[!^-]\    yes         yes
+// hg:       *[^-]\      yes         no
+// svn:      *?[!^-]\    yes         yes
+// bzr/brz:  *?[!^-]     no          yes
+// cvs:      ?*[!^-]\    no          no
+// src:      ?*[^-]\     yes         yes
 //
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
-// FNM_NOESCAPE off; thus rule C.  ! negation is supported. Rule A
-// applied unless there's an initial or nedial separator, in which
-// case rule B. A / at end of pattern has the special behavior of
-// matching only directories. ** matches any number of directory
-// segments.
+// FNM_NOESCAPE off; thus rule C. Rule A applied unless there's an
+// initial or nedial separator, in which case rule B. A / at end of
+// pattern has the special behavior of matching only directories. **
+// matches any number of directory segments.
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
 // or "syntax: glob\n" has been seen most recently. The default is
@@ -140,26 +140,26 @@ type VCS struct {
 // CVS working copy to Subversion, you can directly migrate the ignore
 // patterns by using the .cvsignore file as input to the svn propset
 // command."; however this is not true as the implied settings of
-// FNM_PATHNAME and FNM_PERIOD differ between glob(3) and
-// CVS. svn:global-ignore properties (introduced in Subversion 1.8)
-// set in the repository root apply to subdirectories; svn:ignore
-// properties do not. Just to complicate matters, 1.8 and later have
-// svn:global-ignores defaults identical to the previous
-// global-ignores defaults...and "The ignore patterns in the
-// svn:global-ignores property may be delimited with any whitespace
-// (similar to the global-ignores runtime configuration option), not
-// just newlines (as with the svn:ignore property)."!  Also: "Once an
-// object is under Subversion's control, the ignore pattern mechanisms
-// no longer apply to it."
+// FNM_PATHNAME and FNM_PERIOD differ between glob(3) and CVS. Prefix
+// negation with ! is supported but not documented. svn:global-ignore
+// properties (introduced in Subversion 1.8) set in the repository
+// root apply to subdirectories; svn:ignore properties do not. Just to
+// complicate matters, 1.8 and later have svn:global-ignores defaults
+// identical to the previous global-ignores defaults...and "The ignore
+// patterns in the svn:global-ignores property may be delimited with
+// any whitespace (similar to the global-ignores runtime configuration
+// option), not just newlines (as with the svn:ignore property)."!
+// Also: "Once an object is under Subversion's control, the ignore
+// pattern mechanisms no longer apply to it."
 //
-// bzr/brz has negation with !.  There can be only one ignore file, at
-// the repository root.  Rule A, but an example in the documentation
-// shows that embedded / anchors the pattern to the repository root
-// directory. The wilcard ** to match any sequence of path segments is
-// supported; there's also a unique !!  syntax "Patterns prefixed with
-// '!!' act as regular ignore patterns, but have highest precedence,
-// even over the '!'  exception patterns.". An RE: prefix on a pattern
-// line means it should be interpreted as a regular expression.
+// bzr/brz allows only one ignore file, at the repository root.  Rule
+// A, but an example in the documentation shows that embedded /
+// anchors the pattern to the repository root directory. The wilcard
+// ** to match any sequence of path segments is supported; there's
+// also a unique !!  syntax "Patterns prefixed with '!!' act as
+// regular ignore patterns, but have highest precedence, even over the
+// '!'  exception patterns.". An RE: prefix on a pattern line means it
+// should be interpreted as a regular expression.
 //
 // cvs uses a local workalike of fnmatch(3).  The FNM_PATHNAME,
 // FNM_NOESCAPE, and FNM_PERIOD flags are *not* set.  A line consisting of
@@ -170,7 +170,8 @@ type VCS struct {
 // darcs and mtn use full regexps rather than any version of
 // fnmatch(3)/glob(3)
 //
-// src uses Python's glob library and inherits those behaviors.
+// src uses Python's glob library and inherits those behaviors. It
+// adds support fotr prefix nehation with !.
 //
 // bk doesn't document its ignore syntax at all and the examples only
 // show *. Since we never expect to export *to* bk, we'll make the
@@ -207,8 +208,8 @@ const (
 	ignWACKYSPACE                     // Spaces are treated as pattern separators
 )
 
-// These capabilities come with GNU fmnatch(3)
-const ignFNMATCH = ignBACKSLASH | ignBASEGLOB | ignQUESTION | ignBANGDASH | ignCARETDASH
+// These capabilities come with GNU fnmatch(3)
+const ignFNMATCH = ignBACKSLASH | ignBASEGLOB | ignQUESTION | ignBANGDASH | ignCARETDASH | ignFNMPATHNAME
 
 // Constants needed in VCS class methods.
 //
@@ -324,7 +325,7 @@ func vcsInit() {
 			project:      "http://git-scm.com/",
 			notes:        "The authormap is not required, but will be used if present.",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignFNMATCH | ignFNMPATHNAME | ignNEGATION | ignDOUBLESTAR | ignSLASHANCHORS | ignSLASHDIRMATCH,
+			flags:        ignHASHCOMMENT | ignFNMATCH | ignNEGATION | ignDOUBLESTAR | ignSLASHANCHORS | ignSLASHDIRMATCH,
 			dfltignores:  "",
 		},
 		{
@@ -686,7 +687,7 @@ _darcs
 			notes:        "Run from the repository, not a checkout directory.",
 			checkignore:  ".svn",
 			idformat:     "r%s",
-			flags:        ignEXPORTED | ignBASEGLOB | ignQUESTION | ignFNMPATHNAME | ignRECURSIVE,
+			flags:        ignEXPORTED | ignFNMATCH | ignNEGATION | ignRECURSIVE,
 			dfltignores: `# A simulation of Subversion default ignores, generated by reposurgeon.
 *.o
 *.lo
@@ -788,7 +789,7 @@ core
 			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignFNMPATHNAME, // Through src
+			flags:        ignEXPORTED | ignFNMATCH | ignNEGATION, // Through src
 		},
 		{
 			name:         "rcs",
@@ -813,7 +814,7 @@ core
 			project:      "https://www.gnu.org/software/rcs/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORTED | ignFNMATCH | ignFNMPATHNAME, // Through src
+			flags:        ignEXPORTED | ignFNMATCH | ignNEGATION, // Through src
 		},
 		{
 			name:         "src",
@@ -839,7 +840,7 @@ core
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignHASHCOMMENT | ignBASEGLOB | ignBANGDASH | ignQUESTION | ignBACKSLASH | ignFNMPATHNAME,
+			flags:        ignHASHCOMMENT | ignBASEGLOB | ignBANGDASH | ignQUESTION | ignNEGATION | ignBACKSLASH | ignFNMPATHNAME,
 		},
 		{
 			// Styleflags may need tweaking for round-tripping

@@ -104,6 +104,7 @@ do
 		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg"	# ignBANGDASH
 		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src"	# ignCARETDASH
 		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "b[rz][rz]"	# ignBACKSLASH
+		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg" # ignNEGATION
 		rm ignorable
 		mkdir foo
 		touch foo/bar

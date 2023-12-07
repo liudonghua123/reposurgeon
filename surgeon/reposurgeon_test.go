@@ -104,11 +104,11 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"#Comment", "svn", true}, // because ignEXPORTED
 		{"foobar", "svn", true},
 		{"*.a", "svn", true},
-		{"!*.a", "svn", false},
+		{"!*.a", "svn", true},
 		{".py[co]", "svn", true},
 		{".netrc~", "svn", true},
 		{"x[a-z]y", "svn", true},
-		{"x[!0-9]y", "svn", false},
+		{"x[!0-9]y", "svn", true},
 		// bzr/brz
 		{"#Comment", "bzr", true},
 		{"foobar", "bzr", true},
@@ -131,7 +131,7 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"#Comment", "src", true},
 		{"foobar", "src", true},
 		{"*.a", "src", true},
-		{"!*.a", "src", false},
+		{"!*.a", "src", true},
 		{".py[co]", "src", true},
 		{".netrc~", "src", true},
 		{"x[a-z]y", "src", true},

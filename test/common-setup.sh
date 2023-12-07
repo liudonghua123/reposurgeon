@@ -182,11 +182,12 @@ repository() {
 	    case "${repotype}" in
 		brz) ignorefile=".bzrignore";;
 	    esac
+	    LF='
+'
 	    ;;
 	ignore)
 	    # Clear or append to the ignore file. In Subversion, do the equivalent propset.
-	    # Note: ignore calls are not cumulative, the set of ignores gets replaced each
-	    # time this is called.
+	    # Note: ignore calls are cumulative.
 	    rpattern="$1"
 	    if [ "${repotype}" = "svn" ]
 	    then
@@ -199,7 +200,7 @@ repository() {
 		then
 		    rm -f "${ignorefile}"
 		else
-		    echo "${rpattern}" >>"${ignorefile}"
+		    echo "${rpattern}" | tr ' ' "${LF}" >>"${ignorefile}"
 		fi
 	    fi
 	    ;;
@@ -228,8 +229,7 @@ repository() {
 	    "${repotype}" add -q "${file}" >/dev/null 2>&1 || :
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
-	    LF='
-'
+
 	    case "${repotype}" in
 		git)
 		    # Git seems to reject timestamps with a leading zero
