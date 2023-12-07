@@ -89,23 +89,6 @@ type VCS struct {
 // fnmatch(3) with FNM_NOESCAPE unset but FNM_PATHNAME and FNM_PERIOD
 // set. Some VCSes (darcs, mtn) use full regular expressions. One (hg)
 // defaults to globbing but can use either.
-
-//
-// Alas, generic glob syntax has many variations. After writing test
-// and examing code, we distinguish the following capabilities:
-//
-// 1. ignBASEGLOB (shell globbing): *[-], no ?, no ! or ^ for range negation.
-//
-// 2. ignBACKSLASH: \ escapes glob characters
-//
-// 3. ignQUESTION: ? for any character.
-
-// 2. ignFNMATCH (find globbing): Add ? and !-negation
-// available in ranges and backslash escaping (). This is
-// POSIX fnmatch(3) regexps, though you have to dig pretty hard to
-// find the part of the standard that describes dash ranges.
-//
-// 3. ignNEGATION: Add leading negation
 //
 // Predicting features from knowing which library is used isn't
 // simple, because POSIX glob(3) optionally has features that
@@ -128,33 +111,40 @@ type VCS struct {
 //
 // The presence of a / in a path may change whether A or B applies,
 //
-// Things we know about specific systems:
+// Glob behavior of all of the except cvs is following specials is
+// verified by our test suite. cvs behavior js checked by code
+// inspection.  The "Path match" is yes if * and ? will *not* match /.
+//
+//           Specials    Path match.
+// git:      *?[!^-]\    yes
+// hg:       *[^-]\      yes
+// svn:      *?[!^-]\    yes
+// bzr/brz:  *?[!^-]     no
+// cvs:      ?*[!^-]\    no
+// src:      ?*[^-]\     yes
 //
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
-// FNM_NOESCAPE off; thus rule C. Wildcard characters are ?*[!^-], and
-// !~ negation is supported (all tested). Role A applied unless
-// there's an initial or nedial separator, in which case rule B. A /
-// at end of pattern has the special behavior of matching only
-// directories. ** matches any number of directory segments.
+// FNM_NOESCAPE off; thus rule C.  ! negation is supported. Rule A
+// applied unless there's an initial or nedial separator, in which
+// case rule B. A / at end of pattern has the special behavior of
+// matching only directories. ** matches any number of directory
+// segments.
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
-// or "syntax: glob\n" has been seen most recently. The default globs
-// (tested).  Wildcards are *[^-]; [^-] are not documented but are
-// tested. The documentation specifies that patterns are not rooted,
-// so rule A.  The ** wildcard is recognized. Patterns which match a
-// directory are treated as if followed by **.
+// or "syntax: glob\n" has been seen most recently. The default is
+// globs (tested). The documentation specifies that patterns are not
+// rooted, so rule A.  The ** wildcard is recognized. Patterns which
+// match a directory are treated as if followed by **.
 //
 // svn documents that it uses glob(3) and says "if you are migrating a
 // CVS working copy to Subversion, you can directly migrate the ignore
 // patterns by using the .cvsignore file as input to the svn propset
 // command."; however this is not true as the implied settings of
 // FNM_PATHNAME and FNM_PERIOD differ between glob(3) and
-// CVS. Wildcards are ?*[-], it is unknown whether range negation or
-// backslash are actually supported, and unknown whether / changes
-// matching behavior. svn:global-ignore properties (introduced in
-// Subversion 1.8) set in the repository root apply to subdirectories;
-// svn:ignore properties do not. Just to complicate matters, 1.8 and
-// later have svn:global-ignores defaults identical to the previous
+// CVS. svn:global-ignore properties (introduced in Subversion 1.8)
+// set in the repository root apply to subdirectories; svn:ignore
+// properties do not. Just to complicate matters, 1.8 and later have
+// svn:global-ignores defaults identical to the previous
 // global-ignores defaults...and "The ignore patterns in the
 // svn:global-ignores property may be delimited with any whitespace
 // (similar to the global-ignores runtime configuration option), not
@@ -162,32 +152,25 @@ type VCS struct {
 // object is under Subversion's control, the ignore pattern mechanisms
 // no longer apply to it."
 //
-// bzr/brz support shell-style globbing; wildcards are *?[!^-] (tested).
-// Backlash escaping is not supported (tested).
-// Negation with ! is supported.  There can be only one ignore file,
-// at the repository root.  Rule A, but an example in the
-// documentation shows that embedded / anchors the pattern to the
-// repository root directory.  *?  cannot match / (tested).
-// Backlash is supported (tested). The wilcard ** to match any
-// sequence of path segments is supported; there's also a unique !!
-// syntax "Patterns prefixed with '!!' act as regular ignore patterns,
-// but have highest precedence, even over the '!'  exception
-// patterns.". An RE: prefix on a pattern line means it should be
-// interpreted as a regular expression.
+// bzr/brz has negation with !.  There can be only one ignore file, at
+// the repository root.  Rule A, but an example in the documentation
+// shows that embedded / anchors the pattern to the repository root
+// directory. The wilcard ** to match any sequence of path segments is
+// supported; there's also a unique !!  syntax "Patterns prefixed with
+// '!!' act as regular ignore patterns, but have highest precedence,
+// even over the '!'  exception patterns.". An RE: prefix on a pattern
+// line means it should be interpreted as a regular expression.
 //
-// cvs uses a local workalike of fnmatch(3). Wild cards are ?*[!^-]
-// with the FNM_PATHNAME, FNM_NOESCAPE, and FNM_PERIOD flags are *not*
-// set; thus, specials can be escaped with \ and ? *can* match a /.
-// A line consisting of a single ! clears all ignore patterns.
-// These properties have been checked by examination of the source code.
-// "The patterns found in .cvsignore are only valid for the directory
-// that contains them, not for any sub-directories."   Rules B & ~C.
+// cvs uses a local workalike of fnmatch(3).  The FNM_PATHNAME,
+// FNM_NOESCAPE, and FNM_PERIOD flags are *not* set.  A line consisting of
+// a single ! clears all ignore patterns. "The patterns found in
+// .cvsignore are only valid for the directory that contains them, not
+// for any sub-directories."  Rules B & ~C.
 //
 // darcs and mtn use full regexps rather than any version of
 // fnmatch(3)/glob(3)
 //
-// src uses Python's glob library.  Its wildcard characters are ?*[!-]
-// (tested).  *? doesn't match / (tested).
+// src uses Python's glob library and inherits those behaviors.
 //
 // bk doesn't document its ignore syntax at all and the examples only
 // show *. Since we never expect to export *to* bk, we'll make the
