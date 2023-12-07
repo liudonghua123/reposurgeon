@@ -108,14 +108,10 @@ do
 		mkdir foo
 		touch foo/bar
 		ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
-		# These tests fail because the git and hg status commands
-		# do things that don't fit the test machinery's model.
-		# We might be able to get somewhere with output trimming.
-		if [ "${vcs}" != "hg" ] && [ "${vcs}" != "bzr" ] && [ "${vcs}" != "brz" ]
-		then
-		    ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /"
-		    ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /"
-		fi
+		ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /" "b[rz][rz]"
+		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "b[rz][rz]"
+		rm foo/bar
+		rmdir foo
 		;;
 	    *)
 		echo "not ok -- no handler for $vcs"
