@@ -55,10 +55,11 @@ asciidoctor installed.
 The repotool mirror code needs rsync.
 
 GNU make is required for the regression tests, but not for running the
-code.  golint, shellcheck, mercurial, and cvs are required for
+code.  golint, shellcheck, mercurial, bzr, brz, and cvs are required for
 the full regression tests; only a subset of the tests will be run in
 their absence.  The cvs-fast-export and Subversion svnadmin importer
-are also required for testing.
+are also required for testing. If your versions of these are not
+up-to-date you may see spurious test failures.
 
 gnuplot is only required if you're planning to try performance-tuning
 with repobench.

@@ -5,7 +5,6 @@ apt-get update -qy && apt-get install -qy --no-install-recommends \
 			      brz \
 			      bzr \
 			      cvs \
-			      cvs-fast-export \
 			      darcs \
 			      golang \
 			      golint \
