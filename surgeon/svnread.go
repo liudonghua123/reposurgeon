@@ -2075,7 +2075,7 @@ func svnLinkFixups(ctx context.Context, sp *StreamParser, options stringSet, bat
 	// Phase 7:
 	// The branches we colored in during the last phase almost
 	// completely define the topology of the DAG, except for the
-	// sttachment points of their roots. This can be tricky brcause
+	// attachment points of their roots. This can be tricky because
 	// a branch root revision can be the target of multiple copies
 	// from different revision and they can be a mix of directory
 	// and file copies.
