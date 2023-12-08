@@ -1430,8 +1430,8 @@ func svnGenerateCommits(ctx context.Context, sp *StreamParser, options stringSet
 	// svn:global-ignores). Their content will be concatenated with built-in SVN
 	// ignore patterns to generate .gitignore files.
 	type ignoreProp struct {
-		propname string
-		global   bool
+		propname string // Property name
+		global   bool   // Should it be translated as an unanchored pattern?
 	}
 	ignoreProps := []ignoreProp{{"svn:ignore", false}, {"svn:global-ignores", true}}
 	propCount := len(ignoreProps)

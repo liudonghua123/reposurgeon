@@ -13,7 +13,7 @@
 # ignore patterns only apply to the commands "update", "import" and
 # release; an ifgnored files's CVD status report does not change.
 
-systems="git svn hg bzr brz src"
+systems="brz bzr git hg src svn"
 verbose=no
 restrict=""
 flagdump=no
