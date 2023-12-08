@@ -10075,7 +10075,7 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
 		return errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
-	if !preferred.hasCapability(ignSLASHDIRMATCH) && text[len(text)-1] == '/' {
+	if !preferred.hasCapability(ignDIRMATCH) && text[len(text)-1] == '/' {
 		return fmt.Errorf("terminating slash is't special in %s", preferred.name)
 	}
 

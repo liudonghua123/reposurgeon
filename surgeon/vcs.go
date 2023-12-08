@@ -114,13 +114,13 @@ type VCS struct {
 // inspection.  The "Path match" is yes if * and ? wildcards will
 // *not* match /.
 //
-//           Specials    Path match  !-negation  ignLOOSE  ignFNMDOT  ignDSTAR
-// git:      *?[^!-]\    yes         yes         yes       no         yes
-// svn:      *?[^!-]\    yes         yes         no        no         no
-// hg:       *[^-]\      yes         no          yes       no         no
-// bzr/brz:  *?[^!-]     no          yes         yes       no         yes
-// cvs:      *?[^!-]\    no          no          no        no         yes
-// src:      *?[!-]\     yes         yes         no        yes        no
+//           Specials    Path match  !-negation  ignLOOSE  ignFNMDOT  ignDSTAR  ignASKASH  ignDIRMATCH
+// git:      *?[^!-]\    yes         yes         yes       no         yes       yes        yes
+// svn:      *?[^!-]\    yes         yes         no        no         no        yes        no
+// hg:       *[^-]\      yes         no          yes       no         no        no         yes
+// bzr/brz:  *?[^!-]     no          yes         yes       no         yes       no         no
+// cvs:      *?[^!-]\    no          no          no        no         yes       no         no
+// src:      *?[!-]\     yes         yes         no        yes        no        yes        nk
 //
 
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
@@ -130,8 +130,7 @@ type VCS struct {
 //
 // hg uses globbing or regexps depending on whether "syntax: regexp\n"
 // or "syntax: glob\n" has been seen most recently. The default is
-// globs (tested). Patterns which match a directory exclude the
-// entire directory.
+// globs (tested).
 //
 // svn documents that it uses glob(3) and says "if you are migrating a
 // CVS working copy to Subversion, you can directly migrate the ignore
@@ -150,11 +149,9 @@ type VCS struct {
 // pattern mechanisms no longer apply to it."
 //
 // bzr/brz allows only one ignore file, at the repository root.
-// ignLOOSE, but an example in the documentation shows that embedded /
-// anchors the pattern to the repository root directory. There's a
-// unique !!  syntax "Patterns prefixed with '!!' act as regular
-// ignore patterns, but have highest precedence, even over the '!'
-// exception patterns.". An RE: prefix on a pattern line means it
+// There's a unique !!  syntax "Patterns prefixed with '!!' act as
+// regular ignore patterns, but have highest precedence, even over the
+// '!'  exception patterns.". An RE: prefix on a pattern line means it
 // should be interpreted as a regular expression.
 //
 // cvs uses a local workalike of fnmatch(3).  The FNM_PATHNAME,
@@ -185,23 +182,23 @@ type VCS struct {
 // description.
 
 const (
-	ignESC           uint = 1 << iota // Backslash escape glob characters
-	ignBANG                           // Negate rangest with !
-	ignGLOB                           // Basic globbing: *[-]
-	ignBZR                            // bzr or its clone, brz; RE: syntax
-	ignCARET                          // Negate rangest with !
-	ignDSTAR                          // Match multiple path segments
-	ignEXPORT                         // Ignore patterns are visible via fast-export only
-	ignFNMPATH                        // Glob wildcards can't match / (POSIX FNM_PATHNAME)
-	ignFNMDOT                         // Leading period requires explicit match (POSIX FNM_PERIOD)
-	ignHASH                           // Has native ignorefile comments led by hash
-	ignNEG                            // Ignore patterns allow prefix negation with !
-	ignQUES                           // Allow ? to match any character
-	ignLOOSE                          // Ignore patterns apply to subdirectories
-	ignRE                             // Patterns are full regular expressions
-	ignSLASHANCHORS                   // A / changes matching from LOOSE to anchored
-	ignSLASHDIRMATCH                  // Terminal slash matches directories
-	ignWACKYSPACE                     // Spaces are treated as pattern separators
+	ignESC        uint = 1 << iota // Backslash escape glob characters
+	ignBANG                        // Negate rangest with !
+	ignGLOB                        // Basic globbing: *[-]
+	ignBZR                         // bzr or its clone, brz; RE: syntax
+	ignCARET                       // Negate rangest with !
+	ignDSTAR                       // Match multiple path segments
+	ignEXPORT                      // Ignore patterns are visible via fast-export only
+	ignFNMPATH                     // Glob wildcards can't match / (POSIX FNM_PATHNAME)
+	ignFNMDOT                      // Leading period requires explicit match (POSIX FNM_PERIOD)
+	ignHASH                        // Has native ignorefile comments led by hash
+	ignNEG                         // Ignore patterns allow prefix negation with !
+	ignQUES                        // Allow ? to match any character
+	ignLOOSE                       // Ignore patterns apply to subdirectories
+	ignRE                          // Patterns are full regular expressions
+	ignASLASH                      // A / changes matching from LOOSE to anchored
+	ignDIRMATCH                    // Terminal slash matches directories
+	ignWACKYSPACE                  // Spaces are treated as pattern separators
 )
 
 // These capabilities come with GNU fnmatch(3)
@@ -321,7 +318,7 @@ func vcsInit() {
 			project:      "http://git-scm.com/",
 			notes:        "The authormap is not required, but will be used if present.",
 			idformat:     "%s",
-			flags:        ignHASH | ignFNMATCH | ignNEG | ignDSTAR | ignLOOSE | ignSLASHANCHORS | ignSLASHDIRMATCH,
+			flags:        ignHASH | ignFNMATCH | ignNEG | ignDSTAR | ignLOOSE | ignASLASH | ignDIRMATCH,
 			dfltignores:  "",
 		},
 		{
@@ -352,7 +349,7 @@ func vcsInit() {
 			project:      "http://bazaar.canonical.com/en/",
 			notes:        "Requires the bzr-fast-import plugin.",
 			idformat:     "%s",
-			flags:        ignHASH | ignGLOB | ignQUES | ignBANG | ignNEG | ignLOOSE | ignBZR | ignDSTAR | ignSLASHANCHORS,
+			flags:        ignHASH | ignGLOB | ignQUES | ignBANG | ignNEG | ignLOOSE | ignBZR | ignDSTAR | ignASLASH,
 			dfltignores: `
 # A simulation of bzr default ignores, generated by reposurgeon.
 *.a
@@ -396,7 +393,7 @@ bzr-orphans
 			cookies:      reMake(tokenNumeric),
 			notes:        "Breezy capability is not well tested.",
 			idformat:     "%s",
-			flags:        ignHASH | ignGLOB | ignQUES | ignNEG | ignLOOSE | ignBZR | ignDSTAR | ignSLASHANCHORS,
+			flags:        ignHASH | ignGLOB | ignQUES | ignNEG | ignLOOSE | ignBZR | ignDSTAR | ignASLASH,
 			dfltignores: `
  # A simulation of brz default ignores, generated by reposurgeon.
  *.a
@@ -683,7 +680,7 @@ _darcs
 			notes:        "Run from the repository, not a checkout directory.",
 			checkignore:  ".svn",
 			idformat:     "r%s",
-			flags:        ignEXPORT | ignFNMATCH | ignNEG,
+			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignASLASH,
 			dfltignores: `# A simulation of Subversion default ignores, generated by reposurgeon.
 *.o
 *.lo
@@ -785,7 +782,7 @@ core
 			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT, // Through src
+			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT | ignASLASH, // Through src
 		},
 		{
 			name:         "rcs",
@@ -810,7 +807,7 @@ core
 			project:      "https://www.gnu.org/software/rcs/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT, // Through src
+			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT | ignASLASH, // Through src
 		},
 		{
 			name:         "src",
@@ -836,7 +833,7 @@ core
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignHASH | ignGLOB | ignBANG | ignQUES | ignNEG | ignESC | ignFNMPATH | ignFNMDOT,
+			flags:        ignHASH | ignGLOB | ignBANG | ignQUES | ignNEG | ignESC | ignFNMPATH | ignASLASH | ignFNMDOT,
 		},
 		{
 			// Styleflags may need tweaking for round-tripping
@@ -863,7 +860,7 @@ core
 			project:      "https://www.bitkeeper.com/",
 			notes:        "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
 			idformat:     "%s",
-			flags:        ignGLOB | ignLOOSE | ignSLASHANCHORS,
+			flags:        ignGLOB | ignLOOSE | ignASLASH,
 		},
 	}
 

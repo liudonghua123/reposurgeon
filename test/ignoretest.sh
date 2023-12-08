@@ -142,6 +142,8 @@ do
 		mkdir -p foo/x/y
 		touch foo/x/y/bar
 		ignorecheck 'foo/**/bar' 'bar' "check ** wildcard" "svn|hg|src" DSTAR
+		ignorecheck --nomatch 'y/bar' 'bar' "check whether / forces anchoring" "hg|bzr|brz" ASLASH
+		ignorecheck 'foo/x' 'bar' "check whether directory match is a wildcard" "svn|src" DIRMATCH
 		rm -fr foo
 		printf "\n" >>/tmp/ignoretable$$
 		;;
