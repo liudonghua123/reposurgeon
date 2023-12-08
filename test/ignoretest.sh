@@ -1,9 +1,11 @@
 #!/bin/sh
 ## Test ignore features
 #
-# Outputs one line of TAP on success.  On failures, muktiple TAP lines
+# Outputs one line of TAP on success.  On failures, multiple TAP lines
 # each with the offending status-command dump following as a YAML
-# block.
+# block.  On failure this violates the assumption in the Makefile that there
+# is only one test point per test failure, so test enumeration for purposes
+# of checking plan underrun and overrun will be compromised. 
 #
 # The reason testing CVS isn't supported is that there's no way to get
 # from it a tabular status command reporting on each file in your
@@ -28,7 +30,7 @@ ignoretest.sh - examine ignore-pattern behavior
 With -r, restrict tisting to the specified pattern.
 With -s, set the VCSes tested.
 With -v, run in verbose mode, dumping test output.
-With -d, dump capabilities as a YAML block after success/
+With -d, dump capabilities as a YAML block after success.
 EOF
 	   exit 0;;
     esac
@@ -57,10 +59,10 @@ do
 	    # Take a pattern, a filename, a legend, and an exception
 	    # regexp.  Stuff the pattern in the ignore file. Run the
 	    # status command.  Success if the output is empty -
-	    # nonempty with the nomatch option.
+	    # nonempty with the --nonempty option.
 	    Z=!
 	    N=
-	    if [ "$1" = '--nomatch' ]
+	    if [ "$1" = '--nonempty' ]
 	    then
 		Z=
 		N=!
@@ -126,11 +128,11 @@ do
 		ignorecheck 'ignorab[k-m]e' 'ignorable' "check for dash in ranges"
 		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg" BANG
 		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src" CARET
-		ignorecheck --nomatch '\*' 'ignorable' "check for backslash escaping" "bzr|brz"	ESC
-		ignorecheck --nomatch 'ign* !ignorable' 'ignorable' "check for prefix negation"	"hg" NEG
+		ignorecheck --nonempty '\*' 'ignorable' "check for backslash escaping" "bzr|brz" ESC
+		ignorecheck --nonempty 'ign* !ignorable' 'ignorable' "check for prefix negation" "hg" NEG
 		rm ignorable
 		touch .alpha
-		ignorecheck --nomatch '[.]alpha' '.alpha' "explicit-leading-dot required" "git|svn|hg|bzr|brz" FNMDOT
+		ignorecheck --nonempty '[.]alpha' '.alpha' "explicit-leading-dot required" "git|svn|hg|bzr|brz" FNMDOT
 		rm .alpha
 		mkdir foo
 		touch foo/bar
@@ -139,8 +141,8 @@ do
 		    # Strange failure - should investigate further.
 		    ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
 		fi
-		ignorecheck --nomatch 'foo?bar' 'bar' "check for ? not matching /" "bzr|brz"
-		ignorecheck --nomatch 'fo*bar' 'bar' "check for * not matching /" "bzr|brz" FNMPATH
+		ignorecheck --nonempty 'foo?bar' 'bar' "check for ? not matching /" "bzr|brz"
+		ignorecheck --nonempty 'fo*bar' 'bar' "check for * not matching /" "bzr|brz" FNMPATH
 		rm foo/bar
 		touch foo/subignorable
 		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src" LOOSE
@@ -148,7 +150,7 @@ do
 		mkdir -p foo/x/y
 		touch foo/x/y/bar
 		ignorecheck 'foo/**/bar' 'bar' "check ** wildcard" "svn|hg|src" DSTAR
-		ignorecheck --nomatch 'y/bar' 'bar' "check whether / forces anchoring" "hg|bzr|brz" ASLASH
+		ignorecheck --nonempty 'y/bar' 'bar' "check whether / forces anchoring" "hg|bzr|brz" ASLASH
 		ignorecheck 'foo/x' 'bar' "check whether directory match is a wildcard" "svn|src" DIRMATCH
 		rm -fr foo
 		printf "\n" >>/tmp/ignoretable$$
