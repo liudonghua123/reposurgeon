@@ -4,6 +4,12 @@
 # Outputs one line of TAP on success.  On failures, muktiple TAP lines
 # each with the offending status-command dump following as a YAML
 # block.
+#
+# The reason testing CVS isn't supported is that there's no way to get
+# from it a tabular status command reporting on each file in your
+# working directory. And if there were such a thing, it turns out
+# ignore patterns only apply to the commands "update", "import" and
+# release; an ifgnored files's CVD status report does not change.
 
 systems="git svn hg bzr brz src"
 verbose=no
