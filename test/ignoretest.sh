@@ -7,11 +7,12 @@
 # is only one test point per test failure, so test enumeration for purposes
 # of checking plan underrun and overrun will be compromised. 
 #
-# The reason testing CVS isn't supported is that there's no way to get
-# from it a tabular status command reporting on each file in your
-# working directory. And if there were such a thing, it turns out
-# ignore patterns only apply to the commands "update", "import" and
-# release; an ifgnored files's CVD status report does not change.
+# The reason testing CVS, darcs, and mtn aren't supported is that
+# there's no way to get from them a tabular status command reporting
+# on each file/directory in your working directory. If there were such a thing
+# in CVS, it turns out ignore patterns only apply to the commands
+# "update", "import" and release; an ignored files's status
+# report does not change.
 
 systems="brz bzr git hg src svn"
 verbose=no
