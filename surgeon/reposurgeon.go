@@ -2771,19 +2771,49 @@ func (rs *Reposurgeon) HelpWrite() {
 	rs.helpOutput(`
 [SELECTION] write [--legacy] [--noincremental] [--callout] [>OUTFILE|-|DIRECTORY]
 
-Dump a fast-import stream representing selected events to standard
-output (if second argument is empty or '-') or via > redirect to a file.
+Dump selected events as a fast-import stream representing the
+edited repository; the default selection set is all events. Where to
+dump to is standard output if there is no argument or the argument is
+"-", or the target of an output redirect.
 
 Alternatively, if there is no redirect and the argument names a
-directory the repository is rebuilt into that directory, with any
-selection set argument being ignored; if that target directory is
-nonempty its contents are backed up to a save directory.
+directory, the repository is rebuilt into that directory, with any
+selection set being ignored; if that target directory is nonempty its
+contents are backed up to a save directory.
 
-If the argument ends with a '/' and does not exist, that
-directory is created and the repository written into it.
+With the "--legacy" option, the Legacy-ID of
+each commit is appended to its commit comment at write time. This
+option is mainly useful for debugging conversion edge cases.
 
-Property extensions will be omitted if the importer for the
-preferred repository type cannot digest them.
+If you specify a partial selection set such that some commits
+are included but their parents are not, the output will include
+incremental dump cookies for each branch with an origin outside the
+selection set, just before the first reference to that branch in a
+commit.  An incremental dump cookie looks like "refs/heads/foo^0" and
+is a clue to export-stream loaders that the branch should be glued to
+the tip of a pre-existing branch of the same name.  The
+"--noincremental" option suppresses this behavior.
+
+Specifying a partial selection set, including a commit object, forces the
+inclusion of every blob to which it refers and every tag that refers to
+it.
+
+Specifying a partial selection may cause a situation in which
+some parent marks in merges don't correspond to commits present in the
+dump.  When this happens and the "--callout" option was
+specified, the write code replaces the merge mark with a callout, the
+action stamp of the parent commit; otherwise the parent mark is
+omitted.  Importers will fail when reading a stream dump with callouts;
+it is intended to be used by the "graft" command.
+
+Specifying a write selection set with gaps in it is allowed
+but unlikely to lead to good results if it is loaded by an importer.
+
+Property extensions will be be omitted from the output if the
+importer for the preferred repository type cannot digest them.
+
+Note: to examine small groups of commits without the progress
+meter, use "list inspect".
 `)
 }
 

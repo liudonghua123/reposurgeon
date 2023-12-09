@@ -175,7 +175,8 @@ BNF_TOPICS = \
 	unmerge \
 	unpreserve \
 	version \
-	view
+	view \
+	write
 UNANCHORED_TOPICS = \
 	functions \
 	operators \
@@ -189,8 +190,7 @@ TOPICS = $(BNF_TOPICS) $(UNANCHORED_TOPICS)
 # long-form manual have additional material.
 SHORTFORM = \
 	read \
-	squash \
-	write
+	squash
 # These are all the non-regular topics
 EXCEPTIONS = \
 	attribute
