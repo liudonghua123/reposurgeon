@@ -79,6 +79,7 @@ type VCS struct {
 // hg: https://www.selenic.com/mercurial/hgignore.5.html
 // bk: https://www.bitkeeper.org/man/ignore.html
 // mtn: https://www.monotone.ca/docs/Regexps.html
+// Fossil: https://fossil-scm.org/home/doc/trunk/www/globs.md
 // SCCS and RCS don't have an ignore facility.
 // POSIX fnmatch(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
 // POSIX glob(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/glob.html
@@ -109,15 +110,15 @@ type VCS struct {
 //
 // The presence of a / in a path may change whether A or B applies.
 //
-// Glob behavior of all of the except cvs is following specials is
-// verified by our test suite. CVS behavior is checked by code
-// inspection.  The "Path match" is yes if * and ? wildcards will
-// *not* match /.
+// Glob behavior of all of the except cvs and fossil are
+// verified by our test suite. cvs behavior is checked by code
+// inspection, fossil is checked againsts its (excellent) documentation.
 //
 //           Specials  FNMPATH  NEG      LOOSE    FNMDOT   DSTAR    ASLASH   DIRMATCH
 //           --------  -------  -------  -------  -------  -------  -------  -------
 // bzr/brz:  *?[^!-]   no        yes     yes      no       yes      no       no
 // cvs:      *?[^!-]\  no        no      no       no       yes      no       no
+// fossil:   *?[^-]    no        no      no       no       no       no       no
 // git:      *?[^!-]\  yes       yes     yes      no       yes      yes      yes
 // hg:       *[^-]\    yes       no      yes      no       no       no       yes
 // src:      *?[!-]\   yes       yes     no       yes      no       yes      no
@@ -176,6 +177,14 @@ type VCS struct {
 // the pattern applies only to the repository root."  Rule A, with the
 // ignSLASHANCHORS feature.
 //
+// Fossil has two different mechanisms for ignore patters: the
+// ignore-glob setting through the Webn interface or CLI, and local
+// (versioned) settings in a dotfile.  The unversioned ignore-glob
+// setting isn't supported because fossil fast-export doesn't ship it
+// in the output stream.  We describe its capabilities for
+// completeness.  "The glob must match the entire canonical file name
+// to be considered a match."
+//
 // Yes, the capability flags defined below aren't all used. Yet.
 
 const (
@@ -231,6 +240,10 @@ func (vcs VCS) manages(dirname string) bool {
 				}
 			}
 		}
+	}
+	// Could be a Fossil repository, look for checkout's state file.
+	if vcs.name == "fossil" && isdir(".fslckout") {
+		return true
 	}
 	return false
 }
@@ -863,6 +876,33 @@ core
 			notes:        "Bitkeeper's importer is flaky and incomplete as of 7.3.1ce.",
 			idformat:     "%s",
 			flags:        ignGLOB | ignLOOSE | ignASLASH,
+		},
+		{
+			// Styleflags may need tweaking for round-tripping
+			name:         "fossil",
+			subdirectory: "", // There's a special case in manages()
+			requires:     newStringSet("fossil"),
+			exporter:     "fossil fast-export --git",
+			quieter:      "",
+			styleflags:   newOrderedStringSet(),
+			extensions:   newOrderedStringSet(),
+			initializer:  "fossil init .fossil && fossil open .fossil",
+			pathlister:   "", // fossil extras is the inverse of this
+			taglister:    "fossil tag list",
+			branchlister: "fossil branch list", // Should we list with --all? Unclear...
+			importer:     "fossil fast-import --git",
+			checkout:     "",
+			viewer:       "", // fossil ui looks tempting but has no clean exit.
+			prenuke:      newOrderedStringSet(),
+			preserve:     newOrderedStringSet(),
+			authormap:    "",
+			ignorename:   ".fossil-settings/ignore-glob",
+			dfltignores:  "", // ignore-glob is empty by default
+			cookies:      nil,
+			project:      "https://fossil-scm.org/",
+			notes:        "",
+			idformat:     "%s",
+			flags:        ignGLOB | ignQUES | ignCARET,
 		},
 	}
 

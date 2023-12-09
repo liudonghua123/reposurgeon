@@ -69,8 +69,12 @@ achieved with fully automated converters. Another application is when
 code needs to be removed from a repository for legal or policy reasons.
 
 Fully supported systems (those for which reposurgeon can both read and
-write repositories) include git, hg, bzr, brz, darcs, bk, RCS, and
-SRC.  For a complete list, with dependencies and technical notes, type
+write repositories and the support has been tested) include git, hg,
+bzr, brz, darcs, RCS, and SRC. There is tested read-side support for
+SCCS, CVS and svn. There is untested read-write support for Bitkeeper
+and Fossil, and untested read support for Monotone.
+
+For a complete list, with dependencies and technical notes, type
 "<<prefer_cmd>>" to the reposurgeon prompt.
 
 Writing to the file-oriented systems RCS and SRC has some serious
@@ -569,26 +573,38 @@ multiproject repositories, see <<multiproject>>.
 
 ==== Other VCSes
 
-Mercurial: reposurgeon can read a Mercurial repository using
+Mercurial (hg): reposurgeon can read a Mercurial repository using
 either of two methods.  See <<mercurial>> for details.
 
 RCS: reposurgeon will read an RCS collection.  It uses
 http://www.catb.org/~esr/src[SRC] to get and export a fast-import
-stream to reposurgeon;s importer.
+stream to reposurgeon's importer.This importer does not attempt to
+make changesets out of cliques of per-file commits; you'll have to dp
+this yourself using reposurgeon's coalesce command.
 
 SCCS: reposurgeon will read an SCCS collection. It uses
 http://www.catb.org/esr/src/[SRC] to get and export a a fast-import
-stream to reposurgeon;s importer.
+stream to reposurgeon's importer. This importer does not attempt to
+make changesets out of cliques of per-file commits; you'll have to dp
+this yourself using reposurgeon's coalesce command.
 
 Fossil: reposurgeon will read a Fossil repository file. It uses the
 native Fossil exporter, which is pretty good but doesn't export ignore
 patterns, wiki events, or tickets.
 
-BitKeeper: As of version 7.3 (and probably earlier versions under
+BitKeeper (bk): As of version 7.3 (and probably earlier versions under
 open-source licensing) BitKeeper has fast-import and fast-export
-subcommands, and reposurgeon now knows how to use these.
+subcommands, and reposurgeon now knows how to use these. Note that the
+BitKeeper support is untested - the exporter-importer pair may have
+ubnknown bugs.
 
-Perforce: repotool can be used to mirror a remote p4 repository as a
+Monotone: reposurgeon declares an importer-exporter pair, but the
+capability has not been tested.
+
+Bazaar and Breezy (bzr, brz): These are workalikes. Read support is
+tested, write support is not.
+
+Perforce (p4): repotool can be used to mirror a remote p4 repository as a
 local Git repository, and to incrementally resync the mirror; consult
 the repotool manual page.  This support is experimental; it is unknown
 to the author what (if any) reposurgeon cleanup operations might be

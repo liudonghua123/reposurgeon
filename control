@@ -8,10 +8,10 @@ Description: A tool for editing version-control repository history.
  don't want to let you do, such as editing past comments and metadata
  and removing commits.  It works with any version control system that
  can export and import git fast-import streams, including git, hg,
- fossil, bzr, brz, darcs, bk, and RCS. There is import-only support for svn,
- CVS, SCCS, mtn, and p4. In particular this tool can be used to script
- the production of very high-quality conversions from Subversion to any
- VCS with write support.
+ fossil, bzr, brz, darcs, mtn, bk, and RCS. There is import-only
+ support for svn, CVS, and SCCS. In particular this tool can be used
+ to script the production of very high-quality conversions from
+ Subversion to any VCS with write support.
 
 Homepage: http://www.catb.org/~esr/reposurgeon
 

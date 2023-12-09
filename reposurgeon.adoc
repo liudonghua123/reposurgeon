@@ -38,9 +38,11 @@ defines a common language of primitive operations for
 reposurgeon to speak.
 
 Fully supported systems (those for which reposurgeon can both read and
-write repositories) include git, hg, bzr, brz, darcs, bk, RCS, and SRC.
-For a complete list, with dependencies and technical notes, type
-"prefer" to the reposurgeon prompt.
+write repositories) include git, hg, bzr, brz, darcs, RCS, and SRC.
+There is tested read-side support for SCCS, CVS, and svn.  There is
+untested read-write support for Bitkeeper and untested read support
+for Monotone.  For a complete list, with dependencies and technical
+notes, type "prefer" to the reposurgeon prompt.
 
 Writing to the file-oriented systems RCS and SRC is done via
 rcs-fast-import(1) and has some serious limitations because those
@@ -53,7 +55,7 @@ option of the '```read```' command and written out with the `--format=fossil`
 option of the '```write```'. Ignore patterns are not
 translated in either direction.
 
-SVN and CVS are supported for read only, not write.  For CVS,
+SCCS, SVN and CVS are supported for read only, not write.  For CVS,
 reposurgeon must be run from within a repository directory (that is, a
 tree of CVS masters; a CVSROOT is not required). When reading from a
 CVS top-level directory each module becomes a subdirectory in the
@@ -87,22 +89,25 @@ reposurgeon relies on importers and exporters
 asociated with the VCSes it supports.
 
 git::
-Core git supports both export and import.
+Stock git supports both export and import.
 
 bzr::
 Requires bzr plus the `bzr-fast-import` plugin.
 
 brz::
-Requires brz.
+Requires brz (the import plugin has been integrated).
 
 hg::
 Requires core hg and `hg-git-fast-import`.
 
 svn::
-Stock Subversion commands support export and import.
+Stock Subversion commands support export.
 
 darcs::
-Stock darcs commands support export.
+Stock darcs commands support export and import.
+
+mtn::
+Stock mtn commands support export and import.
 
 CVS::
 Requires `cvs-fast-export`. Note that the quality of CVS lifts may
@@ -110,12 +115,14 @@ be poor, with individual lifts requiring serious hand-hacking. This
 is due to inherent problems with CVS's file-oriented model.
 
 RCS::
-Requires `cvs-fast-export` (yes, that's not a typo; `cvs-fast-export`
-handles RCS collections as well). The caveat for CVS applies.
+Requires src.
 
 SCCS::
-Requires `cvs-fast-export` and `sccs2rcs`, the latter to do a
-lossless conversion to RCS. The caveat for CVS applies.
+Requires src.
+
+Fossil::
+Supports export and omport, but ignore patterns won't come
+through. Tickets and events are also lost.
 
 bk::
 Versions 7.3 and after have a fast-export command that reposurgeon can use.
@@ -128,7 +135,7 @@ Returns 1 if the last command executed threw an error, 0 otherwise.
 [[see_also]]
 == SEE ALSO ==
 
-bzr(1), brz(1), cvs(1), darcs(1), git(1), hg(1), sscs(1), rcs(1), src(1), svn(1), bk(1).
+bzr(1), brz(1), cvs(1), darcs(1), git(1), hg(1), rcs(1), sscs(1), src(1), svn(1).
 
 [[author]]
 == AUTHOR ==
