@@ -82,11 +82,6 @@ limitations because those systems cannot represent all the metadata in
 a git-fast-export stream. They require rcs-fast-import as a back end;
 consult that tool's documentation for details and partial workarounds.
 
-Fossil repository files can be read in using the `--format=fossil`
-option of the '```<<read_cmd>>```' command and written out with the
-`--format=fossil` option of the '```<<write_cmd>>```' comment. Ignore
-patterns are not translated in either direction.
-
 SCCS, SVN, and CVS are supported for read only, not write.  For CVS,
 reposurgeon must be run from within a repository directory (one with a
 CVSROOT subdirectory), not a checkout. Each module becomes a
@@ -1582,7 +1577,7 @@ probably read <<mercurial>> after this section.
 === Reading and writing repositories
 
 [[read_cmd,read]]
-read [--quiet] [ --format=fossil ] [ DIRECTORY | - | <INFILE ]::
+read [--quiet] [ DIRECTORY | - | <INFILE ]::
     With a directory-name argument, this command attempts
     to read in the contents of a repository in any supported
     version-control system under that directory; read with no arguments
@@ -1610,9 +1605,6 @@ If the read location is a directory, and its repository subdirectory
 has a file named _legacy-map_, that file will be read as though passed
 to a '```<<legacy_cmd>> read```' command.
 +
-If the read location is a file and the `--format=fossil` option
-is used, the file is interpreted as a Fossil repository.
-+
 The just-read-in repo is added to the list of loaded
 repositories and becomes the current one, selected for surgery. If it
 was read from a plain file and the file name ends with one of the
@@ -1631,7 +1623,7 @@ repositories.
 Note: this command does not take a selection set.
 
 [[write_cmd,write]]
-[SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout] [>OUTFILE | `-` | DIR]::
+[SELECTION] write [--legacy] [--noincremental] [--callout] [>OUTFILE | `-` | DIR]::
    Dump selected events as a fast-import stream representing the
    edited repository; the default selection set is all events. Where to
    dump to is standard output if there is no argument or the argument is
@@ -1641,10 +1633,6 @@ Alternatively, if there is no redirect and the argument names a
 directory, the repository is rebuilt into that directory, with any
 selection set being ignored; if that target directory is nonempty its
 contents are backed up to a save directory.
-+
-If the write location is a file and the
-`--format=fossil` option is used, the file is written in
-Fossil repository format.
 +
 With the `--legacy` option, the Legacy-ID of
 each commit is appended to its commit comment at write time. This
@@ -3827,7 +3815,7 @@ SELECTION prepend [--rstrip] {TEXT}
 preserve [PATH...]
 print [TEXT...] [>OUTFILE]
 quit
-read [--quiet] [ --format=fossil ] [<INFILE | - | DIRECTORY]
+read [--quiet] [<INFILE | - | DIRECTORY]
 rebuild [DIRECTORY]
 renumber
 [SELECTION] reorder [--quiet]
@@ -3847,7 +3835,7 @@ unite [--prune] [REPO-NAME...]
 {SELECTION} unmerge
 unpreserve [PATH...]
 view [directory]
-[SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout] [>OUTFILE|-|DIRECTORY]
+[SELECTION] write [--legacy] [--noincremental] [--callout] [>OUTFILE|-|DIRECTORY]
 ----
 
 VS:

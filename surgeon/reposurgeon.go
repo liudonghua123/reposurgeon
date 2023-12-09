@@ -2035,9 +2035,6 @@ func (rs *Reposurgeon) DoPrefer(line string) bool {
 		for _, vcs := range vcstypes {
 			control.baton.printLogString(vcs.String() + control.lineSep)
 		}
-		for option := range fileFilters {
-			control.baton.printLogString(fmt.Sprintf("read and write have a --format=%s option that supports %s files.\n", option, strings.ToTitle(option)))
-		}
 		extractable := make([]string, 0)
 		for _, importer := range importers {
 			if importer.visible && importer.basevcs != nil {
@@ -2683,7 +2680,7 @@ func (rs *Reposurgeon) DoUnpreserve(line string) bool {
 // HelpRead says "Shut up, golint!"
 func (rs *Reposurgeon) HelpRead() {
 	rs.helpOutput(`
-read [--quiet] [ --format=fossil ] [<INFILE | - | DIRECTORY]
+read [--quiet] [<INFILE | - | DIRECTORY]
 
 A read command with no arguments is treated as 'read .', operating on the
 current directory.
@@ -2708,7 +2705,7 @@ have been omitted.
 
 // CompleteRead is a completion hook over read options
 func (rs *Reposurgeon) CompleteRead(text string) []string {
-	return []string{"--format=", "--quiet"}
+	return []string{"--quiet"}
 }
 
 // DoRead reads in a repository for surgery.
@@ -2719,34 +2716,6 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 	var repo *Repository
 	if parse.redirected {
 		repo = newRepository("")
-		for _, option := range parse.options {
-			if strings.HasPrefix(option, "--format=") {
-				_, vcs := splitRuneFirst(option, '=')
-				vcs = vcs[1:]
-				infilter, ok := fileFilters[vcs]
-				if !ok {
-					croak("unrecognized --format option %v", vcs)
-					return false
-				}
-				srcname := "unknown-in"
-				if f, ok := parse.stdin.(*os.File); ok {
-					srcname = f.Name()
-				}
-				// parse is redirected so this must be
-				// something besides os.Stdin, so we
-				// can close it and substitute another
-				// redirect
-				closeOrDie(parse.stdin)
-				command := fmt.Sprintf(infilter.importer, srcname)
-				reader, _, err := readFromProcess(command)
-				if err != nil {
-					croak("can't open filter: %v", infilter)
-					return false
-				}
-				parse.stdin = reader
-				break
-			}
-		}
 		repo.fastImport(context.TODO(), parse.stdin, parse.options.toStringSet(), "", control.baton)
 	} else if len(parse.args) == 0 || parse.args[0] == "." {
 		var err2 error
@@ -2800,7 +2769,7 @@ func (rs *Reposurgeon) DoRead(line string) bool {
 // HelpWrite says "Shut up, golint!"
 func (rs *Reposurgeon) HelpWrite() {
 	rs.helpOutput(`
-[SELECTION] write [--legacy] [--format=fossil] [--noincremental] [--callout] [>OUTFILE|-|DIRECTORY]
+[SELECTION] write [--legacy] [--noincremental] [--callout] [>OUTFILE|-|DIRECTORY]
 
 Dump a fast-import stream representing selected events to standard
 output (if second argument is empty or '-') or via > redirect to a file.
@@ -2820,7 +2789,7 @@ preferred repository type cannot digest them.
 
 // CompleteWrite is a completion hook over write options
 func (rs *Reposurgeon) CompleteWrite(text string) []string {
-	return []string{"--caallout", "--format=", "--legacy", "--noincremental"}
+	return []string{"--caallout", "--legacy", "--noincremental"}
 }
 
 // DoWrite streams out the results of repo surgery.
@@ -2830,34 +2799,6 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 	// This is slightly asymmetrical with the read side, which
 	// interprets an empty argument list as '.'
 	if parse.redirected || len(parse.args) == 0 {
-		for _, option := range parse.options {
-			if strings.HasPrefix(option, "--format=") {
-				_, vcs := splitRuneFirst(option, '=')
-				outfilter, ok := fileFilters[vcs]
-				if !ok {
-					croak("unrecognized --format")
-					return false
-				}
-				srcname := "unknown-out"
-				if f, ok := parse.stdout.(*os.File); ok {
-					srcname = f.Name()
-				}
-				// parse is redirected so this
-				// must be something besides
-				// os.Stdout, so we can close
-				// it and substitute another
-				// redirect
-				parse.stdout.Close()
-				command := fmt.Sprintf(outfilter.exporter, srcname)
-				writer, _, err := writeToProcess(command)
-				if err != nil {
-					croak("can't open output filter: %v", outfilter)
-					return false
-				}
-				parse.stdout = writer
-				break
-			}
-		}
 		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
 	} else {
 		if strings.HasSuffix(parse.args[0], "/") && !exists(parse.args[0]) {

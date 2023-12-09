@@ -17,7 +17,8 @@ Repository head::
      repotool initialize becomes repotool makemake.
      Tested support for reading darcs repositories.
      The ignores command sets Q bits
-     Source types of stream dumps ca be deduced from ignore file names.
+     Source types of stream dumps can be deduced from ignore file names.
+     Fossil import/export from checkouts is supported; --fornmat=fossil is gone.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.

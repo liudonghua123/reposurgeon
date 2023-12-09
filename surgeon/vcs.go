@@ -915,21 +915,6 @@ core
 	}
 }
 
-// Import and export filter methods for VCSes that use magic files rather
-// than magic directories. So far there is only one of these.
-//
-// Each entry maps a read/write option to an (importer, exporter) pair.
-// The input filter must be an *exporter from* that takes an alien file
-// and emits a fast-import stream on standard output.  The exporter
-// must be an *importer to* that takes an import stream on standard input
-// and produces a named alien file.
-var fileFilters = map[string]struct {
-	importer string
-	exporter string
-}{
-	"fossil": {"fossil export --git %s", "fossil import --git %s"},
-}
-
 // findVCS finds a VCS by name
 func findVCS(name string) *VCS {
 	for _, vcs := range vcstypes {
