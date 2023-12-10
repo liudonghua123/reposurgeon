@@ -583,9 +583,11 @@ stream to reposurgeon's importer. This importer does not attempt to
 make changesets out of cliques of per-file commits; you'll have to dp
 this yourself using reposurgeon's coalesce command.
 
-Fossil: reposurgeon will read a Fossil repository file. It uses the
-native Fossil exporter, which is pretty good but doesn't export ignore
-patterns, wiki events, or tickets.
+Fossil: reposurgeon will read from a Fossil checkout directory. It
+uses the native Fossil exporter, which is pretty good but exports only
+versioned ignore patterns (in .fossil-settings/ignore-glob) not the
+unversioned ignore-globs set through the Web interface. It also leaves
+behind other data such as the wiki content, events, and tickets.
 
 BitKeeper (bk): As of version 7.3 (and probably earlier versions under
 open-source licensing) BitKeeper has fast-import and fast-export
@@ -2457,7 +2459,7 @@ Three minor issues to watch for:
 
 1. Superfluous root tags.
 
-2. Fossil Subversion revision numbers.
+2. Legacy Subversion revision numbers.
 
 3. File content mismatches due to $-keyword expansion.
 
@@ -2869,7 +2871,7 @@ and comment text.
 
 2. Superfluous root tags.
 
-3. Fossil CVS revision numbers.
+3. Legacy CVS revision numbers.
 
 4. File content mismatches due to $-keyword expansion.
 
