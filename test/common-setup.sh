@@ -164,16 +164,17 @@ repository() {
 	    #
 	    repotype="$1"
 	    rbasedir="$2";
-	    trap 'rm -fr ${rbasedir} /tmp/stream$$' EXIT HUP INT QUIT TERM
+	    trap 'rm -fr ${rbasedir} /tmp/stream$$ /tmp/fossil$$' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
 	    rm -fr "${rbasedir}";
 	    mkdir "${rbasedir}";
 	    # shellcheck disable=SC2164
 	    cd "${rbasedir}" >/dev/null || exit 1;
 	    case "${repotype}" in
-		git|hg|bzr|brz) "${repotype}" init -q;;
-		svn) svnadmin create .; svn co -q "file://$(pwd)" working-copy ; tapcd working-copy;;
+		bzr|brz|git|hg) "${repotype}" init -q;;
+		fossil) fossil init /tmp/fossil$$ >/dev/null && fossil open /tmp/fossil$$ >/dev/null && mkdir .fossil-settings;;
 		src) mkdir .src;;
+		svn) svnadmin create .; svn co -q "file://$(pwd)" working-copy ; tapcd working-copy;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ts=10
@@ -181,6 +182,7 @@ repository() {
 	    ignorefile=".${repotype}ignore"
 	    case "${repotype}" in
 		brz) ignorefile=".bzrignore";;
+		fossil) ignorefile=".fossil-settings/ignore-glob";;
 	    esac
 	    LF='
 '
@@ -210,10 +212,11 @@ repository() {
 	    # notably as issued for directories (since we're only interested in seeing if
 	    # we can ignore files.)
 	    case "${repotype}" in
-		git) git status --porcelain -uall;;
-		svn) svn status | grep -v '  *M  *[.]';;
-		hg|src) "${repotype}" status;;
 		bzr|brz) "${repotype}" status -S | grep -v '/$';;
+		fossil) fossil changes --all --extra --classify | sed '/^EXTRA/s//?/';;
+		git) git status --porcelain -uall;;
+		hg|src) "${repotype}" status;;
+		svn) svn status | grep -v '  *M  *[.]';;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;

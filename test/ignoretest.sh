@@ -14,7 +14,7 @@
 # "update", "import" and release; an ignored files's status
 # report does not change.
 
-systems="brz bzr git hg src svn"
+systems="brz bzr fossil git hg src svn"
 verbose=no
 restrict=""
 flagdump=no
@@ -116,8 +116,8 @@ do
 	
 	repository init "$vcs" /tmp/ignoretest$$
 	case ${vcs} in
-	    git|hg|bzr|brz|src|svn)
-		printf "%s: " "${vcs}" >>/tmp/ignoretable$$
+	    bzr|brz|fossil|git|hg|src|svn)
+		printf "%s:    " "${vcs}" >>/tmp/ignoretable$$
 		touch 'ignorable'
 		# If this fails something very basic has gone wrong
 		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "status didn't flag junk file"
@@ -127,13 +127,13 @@ do
 		ignorecheck 'ignora?le' 'ignorable' "check for ? wildcard" "hg"	QUES
 		ignorecheck 'ignorab[klm]e' 'ignorable' "check for range syntax"
 		ignorecheck 'ignorab[k-m]e' 'ignorable' "check for dash in ranges"
-		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "hg" BANG
+		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "fossil|hg" BANG
 		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src" CARET
 		ignorecheck --nonempty '\*' 'ignorable' "check for backslash escaping" "bzr|brz" ESC
-		ignorecheck --nonempty 'ign* !ignorable' 'ignorable' "check for prefix negation" "hg" NEG
+		ignorecheck --nonempty 'ign* !ignorable' 'ignorable' "check for prefix negation" "fossil|hg" NEG
 		rm ignorable
 		touch .alpha
-		ignorecheck --nonempty '[.]alpha' '.alpha' "explicit-leading-dot required" "git|svn|hg|bzr|brz" FNMDOT
+		ignorecheck --nonempty '[.]alpha' '.alpha' "explicit-leading-dot required" "fossil|git|svn|hg|bzr|brz" FNMDOT
 		rm .alpha
 		mkdir foo
 		touch foo/bar
@@ -142,17 +142,17 @@ do
 		    # Strange failure - should investigate further.
 		    ignorecheck 'foo/bar' 'foo/bar' "check for exact match with /"
 		fi
-		ignorecheck --nonempty 'foo?bar' 'bar' "check for ? not matching /" "bzr|brz"
-		ignorecheck --nonempty 'fo*bar' 'bar' "check for * not matching /" "bzr|brz" FNMPATH
+		ignorecheck --nonempty 'foo?bar' 'bar' "check for ? not matching /" "bzr|brz|fossil"
+		ignorecheck --nonempty 'fo*bar' 'bar' "check for * not matching /" "bzr|brz|fossil" FNMPATH
 		rm foo/bar
 		touch foo/subignorable
-		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "svn|src" LOOSE
+		ignorecheck 'subignorable' 'subignorable' "check for subdirectory match" "fossil|svn|src" LOOSE
 		rm foo/subignorable
 		mkdir -p foo/x/y
 		touch foo/x/y/bar
-		ignorecheck 'foo/**/bar' 'bar' "check ** wildcard" "svn|hg|src" DSTAR
-		ignorecheck --nonempty 'y/bar' 'bar' "check whether / forces anchoring" "hg|bzr|brz" ASLASH
-		ignorecheck 'foo/x' 'bar' "check whether directory match is a wildcard" "svn|src" DIRMATCH
+		ignorecheck 'foo/**/bar' 'bar' "check ** wildcard" "hg|src|svn" DSTAR
+		ignorecheck --nonempty 'y/bar' 'bar' "check whether / forces anchoring" "brz|bzr|hg" ASLASH
+		ignorecheck 'foo/x' 'bar' "check whether directory match is a wildcard" "src|svn" DIRMATCH
 		rm -fr foo
 		printf "\n" >>/tmp/ignoretable$$
 		;;
@@ -174,6 +174,7 @@ then
     echo "ok - ${count} ignore-pattern tests succeeded."
     if [ "${flagdump}" = yes ]
     then
+	# Note: the ASLASH wntry is spurious if FNMPATH is not set
 	tapdump /tmp/ignoretable$$
     fi
 else

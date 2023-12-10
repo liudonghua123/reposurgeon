@@ -118,37 +118,13 @@ type VCS struct {
 //           --------  -------  -------  -------  -------  -------  -------  -------
 // bzr/brz:  *?[^!-]   no        yes     yes      no       yes      no       no
 // cvs:      *?[^!-]\  no        no      no       no       yes      no       no
-// fossil:   *?[^-]    no        no      no       no       no       no       no
+// fossil:   *?[^-]\   no        no      no       no       yes      no       yes
 // git:      *?[^!-]\  yes       yes     yes      no       yes      yes      yes
 // hg:       *[^-]\    yes       no      yes      no       no       no       yes
 // src:      *?[!-]\   yes       yes     no       yes      no       yes      no
 // svn:      *?[^!-]\  yes       yes     no       no       no       yes      no
 //
 
-// git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
-// FNM_NOESCAPE. and FNM_PERIOD off. ignLOOSE applies unless there's
-// an initial or nedial separator, in which case rule B. A / at end of
-// pattern has the special behavior of matching only directories.
-//
-// hg uses globbing or regexps depending on whether "syntax: regexp\n"
-// or "syntax: glob\n" has been seen most recently. The default is
-// globs (tested).
-//
-// svn documents that it uses glob(3) and says "if you are migrating a
-// CVS working copy to Subversion, you can directly migrate the ignore
-// patterns by using the .cvsignore file as input to the svn propset
-// command."; however this is not true as the implied settings of
-// FNM_PATHNAME differs between glob(3) and CVS.  svn:global-ignore
-// properties (introduced in Subversion 1.8) set in the repository
-// root apply to subdirectories; svn:ignore properties do not. Just to
-// complicate matters, 1.8 and later have svn:global-ignores defaults
-// identical to the previous global-ignores defaults...and "The ignore
-// patterns in the svn:global-ignores property may be delimited with
-// any whitespace (similar to the global-ignores runtime configuration
-// option), not just newlines (as with the svn:ignore property)."!
-// Also: "Once an object is under Subversion's control, the ignore
-// pattern mechanisms no longer apply to it."
-//
 // bzr/brz allows only one ignore file, at the repository root.
 // There's a unique !!  syntax "Patterns prefixed with '!!' act as
 // regular ignore patterns, but have highest precedence, even over the
@@ -164,8 +140,34 @@ type VCS struct {
 // darcs and mtn use full regexps rather than any version of
 // fnmatch(3)/glob(3)
 //
+// fossil explicitly documents that ? and * can match /.
+//
+// git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
+// FNM_NOESCAPE. and FNM_PERIOD off. ignLOOSE applies unless there's
+// an initial or nedial separator, in which case rule B. A / at end of
+// pattern has the special behavior of matching only directories.
+//
+// hg uses globbing or regexps depending on whether "syntax: regexp\n"
+// or "syntax: glob\n" has been seen most recently. The default is
+// globs (tested).
+//
 // src uses Python's glob library and inherits those behaviors. It
 // adds support for prefix negation with !.
+//
+// svn documents that it uses glob(3) and says "if you are migrating a
+// CVS working copy to Subversion, you can directly migrate the ignore
+// patterns by using the .cvsignore file as input to the svn propset
+// command."; however this is not true as the implied settings of
+// FNM_PATHNAME differs between glob(3) and CVS.  svn:global-ignore
+// properties (introduced in Subversion 1.8) set in the repository
+// root apply to subdirectories; svn:ignore properties do not. Just to
+// complicate matters, 1.8 and later have svn:global-ignores defaults
+// identical to the previous global-ignores defaults...and "The ignore
+// patterns in the svn:global-ignores property may be delimited with
+// any whitespace (similar to the global-ignores runtime configuration
+// option), not just newlines (as with the svn:ignore property)."!
+// Also: "Once an object is under Subversion's control, the ignore
+// pattern mechanisms no longer apply to it."
 //
 // bk doesn't document its ignore syntax at all and the examples only
 // show *. Since we never expect to export *to* bk, we'll make the
@@ -902,7 +904,7 @@ core
 			project:      "https://fossil-scm.org/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignGLOB | ignQUES | ignCARET,
+			flags:        ignGLOB | ignQUES | ignCARET | ignESC | ignDSTAR,
 		},
 	}
 
