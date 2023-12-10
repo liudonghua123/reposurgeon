@@ -1393,28 +1393,30 @@ visibility sets::
 +
 [options=""]
 |===================================================================
-| B | blobs                           | Most default selection sets exclude
+| B | blobs                            | Most default selection sets exclude
 blobs; they have to be manipulated through the commits they are attached to.
-| C | commits                         |
-| D | all-delete commits              | These are artifacts produced by some
+| C | commits                          |
+| D | all-delete commits               | These are artifacts produced by some
 older repository-conversion tools.
-| H | head (branch tip) commits       |
-| O | orphaned (parentless) commits   |
-| U | commits with callout parents    |
-| Z | commits with no fileops         |
-| M | merge (multi-parent) commits    |
-| F | fork (multi-child) commits      |
+| E | earliast commit on each branch   |
+| F | all fork (multi-child) commits   |
+| H | head (branch tip) commits        |
+| I | all commits not decodable to UTF-8 |
+| J | all commits with non=ASCII (possible ISO 8859) characters |
 | L | commits with unclean multi-line comments |  E.g. without a separating
 empty line after the first
-| I | commits for which metadata cannot be decoded to UTF-8 |
-| T | tags                            |
-| R | resets                          |
-| P | passthroughs                    | All event types simply passed through,
+| M | merge (multi-parent) commits     |
+| N | Legacy IDs                       | Any comment matching a cookie
+(legacy-ID) format
+| O | orphaned (parentless) commits    |
+| P | passthroughs                     | All event types simply passed through,
 including comments, `progress` commands,
 and `checkpoint` commands
-| N | Legacy IDs                      | Any comment matching a cookie
-(legacy-ID) format
-| Q | Recently touched                | Set/cleared by many commands
+| Q | Recently touched                 | Set/cleared by many commands
+| R | all resets                       |
+| T | all tags                         |
+| U | commits with callout parents     |
+| Z | commits with no fileops          |
 |===================================================================
 
 references::
