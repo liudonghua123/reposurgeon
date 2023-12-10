@@ -149,6 +149,7 @@ BNF_TOPICS = \
 	print \
 	profile \
 	quit \
+	read \
 	rebuild \
 	remove \
 	rename \
@@ -189,7 +190,6 @@ TOPICS = $(BNF_TOPICS) $(UNANCHORED_TOPICS)
 # These are in regular form, but the entries in the
 # long-form manual have additional material.
 SHORTFORM = \
-	read \
 	squash
 # These are all the non-regular topics
 EXCEPTIONS = \

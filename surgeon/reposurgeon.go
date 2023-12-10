@@ -2696,16 +2696,43 @@ With an argument of '-', this command reads an import stream from
 standard input (this will be useful in filters constructed with
 command-line arguments).
 
-Various options and special features of this command are described in
-the long-form manual.  Only the general options are included in the synopsis
-above; others related specifically to reading Subversion repositories
-have been omitted.
+If the content is a fast-import stream, any "cvs-revision" property
+on a commit is taken to be a newline-separated list of CVS revision cookies
+pointing to the commit, and used for reference lifting.
+
+If the content is a fast-import stream, any "legacy-id" property
+on a commit is taken to be a legacy ID token pointing to the commit,
+and used for reference-lifting.
+
+If the read location is a git repository and contains a
+_.git/cvsauthors_ file (such as is left in place by "git cvsimport
+-A") that file will be read in as if it had been given to the
+"authors read" command.
+
+If the read location is a directory, and its repository subdirectory
+has a file named _legacy-map_, that file will be read as though passed
+to a "legacy read" command.
+
+The just-read-in repo is added to the list of loaded
+repositories and becomes the current one, selected for surgery. If it
+was read from a plain file and the file name ends with one of the
+extensions ".fi" or ".svn", that
+extension is removed from the load list name.
+
+The "--quiet" option suppresses warnings from the front end
+used to read in the repository, notably the warning fronm the CVS
+reader about missing commit-ids. It's best to not use this for early
+testing, adding it only when you're sure you have a clean read.
+
+This command has a few additional options specific to reading
+Subversion repositories and stream files; they are described in
+the manual section on working with Subversion.
 `)
 }
 
 // CompleteRead is a completion hook over read options
 func (rs *Reposurgeon) CompleteRead(text string) []string {
-	return []string{"--quiet"}
+	return []string{"--no-automatic-ignores", "--preserve", "--quiet", "--user-ignores"}
 }
 
 // DoRead reads in a repository for surgery.
