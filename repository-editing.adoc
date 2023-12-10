@@ -566,7 +566,7 @@ For more detailed discussion of Subversion conversion and
 troubleshooting see <<subversion>>.  For discussion of handling
 multiproject repositories, see <<multiproject>>.
 
-==== Other VCSes
+==== Other Supported VCSes
 
 Mercurial (hg): reposurgeon can read a Mercurial repository using
 either of two methods.  See <<mercurial>> for details.
@@ -619,6 +619,31 @@ representation of a collection of AccuRev streams, as multiple
 disconnected git branches; while there is functionality to identify
 branch and merge points, actually weaving the streams into a single
 DAG is something best done in reposurgeon.
+
+==== Unsupported VCSes
+
+Pijul, which is in early alpha as of 2023 will be supported when it
+grows an importer/exporter pair for Git fast-import streams.
+
+Arch, ArX, DCVS: these systems were open-source but have been dead
+since 2006 (with Arch officially deprecated by its maintainer in favor
+of Bazaar) and no revival of any of them seems likely. There is no
+support for these and no plan to write any.
+
+QVCS is open source but (as of late 2023) has been moribund since
+2010. There is no support and no plan to write any.
+
+Code Coop: open-source but undocumented. As of late 2023 it has been
+untouched since 2018.  There is no support and no plan to write any.
+
+AutoDesk Vault, Azure DevOps Server, CADES, Dimensions CM, ClearCase,
+PVCS, StarTeam, Vault, Visual SourceSafe, Unity Version Control: These
+proprietary systems are mentioned for completeness.  There is no
+support for these and no plan to write any. This could change under
+the following circumstances: either the vendor supplies an
+exporter/importer pair, or the vendor documents a CLI sufficient for
+an extractor class. These will probably never have first-class
+support.
 
 For other systems, see the archived page on
 https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Interaction_with_other_Revision_Control_Systems[Git
