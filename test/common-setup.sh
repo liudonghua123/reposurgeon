@@ -178,6 +178,9 @@ repository() {
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ts=10
+	    fredname='Fred J. Foonly'
+	    fredmail='fred@foonly.org'
+	    fred="${fredname} <${fredmail}>"
 	    # Make the ignore file available for ignore-pattern tests ignorefile=".${cmd}ignore"
 	    ignorefile=".${repotype}ignore"
 	    case "${repotype}" in
@@ -236,12 +239,14 @@ repository() {
 	    case "${repotype}" in
 		git)
 		    # Git seems to reject timestamps with a leading zero
+		    export GIT_COMMITTER="$fred}"
+		    export GIT_AUTHOR="${fred}"
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git commit -q -a -m "${text}" --author "Fred J. Foonly <fred@foonly.org>";;
+		    git commit -q -a -m "${text}";;
 		bzr|brz)
 		    # Doesn't force timestamps.
-		    "${repotype}" commit -q -m "${text}${LF}" --author "Fred J. Foonly <fred@foonly.org>";;
+		    "${repotype}" commit -q -m "${text}${LF}" --author "${fred}";;
 		svn)
 		    # Doesn't force timestamp or author.
 		    svn commit -q -m "${text}";;
@@ -268,6 +273,8 @@ repository() {
 	    ft=$(printf "%09d" ${ts})
 	    case "${repotype}" in
 		git)
+		    export GIT_COMMITTER="$fred}"
+		    export GIT_AUTHOR="${fred}"
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
 		    git merge -q "$@";;
@@ -303,9 +310,12 @@ repository() {
 	    ;;
 	export)
 	    # Dump export stream.  Clock-neutralize it if we were unable to force timestamps at commit time.
+	    neutralize() {
+		(reposurgeon 'read -' 'timequake --tick' "1..$ attribute =C set \"${fredname}\" ${fredmail}" "write -")
+	    }
 	    case "${repotype}" in
-		git) git fast-export -q --all >/tmp/streamm$$;;
-		bzr|brz) "${repotype}" fast-export -q | reposurgeon 'read -' 'timequake --tick' '1..$ attribute =C set "Fred J. Foonly" fred@foonly.org' "write >/tmp/stream$$";;
+		git) git fast-export -q --all >/tmp/stream$$;;
+		bzr|brz) "${repotype}" fast-export -q | neutralize >/tmp/stream$$;;
 		svn)
 		   spacer=' '
 		   (tapcd "${rbasedir}"	# Back to the repository root

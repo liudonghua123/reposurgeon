@@ -884,7 +884,7 @@ core
 			name:         "fossil",
 			subdirectory: "", // There's a special case in manages()
 			requires:     newStringSet("fossil"),
-			exporter:     "fossil fast-export --git",
+			exporter:     "fossil export --git",
 			quieter:      "",
 			styleflags:   newOrderedStringSet(),
 			extensions:   newOrderedStringSet(),
@@ -892,7 +892,7 @@ core
 			pathlister:   "", // fossil extras is the inverse of this
 			taglister:    "fossil tag list",
 			branchlister: "fossil branch list", // Should we list with --all? Unclear...
-			importer:     "fossil fast-import --git",
+			importer:     "fossil import --git",
 			checkout:     "",
 			viewer:       "", // fossil ui looks tempting but has no clean exit.
 			prenuke:      newOrderedStringSet(),
