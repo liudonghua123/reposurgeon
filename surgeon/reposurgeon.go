@@ -1323,7 +1323,7 @@ func (rs *Reposurgeon) DoCheckpoint(line string) bool {
 // HelpShow says "Shut up, golint!"
 func (rs *Reposurgeon) HelpShow() {
 	rs.helpOutput(`
-show {elapsed|memory|sizeof|when TIMESTAMP} [>OUTFILE]
+show {elapsed|memory|sizeof|when TIMESTAMP|vcs [NAME...]} [>OUTFILE]
 
 The "show" command generates reports that do not require a repository
 to be loaded.
@@ -1341,6 +1341,10 @@ trailing padding is required for instances in an array of the structs.
 This command is for developer use when optimizing structure packing to
 reduce memory use. It is probably not of interest to ordinary
 reposurgeon users.
+
+With "vcs", show what reposurgeonn knows about version-control systems.
+Without an argument, list all known ones. With arguments, list 
+details for a specified one.
 
 With "when", try to interpret the input line as a timestamp and
 interconvert between Git and RFC3339 format - can be useful when
@@ -1387,6 +1391,22 @@ func (rs *Reposurgeon) DoShow(line string) bool {
 			parse.respond(d.String())
 		} else {
 			parse.respond(d.rfc3339() + " = " + d.rfc1123())
+		}
+	case "vcs":
+		if len(parse.args) < 2 {
+			available := "Supported systems are:"
+			for _, vcs := range vcstypes {
+				available += " " + vcs.name
+			}
+			respond(available + "\n")
+			return false
+		}
+		for _, name := range parse.args[1:] {
+			if vcs := findVCS(name); vcs == nil {
+				fmt.Fprintf(parse.stdout, "%s is unknown.\n", name)
+			} else {
+				fmt.Fprintf(parse.stdout, vcs.String()+"\n")
+			}
 		}
 	case "sizeof":
 		// For developer use when optimizing structure packing to reduce memory use
@@ -2054,11 +2074,6 @@ func (rs *Reposurgeon) DoPrefer(line string) bool {
 		} else {
 			control.baton.printLogString(fmt.Sprintf("%s is the preferred type.\n", rs.preferred.name))
 		}
-		available := "Supported systems are: "
-		for _, vcs := range vcstypes {
-			available += " " + vcs.name
-		}
-		control.baton.printLogString(available + "\n")
 	}
 	return false
 }
