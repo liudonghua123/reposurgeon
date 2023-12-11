@@ -237,6 +237,21 @@ rebuild project-git
 [[support]]
 == Supported Version Control Systems
 
+The design objective of reposurgeon is to support history
+interconversion and repository surgery on every VCS in use on Unix
+systems.  This is a large, messy domain. Only a few systems have
+top-tier support with good coverage in the reposurgeon test suite;
+others are theoretically supported but only lightly tested and will
+probably require reposurgeon development work when they are first
+encountered in the wild.
+
+=== Git
+
+The internal representation reposurgeomn uses for repository states
+losslessly captures Git histories.
+
+Git has top-tier support with excellent testing.
+
 === CVS
 
 Reposurgeon can read, but not write, CVS repositories.  You must have
@@ -248,6 +263,8 @@ Beware that the quality of CVS lifts may be poor, with individual
 lifts requiring serious hand-hacking. This is due to inherent problems
 with CVS's file-oriented model and the fragility of its repository
 structures; reposurgeonn cannot entirely compensate for these flaws.
+
+CVS has top-tier support with good testing.
 
 === Subversion
 
@@ -265,11 +282,38 @@ Operator errors, prior conversion with tools like cvs2svn, and
 gatewaying with git-svn can leave cruft in a Subversion history
 that needs to be cleaned out.
 
-==== Other Supported VCSes
+Subversion has top-tier support with excellent testing.
+
+=== Mercurial
 
 Mercurial (hg): reposurgeon can read a Mercurial repository using
-either of two methods. and write one using a plugin.  See
-<<mercurial>> for details.
+either of two methods, and write one using a Mercurial plugin.  See
+<<mercurial>> for details. Reposurgeon has been used for
+successful history conversions from Mercurial to Git.
+
+Mercurial has top-tier support, but only basic test coverage.
+
+=== Bazaar/Breezy
+
+Bazaar and Breezy (bzr, brz): These are workalikes. Import has only basic
+test coverage, but reposurgeon has been successfully used for a major
+Bazaar-to-Git conversion (the history of Emacs).
+
+Some Bazaar extensions - per-commit properties and multiple authors -
+are directly supported in reposurgeon. On the other hand, nothing in
+Bazaar corresponds to a Git annotated tag, so those would be lost in a
+Git-to-Bazaar conversion. It is not believed that any such thing has
+ever been attempted.
+
+Bazaar has top-tier support, and Breezy is expected to replicate its
+behavior closely enough to inherit that. Test coverage is only basic,
+however.
+
+=== Second-tier systems
+
+A VCS is "second tier" if import capability is checked in the
+reposurgeon test suite, but it hasn't had known use for a
+conversion in the wild.
 
 RCS: reposurgeon will read an RCS collection.  It uses
 http://www.catb.org/~esr/src[SRC] to get and export a fast-import
@@ -290,20 +334,22 @@ stream to reposurgeon's importer. This importer does not attempt to
 make changesets out of cliques of per-file commits; you'll have to dp
 this yourself using reposurgeon's coalesce command.
 
-Fossil: reposurgeon will read from a Fossil checkout directory. It
-uses the native Fossil exporter, which is pretty good but exports only
-versioned ignore patterns (in .fossil-settings/ignore-glob) not the
-unversioned ignore-globs set through the Web interface. The Fossil tag
-model has complexities that an export to Git or other systems will not
-capture. Export also leaves behind other data such as the wiki
-content, events, and tickets.
-
-Bazaar and Breezy (bzr, brz): These are workalikes. Import and export
-both work and have been tested.
+Fossil: reposurgeon declares an importer-exporter pair, and will read
+from a Fossil checkout directory. It uses the native Fossil exporter,
+which is pretty good but exports only versioned ignore patterns (in
+.fossil-settings/ignore-glob) not the unversioned ignore-globs set
+through the Web interface. The Fossil tag model has complexities that
+an export to Git or other systems will not capture. Export also leaves
+behind other data such as the wiki content, events, and tickets.
 
 darcs: reposurgeon declares an importer-exporter pair, but the
 capability has only been lightly tested. There are almost certainly
 undiscovered data-model issues here.
+
+=== Third-tier systems
+
+These have no coverage in the test suite.  Significant issues can be
+expected.
 
 BitKeeper (bk): As of version 7.3 (and probably earlier versions under
 open-source licensing) BitKeeper has fast-import and fast-export
@@ -311,12 +357,17 @@ subcommands, and reposurgeon now knows how to use these. Note that the
 BitKeeper support is untested - the exporter-importer pair may have
 unknown bugs.
 
+At one point reposurgeon was used to convert a Bitkeeper history (that
+of the NTP reference implementation), but that was via a custom
+third-party exporter that no longer works rather than the one that was
+later built in. The quality of the built-in exporter is unknown.
+
 Monotone (mtn): reposurgeon declares an importer-exporter pair, but the
 capability has not been tested. Monotone never achieved wide usage and
 in 2023 appears to have been moribund for over a decade; support for
 it may be dropped in a future release.
 
-==== Indirect support
+=== Indirect support
 
 Perforce (p4): repotool can be used to mirror a remote p4 repository as a
 local Git repository, and to incrementally resync the mirror; consult
@@ -337,7 +388,7 @@ disconnected git branches; while there is functionality to identify
 branch and merge points, actually weaving the streams into a single
 DAG is something best done in reposurgeon.
 
-==== Unsupported VCSes
+=== Unsupported VCSes
 
 Pijul, which is still new and in intensive development as of 2023, will be
 supported when it grows an importer/exporter pair for Git fast-import
@@ -368,7 +419,6 @@ https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Interaction_wi
 wiki page on conversion tools]. Warning: the information on it may be
 out of date.
 
-
 [[conversion]]
 == A Guide to Repository Conversion
 
@@ -386,7 +436,7 @@ you can safely skip this section.
 
 In 90% of cases you'll be converting from CVS or Subversion, and those
 are the cases we'll discuss in detail.  If you're using something
-older or weirder, see the short section on other VCSes for some hints,
+older or weirder, see the section on other VCSes for some hints,
 but you're mostly on your own.
 
 [[why-reposurgeon]]
