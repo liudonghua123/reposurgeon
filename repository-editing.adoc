@@ -82,10 +82,13 @@ limitations because those systems cannot represent all the metadata in
 a git-fast-export stream. They require rcs-fast-import as a back end;
 consult that tool's documentation for details and partial workarounds.
 
-SCCS, SVN, and CVS are supported for read only, not write.  For CVS,
-reposurgeon must be run from within a repository directory (one with a
-CVSROOT subdirectory), not a checkout. Each module becomes a
-subdirectory in the reposurgeon representation of the change history.
+SCCS, SVN, and CVS are supported for read only, not write. For CVS,
+reposurgeon must be run from within a repository directory (that is, a
+tree of CVS masters; a CVSROOT is not required). When reading from a
+CVS top-level directory each module becomes a subdirectory in the
+reposurgeon representation of the change history. It is also possible
+to read a repository from within a CVS module subdirectory and lift
+that individual module.
 
 Perforce (p4) is not directly supported, but the auxiliary program
 repotool(1) can mirror a p4 repository as a local git repository.
@@ -573,9 +576,16 @@ either of two methods.  See <<mercurial>> for details.
 
 RCS: reposurgeon will read an RCS collection.  It uses
 http://www.catb.org/~esr/src[SRC] to get and export a fast-import
-stream to reposurgeon's importer.This importer does not attempt to
+stream to reposurgeon's importer. This importer does not attempt to
 make changesets out of cliques of per-file commits; you'll have to dp
 this yourself using reposurgeon's coalesce command.
+
+SRC: reposurgeon can read an SRC collection. The caveats for RCS apply.
+
+Writing to the file-oriented SRC and RCS systems can be done via
+rcs-fast-import(1).  It has some serious limitations because RCS
+cannot represent all the metadata in a git-fast-export stream. Consult
+that tool's documentation for details and partial workarounds.
 
 SCCS: reposurgeon will read an SCCS collection. It uses
 http://www.catb.org/esr/src/[SRC] to get and export a a fast-import
@@ -587,20 +597,29 @@ Fossil: reposurgeon will read from a Fossil checkout directory. It
 uses the native Fossil exporter, which is pretty good but exports only
 versioned ignore patterns (in .fossil-settings/ignore-glob) not the
 unversioned ignore-globs set through the Web interface. The Fossil tag
-model has compolexities that an export does not capture. It also leaves
-behind other data such as the wiki content, events, and tickets.
+model has complexities that an export to Git or other systems will not
+capture. Export also leaves behind other data such as the wiki
+content, events, and tickets.
+
+Bazaar and Breezy (bzr, brz): These are workalikes. Import and export
+both work and have been tested.
+
+darcs: reposurgeon declares an importer-exporter pair, but the
+capability has only been lightly tested. There are almost certainly
+undiscovered data-model issues here.
 
 BitKeeper (bk): As of version 7.3 (and probably earlier versions under
 open-source licensing) BitKeeper has fast-import and fast-export
 subcommands, and reposurgeon now knows how to use these. Note that the
 BitKeeper support is untested - the exporter-importer pair may have
-ubnknown bugs.
+unknown bugs.
 
 Monotone: reposurgeon declares an importer-exporter pair, but the
-capability has not been tested.
+capability has not been tested. Monotone never achieved wide usage and
+in 2023 appears to have been moribund for over a decade; support for
+it may be dropped in a future release.
 
-Bazaar and Breezy (bzr, brz): These are workalikes. Read support is
-tested, write support is not.
+==== Indirect support
 
 Perforce (p4): repotool can be used to mirror a remote p4 repository as a
 local Git repository, and to incrementally resync the mirror; consult

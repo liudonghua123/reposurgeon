@@ -26,7 +26,20 @@ can be achieved with fully automated converters.
 The user interface of reposurgeon resembles a symbolic debugger.
 It can be used to explore a repository history interactively, but
 also has a well-developed scripting capability that can be used
-to develop recipes.
+to develop and refine recipes.
+
+Fully supported systems (those for which reposurgeon can both read and
+write repositories) include git, hg, bzr, brz, Fossil, darcs, RCS, and SRC.
+There is tested read-side support for SCCS, CVS, and svn. Due to
+data-model incompatiblities, not all metadata is necessarily passed
+through in both import and export directions: for details, consult the long-form
+manual referenced later on this page.
+
+The Subversion to Git pathway is particulartly well tested. On the
+other hand, the quality of CVS lifts may be poor, with individual
+lifts requiring serious hand-hacking - this is due to inherent
+problems with CVS's file-oriented model and the fragility of its
+repository structures.
 
 To keep reposurgeon simple and flexible, it normally does not do its
 own repository reading and writing.  Instead, it relies on being able
@@ -38,37 +51,6 @@ common language of primitive operations for reposurgeon to speak.
 
 If you don't have a tool installed that reposurgeon needs, it will
 bail out gradefully and inform you what is missing.
-
-Fully supported systems (those for which reposurgeon can both read and
-write repositories) include git, hg, bzr, brz, Fossil, darcs, RCS, and SRC.
-There is tested read-side support for SCCS, CVS, and svn.
-
-Fossil supports export and import, but ignore patterns won't come
-through. The Fossil tag model has complexities a Git export
-dies not capture. Tickets and events are also lost.
-
-Writing to the file-oriented RCS system is done via rcs-fast-import(1)
-and has some serious limitations because RCS cannot represent all the
-metadata in a git-fast-export stream. Consult that tool's
-documentation for details and partial workarounds.
-
-SCCS, SVN and CVS are supported for read only, not write.  For CVS,
-reposurgeon must be run from within a repository directory (that is, a
-tree of CVS masters; a CVSROOT is not required). When reading from a
-CVS top-level directory each module becomes a subdirectory in the
-reposurgeon representation of the change history. It is also possible
-to read a repository from within a CVS module subdirectory and lift
-that individual module.
-
-Note that the quality of CVS lifts may be poor, with individual lifts
-requiring serious hand-hacking. This is due to inherent problems with
-CVS's file-oriented model.
-
-There is untested read-write support for Bitkeeper and untested read
-support for Monotone.
-
-For a complete list of supported systems, with dependencies and
-technical notes, type "prefer" to the reposurgeon prompt.
 
 In order to deal with version-control systems that do not have
 fast-export equivalents, reposurgeon can also host extractor code that
