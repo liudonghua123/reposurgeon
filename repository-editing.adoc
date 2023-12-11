@@ -70,9 +70,9 @@ code needs to be removed from a repository for legal or policy reasons.
 
 Fully supported systems (those for which reposurgeon can both read and
 write repositories and the support has been tested) include git, hg,
-bzr, brz, darcs, RCS, and SRC. There is tested read-side support for
+bzr, brz, fossil, darcs, RCS, and SRC. There is tested read-side support for
 SCCS, CVS and svn. There is untested read-write support for Bitkeeper
-and Fossil, and untested read support for Monotone.
+and untested read support for Monotone.
 
 For a complete list, with dependencies and technical notes, type
 "<<prefer_cmd>>" to the reposurgeon prompt.
@@ -586,7 +586,8 @@ this yourself using reposurgeon's coalesce command.
 Fossil: reposurgeon will read from a Fossil checkout directory. It
 uses the native Fossil exporter, which is pretty good but exports only
 versioned ignore patterns (in .fossil-settings/ignore-glob) not the
-unversioned ignore-globs set through the Web interface. It also leaves
+unversioned ignore-globs set through the Web interface. The Fossil tag
+model has compolexities that an export does not capture. It also leaves
 behind other data such as the wiki content, events, and tickets.
 
 BitKeeper (bk): As of version 7.3 (and probably earlier versions under

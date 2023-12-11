@@ -23,37 +23,34 @@ A major use of reposurgeon is to assist a human operator to
 perform higher-quality conversions among version control systems than
 can be achieved with fully automated converters.
 
-The original motivation for reposurgeon was
-to clean up artifacts created by repository conversions.  It was
-foreseen that the tool would also have applications when code needs to
-be removed from repositories for legal or policy reasons.
+The user interface of reposurgeon resembles a symbolic debugger.
+It can be used to explore a repository history interactively, but
+also has a well-developed scripting capability that can be used
+to develop recipes.
 
-To keep reposurgeon simple and flexible, it
-normally does not do its own repository reading and writing.  Instead, it
-relies on being able to parse and emit the command streams created by
-git-fast-export and read by git-fast-import.  This means that it can
-be used on any version-control system that has both fast-export
-and fast-import utilities. The git-import stream format also implicitly
-defines a common language of primitive operations for
-reposurgeon to speak.
+To keep reposurgeon simple and flexible, it normally does not do its
+own repository reading and writing.  Instead, it relies on being able
+to parse and emit the command streams created by git-fast-export and
+read by git-fast-import.  This means that it can be used on any
+version-control system that has both fast-export and fast-import
+utilities. The git-import stream format also implicitly defines a
+common language of primitive operations for reposurgeon to speak.
+
+If you don't have a tool installed that reposurgeon needs, it will
+bail out gradefully and inform you what is missing.
 
 Fully supported systems (those for which reposurgeon can both read and
-write repositories) include git, hg, bzr, brz, darcs, RCS, and SRC.
-There is tested read-side support for SCCS, CVS, and svn.  There is
-untested read-write support for Bitkeeper and untested read support
-for Monotone.  For a complete list, with dependencies and technical
-notes, type "prefer" to the reposurgeon prompt.
+write repositories) include git, hg, bzr, brz, Fossil, darcs, RCS, and SRC.
+There is tested read-side support for SCCS, CVS, and svn.
 
-Writing to the file-oriented systems RCS and SRC is done via
-rcs-fast-import(1) and has some serious limitations because those
-systems cannot represent all the metadata in a git-fast-export
-stream. Consult that tool's documentation for details and partial
-workarounds.
+Fossil supports export and import, but ignore patterns won't come
+through. The Fossil tag model has complexities a Git export
+dies not capture. Tickets and events are also lost.
 
-Fossil repository files can be read in using the `--format=fossil`
-option of the '```read```' command and written out with the `--format=fossil`
-option of the '```write```'. Ignore patterns are not
-translated in either direction.
+Writing to the file-oriented RCS system is done via rcs-fast-import(1)
+and has some serious limitations because RCS cannot represent all the
+metadata in a git-fast-export stream. Consult that tool's
+documentation for details and partial workarounds.
 
 SCCS, SVN and CVS are supported for read only, not write.  For CVS,
 reposurgeon must be run from within a repository directory (that is, a
@@ -62,6 +59,16 @@ CVS top-level directory each module becomes a subdirectory in the
 reposurgeon representation of the change history. It is also possible
 to read a repository from within a CVS module subdirectory and lift
 that individual module.
+
+Note that the quality of CVS lifts may be poor, with individual lifts
+requiring serious hand-hacking. This is due to inherent problems with
+CVS's file-oriented model.
+
+There is untested read-write support for Bitkeeper and untested read
+support for Monotone.
+
+For a complete list of supported systems, with dependencies and
+technical notes, type "prefer" to the reposurgeon prompt.
 
 In order to deal with version-control systems that do not have
 fast-export equivalents, reposurgeon can also host extractor code that
@@ -82,51 +89,6 @@ For details on how to operate reposurgeon, see the
 http://www.catb.org/esr/reposurgeon/repository-editing.html[Repository Editing and
 Conversion With Reposurgeon].
 
-[[requirements]]
-== REQUIREMENTS ==
-
-reposurgeon relies on importers and exporters
-asociated with the VCSes it supports.
-
-git::
-Stock git supports both export and import.
-
-bzr::
-Requires bzr plus the `bzr-fast-import` plugin.
-
-brz::
-Requires brz (the import plugin has been integrated).
-
-hg::
-Requires core hg and `hg-git-fast-import`.
-
-svn::
-Stock Subversion commands support export.
-
-darcs::
-Stock darcs commands support export and import.
-
-mtn::
-Stock mtn commands support export and import.
-
-CVS::
-Requires `cvs-fast-export`. Note that the quality of CVS lifts may
-be poor, with individual lifts requiring serious hand-hacking. This
-is due to inherent problems with CVS's file-oriented model.
-
-RCS::
-Requires src.
-
-SCCS::
-Requires src.
-
-Fossil::
-Supports export and omport, but ignore patterns won't come
-through. Tickets and events are also lost.
-
-bk::
-Versions 7.3 and after have a fast-export command that reposurgeon can use.
-
 [[returns]]
 == ERROR RETURNS ==
 
@@ -135,7 +97,8 @@ Returns 1 if the last command executed threw an error, 0 otherwise.
 [[see_also]]
 == SEE ALSO ==
 
-bzr(1), brz(1), cvs(1), darcs(1), git(1), hg(1), rcs(1), sscs(1), src(1), svn(1).
+bzr(1), brz(1), cvs(1), darcs(1), fossil(1), git(1), hg(1), rcs(1),
+sccs(1), src(1), svn(1).
 
 [[author]]
 == AUTHOR ==
