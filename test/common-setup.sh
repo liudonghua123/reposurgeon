@@ -232,24 +232,37 @@ repository() {
 	    cat >"${file}"
 	    # Always do the add, ignore errors. Otherwise we'd have to check to see if
 	    # the file is registered each time.
-	    "${repotype}" add -q "${file}" >/dev/null 2>&1 || :
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
 
 	    case "${repotype}" in
+		bzr|brz)
+		    "${repotype}" add -q "${file}" >/dev/null 2>&1 || :
+		    # Doesn't force timestamps or author.
+		    "${repotype}" commit -q -m "${text}${LF}" --author "${fred}"
+		    ;;
+		fossil)
+		    fossil add "${file}" >/dev/null 2>&1 || :
+		    # Doesn't force timestamps or author.
+		    fossil commit -m "${text}" >/dev/null
+		    ;;
 		git)
+		    git add -q "${file}" >/dev/null 2>&1 || :
 		    # Git seems to reject timestamps with a leading zero
 		    export GIT_COMMITTER="$fred}"
 		    export GIT_AUTHOR="${fred}"
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git commit -q -a -m "${text}";;
-		bzr|brz)
-		    # Doesn't force timestamps.
-		    "${repotype}" commit -q -m "${text}${LF}" --author "${fred}";;
+		    git commit -q -a -m "${text}"
+		    ;;
+		src)
+		    src commit
+		    ;;
 		svn)
+		    git add -q "${file}" >/dev/null 2>&1 || :
 		    # Doesn't force timestamp or author.
-		    svn commit -q -m "${text}";;
+		    svn commit -q -m "${text}"
+		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
@@ -296,7 +309,8 @@ repository() {
 	    # Create a (lightweight) tag.
 	    tagname="$1"
 	    case "${repotype}" in
-		git|bzr|brz) "${repotype}" tag -q "${tagname}";;
+		bzr|brz|git) "${repotype}" tag -q "${tagname}";;
+		fossil) ;; # FIXME: Figure out how to make Fossil tags with Git tag behavior 
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
@@ -325,8 +339,9 @@ repository() {
 		done 
 	    }
 	    case "${repotype}" in
-		git) git fast-export -q --all >/tmp/stream$$;;
 		bzr|brz) "${repotype}" fast-export -q | neutralize >/tmp/stream$$;;
+		fossil) fossil export --git | neutralize >/tmp/stream$$;;
+		git) git fast-export -q --all >/tmp/stream$$;;
 		svn)
 		   spacer=' '
 		   (tapcd "${rbasedir}"	# Back to the repository root
