@@ -311,7 +311,18 @@ repository() {
 	export)
 	    # Dump export stream.  Clock-neutralize it if we were unable to force timestamps at commit time.
 	    neutralize() {
-		(reposurgeon 'read -' 'timequake --tick' "1..$ attribute =C set \"${fredname}\" ${fredmail}" "write -")
+		tt=10
+		while read -r line;
+		do
+		    # shellcheck disable=SC2086
+		    set -- $line
+		    case "$1" in
+			commit) tt=$((tt + 60)); echo "${line}";;
+			committer) echo "committer ${fredname} <${fredmail}> ${tt} +0000";;
+			author) echo "author ${fredname} <${fredmail}> ${tt} +0000";;
+			*) echo "$line" ;;
+		    esac
+		done 
 	    }
 	    case "${repotype}" in
 		git) git fast-export -q --all >/tmp/stream$$;;
