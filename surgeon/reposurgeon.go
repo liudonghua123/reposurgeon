@@ -2031,20 +2031,7 @@ func (rs *Reposurgeon) CompletePrefer(text string) []string {
 // DoPrefer reports or select the preferred repository type.
 func (rs *Reposurgeon) DoPrefer(line string) bool {
 	parse := rs.newLineParse(line, "prefer", parseNOSELECT|parseNOOPTS, nil)
-	if len(parse.args) == 0 {
-		for _, vcs := range vcstypes {
-			control.baton.printLogString(vcs.String() + control.lineSep)
-		}
-		extractable := make([]string, 0)
-		for _, importer := range importers {
-			if importer.visible && importer.basevcs != nil {
-				extractable = append(extractable, importer.name)
-			}
-		}
-		if len(extractable) > 0 {
-			control.baton.printLogString(fmt.Sprintf("Other systems supported for read only: %s\n\n", strings.Join(extractable, " ")))
-		}
-	} else {
+	if len(parse.args) != 0 {
 		known := ""
 		rs.preferred = nil
 		for _, repotype := range importers {
@@ -2067,6 +2054,11 @@ func (rs *Reposurgeon) DoPrefer(line string) bool {
 		} else {
 			control.baton.printLogString(fmt.Sprintf("%s is the preferred type.\n", rs.preferred.name))
 		}
+		available := "Supported systems are: "
+		for _, vcs := range vcstypes {
+			available += " " + vcs.name
+		}
+		control.baton.printLogString(available + "\n")
 	}
 	return false
 }
