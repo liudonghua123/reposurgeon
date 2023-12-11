@@ -1358,7 +1358,7 @@ format.
 
 // CompleteShow is a completion hook over show modes
 func (rs *Reposurgeon) CompleteShow(text string) []string {
-	return []string{"elapsed", "memory", "sizeof"}
+	return []string{"elapsed", "memory", "sizeof", "vcs", "when"}
 }
 
 // DoShow is the handler for the "memory" command.
