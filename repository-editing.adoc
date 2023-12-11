@@ -234,6 +234,140 @@ prefer git
 rebuild project-git
 --------
 
+[[support]]
+== Supported Version Control Systems
+
+=== CVS
+
+Reposurgeon can read, but not write, CVS repositories.  You must have
+a copy of the repository master directory, and run reposurgeon pointed
+at that directory or one of its submodules; a checkout directory won't
+do.
+
+Beware that the quality of CVS lifts may be poor, with individual
+lifts requiring serious hand-hacking. This is due to inherent problems
+with CVS's file-oriented model and the fragility of its repository
+structures; reposurgeonn cannot entirely compensate for these flaws.
+
+=== Subversion
+
+Reposurgeon can read Subversion dumpfiles or repositories. If you want
+it to read a repository, you must run it within the top-level
+directory of the repository itself, *not* in a checkout directory made
+from the repository.
+
+Unlike CVS, Subversion repositories have real changesets, and the work
+in them can effectively always be mapped to equivalent commits in a
+more modern system.  The parent-child relationships among commits will
+also translate cleanly.
+
+Operator errors, prior conversion with tools like cvs2svn, and
+gatewaying with git-svn can leave cruft in a Subversion history
+that needs to be cleaned out.
+
+==== Other Supported VCSes
+
+Mercurial (hg): reposurgeon can read a Mercurial repository using
+either of two methods. and write one using a plugin.  See
+<<mercurial>> for details.
+
+RCS: reposurgeon will read an RCS collection.  It uses
+http://www.catb.org/~esr/src[SRC] to get and export a fast-import
+stream to reposurgeon's importer. This importer does not attempt to
+make changesets out of cliques of per-file commits; you'll have to dp
+this yourself using reposurgeon's coalesce command.
+
+SRC: reposurgeon can read an SRC collection. The caveats for RCS apply.
+
+Writing to the file-oriented SRC and RCS systems can be done via
+rcs-fast-import(1).  It has some serious limitations because RCS
+cannot represent all the metadata in a git-fast-export stream. Consult
+that tool's documentation for details and partial workarounds.
+
+SCCS: reposurgeon will read an SCCS collection. It uses
+http://www.catb.org/esr/src/[SRC] to get and export a a fast-import
+stream to reposurgeon's importer. This importer does not attempt to
+make changesets out of cliques of per-file commits; you'll have to dp
+this yourself using reposurgeon's coalesce command.
+
+Fossil: reposurgeon will read from a Fossil checkout directory. It
+uses the native Fossil exporter, which is pretty good but exports only
+versioned ignore patterns (in .fossil-settings/ignore-glob) not the
+unversioned ignore-globs set through the Web interface. The Fossil tag
+model has complexities that an export to Git or other systems will not
+capture. Export also leaves behind other data such as the wiki
+content, events, and tickets.
+
+Bazaar and Breezy (bzr, brz): These are workalikes. Import and export
+both work and have been tested.
+
+darcs: reposurgeon declares an importer-exporter pair, but the
+capability has only been lightly tested. There are almost certainly
+undiscovered data-model issues here.
+
+BitKeeper (bk): As of version 7.3 (and probably earlier versions under
+open-source licensing) BitKeeper has fast-import and fast-export
+subcommands, and reposurgeon now knows how to use these. Note that the
+BitKeeper support is untested - the exporter-importer pair may have
+unknown bugs.
+
+Monotone (mtn): reposurgeon declares an importer-exporter pair, but the
+capability has not been tested. Monotone never achieved wide usage and
+in 2023 appears to have been moribund for over a decade; support for
+it may be dropped in a future release.
+
+==== Indirect support
+
+Perforce (p4): repotool can be used to mirror a remote p4 repository as a
+local Git repository, and to incrementally resync the mirror; consult
+the repotool manual page.  This support is experimental; it is unknown
+to the author what (if any) reposurgeon cleanup operations might be
+required, but a skim of Perforce documentation suggests that mapping
+Perforce user IDs to a Git-style name/address pair will be desirable.
+
+AccuRev: There are a couple of tools for translating AccuRev
+repositories to live Git repositories. Of these
+https://stackoverflow.com/questions/10983442/how-to-export-accurev-to-another-vcs[the
+most developed appears to be called "ac2git.py"]; you should be able
+to find it with a search engine.  We recommend you use this tool to
+get a first-pass conversion to Git, then use reposurgeon to clean up
+the result. The ac2git.py converter's goal is to produce an accurate
+representation of a collection of AccuRev streams, as multiple
+disconnected git branches; while there is functionality to identify
+branch and merge points, actually weaving the streams into a single
+DAG is something best done in reposurgeon.
+
+==== Unsupported VCSes
+
+Pijul, which is still new and in intensive development as of 2023, will be
+supported when it grows an importer/exporter pair for Git fast-import
+streams.
+
+Arch, ArX, DCVS: these systems were open-source but have been dead
+since 2006 (with Arch officially deprecated by its maintainer in favor
+of Bazaar) and no revival of any of them seems likely. There is no
+support for these and no plan to write any.
+
+QVCS is open source but (as of late 2023) has been moribund since
+2010. There is no support and no plan to write any.
+
+Code Coop: open-source but undocumented. As of late 2023 it has been
+untouched since 2018.  There is no support and no plan to write any.
+
+AutoDesk Vault, Azure DevOps Server, CADES, Dimensions CM, ClearCase,
+PVCS, StarTeam, Vault, Visual SourceSafe, Unity Version Control: These
+proprietary systems are mentioned for completeness.  There is no
+support for these and no plan to write any. This could change under
+the following circumstances: either the vendor supplies an
+exporter/importer pair, or the vendor documents a CLI sufficient for
+an extractor class. These will probably never have first-class
+support, unless someobody with a lot of money decides to pay for it.
+
+For other systems, see the archived page on
+https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Interaction_with_other_Revision_Control_Systems[Git
+wiki page on conversion tools]. Warning: the information on it may be
+out of date.
+
 
 [[conversion]]
 == A Guide to Repository Conversion
@@ -510,25 +644,21 @@ identifications in parallel with the rest of the work.
 
 === Step Two: Conversion
 
-Install whatever front end reposurgeon needs to read your
-repository.  That will be
-http://www.catb.org/~esr/cvs-fast-export[cvs-fast-export] for CVS, or the
-VCS tool itself for Subversion and other systems.
+Install whatever front end reposurgeon needs to read your repository.
+That will usually be
+http://www.catb.org/~esr/cvs-fast-export[cvs-fast-export] for CVS, or
+the VCS tool itself for Subversion and other systems. If you don't
+have a tool you need, repoosugeon will bail out gracefully and inform
+you what's missing.
 
-The generic-workflow Makefile will call reposurgeon
-for you, interpreting your $(PROJECT).lift file, when you type "make".
-You may have to watch the baton spin for a few minutes.  For very
-large repositories it could be more than a few minutes.
+The generic-workflow Makefile will call reposurgeon for you,
+interpreting your $(PROJECT).lift file, when you type "make".  You may
+have to watch the baton spin for a few minutes.  For very large
+repositories it could be more than a few minutes.
 
 This will convert your repository to git. If you need to export
 to something else, reposurgeon has write support for a couple of
 other modern VCSes.
-
-==== CVS
-
-Reposurgeon can read CVS repositories.  You must have a copy of the
-repository master directory, and run reposurgeon pointed at that
-directory or one of its submodules; a checkout directory won't do.
 
 If you are exporting from CVS, it may be a good idea to run some trial
 conversions with cvsconvert, a wrapper script shipped with
@@ -542,23 +672,12 @@ Gitify comments.
 For more detailed discussion of CVS conversion and troubleshooting see
 <<CVS>>.
 
-==== Subversion
-
-Reposurgeon can read Subversion dumpfiles or repositories. If you want
-it to read a repository, you must run it within the top-level
-directory of the repository itself, *not* in a checkout directory made
-from the repository.
-
-Unlike CVS, Subversion repositories have real changesets, and the work
-in them can effectively always be mapped to equivalent DVCS commits.
-The parent-child relationships among commits will also translate
-cleanly.
-
-Normally reposurgeon will do branch analysis for you.  On most
-Subversion repositories, and in particular anything with a standard
-trunk/tags/branches layout, it will do the right thing. It will also
-cope with adventitious branches in the root directory of the repo,
-such as some projects use for website content.
+On the other hand, while Subversion conversion has its complexities it
+is robust and well-tested. Normally reposurgeon will do branch
+analysis for you.  On most Subversion repositories, and in particular
+anything with a standard trunk/tags/branches layout, it will do the
+right thing. It will also cope with adventitious branches in the root
+directory of the repo, such as some projects use for website content.
 
 There is, however, a minor problem around tags, and a slightly
 more significant problem around Subversion merges. Also, some
@@ -568,107 +687,6 @@ directory layout.
 For more detailed discussion of Subversion conversion and
 troubleshooting see <<subversion>>.  For discussion of handling
 multiproject repositories, see <<multiproject>>.
-
-==== Other Supported VCSes
-
-Mercurial (hg): reposurgeon can read a Mercurial repository using
-either of two methods.  See <<mercurial>> for details.
-
-RCS: reposurgeon will read an RCS collection.  It uses
-http://www.catb.org/~esr/src[SRC] to get and export a fast-import
-stream to reposurgeon's importer. This importer does not attempt to
-make changesets out of cliques of per-file commits; you'll have to dp
-this yourself using reposurgeon's coalesce command.
-
-SRC: reposurgeon can read an SRC collection. The caveats for RCS apply.
-
-Writing to the file-oriented SRC and RCS systems can be done via
-rcs-fast-import(1).  It has some serious limitations because RCS
-cannot represent all the metadata in a git-fast-export stream. Consult
-that tool's documentation for details and partial workarounds.
-
-SCCS: reposurgeon will read an SCCS collection. It uses
-http://www.catb.org/esr/src/[SRC] to get and export a a fast-import
-stream to reposurgeon's importer. This importer does not attempt to
-make changesets out of cliques of per-file commits; you'll have to dp
-this yourself using reposurgeon's coalesce command.
-
-Fossil: reposurgeon will read from a Fossil checkout directory. It
-uses the native Fossil exporter, which is pretty good but exports only
-versioned ignore patterns (in .fossil-settings/ignore-glob) not the
-unversioned ignore-globs set through the Web interface. The Fossil tag
-model has complexities that an export to Git or other systems will not
-capture. Export also leaves behind other data such as the wiki
-content, events, and tickets.
-
-Bazaar and Breezy (bzr, brz): These are workalikes. Import and export
-both work and have been tested.
-
-darcs: reposurgeon declares an importer-exporter pair, but the
-capability has only been lightly tested. There are almost certainly
-undiscovered data-model issues here.
-
-BitKeeper (bk): As of version 7.3 (and probably earlier versions under
-open-source licensing) BitKeeper has fast-import and fast-export
-subcommands, and reposurgeon now knows how to use these. Note that the
-BitKeeper support is untested - the exporter-importer pair may have
-unknown bugs.
-
-Monotone: reposurgeon declares an importer-exporter pair, but the
-capability has not been tested. Monotone never achieved wide usage and
-in 2023 appears to have been moribund for over a decade; support for
-it may be dropped in a future release.
-
-==== Indirect support
-
-Perforce (p4): repotool can be used to mirror a remote p4 repository as a
-local Git repository, and to incrementally resync the mirror; consult
-the repotool manual page.  This support is experimental; it is unknown
-to the author what (if any) reposurgeon cleanup operations might be
-required, but a skim of Perforce documentation suggests that mapping
-Perforce user IDs to a Git-style name/address pair will be desirable.
-
-AccuRev: There are a couple of tools for translating AccuRev
-repositories to live Git repositories. Of these
-https://stackoverflow.com/questions/10983442/how-to-export-accurev-to-another-vcs[the
-most developed appears to be called "ac2git.py"]; you should be able
-to find it with a search engine.  We recommend you use this tool to
-get a first-pass conversion to Git, then use reposurgeon to clean up
-the result. The ac2git.py converter's goal is to produce an accurate
-representation of a collection of AccuRev streams, as multiple
-disconnected git branches; while there is functionality to identify
-branch and merge points, actually weaving the streams into a single
-DAG is something best done in reposurgeon.
-
-==== Unsupported VCSes
-
-Pijul, which is in early alpha as of 2023 will be supported when it
-grows an importer/exporter pair for Git fast-import streams.
-
-Arch, ArX, DCVS: these systems were open-source but have been dead
-since 2006 (with Arch officially deprecated by its maintainer in favor
-of Bazaar) and no revival of any of them seems likely. There is no
-support for these and no plan to write any.
-
-QVCS is open source but (as of late 2023) has been moribund since
-2010. There is no support and no plan to write any.
-
-Code Coop: open-source but undocumented. As of late 2023 it has been
-untouched since 2018.  There is no support and no plan to write any.
-
-AutoDesk Vault, Azure DevOps Server, CADES, Dimensions CM, ClearCase,
-PVCS, StarTeam, Vault, Visual SourceSafe, Unity Version Control: These
-proprietary systems are mentioned for completeness.  There is no
-support for these and no plan to write any. This could change under
-the following circumstances: either the vendor supplies an
-exporter/importer pair, or the vendor documents a CLI sufficient for
-an extractor class. These will probably never have first-class
-support.
-
-For other systems, see the archived page on
-https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Interaction_with_other_Revision_Control_Systems[Git
-wiki page on conversion tools]. Warning: the information on it may be
-out of date.
 
 === Step Three: Sanity Checking
 
