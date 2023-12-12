@@ -15,8 +15,6 @@ do
     esac
 done
 
-trap 'rm -fr test-repo$$ test-checkout' EXIT HUP INT QUIT TERM 
-
 svnaction () {
     # This version of svnaction does filenames only 
     filename=$1
