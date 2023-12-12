@@ -24,10 +24,8 @@ done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
 {
-    set -e
-    trap 'svnwrap' EXIT HUP INT QUIT TERM
-    svninit
-    tapcd trunk
+    repository init svn
+    repository stdlayout
     svn mkdir targetdir
     svn mkdir sourcedir
     echo "Source file" >sourcedir/sourcefile.txt
@@ -36,15 +34,15 @@ shift $(($OPTIND - 1))
     svn ci -m "Initial commit of example files"
     svn cp sourcedir/sourcefile.txt targetdir
     svn ci -m "Copy of sourcedir/sourcefile.txt to targetdir."
-    tapcd ../..
-    ls test-checkout$$
+    if [ -x targetdir/sourcefile.txt ]; then executable=yes; fi
+    repository wrap
 } >"/dev/${verbose}" 2>&1
 
 # shellcheck disable=2010
 if [ "$dump" = yes ]
 then
-    svnadmin dump -q test-repo$$
-elif ls -l test-checkout$$/trunk/targetdir/sourcefile.txt | grep x >/dev/null
+    repository export "exec propagation test"
+elif [ "${executable}" = yes ]
 then
     echo "ok - $0: executable permission is as expected"
     exit 0

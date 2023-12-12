@@ -37,9 +37,9 @@ svnaction () {
 }
 
 {
-    set -e
-    trap 'svnwrap' EXIT HUP INT QUIT TERM
-    svninit
+    repository init svn
+    repository stdlayout
+    tapcd ..
     # Content operations start here
     svnaction "trunk/foo.txt" "Now is the time." "More example content" 
     svnaction "trunk/bar.txt" "For all good men." "Example content in different file" 
@@ -55,12 +55,11 @@ svnaction () {
     svn up
     svn copy trunk tags/1.0
     svn commit -m "First tag copy"
-    # We're done
-    cd .. >/dev/null
+    repository wrap
 } >/dev/$verbose 2>&1
 if [ "$dump" = yes ]
 then
-    svnadmin dump -q test-repo$$
+    repository export "ancestry-chasing test"
 fi
 
 # end

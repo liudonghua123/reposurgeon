@@ -36,6 +36,47 @@ done
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
+# Initialize a Subversion test repository with flat layout
+svnflat() {
+	svnadmin create test-repo
+	svn co "file://$(pwd)/test-repo" test-checkout
+}
+
+svnaction() {
+    # This version of svnaction does filenames or directories 
+    case $1 in
+	*/)
+	    directory=$1
+	    comment=${2:-$1 creation}
+	    if [ ! -d "$directory" ]
+	    then
+		mkdir "$directory"
+		svn add "$directory"
+	    fi
+	    svn commit -m "$comment"
+	;;
+	*)
+	    filename=$1
+	    content=$2
+	    comment=$3
+	    # shellcheck disable=SC2046
+	    if [ ! -f "$filename" ]
+	    then
+		if [ ! -d $(dirname "$filename") ]
+		then
+		    mkdir $(dirname "$filename")
+		    svn add $(dirname "$filename")
+		fi
+		echo "$content" >"$filename"
+		svn add "$filename"
+	    else
+		echo "$content" >"$filename"
+	    fi
+	    svn commit -m "$comment"
+	;;
+    esac
+}
+
 trap 'rm -fr test-repo test-checkout' EXIT HUP INT QUIT TERM 
 
 {

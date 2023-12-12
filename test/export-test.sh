@@ -6,7 +6,7 @@ engine="${1:-bzr}"
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-repository init "${engine}" /tmp/testbranch$$
+repository init "${engine}"
 
 #C1
 repository commit sample "First commit" <<EOF

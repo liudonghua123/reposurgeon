@@ -1,5 +1,5 @@
 ## A repository with a merge bubble
- # Generated - do not hand-hack!
+# Generated - do not hand-hack!
 blob
 mark :1
 data 30
@@ -8,8 +8,8 @@ First line of sample content.
 reset refs/heads/master
 commit refs/heads/master
 mark :2
-author Fred J. Foonly <fered@foonly.org> 1000000060 +0000
-committer Eric S. Raymond <esr@thyrsus.com> 1000000060 +0000
+author Eric S. Raymond <esr@thyrsus.com> 1000000070 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000070 +0000
 data 22
 First commit (master)
 M 100644 :1 sample
@@ -22,8 +22,8 @@ Second line of sample content.
 
 commit refs/heads/master
 mark :4
-author Fred J. Foonly <fered@foonly.org> 1000000120 +0000
-committer Eric S. Raymond <esr@thyrsus.com> 1000000120 +0000
+author Eric S. Raymond <esr@thyrsus.com> 1000000130 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000130 +0000
 data 23
 Second commit (master)
 from :2
@@ -38,8 +38,8 @@ Third line of sample content.
 
 commit refs/heads/master
 mark :6
-author Fred J. Foonly <fered@foonly.org> 1000000180 +0000
-committer Eric S. Raymond <esr@thyrsus.com> 1000000180 +0000
+author Eric S. Raymond <esr@thyrsus.com> 1000000190 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000190 +0000
 data 22
 Third commit (master)
 from :4
@@ -52,8 +52,8 @@ First line of sample3 content.
 
 commit refs/heads/master
 mark :8
-author Fred J. Foonly <fered@foonly.org> 1000000300 +0000
-committer Eric S. Raymond <esr@thyrsus.com> 1000000300 +0000
+author Eric S. Raymond <esr@thyrsus.com> 1000000310 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000310 +0000
 data 25
 Fix broken email address
 from :6
@@ -66,8 +66,8 @@ First line of sample2 content.
 
 commit refs/heads/iss53
 mark :10
-author Fred J. Foonly <fered@foonly.org> 1000000240 +0000
-committer Eric S. Raymond <esr@thyrsus.com> 1000000240 +0000
+author Eric S. Raymond <esr@thyrsus.com> 1000000250 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000250 +0000
 data 29
 Create new footer [issue 53]
 from :6
@@ -81,8 +81,8 @@ Second line of sample2 content.
 
 commit refs/heads/iss53
 mark :12
-author Fred J. Foonly <fered@foonly.org> 1000000420 +0000
-committer Eric S. Raymond <esr@thyrsus.com> 1000000420 +0000
+author Eric S. Raymond <esr@thyrsus.com> 1000000430 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000430 +0000
 data 29
 Create new footer [issue 53]
 from :10
@@ -90,8 +90,8 @@ M 100644 :11 sample2
 
 commit refs/heads/master
 mark :13
-author Eric S. Raymond <esr@thyrsus.com> 1000000480 +0000
-committer Eric S. Raymond <esr@thyrsus.com> 1000000480 +0000
+author Eric S. Raymond <esr@thyrsus.com> 1000000490 +0000
+committer Eric S. Raymond <esr@thyrsus.com> 1000000490 +0000
 data 14
 Second merge.
 from :8

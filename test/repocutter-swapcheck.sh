@@ -4,7 +4,7 @@
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-repository init svn /tmp/testsvn$$
+repository init svn
 
 repository mkdir crossflight            # This is OK
 repository mkdir crossflight/src        # This should be reported

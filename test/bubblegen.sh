@@ -11,7 +11,7 @@ trap 'rm -fr /tmp/bubble$$' EXIT HUP INT QUIT TERM
 # Based on the merge example at
 # https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
 
-repository init git /tmp/bubble$$
+repository init git
 
 #C1
 repository commit sample "First commit (master)" <<EOF

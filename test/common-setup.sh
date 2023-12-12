@@ -53,63 +53,6 @@ tapcd () {
     cd "$1" >/dev/null || ( echo "not ok: $0: cd failed"; exit 1 )
 }
 
-# Initialize a Subversion test repository with standard layout
-svninit() {
-        echo "Starting at ${PWD}"
- 	# Note: this leaves you with the checkout directory current
-    	svnadmin create test-repo$$
-	    svn co "file://$(pwd)/test-repo$$" test-checkout$$ && \
-	    cd test-checkout$$ >/dev/null && \
-	    svn mkdir trunk && \
-	    svn mkdir tags && \
-	    svn mkdir branches && \
-	    echo "Directory layout." | svn commit -F - && \
-	    echo "This is a test Subversion repository" >trunk/README && \
-	    svn add trunk/README && \
-	    echo "Initial README content." | svn commit -F -
-}
-
-# Initialize a Subversion test repository with flat layout
-svnflat() {
-	svnadmin create test-repo
-	svn co "file://$(pwd)/test-repo" test-checkout
-}
-
-svnaction() {
-    # This version of svnaction does filenames or directories 
-    case $1 in
-	*/)
-	    directory=$1
-	    comment=${2:-$1 creation}
-	    if [ ! -d "$directory" ]
-	    then
-		mkdir "$directory"
-		svn add "$directory"
-	    fi
-	    svn commit -m "$comment"
-	;;
-	*)
-	    filename=$1
-	    content=$2
-	    comment=$3
-	    # shellcheck disable=SC2046
-	    if [ ! -f "$filename" ]
-	    then
-		if [ ! -d $(dirname "$filename") ]
-		then
-		    mkdir $(dirname "$filename")
-		    svn add $(dirname "$filename")
-		fi
-		echo "$content" >"$filename"
-		svn add "$filename"
-	    else
-		echo "$content" >"$filename"
-	    fi
-	    svn commit -m "$comment"
-	;;
-    esac
-}
-
 svndump() {
     # shellcheck disable=SC1117,SC1004,SC2006,SC2086
     svnadmin dump -q "$1" | repocutter -q -t "$(basename $0)" testify | sed "1a\
@@ -163,7 +106,7 @@ repository() {
 	    # us into that directory; wrap backs us out.
 	    #
 	    repotype="$1"
-	    rbasedir="$2";
+	    rbasedir="/tmp/testrepo$$";
 	    trap 'rm -fr ${rbasedir} /tmp/stream$$ /tmp/fossil$$' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
 	    rm -fr "${rbasedir}";
@@ -175,7 +118,7 @@ repository() {
 		fossil) fossil init /tmp/fossil$$ >/dev/null && fossil open /tmp/fossil$$ >/dev/null && mkdir .fossil-settings;;
 		src) mkdir .src;;
 		svn) svnadmin create .; svn co -q "file://$(pwd)" working-copy ; tapcd working-copy;;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ts=10
 	    fredname='Fred J. Foonly'
@@ -189,6 +132,21 @@ repository() {
 	    esac
 	    LF='
 '
+	    ;;
+	stdlayout)
+	    case "${repotype}" in
+		svn)
+		    svn mkdir trunk && \
+			svn mkdir tags && \
+			svn mkdir branches && \
+			echo "Directory layout." | svn commit -F - && \
+			echo "This is a test Subversion repository" >trunk/README && \
+			svn add trunk/README && \
+			echo "Initial README content." | svn commit -F - && \
+			tapcd trunk
+		    ;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
+	    esac
 	    ;;
 	ignore)
 	    # Clear or append to the ignore file. In Subversion, do the equivalent propset.
@@ -220,7 +178,7 @@ repository() {
 		git) git status --porcelain -uall;;
 		hg|src) "${repotype}" status;;
 		svn) svn status | grep -v '  *M  *[.]';;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
 	commit)
@@ -248,7 +206,7 @@ repository() {
 		    fossil commit -m "${text}" >/dev/null
 		    ;;
 		git)
-		    git add -q "${file}" >/dev/null 2>&1 || :
+		    git add "${file}" >/dev/null 2>&1 || :
 		    # Git seems to reject timestamps with a leading zero
 		    export GIT_COMMITTER="$fred}"
 		    export GIT_AUTHOR="${fred}"
@@ -267,11 +225,11 @@ repository() {
 		    src commit -m "${text}"
 		    ;;
 		svn)
-		    git add -q "${file}" >/dev/null 2>&1 || :
+		    svn add -q "${file}" >/dev/null 2>&1 || :
 		    # Doesn't force timestamp or author.
 		    svn commit -q -m "${text}"
 		    ;;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
 	checkout)
@@ -285,7 +243,7 @@ repository() {
 			git branch "${branch}"
 		    fi
 		    git checkout -q "$1";;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
 	merge)
@@ -299,7 +257,7 @@ repository() {
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
 		    git merge -q "$@";;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
 	mkdir)
@@ -309,7 +267,7 @@ repository() {
 		mkdir -p "${d}"
 		case "${repotype}" in
 		    svn) svn add -q "${d}"; svn commit -q -m "${d} creation";;
-		    *) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		    *) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 		esac
 	    done
 	    ;;
@@ -321,7 +279,7 @@ repository() {
 		fossil) ;; # FIXME: Figure out how to make Fossil tags with Git lightweight tag behavior
 		hg) hg tag "${tagname}";;
 		src) src tag create "${tagname}";;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
 	atag)
@@ -350,7 +308,7 @@ repository() {
 		    # shellcheck disable=SC2086
 		    hg tag -m "${tagname}" "$(cat ${file})"
 		    ;;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
 	up)
@@ -358,11 +316,12 @@ repository() {
 	    # (I'm looking at you, Subversion.)
 	    case "${repotype}" in
 		svn) svn -q up;;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
 	export)
 	    # Dump export stream.  Clock-neutralize it if we were unable to force timestamps at commit time.
+	    legend="$1"
 	    neutralize() {
 		tt=10
 		while read -r line;
@@ -381,29 +340,47 @@ repository() {
 	    case "${repotype}" in
 		bzr|brz) "${repotype}" fast-export -q | neutralize >/tmp/stream$$;;
 		fossil) fossil export --git | neutralize >/tmp/stream$$;;
-		git) git fast-export -q --all >/tmp/stream$$;;
+		git) git fast-export --all >/tmp/stream$$;;
 		hg)
 		    need hg-fast-export.py
 		    # https://github.com/frej/fast-export
 		    # This doesn't work yet. It dies with a message about a missing hg2git module.
 		    hg-fast-export.py | neutralize >/tmp/stream$$
 		    ;;
-		src) src fast-export | neutralize >/tmp/stream$$;;
-		svn)
-		   spacer=' '
-		   (tapcd "${rbasedir}"	# Back to the repository root
-		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
-		    svnadmin dump -q "." | repocutter -q -t "${rbasedir}" testify) >/tmp/stream$$
+		src)
+		    src fast-export | neutralize >/tmp/stream$$
 		    ;;
-		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+		svn)
+		    (tapcd "${rbasedir}"	# Back to the repository root
+		     # shellcheck disable=SC1117,SC1004,SC2006,SC2086
+		     svnadmin dump -q "." | repocutter -q -t "${rbasedir}" testify) >/tmp/stream$$
+		    ;;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
-	    echo "${spacer}## $1"; echo "${spacer}# Generated - do not hand-hack!"; cat /tmp/stream$$
+	    case "${repotype}" in
+		svn)
+		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
+		    cat /tmp/stream$$ | sed "1a\
+\ ## ${legend}
+" | sed "2a\
+\ # Generated - do not hand-hack!
+"
+		    ;;
+		*)
+		    echo "## ${legend}"; echo "# Generated - do not hand-hack!"; cat /tmp/stream$$;
+		    ;;
+	    esac
+	    
 	    ;;
 	wrap)
 	    # We're done. Make sure we've returned to the sandbox root.
 	    case "${repotype}" in
 		svn) tapcd "${rbasedir}";;	# Back out of the working directory
 	    esac
+	    ;;
+	*)
+	    echo "not ok - ${cmd} is not a command in the repository shell function.";
+	    exit 1
 	    ;;
     esac
 }

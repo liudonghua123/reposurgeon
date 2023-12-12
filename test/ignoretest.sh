@@ -114,7 +114,7 @@ do
 	    fi
 	}
 	
-	repository init "$vcs" /tmp/ignoretest$$
+	repository init "$vcs"
 	case ${vcs} in
 	    bzr|brz|fossil|git|hg|src|svn)
 		printf "%s:    " "${vcs}" >>/tmp/ignoretable$$
