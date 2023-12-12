@@ -244,6 +244,7 @@ repository() {
 		fossil)
 		    fossil add "${file}" >/dev/null 2>&1 || :
 		    # Doesn't force timestamps or author.
+		    # Could be done with  --date-override and  --user-override.
 		    fossil commit -m "${text}" >/dev/null
 		    ;;
 		git)
@@ -255,8 +256,15 @@ repository() {
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
 		    git commit -q -a -m "${text}"
 		    ;;
+		hg)
+		    # Untested.
+		    # Doesn't force timestamps or author.
+		    # Could be done with -d and -u
+		    git commit -m "${text}"
+		    ;;
 		src)
-		    src commit
+		    # Doesn't force timestamps or author.
+		    src commit -m "${text}"
 		    ;;
 		svn)
 		    git add -q "${file}" >/dev/null 2>&1 || :
@@ -306,11 +314,42 @@ repository() {
 	    done
 	    ;;
 	tag)
-	    # Create a (lightweight) tag.
+	    # Create lightweight tag.
 	    tagname="$1"
 	    case "${repotype}" in
 		bzr|brz|git) "${repotype}" tag -q "${tagname}";;
-		fossil) ;; # FIXME: Figure out how to make Fossil tags with Git tag behavior 
+		fossil) ;; # FIXME: Figure out how to make Fossil tags with Git lightweight tag behavior
+		hg) hg tag "${tagname}";;
+		src) src tag create "${tagname}";;
+		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
+	    esac
+	    ;;
+	atag)
+	    # Create annotated tag
+	    cat >"${file}"
+	    ts=$((ts + 60))
+	    ft=$(printf "%09d" ${ts})
+	    case "${repotype}" in
+		fossil)
+		    # Untested, recorded so we don't have to rediscover argument magic later.
+		    # Doesn't force timestamps or author.
+		    # Could be done with --date-override and  --user-override.
+		    # shellcheck disable=SC2086
+		    fossil tag add "${tagname}" "$(fossil timeline -F "%H" | head -1)" "$(cat ${file})"
+		    ;;
+		git)
+		    # Untested.
+		    export GIT_COMMITTER="$fred}"
+		    export GIT_COMMITTER_DATE="1${ft} +0000" 
+		    git tag -a -F "${file}"
+		    ;;
+		hg)
+		    # Untested.
+		    # Doesn't force timestamps or author.
+		    # Could be done with --d and  -u.
+		    # shellcheck disable=SC2086
+		    hg tag -m "${tagname}" "$(cat ${file})"
+		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function"; exit 1;;
 	    esac
 	    ;;
@@ -334,6 +373,7 @@ repository() {
 			commit) tt=$((tt + 60)); echo "${line}";;
 			committer) echo "committer ${fredname} <${fredmail}> ${tt} +0000";;
 			author) echo "author ${fredname} <${fredmail}> ${tt} +0000";;
+			tagger) echo "tagger ${fredname} <${fredmail}> ${tt} +0000";;
 			*) echo "$line" ;;
 		    esac
 		done 
@@ -342,6 +382,13 @@ repository() {
 		bzr|brz) "${repotype}" fast-export -q | neutralize >/tmp/stream$$;;
 		fossil) fossil export --git | neutralize >/tmp/stream$$;;
 		git) git fast-export -q --all >/tmp/stream$$;;
+		hg)
+		    need hg-fast-export.py
+		    # https://github.com/frej/fast-export
+		    # This doesn't work yet. It dies with a message about a missing hg2git module.
+		    hg-fast-export.py | neutralize >/tmp/stream$$
+		    ;;
+		src) src fast-export | neutralize >/tmp/stream$$;;
 		svn)
 		   spacer=' '
 		   (tapcd "${rbasedir}"	# Back to the repository root
