@@ -1,5 +1,5 @@
 #! /bin/sh
-# Create basic revision and tagging test for branch-oriented VCS
+# VBasic revision and tagging test for VCSes with exporters.
 
 engine="${1:-bzr}"
 

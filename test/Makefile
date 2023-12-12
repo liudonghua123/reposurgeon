@@ -271,9 +271,9 @@ ifneq ($(call AVAILABLE bzr),)
 
 BZR_TARGETS=bzr-test-check
 bzr-test-check:
-	@(./bzrtest.sh bzr | tapdiffer "bzr export test" bzrtest.chk) || echo "$@" >>$(FAILLOG)
+	@(./export-test.sh bzr | tapdiffer "bzr export test" bzrtest.chk) || echo "$@" >>$(FAILLOG)
 bzr-buildcheck:
-	@./bzrtest.sh bzr >bzrtest.chk
+	@./export-test.sh bzr >bzrtest.chk
 
 endif # if bzr
 
@@ -285,9 +285,9 @@ ifneq ($(call AVAILABLE brz),)
 
 BRZ_TARGETS=brz-test-check
 brz-test-check:
-	@(./bzrtest.sh brz | tapdiffer "brz export test" brztest.chk) || echo "$@" >>$(FAILLOG)
+	@(./export-test.sh brz | tapdiffer "brz export test" brztest.chk) || echo "$@" >>$(FAILLOG)
 brz-buildcheck:
-	@./bzrtest.sh brz >brztest.chk
+	@./export-test.sh brz >brztest.chk
 
 endif # if brz
 
