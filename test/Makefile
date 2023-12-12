@@ -293,6 +293,20 @@ endif # if brz
 
 # ENDS: Tests requiring brz
 
+# BEGINS: Tests requiring fossil
+
+ifneq ($(call AVAILABLE fossil),)
+
+FOSSIL_TARGETS=fossil-test-check
+fossil-test-check:
+	@(./export-test.sh fossil | tapdiffer "fossil export test" fossiltest.chk) || echo "$@" >>$(FAILLOG)
+fossil-buildcheck:
+	@./export-test.sh fossil >fossiltest.chk
+
+endif # if fossil
+
+# ENDS: Tests requiring fossil
+
 # Tests past this point may depend on any VCS and are expected
 # to die cleanly with a TAP complaint if they can't find what they need.
 
@@ -320,7 +334,7 @@ $(SPORADIC_TARGETS): sporadic-test-%:
 # so those tests start first.
 TEST_TARGETS = $(LIFTCHECK_TARGETS) $(SVNCHECK_TARGETS) \
 		$(GIT_EXTRACTOR_TARGETS) $(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_TARGETS) \
-		$(BZR_TARGETS) $(BRZ_TARGETS) \
+		$(BZR_TARGETS) $(BRZ_TARGETS) $(FOSSIL_TARGETS) \
 		$(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_TARGETS) \
 		$(COMMAND_TARGETS) $(SVNLOAD_TARGETS) $(LEGACY_TARGETS) \
 		$(REPOMAPPER_TARGETS) $(REPOTOOL_TARGETS) $(REPOCUTTER_TARGETS) \
@@ -346,7 +360,7 @@ parallel-tap: clean
 # noisy failure here because the alternative is that checkfiles might
 # silently not get updated, leadin to vast confusion later.
 buildcheck: command-buildcheck svnload-buildcheck legacy-buildcheck \
-	hg-buildcheck bzr-buildcheck brz-buildcheck repomapper-buildcheck \
+	hg-buildcheck bzr-buildcheck brz-buildcheck fossil-buildcheck repomapper-buildcheck \
 	repotool-buildcheck repocutter-buildcheck svncheck-buildcheck 
 
 # Test productions end here.

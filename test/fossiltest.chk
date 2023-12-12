@@ -1,0 +1,51 @@
+## fossil test repository
+# Generated - do not hand-hack!
+blob
+mark :1
+data 30
+First line of sample content.
+
+blob
+mark :2
+data 61
+First line of sample content.
+Second line of sample content.
+
+blob
+mark :3
+data 91
+First line of sample content.
+Second line of sample content.
+Third line of sample content.
+
+commit refs/heads/trunk
+mark :4
+committer Fred J. Foonly <fred@foonly.org> 70 +0000
+data 22
+initial empty check-in
+deleteall
+
+commit refs/heads/trunk
+mark :5
+committer Fred J. Foonly <fred@foonly.org> 130 +0000
+data 12
+First commit
+from :4
+M 100644 :1 sample
+
+commit refs/heads/trunk
+mark :6
+committer Fred J. Foonly <fred@foonly.org> 190 +0000
+data 13
+Second commit
+from :5
+M 100644 :2 sample
+
+commit refs/heads/trunk
+mark :7
+committer Fred J. Foonly <fred@foonly.org> 250 +0000
+data 12
+Third commit
+from :6
+M 100644 :3 sample
+
