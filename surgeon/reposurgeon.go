@@ -170,7 +170,7 @@ func respond(msg string, args ...interface{}) {
 // screenwidth returns the current width of the terminal window.
 func screenwidth() int {
 	width := 80
-	if term.IsTerminal(int(os.Stdin.Fd())) {
+	if control.isInteractive() && term.IsTerminal(int(os.Stdin.Fd())) {
 		var err error
 		width, _, err = term.GetSize(0)
 		if err != nil {

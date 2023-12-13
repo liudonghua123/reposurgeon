@@ -91,7 +91,6 @@ M 100644 :11 .README
 
 EOF
 print "Initially no sourcetype is set, so =N should be empty"
-set flag interactive
 =N resolve
 sourcetype cvs
 print "Expect 2 CVS results"
