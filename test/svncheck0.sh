@@ -17,43 +17,22 @@ do
     esac
 done
 
-svnaction () {
-    # This version of svnaction does filenames only 
-    filename=$1
-    content=$2
-    comment=$3
-    if [ ! -f "$filename" ]
-    then
-	# shellcheck disable=SC2046,2086
-	if [ ! -d $(dirname $filename) ]
-	then
-	    mkdir $(dirname $filename)
-	    svn add $(dirname $filename)
-	fi
-        echo "$content" >"$filename"
-	svn add "$filename"
-    else
-        echo "$content" >"$filename"
-    fi
-    svn commit -m "$comment" "$filename"
-}
-
 {
     repository init svn
     repository stdlayout
     tapcd ..
     # Content operations start here
-    svnaction "trunk/foo.txt" "Now is the time." "More example content" 
-    svnaction "trunk/bar.txt" "For all good men." "Example content in different file" 
-    svnaction "trunk/baz.txt" "to come to the aid of their country." "And in yet another file"
+    repository commit "trunk/foo.txt" "More example content"  "Now is the time."
+    repository commit "trunk/bar.txt" "Example content in different file"  "For all good men."
+    repository commit "trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
     svn up  # Without this, the next copy does file copies.  With it, a directory copy. 
     svn copy trunk branches/stable
     svn commit -m "First directory copy"
-    svnaction "trunk/foo.txt" "Whether tis nobler in the mind." "Hamlet the Dane said this"
-    svnaction "trunk/bar.txt" "or to take arms against a sea of troubles" "He continued"
-    svnaction "trunk/baz.txt" "and by opposing end them" "The build-up"
-    svnaction "trunk/foo.txt" "to be,"  "Famous soliloquy begins"
-    svnaction "branches/foo.txt" "or not to be." "And continues"
+    repository commit "trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
+    repository commit "trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
+    repository commit "trunk/baz.txt" "The build-up" "and by opposing end them"
+    repository commit "trunk/foo.txt" "Famous soliloquy begins" "to be,"
+    repository commit "branches/foo.txt" "And continues" "or not to be."
     svn up
     svn copy trunk tags/1.0
     svn commit -m "First tag copy"

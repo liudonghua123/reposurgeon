@@ -192,15 +192,15 @@ repository() {
 	    sink=/dev/${verbose:-null}
 	    case "${repotype}" in
 		bzr|brz)
-		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
-			"${repotype}" add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
+			"${repotype}" add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamps or committer.
 		    "${repotype}" commit -m "${comment}${LF}" --author "${fred}" >"${sink}" 2>&1
 		    ;;
 		fossil)
-		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
-			fossil add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
+			fossil add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamps or author.  In theory
 		    # this could be done with --date-override and
@@ -208,8 +208,8 @@ repository() {
 		    fossil commit -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		git)
-		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
-			git add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
+			git add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Git seems to reject timestamps with a leading zero
 		    export GIT_COMMITTER="$fred}"
@@ -219,8 +219,8 @@ repository() {
 		    git commit -a -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		hg)
-		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
-			 hg add "${file}" >"${sink}" && echo "{file}" >>"/tmp/addlist$$"
+		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
+			 hg add "${file}" >"${sink}" && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Untested.
 		    # Doesn't force timestamps or author.
@@ -233,8 +233,14 @@ repository() {
 		    src commit -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		svn)
-		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
-			svn add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    # shellcheck disable=SC2046,2086
+		    if [ ! -d $(dirname ${file}) ]
+		    then
+			mkdir $(dirname ${file})
+			svn add $(dirname ${file})
+		    fi
+		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
+			svn add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamp or author.
 		    svn commit -m "${comment}" >"${sink}" 2>&1
