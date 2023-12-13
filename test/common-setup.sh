@@ -53,15 +53,6 @@ tapcd () {
     cd "$1" >/dev/null || ( echo "not ok: $0: cd failed"; exit 1 )
 }
 
-svndump() {
-    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
-    svnadmin dump -q "$1" | repocutter -q -t "$(basename $0)" testify | sed "1a\
-\ ## $2
-" | sed "2a\
-\ # Generated - do not hand-hack!
-"
-}
-
 svnwrap() {
     rm -fr test-repo$$ test-checkout$$
 }

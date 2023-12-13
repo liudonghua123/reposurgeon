@@ -19,56 +19,66 @@
 #
 # In an ideal world, we might want the gitspace commit
 # corresponding to r5 to become a tag.
-
+#
 # This is a GENERATOR
-
-set -e
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
+set -e
 
-svnadmin create test-repo-$$
-svn checkout --quiet "file://$(pwd)/test-repo-$$" test-checkout-$$
+dump=no
+verbose=null
+while getopts dv opt
+do
+    case $opt in
+	d) dump=yes;;
+	v) verbose=stdout;;
+	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
+    esac
+done
 
-cd test-checkout-$$ >/dev/null || ( echo "$0: cd failed"; exit 1 )
+{
+    repository init svn
+    repository stdlayout
+    tapcd ..
 
-# r1
-mkdir -p trunk branches tags
-svn add --quiet trunk branches tags
-svn commit --quiet -m "create initial folder structure"
+    # r2
+    echo "initial content" >trunk/file
+    svn add trunk/file
+    svn commit -m "add initial content"
 
-# r2
-echo "initial content" >trunk/file
-svn add --quiet trunk/file
-svn commit --quiet -m "add initial content"
+    # r3
+    echo "more content" >>trunk/file
+    svn commit -m "continue development"
 
-# r3
-echo "more content" >>trunk/file
-svn commit --quiet -m "continue development"
+    # r4
+    mkdir -p branches/release-1.0
+    svn add branches/release-1.0
+    svn commit -m "prepare empty release branch"
+    svn up
 
-# r4
-mkdir -p branches/release-1.0
-svn add --quiet branches/release-1.0
-svn commit --quiet -m "prepare empty release branch"
-svn --quiet up
+    # r5
+    svn copy trunk/* branches/release-1.0
+    svn commit -m "copy everything from trunk to release branch"
+    svn up
 
-# r5
-svn copy --quiet trunk/* branches/release-1.0
-svn commit --quiet -m "copy everything from trunk to release branch"
-svn --quiet up
+    # r6
+    echo "even more branch content" >>branches/release-1.0/file
+    svn commit -m "continue development on branch"
 
-# r6
-echo "even more branch content" >>branches/release-1.0/file
-svn commit --quiet -m "continue development on branch"
+    # r7
+    echo "even more trunk content" >>trunk/file
+    svn commit -m "continue trunk development"
 
-# r7
-echo "even more trunk content" >>trunk/file
-svn commit --quiet -m "continue trunk development"
+    repository wrap
+} >/dev/$verbose 2>&1
 
-cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
+if [ "$dump" = yes ]
+then
+    repository export "branch creation via copy-to-empty-dir example"
+fi
 
-svndump test-repo-$$ "branch creation via copy-to-empty-dir example"
+
 
 # end

@@ -6,6 +6,7 @@
 # Normally global-ignores is a property that is created and interpreted
 # on the client side only.  Forcing it with a propset is a bit
 # perverse. Nevertheless we've had a request to handle this case
+#
 # This is a GENERATOR
 
 # shellcheck disable=SC1091
@@ -15,23 +16,17 @@ set -e
 
 if [ "$1" != "ignore" ] && [ "$1" != "global-ignores" ]
 then
-    echo "$0: invalid first argument, should be an ignore-type property"
+    echo "not ok - $0: invalid first argument, should be an ignore-type property"
+    exit 1
 fi
 
 if [ -n "$2" ] && [ "$2" != "copy" ]
 then
-    echo "$0: invalid second argument, should be empty or 'copy'"
+    echo "not ok - $0: invalid second argument, should be empty or 'copy'"
+    exit 1
 fi
 
-command -v realpath >/dev/null 2>&1 ||
-    realpath() { test -z "${1%%/*}" && echo "$1" || echo "$PWD/${1#./}"; }
-
-trap 'rm -fr test-repo-$$ test-checkout-$$ test-checkout2-$$' EXIT HUP INT QUIT TERM
-
-svnadmin create test-repo-$$
-svn checkout --quiet "file://$(pwd)/test-repo-$$" test-checkout-$$
-
-cd test-checkout-$$ >/dev/null || ( echo "$0: cd failed"; exit 1 )
+repository init svn
 
 mkdir -p trunk/subdir
 svn add --quiet trunk
@@ -86,11 +81,11 @@ then
     svn copy --quiet trunk branches/newbranch
     svn commit --quiet -m "Test if a branch copy preserves the properties"
 fi
+repository wrap
 
 # test that the property is stored in the repository by using a new clean checkout
-cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
-svn checkout --quiet "file://$(pwd)/test-repo-$$" test-checkout2-$$
-cd test-checkout2-$$ >/dev/null
+svn checkout --quiet "file://$(pwd)" test-checkout2-$$
+tapcd test-checkout2-$$
 echo "ignored" > trunk/something.foo
 echo "ignored" > trunk/subdir/something.foo
 echo "ignored" > trunk/subdir/something.bar
@@ -99,8 +94,6 @@ echo "ignored" > trunk/subdir/something.bar
 # should return empty
 
 # create dump and ship to standard output
-# shellcheck disable=2103
-cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
-svndump test-repo-$$ "svn:$1 property-setting example"
+repository export "svn:$1 property-setting example"
 
 # end

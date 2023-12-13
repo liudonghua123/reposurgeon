@@ -14,8 +14,8 @@ V 27
 PROPS-END
 
 Revision-number: 1
-Prop-content-length: 134
-Content-length: 134
+Prop-content-length: 126
+Content-length: 126
 
 K 10
 svn:author
@@ -27,8 +27,9 @@ V 27
 1970-01-01T00:00:10.000000Z
 K 7
 svn:log
-V 35
-add trunk branches tags directories
+V 27
+Standard directory layout.
+
 PROPS-END
 
 Node-path: branches

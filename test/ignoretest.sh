@@ -13,6 +13,8 @@
 # in CVS, it turns out ignore patterns only apply to the commands
 # "update", "import" and release; an ignored files's status
 # report does not change.
+#
+# This is not a generator.
 
 systems="brz bzr fossil git hg src svn"
 verbose=no

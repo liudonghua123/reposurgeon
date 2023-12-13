@@ -1,7 +1,7 @@
 #!/bin/sh
 # Generate an SVN stream which may provoke reposurgeon to create a duplicate 'refs/tags/release-1.0-root'
 # This used to lift to an invalid input stream, see https://gitlab.com/esr/reposurgeon/-/issues/355
-
+#
 # This is a GENERATOR
 
 # shellcheck disable=SC1091
@@ -9,42 +9,53 @@
 
 set -e
 
-trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
+dump=no
+verbose=null
+while getopts dv opt
+do
+    case $opt in
+	d) dump=yes;;
+	v) verbose=stdout;;
+	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
+    esac
+done
 
-svnadmin create test-repo-$$
-svn checkout --quiet "file://$(pwd)/test-repo-$$" test-checkout-$$
+# shellcheck disable=SC2004
+shift $(($OPTIND - 1))
+{
+    repository init svn
+    repository stdlayout
+    tapcd ..
 
-cd test-checkout-$$ >/dev/null || ( echo "$0: cd failed"; exit 1 )
+    # r2
+    echo foo >trunk/file
+    svn add trunk/file
+    svn commit -m 'add file'
 
-# r1
-mkdir trunk branches tags
-svn add --quiet trunk branches tags
-svn commit --quiet -m 'add trunk branches tags directories'
+    # r3
+    svn copy ^/trunk ^/branches/release-1.0 -m "Create release branch 1.0"
+    svn up
 
-# r2
-echo foo >trunk/file
-svn add --quiet trunk/file
-svn commit --quiet -m 'add file'
+    # r4
+    echo bar >>branches/release-1.0/file
+    svn commit -m 'Prepare release 1.0'
 
-# r3
-svn copy --quiet ^/trunk ^/branches/release-1.0 -m "Create release branch 1.0"
-svn up --quiet
+    # r5
+    svn copy ^/branches/release-1.0 ^/tags/release-1.0 -m "Tag release 1.0"
+    svn up
 
-# r4
-echo bar >>branches/release-1.0/file
-svn commit --quiet -m 'Prepare release 1.0'
+    # r6
+    svn up
+    echo bar >>tags/release-1.0/file
+    svn commit -m 'Oops, forgot something! (this turns the "tag" back into a "branch")'
 
-# r5
-svn copy --quiet ^/branches/release-1.0 ^/tags/release-1.0 -m "Tag release 1.0"
-svn up --quiet
+    repository wrap
+} >"/dev/${verbose}" 2>&1
 
-# r6
-svn up --quiet
-echo bar >>tags/release-1.0/file
-svn commit --quiet -m 'Oops, forgot something! (this turns the "tag" back into a "branch")'
-
-cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
-
-svndump test-repo-$$ "tag with commit after creation example"
+# shellcheck disable=2010
+if [ "$dump" = yes ]
+then
+    repository export "tag with commit after creation example"
+fi
 
 # end

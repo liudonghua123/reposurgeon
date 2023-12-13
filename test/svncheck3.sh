@@ -1,6 +1,8 @@
 #!/bin/sh
 ## Test propagation of executable bit by directory copy, second variant
 # Originally made from gen-dump2.sh, attached to issue #103.
+#
+# This is not a generator.
 
 # shellcheck disable=SC1091
 . ./common-setup.sh

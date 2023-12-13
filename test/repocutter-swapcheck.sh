@@ -1,5 +1,7 @@
 #!/bin/sh
 ## Test repocutter swapcheck
+#
+# This is not a generator.
 
 # shellcheck disable=SC1091
 . ./common-setup.sh

@@ -1,5 +1,7 @@
 #!/bin/sh
 ## General test load for ancestry-chasing logic
+#
+# This is a GENERATOR
 
 # shellcheck disable=SC1091
 . ./common-setup.sh

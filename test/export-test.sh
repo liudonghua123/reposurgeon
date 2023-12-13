@@ -1,5 +1,7 @@
 #! /bin/sh
-# VBasic revision and tagging test for VCSes with exporters.
+# Basic revision and tagging test for VCSes with exporters.
+#
+# This is a GENERATOR
 
 engine="${1:-bzr}"
 

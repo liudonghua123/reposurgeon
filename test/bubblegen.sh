@@ -1,5 +1,7 @@
 #! /bin/sh
 # Create a small test repository with a merge bubble
+#
+# This is a GENERATOR
 
 # shellcheck disable=SC1091
 . ./common-setup.sh

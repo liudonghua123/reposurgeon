@@ -6,6 +6,8 @@
 # Expect the resulting dump to have an add with copyfrom at
 # the last commit, as opposed to a replace.  Verify that
 # the file copy operation leaves the executable bit set.
+#
+# This is not a generator.
 
 # shellcheck disable=SC1091
 . ./common-setup.sh

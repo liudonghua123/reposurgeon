@@ -1,64 +1,75 @@
 #!/bin/sh
 # Generate a Subversion output stream with a deleted branch (that also contains spaces)
-
+#
 # This is a GENERATOR
-
-set -e
 
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-trap 'rm -fr test-repo-$$ test-checkout-$$' EXIT HUP INT QUIT TERM
+set -e
 
-svnadmin create test-repo-$$
-svn --quiet checkout "file://$(pwd)/test-repo-$$" test-checkout-$$
+dump=no
+verbose=null
+while getopts dv opt
+do
+    case $opt in
+	d) dump=yes;;
+	v) verbose=stdout;;
+	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
+    esac
+done
 
-cd test-checkout-$$ >/dev/null || ( echo "$0: cd failed"; exit 1 )
+# shellcheck disable=SC2004
+shift $(($OPTIND - 1))
+{
+    repository init svn
+    repository stdlayout
+    tapcd ..
 
-# r1
-mkdir -p trunk branches tags
-svn --quiet add trunk branches tags
-svn --quiet commit -m "create initial folder structure"
+    # r2
+    echo "initial content" >trunk/file
+    svn add trunk/file
+    svn commit -m "add initial content"
 
-# r2
-echo "initial content" >trunk/file
-svn --quiet add trunk/file
-svn --quiet commit -m "add initial content"
+    # r3
+    echo "more content" >>trunk/file
+    svn commit -m "continue development"
 
-# r3
-echo "more content" >>trunk/file
-svn --quiet commit -m "continue development"
+    # r4
+    svn copy "trunk" "branches/first-branch"
+    svn commit -m "copy trunk to first new branch"
+    svn up
 
-# r4
-svn --quiet copy "trunk" "branches/first-branch"
-svn --quiet commit -m "copy trunk to first new branch"
-svn --quiet up
+    # r5
+    echo "even more branch content" >>"branches/first-branch/file"
+    svn commit -m "continue development on first branch"
+    svn up
 
-# r5
-echo "even more branch content" >>"branches/first-branch/file"
-svn --quiet commit -m "continue development on first branch"
-svn --quiet up
+    # r6
+    svn rm "branches/first-branch"
+    svn commit -m "delete first branch"
+    svn up
 
-# r6
-svn --quiet rm "branches/first-branch"
-svn --quiet commit -m "delete first branch"
-svn --quiet up
+    # r7
+    svn copy "trunk" "branches/second-branch"
+    svn commit -m "copy trunk to new branch"
+    svn up
 
-# r7
-svn --quiet copy "trunk" "branches/second-branch"
-svn --quiet commit -m "copy trunk to new branch"
-svn --quiet up
+    # r8
+    echo "even more branch content" >>"branches/second-branch/file"
+    svn commit -m "continue development on branch"
 
-# r8
-echo "even more branch content" >>"branches/second-branch/file"
-svn --quiet commit -m "continue development on branch"
+    # r9
+    echo "even more trunk content" >>trunk/file
+    svn commit -m "continue trunk development"
 
-# r9
-echo "even more trunk content" >>trunk/file
-svn --quiet commit -m "continue trunk development"
+    repository wrap
+} >"/dev/${verbose}" 2>&1
 
-cd .. >/dev/null || ( echo "$0: cd failed"; exit 1 )
-
-svndump test-repo-$$ "branch with spaces deletion example"
+# shellcheck disable=2010
+if [ "$dump" = yes ]
+then
+    repository export "branch with spaces deletion example"
+fi
 
 # end
