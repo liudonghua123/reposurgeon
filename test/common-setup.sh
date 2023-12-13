@@ -175,8 +175,14 @@ repository() {
 	    # commit.  If possible, force timestamp and author. When
 	    # it isn't, that has to be cleaned up at export time.
 	    file="$1"
-	    text="$2"
-	    cat >"${file}"
+	    comment="$2"
+	    newcontent="$3"
+	    if [ -z "${newcontent}" ]
+	    then
+		cat >"${file}"
+	    else
+		echo "${newcontent}" >"${file}"
+	    fi
 	    # Always do the add, ignore errors. Otherwise we'd have to check to see if
 	    # the file is registered each time.
 	    ts=$((ts + 60))
@@ -190,7 +196,7 @@ repository() {
 			"${repotype}" add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamps or committer.
-		    "${repotype}" commit -m "${text}${LF}" --author "${fred}" >"${sink}" 2>&1
+		    "${repotype}" commit -m "${comment}${LF}" --author "${fred}" >"${sink}" 2>&1
 		    ;;
 		fossil)
 		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
@@ -199,7 +205,7 @@ repository() {
 		    # Doesn't force timestamps or author.  In theory
 		    # this could be done with --date-override and
 		    # --user-override, but that failed when it was tried.
-		    fossil commit -m "${text}" >"${sink}" 2>&1
+		    fossil commit -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		git)
 		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
@@ -210,7 +216,7 @@ repository() {
 		    export GIT_AUTHOR="${fred}"
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git commit -a -m "${text}" >"${sink}" 2>&1
+		    git commit -a -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		hg)
 		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
@@ -219,19 +225,19 @@ repository() {
 		    # Untested.
 		    # Doesn't force timestamps or author.
 		    # Could be done with -d and -u
-		    hg commit -m "${text}" >"${sink}" 2>&1
+		    hg commit -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		src)
 		    # Doesn't force timestamps or author.
 		    # Doesn't require an add if the file fails to exist.
-		    src commit -m "${text}" >"${sink}" 2>&1
+		    src commit -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		svn)
 		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
 			svn add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamp or author.
-		    svn commit -m "${text}" >"${sink}" 2>&1
+		    svn commit -m "${comment}" >"${sink}" 2>&1
 		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
