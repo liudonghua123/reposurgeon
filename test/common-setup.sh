@@ -181,6 +181,7 @@ repository() {
 	    # the file is registered each time.
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
+	    #rfc3339="$(date --date=@${ts} --rfc-3339=seconds | tr ' ' 'T')"
 
 	    sink=/dev/${verbose:-null}
 	    case "${repotype}" in
@@ -188,15 +189,16 @@ repository() {
 		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
 			"${repotype}" add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
 		    }
-		    # Doesn't force timestamps or author.
+		    # Doesn't force timestamps or committer.
 		    "${repotype}" commit -m "${text}${LF}" --author "${fred}" >"${sink}" 2>&1
 		    ;;
 		fossil)
 		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
 			fossil add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
 		    }
-		    # Doesn't force timestamps or author.
-		    # Could be done with  --date-override and  --user-override.
+		    # Doesn't force timestamps or author.  In theory
+		    # this could be done with --date-override and
+		    # --user-override, but that failed when it was tried.
 		    fossil commit -m "${text}" >"${sink}" 2>&1
 		    ;;
 		git)
