@@ -9,13 +9,12 @@
 
 set -e
 
-dump=no
+dump=yes
 verbose=null
-while getopts dv opt
+while getopts v opt
 do
     case $opt in
-	d) dump=yes;;
-	v) verbose=stdout;;
+	v) verbose=stdout; dump=no;;
 	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
     esac
 done

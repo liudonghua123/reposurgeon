@@ -61,7 +61,7 @@ check:
 .svn.map:
 	$(REPOSURGEON) "log -all" "read <$<" "legacy write -" >$@
 .sh.svn:
-	sh $< -d >$@
+	sh $< >$@
 .svn.see:
 	@repocutter -q see <$< >$@
 .sh.fi:
@@ -112,6 +112,10 @@ ignore-copy.svn: ignoregen.sh
 	sh $< ignore copy >$@
 global-ignores-copy.svn: ignoregen.sh
 	sh $< global-ignores copy >$@
+
+clobber:
+	rm -f $(GENERATEDSVN) $(GENERATEDGIT)
+regenerate: $(GENERATEDSVN) $(GENERATEDGIT)
 
 # General regression testing of commands and output; look at the *.tst and
 # corresponding *.chk files to see which tests this runs.
