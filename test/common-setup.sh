@@ -98,7 +98,7 @@ repository() {
 	    #
 	    repotype="$1"
 	    rbasedir="/tmp/testrepo$$";
-	    trap 'rm -fr ${rbasedir} /tmp/stream$$ /tmp/fossil$$' EXIT HUP INT QUIT TERM
+	    trap 'rm -fr ${rbasedir} /tmp/stream$$ /tmp/fossil$$ /tmp/addlist$$' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
 	    rm -fr "${rbasedir}";
 	    mkdir "${rbasedir}";
@@ -123,6 +123,7 @@ repository() {
 	    esac
 	    LF='
 '
+	    touch "/tmp/addlist$$"
 	    ;;
 	stdlayout)
 	    case "${repotype}" in
@@ -181,41 +182,54 @@ repository() {
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
 
+	    sink=/dev/${verbose:-null}
 	    case "${repotype}" in
 		bzr|brz)
-		    "${repotype}" add -q "${file}" >/dev/null 2>&1 || :
+		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
+			"${repotype}" add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    }
 		    # Doesn't force timestamps or author.
-		    "${repotype}" commit -q -m "${text}${LF}" --author "${fred}"
+		    "${repotype}" commit -m "${text}${LF}" --author "${fred}" >"${sink}" 2>&1
 		    ;;
 		fossil)
-		    fossil add "${file}" >/dev/null 2>&1 || :
+		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
+			fossil add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    }
 		    # Doesn't force timestamps or author.
 		    # Could be done with  --date-override and  --user-override.
-		    fossil commit -m "${text}" >/dev/null
+		    fossil commit -m "${text}" >"${sink}" 2>&1
 		    ;;
 		git)
-		    git add "${file}" >/dev/null 2>&1 || :
+		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
+			git add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    }
 		    # Git seems to reject timestamps with a leading zero
 		    export GIT_COMMITTER="$fred}"
 		    export GIT_AUTHOR="${fred}"
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git commit -q -a -m "${text}"
+		    git commit -a -m "${text}" >"${sink}" 2>&1
 		    ;;
 		hg)
+		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
+			 hg add "${file}" >"${sink}" && echo "{file}" >>"/tmp/addlist$$"
+		    }
 		    # Untested.
 		    # Doesn't force timestamps or author.
 		    # Could be done with -d and -u
-		    git commit -m "${text}"
+		    hg commit -m "${text}" >"${sink}" 2>&1
 		    ;;
 		src)
 		    # Doesn't force timestamps or author.
-		    src commit -m "${text}"
+		    # Doesn't require an add if the file fails to exist.
+		    src commit -m "${text}" >"${sink}" 2>&1
 		    ;;
 		svn)
-		    svn add -q "${file}" >/dev/null 2>&1 || :
+		    grep "{file}" "/tmp/addlist$$" >/dev/null || { 
+			svn add "${file}" >"${sink}" 2>&1 && echo "{file}" >>"/tmp/addlist$$"
+		    }
 		    # Doesn't force timestamp or author.
-		    svn commit -q -m "${text}"
+		    svn commit -m "${text}" >"${sink}" 2>&1
 		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
