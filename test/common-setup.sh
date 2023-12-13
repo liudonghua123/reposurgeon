@@ -139,10 +139,7 @@ repository() {
 		    svn mkdir trunk && \
 			svn mkdir tags && \
 			svn mkdir branches && \
-			echo "Directory layout." | svn commit -F - && \
-			echo "This is a test Subversion repository" >trunk/README && \
-			svn add trunk/README && \
-			echo "Initial README content." | svn commit -F - && \
+			echo "Standard directory layout." | svn commit -F - && \
 			tapcd trunk
 		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;

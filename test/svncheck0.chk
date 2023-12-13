@@ -23,146 +23,132 @@ data 210
 
 blob
 mark :2
-data 37
-This is a test Subversion repository
+data 17
+Now is the time.
 
 commit refs/heads/master
 #legacy-id 2
 mark :3
 committer Fred J. Foonly <foonly@foo.com> 720 +0000
-data 24
-Initial README content.
+data 21
+More example content
 M 100644 :1 .gitignore
-M 100644 :2 README
+M 100644 :2 foo.txt
 
 blob
 mark :4
-data 17
-Now is the time.
+data 18
+For all good men.
 
 commit refs/heads/master
 #legacy-id 3
 mark :5
 committer Fred J. Foonly <foonly@foo.com> 1080 +0000
-data 21
-More example content
+data 34
+Example content in different file
 from :3
-M 100644 :4 foo.txt
+M 100644 :4 bar.txt
 
 blob
 mark :6
-data 18
-For all good men.
+data 37
+to come to the aid of their country.
 
 commit refs/heads/master
 #legacy-id 4
 mark :7
 committer Fred J. Foonly <foonly@foo.com> 1440 +0000
-data 34
-Example content in different file
+data 24
+And in yet another file
 from :5
-M 100644 :6 bar.txt
+M 100644 :6 baz.txt
 
 blob
 mark :8
-data 37
-to come to the aid of their country.
+data 32
+Whether tis nobler in the mind.
 
 commit refs/heads/master
-#legacy-id 5
+#legacy-id 6
 mark :9
-committer Fred J. Foonly <foonly@foo.com> 1800 +0000
-data 24
-And in yet another file
+committer Fred J. Foonly <foonly@foo.com> 2160 +0000
+data 26
+Hamlet the Dane said this
 from :7
-M 100644 :8 baz.txt
+M 100644 :8 foo.txt
 
 blob
 mark :10
-data 32
-Whether tis nobler in the mind.
+data 42
+or to take arms against a sea of troubles
 
 commit refs/heads/master
 #legacy-id 7
 mark :11
 committer Fred J. Foonly <foonly@foo.com> 2520 +0000
-data 26
-Hamlet the Dane said this
+data 13
+He continued
 from :9
-M 100644 :10 foo.txt
+M 100644 :10 bar.txt
 
 blob
 mark :12
-data 42
-or to take arms against a sea of troubles
+data 25
+and by opposing end them
 
 commit refs/heads/master
 #legacy-id 8
 mark :13
 committer Fred J. Foonly <foonly@foo.com> 2880 +0000
 data 13
-He continued
+The build-up
 from :11
-M 100644 :12 bar.txt
+M 100644 :12 baz.txt
 
 blob
 mark :14
-data 25
-and by opposing end them
+data 7
+to be,
 
 commit refs/heads/master
 #legacy-id 9
 mark :15
 committer Fred J. Foonly <foonly@foo.com> 3240 +0000
-data 13
-The build-up
+data 24
+Famous soliloquy begins
 from :13
-M 100644 :14 baz.txt
+M 100644 :14 foo.txt
 
 blob
 mark :16
-data 7
-to be,
-
-commit refs/heads/master
-#legacy-id 10
-mark :17
-committer Fred J. Foonly <foonly@foo.com> 3600 +0000
-data 24
-Famous soliloquy begins
-from :15
-M 100644 :16 foo.txt
-
-blob
-mark :18
 data 14
 or not to be.
 
 commit refs/heads/unbranched
-#legacy-id 11
-mark :19
-committer Fred J. Foonly <foonly@foo.com> 3960 +0000
+#legacy-id 10
+mark :17
+committer Fred J. Foonly <foonly@foo.com> 3600 +0000
 data 14
 And continues
 M 100644 :1 .gitignore
-M 100644 :18 branches/foo.txt
+M 100644 :16 branches/foo.txt
 
 tag stable-root
-#legacy-id 6
-from :9
-tagger Fred J. Foonly <foonly@foo.com> 2160 +0000
+#legacy-id 5
+from :7
+tagger Fred J. Foonly <foonly@foo.com> 1800 +0000
 data 21
 First directory copy
 
 tag 1.0
-#legacy-id 12
-from :17
-tagger Fred J. Foonly <foonly@foo.com> 4320 +0000
+#legacy-id 11
+from :15
+tagger Fred J. Foonly <foonly@foo.com> 3960 +0000
 data 15
 First tag copy
 
 reset refs/heads/stable
-#legacy-id 6
-from :9
+#legacy-id 5
+from :7
 
 done
