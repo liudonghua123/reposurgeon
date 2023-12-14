@@ -301,7 +301,8 @@ commit refs/heads/project3
 #legacy-id 33
 mark :37
 committer fred <fred> 330 +0000
-data 0
+data 24
+Gettysburg speech begin
 from :35
 M 100644 :36 branches/sample/foo.txt
 
