@@ -124,6 +124,7 @@ repository() {
 	    LF='
 '
 	    touch "/tmp/addlist$$"
+	    sink=/dev/${verbose:-null}
 	    ;;
 	stdlayout)
 	    case "${repotype}" in
@@ -189,7 +190,6 @@ repository() {
 	    ft=$(printf "%09d" ${ts})
 	    #rfc3339="$(date --date=@${ts} --rfc-3339=seconds | tr ' ' 'T')"
 
-	    sink=/dev/${verbose:-null}
 	    case "${repotype}" in
 		bzr|brz)
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
@@ -237,7 +237,7 @@ repository() {
 		    if [ ! -d $(dirname ${file}) ]
 		    then
 			mkdir $(dirname ${file})
-			svn add $(dirname ${file})
+			svn add $(dirname ${file}) >"${sink}" 2>&1
 		    fi
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
 			svn add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
@@ -282,7 +282,7 @@ repository() {
 	    do
 		mkdir -p "${d}"
 		case "${repotype}" in
-		    svn) svn add -q "${d}"; svn commit -q -m "${d} creation";;
+		    svn) svn add "${d}" >"${sink}" 2>&1; svn commit -m "${d} creation" >"${sink}" 2>&1;;
 		    *) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 		esac
 	    done
