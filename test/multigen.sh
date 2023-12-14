@@ -83,9 +83,9 @@ svnaction() {
     svnaction project1/trunk/
     svnaction project1/branches/
     svnaction project1/tags/
-    svnaction "project1/trunk/foo.txt" "Example content" "Now is the time."
-    svnaction "project1/trunk/bar.txt" "Example content in different file"  "For all good men."
-    svnaction "project1/trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
+    repository commit "project1/trunk/foo.txt" "Example content" "Now is the time."
+    repository commit "project1/trunk/bar.txt" "Example content in different file"  "For all good men."
+    repository commit "project1/trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
     svn up  # Without this, the next copy does file copies.  With it, a directory copy. 
     svn copy project1/trunk project1/branches/stable
     svn commit -m "First directory copy"
@@ -93,11 +93,11 @@ svnaction() {
     svnaction project2/trunk/
     svnaction project2/branches/
     svnaction project2/tags/
-    svnaction "project2/trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
-    svnaction "project2/trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
-    svnaction "project2/trunk/baz.txt" "The build-up" "and by opposing end them"
-    svnaction "project2/trunk/foo.txt" "Famous soliloquy begins" "to be," 
-    svnaction "project2/trunk/foo.txt" "And continues" "or not to be."
+    repository commit "project2/trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
+    repository commit "project2/trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
+    repository commit "project2/trunk/baz.txt" "The build-up" "and by opposing end them"
+    repository commit "project2/trunk/foo.txt" "Famous soliloquy begins" "to be," 
+    repository commit "project2/trunk/foo.txt" "And continues" "or not to be."
     svn up
     svnaction "project2/trunk/foodir/qux.txt" "and a sense that the world is mad." "He was born with the gift of laughter"
     svn up
@@ -109,11 +109,11 @@ svnaction() {
     svnaction project3/trunk/
     svnaction project3/branches/
     svnaction project3/tags/
-    svnaction "project3/trunk/foo.txt" "I learned to relish the beauty of manners" "From my grandfather Verus"
-    svnaction "project3/trunk/bar.txt" "From the fame and character my father obtain'd" "and to restrain all anger."
-    svnaction "project3/trunk/baz.txt" "Of my mother;" "modesty, and a many deportment."
-    svnaction "project3/trunk/foo.txt" "and to guard not only against evil actions," "I learned to be religuious and liberal;" 
-    svnaction "project3/trunk/foo.txt" "entering my thoughts" "but even against any evil intentions"
+    repository commit "project3/trunk/foo.txt" "I learned to relish the beauty of manners" "From my grandfather Verus"
+    repository commit "project3/trunk/bar.txt" "From the fame and character my father obtain'd" "and to restrain all anger."
+    repository commit "project3/trunk/baz.txt" "Of my mother;" "modesty, and a many deportment."
+    repository commit "project3/trunk/foo.txt" "and to guard not only against evil actions," "I learned to be religuious and liberal;" 
+    repository commit "project3/trunk/foo.txt" "entering my thoughts" "but even against any evil intentions"
     svn up
     # Write a span of per-project trunk-to-branch copies that needs to be coalesced by swapsvn
     # Ideally these should turn into a single copy trunk/ branches/sample
