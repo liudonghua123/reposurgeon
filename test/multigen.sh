@@ -42,57 +42,43 @@ shift $(($OPTIND - 1))
 
 svnaction() {
     # This version of svnaction does filenames or directories 
-    case $1 in
-	*/)
-	    directory=$1
-	    comment=${2:-$1 creation}
-	    if [ ! -d "$directory" ]
-	    then
-		mkdir "$directory"
-		svn add "$directory"
-	    fi
-	    svn commit -m "$comment"
-	;;
-	*)
-	    filename=$1
-	    comment=$2
-	    content=$3
-	    # shellcheck disable=SC2046
-	    if [ ! -f "$filename" ]
-	    then
-		if [ ! -d $(dirname "$filename") ]
-		then
-		    mkdir $(dirname "$filename")
-		    svn add $(dirname "$filename")
-		fi
-		echo "$content" >"$filename"
-		svn add "$filename"
-	    else
-		echo "$content" >"$filename"
-	    fi
-	    svn commit -m "$comment"
-	;;
-    esac
+    filename=$1
+    comment=$2
+    content=$3
+    # shellcheck disable=SC2046
+    if [ ! -f "$filename" ]
+    then
+	if [ ! -d $(dirname "$filename") ]
+	then
+	    mkdir $(dirname "$filename")
+	    svn add $(dirname "$filename")
+	fi
+	echo "$content" >"$filename"
+	svn add "$filename"
+    else
+	echo "$content" >"$filename"
+    fi
+    svn commit -m "$comment"
 }
 
 {
     repository init svn
 
     # Content operations start here
-    svnaction project1/
-    svnaction project1/trunk/
-    svnaction project1/branches/
-    svnaction project1/tags/
+    repository mkdir project1/
+    repository mkdir project1/trunk/
+    repository mkdir project1/branches/
+    repository mkdir project1/tags/
     repository commit "project1/trunk/foo.txt" "Example content" "Now is the time."
     repository commit "project1/trunk/bar.txt" "Example content in different file"  "For all good men."
     repository commit "project1/trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
     svn up  # Without this, the next copy does file copies.  With it, a directory copy. 
     svn copy project1/trunk project1/branches/stable
     svn commit -m "First directory copy"
-    svnaction project2/
-    svnaction project2/trunk/
-    svnaction project2/branches/
-    svnaction project2/tags/
+    repository mkdir project2/
+    repository mkdir project2/trunk/
+    repository mkdir project2/branches/
+    repository mkdir project2/tags/
     repository commit "project2/trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
     repository commit "project2/trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
     repository commit "project2/trunk/baz.txt" "The build-up" "and by opposing end them"
@@ -105,10 +91,10 @@ svnaction() {
     svn commit -m "First tag copy"
     svn copy project2/trunk project1/trunk/evilcopy
     svn commit -m "Example cross-project copy"
-    svnaction project3/
-    svnaction project3/trunk/
-    svnaction project3/branches/
-    svnaction project3/tags/
+    repository mkdir project3/
+    repository mkdir project3/trunk/
+    repository mkdir project3/branches/
+    repository mkdir project3/tags/
     repository commit "project3/trunk/foo.txt" "I learned to relish the beauty of manners" "From my grandfather Verus"
     repository commit "project3/trunk/bar.txt" "From the fame and character my father obtain'd" "and to restrain all anger."
     repository commit "project3/trunk/baz.txt" "Of my mother;" "modesty, and a many deportment."
