@@ -27,63 +27,63 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init git
+    vc init git
 
     #C1
-    repository commit sample "First commit (master)" <<EOF
+    vc commit sample "First commit (master)" <<EOF
 First line of sample content.
 EOF
 
     #C1
-    repository commit sample "Second commit (master)" <<EOF
+    vc commit sample "Second commit (master)" <<EOF
 First line of sample content.
 Second line of sample content.
 EOF
 
     #C2
-    repository commit sample "Third commit (master)" <<EOF
+    vc commit sample "Third commit (master)" <<EOF
 First line of sample content.
 Second line of sample content.
 Third line of sample content.
 EOF
 
-    repository checkout iss53
+    vc checkout iss53
 
     #C3
-    repository commit sample2 "Create new footer [issue 53]" <<EOF
+    vc commit sample2 "Create new footer [issue 53]" <<EOF
 First line of sample2 content.
 EOF
 
-    repository checkout master
+    vc checkout master
 
-    repository checkout hotfix
+    vc checkout hotfix
 
     #C4
-    repository commit sample3 "Fix broken email address" <<EOF
+    vc commit sample3 "Fix broken email address" <<EOF
 First line of sample3 content.
 EOF
 
-    repository checkout master
+    vc checkout master
 
-    repository merge hotfix
+    vc merge hotfix
 
     git branch -q -d hotfix	# NOTE: GIT DEPENDENCY!
 
-    repository checkout iss53
+    vc checkout iss53
 
     #C5
-    repository commit sample2 "Create new footer [issue 53]" <<EOF
+    vc commit sample2 "Create new footer [issue 53]" <<EOF
 First line of sample2 content.
 Second line of sample2 content.
 EOF
 
-    repository checkout master
+    vc checkout master
 
-    repository merge iss53 -m "Second merge."
+    vc merge iss53 -m "Second merge."
 
     #gitk --all
 } >"${msgsink}" 2>&1
-repository export "A repository with a merge bubble" >"${outsink}"
+vc export "A repository with a merge bubble" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

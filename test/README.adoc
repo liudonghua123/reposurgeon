@@ -136,22 +136,22 @@ synthesize such streams.
 
 If you want to create a new test load (as opposed to capturing one from
 a bug reports) it's best to write a generator for it.  Do this using
-the "repository" function in common-setup.sh. Its subcommands give you
+the "vc" function in common-setup.sh. Its subcommands give you
 a concise way to express operations on repositories, a common language
 that can sometimes be used to write generators that will work under
 multiple different VCSses (see export-test.sh for example). If you
 try to do an operation a given VCS doesn't support, it will error out
 shipping a TAP failure line.
 
-When writing generators you can assume that in between "repository
-init" and "repository wrap" you are in the repository's working
+When writing generators you can assume that in between "vc
+init" and "vc wrap" you are in the repository's working
 directory and can use native VCS commands.  This is especially
-relevant with Subversion; the "repository" pseudofunctions are
+relevant with Subversion; the "vc" pseudofunctions are
 designed to behave like a generic DVCS (e.g. git, brz/brz, hg,
 fossil) but the Subversion model is different enough that you will
 often need to use native Subversion commands.
 
-By design, the "repository" functions do not suppress message
+By design, the "vc" functions do not suppress message
 and error output from the commands they run. They are
 wrapped in a redirect that stashes that stuff.  The generators
 have standard wrapper code ensuring that you can pass a -v

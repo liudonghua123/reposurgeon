@@ -42,7 +42,7 @@ fi
 
 here=$(pwd)
 {
-    repository init svn
+    vc init svn
 
     mkdir -p trunk/subdir
     svn add trunk
@@ -97,7 +97,7 @@ here=$(pwd)
 	svn copy trunk branches/newbranch
 	svn commit -m "Test if a branch copy preserves the properties"
     fi
-    repository wrap
+    vc wrap
 
     # test that the property is stored in the repository by using a new clean checkout
     svn checkout "file://$(pwd)" test-checkout2-$$
@@ -109,7 +109,7 @@ here=$(pwd)
     # svn status
     # should return empty
 } >"${msgsink}" 2>&1
-repository export "svn:$1 property-setting example" >"${outsink}"
+vc export "svn:$1 property-setting example" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

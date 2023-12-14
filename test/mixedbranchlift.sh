@@ -24,8 +24,8 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init svn
-    repository stdlayout
+    vc init svn
+    vc stdlayout
 
     # r2
     svn mkdir nonbranch1
@@ -57,9 +57,9 @@ here=$(pwd)
     svn commit -m 'append to nonbranch2/DRINKME'
     svn up
 
-    repository wrap
+    vc wrap
 } >"${msgsink}" 2>&1
-repository export "Example of mixed-directory commits on master for testing branchlift" >"${outsink}"
+vc export "Example of mixed-directory commits on master for testing branchlift" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

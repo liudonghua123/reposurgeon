@@ -24,7 +24,7 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init svn
+    vc init svn
 
     projects="software firmware docs"
 
@@ -70,9 +70,9 @@ here=$(pwd)
     done
     svn commit -m "continue development on new trunk"
 
-    repository wrap
+    vc wrap
 } >"${msgsink}" 2>&1
-repository export "multiple projects merged into common trunk example" >"${outsink}"
+vc export "multiple projects merged into common trunk example" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

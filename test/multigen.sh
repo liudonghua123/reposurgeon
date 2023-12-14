@@ -65,28 +65,28 @@ svnaction() {
 
 here=$(pwd)
 {
-    repository init svn
+    vc init svn
 
     # Content operations start here
-    repository mkdir project1/
-    repository mkdir project1/trunk/
-    repository mkdir project1/branches/
-    repository mkdir project1/tags/
-    repository commit "project1/trunk/foo.txt" "Example content" "Now is the time."
-    repository commit "project1/trunk/bar.txt" "Example content in different file"  "For all good men."
-    repository commit "project1/trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
+    vc mkdir project1/
+    vc mkdir project1/trunk/
+    vc mkdir project1/branches/
+    vc mkdir project1/tags/
+    vc commit "project1/trunk/foo.txt" "Example content" "Now is the time."
+    vc commit "project1/trunk/bar.txt" "Example content in different file"  "For all good men."
+    vc commit "project1/trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
     svn up  # Without this, the next copy does file copies.  With it, a directory copy. 
     svn copy project1/trunk project1/branches/stable
     svn commit -m "First directory copy"
-    repository mkdir project2/
-    repository mkdir project2/trunk/
-    repository mkdir project2/branches/
-    repository mkdir project2/tags/
-    repository commit "project2/trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
-    repository commit "project2/trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
-    repository commit "project2/trunk/baz.txt" "The build-up" "and by opposing end them"
-    repository commit "project2/trunk/foo.txt" "Famous soliloquy begins" "to be," 
-    repository commit "project2/trunk/foo.txt" "And continues" "or not to be."
+    vc mkdir project2/
+    vc mkdir project2/trunk/
+    vc mkdir project2/branches/
+    vc mkdir project2/tags/
+    vc commit "project2/trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
+    vc commit "project2/trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
+    vc commit "project2/trunk/baz.txt" "The build-up" "and by opposing end them"
+    vc commit "project2/trunk/foo.txt" "Famous soliloquy begins" "to be," 
+    vc commit "project2/trunk/foo.txt" "And continues" "or not to be."
     svn up
     svnaction "project2/trunk/foodir/qux.txt" "and a sense that the world is mad." "He was born with the gift of laughter"
     svn up
@@ -94,15 +94,15 @@ here=$(pwd)
     svn commit -m "First tag copy"
     svn copy project2/trunk project1/trunk/evilcopy
     svn commit -m "Example cross-project copy"
-    repository mkdir project3/
-    repository mkdir project3/trunk/
-    repository mkdir project3/branches/
-    repository mkdir project3/tags/
-    repository commit "project3/trunk/foo.txt" "I learned to relish the beauty of manners" "From my grandfather Verus"
-    repository commit "project3/trunk/bar.txt" "From the fame and character my father obtain'd" "and to restrain all anger."
-    repository commit "project3/trunk/baz.txt" "Of my mother;" "modesty, and a many deportment."
-    repository commit "project3/trunk/foo.txt" "and to guard not only against evil actions," "I learned to be religuious and liberal;" 
-    repository commit "project3/trunk/foo.txt" "entering my thoughts" "but even against any evil intentions"
+    vc mkdir project3/
+    vc mkdir project3/trunk/
+    vc mkdir project3/branches/
+    vc mkdir project3/tags/
+    vc commit "project3/trunk/foo.txt" "I learned to relish the beauty of manners" "From my grandfather Verus"
+    vc commit "project3/trunk/bar.txt" "From the fame and character my father obtain'd" "and to restrain all anger."
+    vc commit "project3/trunk/baz.txt" "Of my mother;" "modesty, and a many deportment."
+    vc commit "project3/trunk/foo.txt" "and to guard not only against evil actions," "I learned to be religuious and liberal;" 
+    vc commit "project3/trunk/foo.txt" "entering my thoughts" "but even against any evil intentions"
     svn up
     # Write a span of per-project trunk-to-branch copies that needs to be coalesced by swapsvn
     # Ideally these should turn into a single copy trunk/ branches/sample
@@ -160,14 +160,14 @@ here=$(pwd)
     svn rename project3/branches/sample3 project3/branches/renamed
     svn commit -m "Rename sample3 branch of project3"
     svn up
-    # Pathological copy that needs to be split.  We're cipying project1
+    # Pathological copy that needs to be split.  We're copying project1
     # because it has a branch that should be caught by wildcarding.
     svn copy project1 project4
     svn commit -m "Should become 3 copies of project3/{trunk,branches,tags}"
     svn up
-    repository wrap
+    vc wrap
 } >"${msgsink}" 2>&1
-repository export "Multi-project repository example" >"${outsink}"
+vc export "Multi-project repository example" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

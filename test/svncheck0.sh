@@ -23,27 +23,27 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init svn
-    repository stdlayout
+    vc init svn
+    vc stdlayout
     tapcd ..
     # Content operations start here
-    repository commit "trunk/foo.txt" "More example content"  "Now is the time."
-    repository commit "trunk/bar.txt" "Example content in different file"  "For all good men."
-    repository commit "trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
+    vc commit "trunk/foo.txt" "More example content"  "Now is the time."
+    vc commit "trunk/bar.txt" "Example content in different file"  "For all good men."
+    vc commit "trunk/baz.txt" "And in yet another file" "to come to the aid of their country."
     svn up  # Without this, the next copy does file copies.  With it, a directory copy. 
     svn copy trunk branches/stable
     svn commit -m "First directory copy"
-    repository commit "trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
-    repository commit "trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
-    repository commit "trunk/baz.txt" "The build-up" "and by opposing end them"
-    repository commit "trunk/foo.txt" "Famous soliloquy begins" "to be,"
-    repository commit "branches/foo.txt" "And continues" "or not to be."
+    vc commit "trunk/foo.txt" "Hamlet the Dane said this" "Whether tis nobler in the mind."
+    vc commit "trunk/bar.txt" "He continued" "or to take arms against a sea of troubles"
+    vc commit "trunk/baz.txt" "The build-up" "and by opposing end them"
+    vc commit "trunk/foo.txt" "Famous soliloquy begins" "to be,"
+    vc commit "branches/foo.txt" "And continues" "or not to be."
     svn up
     svn copy trunk tags/1.0
     svn commit -m "First tag copy"
-    repository wrap
+    vc wrap
 } >"${msgsink}" 2>&1
-repository export "ancestry-chasing test" >"${outsink}"
+vc export "ancestry-chasing test" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

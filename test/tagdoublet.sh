@@ -65,8 +65,8 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init svn
-    repository stdlayout
+    vc init svn
+    vc stdlayout
 
     # r2
     echo foo >file
@@ -91,9 +91,9 @@ here=$(pwd)
     tapcd trunk
     echo end >> file
     svn commit -m 'file: add end'
-    repository wrap
+    vc wrap
 } >"${msgsink}" 2>&1
-repository export "tag doublet example" >"${outsink}"
+vc export "tag doublet example" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

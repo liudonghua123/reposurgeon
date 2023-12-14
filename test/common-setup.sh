@@ -80,8 +80,8 @@ tapdump() {
     echo "  ..."
 }
 
-repository() {
-    # Generic repository-manipulation code
+vc() {
+    # Generic VCS manipulation code
     cmd="$1"
     shift
     case "${cmd}" in

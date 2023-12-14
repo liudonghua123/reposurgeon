@@ -26,29 +26,29 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init "${engine}"
+    vc init "${engine}"
 
     #C1
-    repository commit sample "First commit" <<EOF
+    vc commit sample "First commit" <<EOF
 First line of sample content.
 EOF
 
     #C1
-    repository commit sample "Second commit" <<EOF
+    vc commit sample "Second commit" <<EOF
 First line of sample content.
 Second line of sample content.
 EOF
 
     #C2
-    repository commit sample "Third commit" <<EOF
+    vc commit sample "Third commit" <<EOF
 First line of sample content.
 Second line of sample content.
 Third line of sample content.
 EOF
 
-    repository tag foobar
+    vc tag foobar
 } >"${msgsink}" 2>&1
-repository export "${engine} test repository" >"${outsink}"
+vc export "${engine} test repository" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

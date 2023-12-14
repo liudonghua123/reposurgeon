@@ -89,11 +89,11 @@ do
 	    fi
 
 	    count=$((count+1))
-	    repository ignore
+	    vc ignore
 	    # shellcheck disable=SC2154
-	    repository ignore "${ignorefile}"
-	    repository ignore "${pattern}"
-	    repository status >/tmp/statusout$$ 2>&1
+	    vc ignore "${ignorefile}"
+	    vc ignore "${pattern}"
+	    vc status >/tmp/statusout$$ 2>&1
 	    
 	    if [ -n "${exceptions}" ] && (echo "${vcs}" | grep -E "${exceptions}" >/dev/null)
 	    then
@@ -116,13 +116,13 @@ do
 	    fi
 	}
 	
-	repository init "$vcs"
+	vc init "$vcs"
 	case ${vcs} in
 	    bzr|brz|fossil|git|hg|src|svn)
 		printf "%s:    " "${vcs}" >>/tmp/ignoretable$$
 		touch 'ignorable'
 		# If this fails something very basic has gone wrong
-		(repository status | grep '?[ 	]*ignorable' >/dev/null) || fail "status didn't flag junk file"
+		(vc status | grep '?[ 	]*ignorable' >/dev/null) || fail "status didn't flag junk file"
 		# The actual pattern tests start here.
 		ignorecheck 'ignorable' 'ignorable' "basic ignore"
 		ignorecheck 'ignor*' 'ignorable' "check for * wildcard"
@@ -163,7 +163,7 @@ do
 		failures=$((failures+1))
 		exit 1
 	esac
-	repository wrap
+	vc wrap
     else
         printf 'not ok - %s missing # SKIP\n' "$vcs"
 	failures=$((failures+1))

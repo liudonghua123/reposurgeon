@@ -20,7 +20,7 @@ done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
 {
-    repository init svn
+    vc init svn
     mkdir trunk
     svn add trunk
     svn commit -m "Create trunk."
@@ -35,12 +35,12 @@ shift $(($OPTIND - 1))
     svn cp dir1 dir2
     svn commit -m "Copy dir1 to dir2."
     if [ -x trunk/dir2/file ]; then executable=yes; fi
-    repository wrap
+    vc wrap
 } >/dev/$verbose 2>&1
 # shellcheck disable=SC2010
 if [ "$dump" = yes ]
 then
-    repository export "exec propagation test"
+    vc export "exec propagation test"
 elif [ "${executable}" = yes ]
 then
     echo "ok - $0: executable permission is as expected"

@@ -20,8 +20,8 @@ done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
 {
-    repository init svn
-    repository stdlayout
+    vc init svn
+    vc stdlayout
     svn mkdir dir1
     echo "file" > dir1/file
     svn add dir1/file
@@ -35,12 +35,12 @@ shift $(($OPTIND - 1))
     svn up
     ls -l dir1/file dir2/file
     if [ -x dir2/file ]; then executable=yes; fi
-    repository wrap
+    vc wrap
 } >/dev/$verbose 2>&1
 # shellcheck disable=SC2010
 if [ "$dump" = yes ]
 then
-    repository export "exec propagation test"
+    vc export "exec propagation test"
 elif [ "${executable}" = yes ]
 then
     echo "ok - $0: executable permission is as expected"

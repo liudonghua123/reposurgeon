@@ -25,8 +25,8 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init svn
-    repository stdlayout
+    vc init svn
+    vc stdlayout
     tapcd ..
 
     # r2
@@ -51,9 +51,9 @@ here=$(pwd)
     echo bar >>tags/release-1.0/file
     svn commit -m 'Oops, forgot something! (this turns the "tag" back into a "branch")'
 
-    repository wrap
+    vc wrap
 } >"${msgsink}" 2>&1
-repository export "tag with commit after creation example" >"${outsink}"
+vc export "tag with commit after creation example" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]

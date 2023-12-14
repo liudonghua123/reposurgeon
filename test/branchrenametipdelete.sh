@@ -24,8 +24,8 @@ shift $(($OPTIND - 1))
 
 here=$(pwd)
 {
-    repository init svn
-    repository stdlayout
+    vc init svn
+    vc stdlayout
     tapcd ..
 
     # r2
@@ -65,9 +65,9 @@ here=$(pwd)
     echo "even more trunk content" >>trunk/file
     svn commit -m "continue trunk development"
 
-    repository wrap
+    vc wrap
 } >"${msgsink}" 2>&1
-repository export "branch with spaces deletion example" >"${outsink}"
+vc export "branch with spaces deletion example" >"${outsink}"
 
 # With -o, don't ship to the target until we know we have not errored out
 if [ -s /tmp/genout$$ ]
