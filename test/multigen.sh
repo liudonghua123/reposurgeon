@@ -37,6 +37,8 @@ do
 	*) echo "$0: unknown flag $opt" >&2; exit 1;;
     esac
 done
+# shellcheck disable=SC2004
+shift $(($OPTIND - 1))
 
 svnaction() {
     # This version of svnaction does filenames or directories 

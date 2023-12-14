@@ -18,9 +18,9 @@ do
 	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
     esac
 done
-
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
+
 {
     repository init svn
     repository stdlayout
