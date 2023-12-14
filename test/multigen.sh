@@ -42,27 +42,6 @@ done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
 
-svnaction() {
-    # This version of svnaction does filenames or directories 
-    filename=$1
-    comment=$2
-    content=$3
-    # shellcheck disable=SC2046
-    if [ ! -f "$filename" ]
-    then
-	if [ ! -d $(dirname "$filename") ]
-	then
-	    mkdir $(dirname "$filename")
-	    svn add $(dirname "$filename")
-	fi
-	echo "$content" >"$filename"
-	svn add "$filename"
-    else
-	echo "$content" >"$filename"
-    fi
-    svn commit -m "$comment"
-}
-
 here=$(pwd)
 {
     vc init svn
@@ -88,7 +67,15 @@ here=$(pwd)
     vc commit "project2/trunk/foo.txt" "Famous soliloquy begins" "to be," 
     vc commit "project2/trunk/foo.txt" "And continues" "or not to be."
     svn up
-    svnaction "project2/trunk/foodir/qux.txt" "and a sense that the world is mad." "He was born with the gift of laughter"
+    # This is a remnant of our older way of writing Subversion
+    # generators. No point in disturbing it.  The vc finctions wouild
+    # insert a commit after the directory add.
+    mkdir project2/trunk/foodir
+    svn add project2/trunk/foodir
+    echo "He was born with the gift of laughter" >project2/trunk/foodir/qux.txt
+    svn add project2/trunk/foodir/qux.txt
+    svn commit -m "and a sense that the world is mad."
+    # End of old-style stuff
     svn up
     svn copy project2/trunk project2/tags/1.0
     svn commit -m "First tag copy"
@@ -108,6 +95,7 @@ here=$(pwd)
     # Ideally these should turn into a single copy trunk/ branches/sample
     svn copy project1/trunk project1/branches/sample
     svn commit -m "Create sample branch of project1"
+    # End of old-style stuff
     svn up
     svn copy project2/trunk project2/branches/sample
     svn commit -m "Create sample branch of project2"
@@ -115,7 +103,11 @@ here=$(pwd)
     svn copy project3/trunk project3/branches/sample
     svn commit -m "Create sample branch of project3"
     svn up
-    svnaction "project3/branches/sample/foo.txt" "Gettysburg speech begin" "Fourscore and seven years ago"
+    # Can't use vc commit here, it fails trying to do an add
+    # because it doesn't avoid paths created by copy opertions.
+    echo "Fourscore and seven years ago" >project3/branches/sample/foo.txt
+    svn commit -m "Gettysburg speech begin"
+    # End of old-style stuff
     svn up
     svn copy project2/trunk/foodir project3/branches/sample
     svn commit -m "Copy after branch creation"
