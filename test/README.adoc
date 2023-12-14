@@ -27,37 +27,24 @@ QUIET: 0 (the default) allows display of a diff against the checkfile
 when a test fails. When QUIET=1 the diff is suppressed; only the
 TAP report line appears.
 
-To run a single test:
-
-------------------------------------------------------
-$ cd test; ./singletest foo
-------------------------------------------------------
-
-will check the actual result of the script in foo.tst against its expected
-output in foo.chk. A TAP "ok" line is good news.
-
-The "liftcheck" script is useful for testing the conversion correctness
-of a Subversion stream:
-
-------------------------------------------------------
-$ cd test; ./liftcheck foo.svn
-------------------------------------------------------
-   
-An "ok" line means that a compare-all showed no errors or warnings.
-
-To allow the code to emit a stack trace, set any log bit.
-
-The script "delver" is available to run the Golang debugger,
-dlv, on reposurgeon.
-
-== Notes on the test machinery
+== Finding your way around
 
 A .fi extension means it's a git fast-import stream.  
 A .svn extension means it's a Subversion repo dump.
 A .chk extension means it's expected output from a test.
 A .tst extension means it's a test driver script.
+A .sh extension can be a test or a test generator.
 
-All reports from test scripts are in the form of TAP (Test Anything Protocol).
+To see synopsis lines from all tests in .tst files, 'make testlist'.  
+
+In general, a file named foo.chk is the expected output from a test.
+Check files are rebuilt by "make buildcheck".
+
+The Subversion .svn dumpfiles have summary comments in them that abuse
+a loophole in Subversion's parser - header lines that begin with
+whitespace are ignored.  When you create a new one, insert a second
+line that begins with a space and two pound signs.  Import streams
+don't need this hack, as they have #-led comments natively.
 
 == The scripts
 
@@ -138,39 +125,39 @@ Run delve, the Golang symbolic debugger, on reposurgeon. The wrapper
 is required to work around the problem that a program running under
 an ordinary delver instance loses access to stdin.
 
-== The tests
+== The tests and the generators.
 
-Keeping live Subversion repos under version control doesn't work very well; 
-in particular, things like the entries file change too often.  So what we 
-do is keep Subversion dump files and rebuild the repo before each test.
+Keeping live repositories under version control doesn't work very
+well; in particular, things like the Subversion entries file (and its
+analogs in other VCSes) change too often.  So what we keep around is
+two things: dump files (git fast-import streams and Subversion dump
+streams) captured from bug reports, and generator scripts that
+synthesize such streams.
 
-In general, a file named foo.chk is the expected output from a test involving
-either some operation test on an input stream in foo.fi or a repo conversion
-from foo.svn.
+If you want to create a new test load (as opposed to capturing one from
+a bug reports) it's best to write a generator for it.  Do this using
+the "repository" function in common-setup.sh. Its subcommands give you
+a concise way to express operations on repositories, a common language
+that can sometimes be used to write generators that will work under
+multiple different VCSses (see export-test.sh for example). If you
+try to do an operation a given VCS doesn't support, it will error out
+shipping a TAP failure line.
 
-To see summary lines from all tests, 'make testlist'.  
+When writing generators you can assume that in between "repository
+init" and "repository wrap" you are in the repository's working
+directory and can use native VCS commands.  This is especially
+relevant with Subversion; the "repository" pseudofunctions are
+designed to behave like a generic DVCS (e.g. git, brz/brz, hg,
+fossil) but the Subversion model is different enough that you will
+often need to use native Subversion commands.
 
-The Subversion dumpfiles have summary comments in them that abuse a loophole
-in Subversion's parser - header lines that begin with whitespace are ignored.
-When you create a new one, insert a second line that begins with a space and
-two pound signs.
-
-=== Notes about making new Subversion test loads
-
-It's good practice to write generators using the shell functions in
-common-setup.sh.  Theye are easier to read and modify than the
-stream files they generate.
-
-1. To clone an existing test load foo.svn into the test repo,
-'svn-to-svn -n <foo.svn'
-
-2. To copy trunk, creating a tag named 'foo'
-
-   svn copy file://${PWD}/test-repo/trunk file://${PWD}/test-repo/tags/foo
-
-3. To delete a branch foo
-
-   svn delete file://${PWD}/test-repo/branches/foo
+By design, the "repository" functions do not suppress message
+and error output from the commands they run. They are
+wrapped in a redirect that stashes that stuff.  The generators
+have standard wrapper code ensuring that you can pass a -v
+option that suppresses normal output generation and shows these
+messages instead; use it if you have any doubt about what
+your generator is doing.
 
 == The agito test case
 

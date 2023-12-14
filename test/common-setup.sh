@@ -98,7 +98,7 @@ repository() {
 	    #
 	    repotype="$1"
 	    rbasedir="/tmp/testrepo$$";
-	    trap 'rm -fr ${rbasedir} /tmp/stream$$ /tmp/fossil$$ /tmp/addlist$$' EXIT HUP INT QUIT TERM
+	    trap 'rm -fr ${rbasedir} /tmp/stream$$ /tmp/fossil$$ /tmp/addlist$$ /tmp/genout$$' EXIT HUP INT QUIT TERM
 	    need "${repotype}"
 	    rm -fr "${rbasedir}";
 	    mkdir "${rbasedir}";
@@ -124,7 +124,6 @@ repository() {
 	    LF='
 '
 	    touch "/tmp/addlist$$"
-	    sink=/dev/${verbose:-null}
 	    ;;
 	stdlayout)
 	    case "${repotype}" in
@@ -193,57 +192,57 @@ repository() {
 	    case "${repotype}" in
 		bzr|brz)
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
-			"${repotype}" add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
+			"${repotype}" add "${file}" && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamps or committer.
-		    "${repotype}" commit -m "${comment}${LF}" --author "${fred}" >"${sink}" 2>&1
+		    "${repotype}" commit -m "${comment}${LF}" --author "${fred}"
 		    ;;
 		fossil)
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
-			fossil add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
+			fossil add "${file}" && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamps or author.  In theory
 		    # this could be done with --date-override and
 		    # --user-override, but that failed when it was tried.
-		    fossil commit -m "${comment}" >"${sink}" 2>&1
+		    fossil commit -m "${comment}"
 		    ;;
 		git)
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
-			git add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
+			git add "${file}" && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Git seems to reject timestamps with a leading zero
 		    export GIT_COMMITTER="$fred}"
 		    export GIT_AUTHOR="${fred}"
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git commit -a -m "${comment}" >"${sink}" 2>&1
+		    git commit -a -m "${comment}"
 		    ;;
 		hg)
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
-			 hg add "${file}" >"${sink}" && echo "${file}" >>"/tmp/addlist$$"
+			 hg add "${file}" && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Untested.
 		    # Doesn't force timestamps or author.
 		    # Could be done with -d and -u
-		    hg commit -m "${comment}" >"${sink}" 2>&1
+		    hg commit -m "${comment}"
 		    ;;
 		src)
 		    # Doesn't force timestamps or author.
 		    # Doesn't require an add if the file fails to exist.
-		    src commit -m "${comment}" >"${sink}" 2>&1
+		    src commit -m "${comment}"
 		    ;;
 		svn)
 		    # shellcheck disable=SC2046,2086
 		    if [ ! -d $(dirname ${file}) ]
 		    then
 			mkdir $(dirname ${file})
-			svn add $(dirname ${file}) >"${sink}" 2>&1
+			svn add $(dirname ${file})
 		    fi
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
-			svn add "${file}" >"${sink}" 2>&1 && echo "${file}" >>"/tmp/addlist$$"
+			svn add "${file}" && echo "${file}" >>"/tmp/addlist$$"
 		    }
 		    # Doesn't force timestamp or author.
-		    svn commit -m "${comment}" >"${sink}" 2>&1
+		    svn commit -m "${comment}"
 		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
@@ -282,7 +281,7 @@ repository() {
 	    do
 		mkdir -p "${d}"
 		case "${repotype}" in
-		    svn) svn add "${d}" >"${sink}" 2>&1; svn commit -m "${d} creation" >"${sink}" 2>&1;;
+		    svn) svn add "${d}"; svn commit -m "${d} creation";;
 		    *) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 		esac
 	    done

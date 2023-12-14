@@ -27,18 +27,21 @@
 
 set -e
 
-dump=yes
-verbose=null
-while getopts v opt
+rm -f /tmp/genout$$
+outsink=/dev/stdout
+msgsink=/dev/null
+while getopts o:v opt
 do
     case $opt in
-	v) verbose=stdout; dump=no;;
-	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
+	o) outsink=/tmp/genout$$; target=${OPTARG};;
+	v) msgsink=/dev/stdout; outsink=/dev/null;;
+	*) echo "$0: unknown flag $opt" >&2; exit 1;;
     esac
 done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
 
+here=$(pwd)
 {
     repository init svn
     repository stdlayout
@@ -73,13 +76,13 @@ shift $(($OPTIND - 1))
     svn commit -m "continue trunk development"
 
     repository wrap
-} >/dev/$verbose 2>&1
+} >"${msgsink}" 2>&1
+repository export "branch creation via copy-to-empty-dir example" >"${outsink}"
 
-if [ "$dump" = yes ]
+# With -o, don't ship to the target until we know we have not errored out
+if [ -s /tmp/genout$$ ]
 then
-    repository export "branch creation via copy-to-empty-dir example"
+    cp /tmp/genout$$ "${here}/${target}"
 fi
-
-
 
 # end

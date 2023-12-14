@@ -28,12 +28,14 @@
 
 set -e
 
-dump=yes
-verbose=null
-while getopts v opt
+rm -f /tmp/genout$$
+outsink=/dev/stdout
+msgsink=/dev/null
+while getopts o:v opt
 do
     case $opt in
-	v) verbose=stdout; dump=no;;
+	o) outsink=/tmp/genout$$; target="${OPTARG}";;
+	v) msgsink=/dev/stdout; outsink=/dev/null;;
 	*) echo "$0: unknown flag $opt" >&2; exit 1;;
     esac
 done
@@ -61,6 +63,7 @@ svnaction() {
     svn commit -m "$comment"
 }
 
+here=$(pwd)
 {
     repository init svn
 
@@ -163,11 +166,13 @@ svnaction() {
     svn commit -m "Should become 3 copies of project3/{trunk,branches,tags}"
     svn up
     repository wrap
-} >/dev/$verbose 2>&1
+} >"${msgsink}" 2>&1
+repository export "Multi-project repository example" >"${outsink}"
 
-if [ "$dump" = yes ]
+# With -o, don't ship to the target until we know we have not errored out
+if [ -s /tmp/genout$$ ]
 then
-    repository export "Multi-project repository example"
+    cp /tmp/genout$$ "${here}/${target}"
 fi
 
 # end

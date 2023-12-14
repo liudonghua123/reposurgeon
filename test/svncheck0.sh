@@ -6,19 +6,22 @@
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
-dump=no
-verbose=null
-while getopts dv opt
+rm -f /tmp/genout$$
+outsink=/dev/stdout
+msgsink=/dev/null
+while getopts do:v opt
 do
     case $opt in
-	d) dump=yes;;
-	v) verbose=stdout;;
-	*) echo "not ok - $0: unknown flag $opt"; exit 1;;
+	d) ;;
+	o) outsink=/tmp/genout$$; target="${OPTARG}";;
+	v) msgsink=/dev/stdout; outsink=/dev/null;;
+	*) echo "$0: unknown flag $opt" >&2; exit 1;;
     esac
 done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
 
+here=$(pwd)
 {
     repository init svn
     repository stdlayout
@@ -39,10 +42,13 @@ shift $(($OPTIND - 1))
     svn copy trunk tags/1.0
     svn commit -m "First tag copy"
     repository wrap
-} >/dev/$verbose 2>&1
-if [ "$dump" = yes ]
+} >"${msgsink}" 2>&1
+repository export "ancestry-chasing test" >"${outsink}"
+
+# With -o, don't ship to the target until we know we have not errored out
+if [ -s /tmp/genout$$ ]
 then
-    repository export "ancestry-chasing test"
+    cp /tmp/genout$$ "${here}/${target}"
 fi
 
 # end

@@ -61,11 +61,11 @@ check:
 .svn.map:
 	$(REPOSURGEON) "log -all" "read <$<" "legacy write -" >$@
 .sh.svn:
-	sh $< >$@
+	sh $< -o $@
+.sh.fi:
+	sh $< -o $@
 .svn.see:
 	@repocutter -q see <$< >$@
-.sh.fi:
-	sh $< >$@
 
 clean:
 	@rm -fr .rs* test=repo test-checkout test-repo* test-checkout* git-repo left-repo right-repo *~
@@ -105,13 +105,13 @@ GENERATEDSVN=multigen.svn ignore.svn global-ignores.svn ignore-copy.svn global-i
 	branchcreateempty.svn
 GENERATEDGIT=bubblegen.fi
 ignore.svn: ignoregen.sh
-	sh $< ignore >$@
+	sh $< -o $@ ignore
 global-ignores.svn: ignoregen.sh
-	sh $< global-ignores >$@
+	sh $< -o $@ global-ignores
 ignore-copy.svn: ignoregen.sh
-	sh $< ignore copy >$@
+	sh $<  -o $@ ignore copy
 global-ignores-copy.svn: ignoregen.sh
-	sh $< global-ignores copy >$@
+	sh $< -o $@ global-ignores copy
 
 clobber:
 	rm -f $(GENERATEDSVN) $(GENERATEDGIT)
