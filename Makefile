@@ -311,7 +311,7 @@ check: lint all test
 	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
 
 fixme:
-	@if command -v rg; then \
+	@if command -v rg >/dev/null; then \
 		rg --no-heading FIX''ME; \
 	else \
 		find . -type f -exec grep -n FIX''ME {} /dev/null \; | grep -v "[.]git"; \
