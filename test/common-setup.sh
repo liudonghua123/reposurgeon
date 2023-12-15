@@ -53,10 +53,6 @@ tapcd () {
     cd "$1" >/dev/null || ( echo "not ok: $0: cd failed"; exit 1 )
 }
 
-svnwrap() {
-    rm -fr test-repo$$ test-checkout$$
-}
-
 seecompare () {
     # Takes a test file on stdin. The arguments the arguments are the command
     trap 'rm -f /tmp/seecompare-before$$ /tmp/infile$$' EXIT HUP INT QUIT TERM
