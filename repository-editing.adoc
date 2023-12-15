@@ -72,10 +72,7 @@ Fully supported systems (those for which reposurgeon can both read and
 write repositories and the support has been tested) include git, hg,
 bzr, brz, fossil, darcs, RCS, and SRC. There is tested read-side support for
 SCCS, CVS and svn. There is untested read-write support for Bitkeeper
-and untested read support for Monotone.
-
-For a complete list, with dependencies and technical notes, type
-"<<prefer_cmd>>" to the reposurgeon prompt.
+and untested read support for Monotone. See <<support> for more details.
 
 Writing to the file-oriented systems RCS and SRC has some serious
 limitations because those systems cannot represent all the metadata in
@@ -263,6 +260,7 @@ Beware that the quality of CVS lifts may be poor, with individual
 lifts requiring serious hand-hacking. This is due to inherent problems
 with CVS's file-oriented model and the fragility of its repository
 structures; reposurgeonn cannot entirely compensate for these flaws.
+See <<CVS>> for discussion and workarounds.
 
 CVS has top-tier support with good testing.
 
@@ -280,7 +278,8 @@ also translate cleanly.
 
 Operator errors, prior conversion with tools like cvs2svn, and
 gatewaying with git-svn can leave cruft in a Subversion history
-that needs to be cleaned out.
+that needs to be cleaned out.  See <<subversion>> for discussion
+and workarounds.
 
 Subversion has top-tier support with excellent testing.
 
@@ -292,6 +291,8 @@ either of two methods, and write one using a Mercurial plugin.  See
 successful history conversions from Mercurial to Git.
 
 Mercurial has top-tier support, but only basic test coverage.
+
+See <<mercurial>> for more details.
 
 === Bazaar/Breezy
 
@@ -339,8 +340,9 @@ from a Fossil checkout directory. It uses the native Fossil exporter,
 which is pretty good but exports only versioned ignore patterns (in
 .fossil-settings/ignore-glob) not the unversioned ignore-globs set
 through the Web interface. The Fossil tag model has complexities that
-an export to Git or other systems will not capture. Export also leaves
-behind other data such as the wiki content, events, and tickets.
+an export to Git or other systems will not fully capture. Export also
+leaves behind other data such as the wiki content, events, and
+tickets.
 
 darcs: reposurgeon declares an importer-exporter pair, but the
 capability has only been lightly tested. There are almost certainly
@@ -942,7 +944,7 @@ a parent mark to a commit.
 One minor feature you lose in moving from SCCS, CVS, Subversion, or
 BitKeeper to a DVCS is keyword expansion.  You should go through the last
 revision of the code and remove `$Id$`, `$Date$`, `$Revision$`, and other
-keyword cookies lest they become unhelpful fossils. The full Subversion
+keyword cookies lest they become unhelpful relics. The full Subversion
 set is `$Date$`, `$Revision$`, `$Author$`, `$HeadURL$` and `$Id$`. CVS
 uses `$Author$`, `$Date$`, `$Header$`, `$Id$`, `$Log$`, `$Revision$`,
 also (rarely) `$Locker$`, `$Name$`, `$RCSfile$`, `$Source$`, and
@@ -2276,9 +2278,9 @@ the repository subdirectory.
 [[changelogs]]
 === Changelogs
 
-CVS, Subversion and Mercurial do not have separated notions of committer
-and author for changesets; when lifted to a VCS that does, like git,
-their one author field is used for both.
+CVS, Subversion, Mercurial, and Fossil do not have separated notions
+of committer and author for changesets; when lifted to a VCS that
+does, like git or bzr/brz, their one author field is used for both.
 
 However, if the project used the FSF ChangeLog convention,
 many changesets will include a ChangeLog modification listing an
