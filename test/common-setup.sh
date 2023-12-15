@@ -81,12 +81,36 @@ tapdump() {
 }
 
 vc() {
-    # Generic VCS manipulation code
+    # Harness for generic VCS manipulation. This is the virtual VCS we
+    # write our test generators in.  It fails loudly - will error out
+    # with a TAP failure line if you try to do an operation that isn't
+    # supported by the VCS you selected at vc init time.
+    #
+    # Due to ontological mismatch this has some limitations. It's
+    # designed to capture generic DVCS-like behavior and covers git,
+    # bzr, brz, and fossil fairly well. Within this group the friction
+    # points are tag and branch operations, there is only limited support
+    # with limited portability.
+    #
+    # The interface of src makes it fit in the DVCS group despite not
+    # having real changesets.
+    #
+    # svn has a very different model and vc scripts written for it won't
+    # generally work if you select anything in the DVCS group, or vice-versa.
+    # This is why Subversion generators are usually less pure, with lots of
+    # native svn commands in them - there's not much point in trying to
+    # shoehorn them into the DVCS-like model.
+    #
+    # CVS support is missing because cvs-fast-export has its own test suite
+    # with its own equivalent of this harness. SCCS and RCS are missing for
+    # the same reason - they are queried and manipulated through src, which
+    # has its own test suite and exporter.
+    #
     cmd="$1"
     shift
     case "${cmd}" in
 	init)
-	    # Initialize repo in specified temporary directory
+	    # Initialize repo in a temporary directory.
 	    #
 	    # Always pair init and wrap calls.  The issue is that in
 	    # SVN (and CVS, if and when when it's supported), the
@@ -105,16 +129,17 @@ vc() {
 	    # shellcheck disable=SC2164
 	    cd "${rbasedir}" >/dev/null || exit 1;
 	    case "${repotype}" in
-		bzr|brz|git|hg) "${repotype}" init -q;;
+		bzr|brz|git|hg) "${repotype}" init;;
 		fossil) fossil init /tmp/fossil$$ >/dev/null && fossil open /tmp/fossil$$ >/dev/null && mkdir .fossil-settings;;
 		src) mkdir .src;;
-		svn) svnadmin create .; svn co -q "file://$(pwd)" working-copy ; tapcd working-copy;;
+		svn) svnadmin create .; svn co "file://$(pwd)" working-copy ; tapcd working-copy;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ts=10
 	    fredname='Fred J. Foonly'
 	    fredmail='fred@foonly.org'
 	    fred="${fredname} <${fredmail}>"
+	    #commitbranch="trunk"
 	    # Make the ignore file available for ignore-pattern tests ignorefile=".${cmd}ignore"
 	    ignorefile=".${repotype}ignore"
 	    case "${repotype}" in
@@ -126,6 +151,7 @@ vc() {
 	    touch "/tmp/addlist$$"
 	    ;;
 	stdlayout)
+	    # Create standard Subversion layout
 	    case "${repotype}" in
 		svn)
 		    svn mkdir trunk && \
@@ -145,7 +171,7 @@ vc() {
 	    then
 		if [ -n "${rpattern}" ] && [ "${rpattern}" != '.svnignore' ]
 		then
-		   svn propset -q svn:ignore "${rpattern}" .
+		   svn propset svn:ignore "${rpattern}" .
 		fi
 	    else
 		if [ -z "${rpattern}" ]
@@ -247,17 +273,21 @@ vc() {
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
-	checkout)
-	    # Checkout branch, creating if necessary.
+	switch)
+	    # Switch to branch, creating if necessary.
 	    branch="$1"
 	    case "${repotype}" in
 		git)
 		    # shellcheck disable=SC2086
 		    if [ "$(git branch | grep ${branch})" = "" ]
 		    then
-			git branch "${branch}"
+			git switch -c "${branch}"
 		    fi
-		    git checkout -q "$1";;
+		    if [ "${branch}" = "trunk" ]; then branch="master"; fi
+		    git switch "$1";;
+		#fossil)
+		#    commitbranch="${branch}"
+		#    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
@@ -271,7 +301,7 @@ vc() {
 		    export GIT_AUTHOR="${fred}"
 		    export GIT_COMMITTER_DATE="1${ft} +0000" 
 		    export GIT_AUTHOR_DATE="1${ft} +0000" 
-		    git merge -q "$@";;
+		    git merge "$@";;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
@@ -290,15 +320,25 @@ vc() {
 	    # Create lightweight tag.
 	    tagname="$1"
 	    case "${repotype}" in
-		bzr|brz|git) "${repotype}" tag -q "${tagname}";;
-		fossil) ;; # FIXME: Figure out how to make Fossil tags with Git lightweight tag behavior
-		hg) hg tag "${tagname}";;
-		src) src tag create "${tagname}";;
+		bzr|brz|git|hg)
+		    "${repotype}" tag "${tagname}"
+		    ;;
+		fossil)
+		    # FIXME: Figure out how to make Fossil tags with Git lightweight tag behavior
+		    ;;
+		src)
+		    src tag create "${tagname}"
+		    ;;
+		svn)
+		    svn copy trunk "branches/${tagname}"
+		    svn commit -m "${tagname} branch copy."
+		    ;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;
-	atag)
+	annotated)
 	    # Create annotated tag
+	    tagname="$1"
 	    cat >"${file}"
 	    ts=$((ts + 60))
 	    ft=$(printf "%09d" ${ts})
@@ -330,7 +370,7 @@ vc() {
 	    # Update a checkout. Sometimes required to force a commit boundary
 	    # (I'm looking at you, Subversion.)
 	    case "${repotype}" in
-		svn) svn -q up;;
+		svn) svn up;;
 		*) echo "not ok - ${cmd} under ${repotype} not supported in repository shell function."; exit 1;;
 	    esac
 	    ;;

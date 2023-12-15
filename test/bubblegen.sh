@@ -47,29 +47,29 @@ Second line of sample content.
 Third line of sample content.
 EOF
 
-    vc checkout iss53
+    vc switch iss53
 
     #C3
     vc commit sample2 "Create new footer [issue 53]" <<EOF
 First line of sample2 content.
 EOF
 
-    vc checkout master
+    vc switch master
 
-    vc checkout hotfix
+    vc switch hotfix
 
     #C4
     vc commit sample3 "Fix broken email address" <<EOF
 First line of sample3 content.
 EOF
 
-    vc checkout master
+    vc switch master
 
     vc merge hotfix
 
     git branch -q -d hotfix	# NOTE: GIT DEPENDENCY!
 
-    vc checkout iss53
+    vc switch iss53
 
     #C5
     vc commit sample2 "Create new footer [issue 53]" <<EOF
@@ -77,7 +77,7 @@ First line of sample2 content.
 Second line of sample2 content.
 EOF
 
-    vc checkout master
+    vc switch master
 
     vc merge iss53 -m "Second merge."
 
