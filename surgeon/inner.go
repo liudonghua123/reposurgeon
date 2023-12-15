@@ -9740,6 +9740,7 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 		}
 	}
 
+	repo.clearColor(colorQSET)
 	// Generate tarball commits
 	for i, tarpath := range tarballs {
 		// Create new commit to carry the new content
@@ -9804,6 +9805,7 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 		// Splice it into the repository
 		blank.mark = repo.newmark()
 		repo.insertEvent(blank, insertionPoint, "")
+		blank.addColor(colorQSET)
 		insertionPoint++
 
 		segment[i+1] = blank
@@ -9831,6 +9833,7 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 		op.construct(deleteall)
 		blank.appendOperation(op)
 		repo.insertEvent(blank, insertionPoint, "")
+		blank.addColor(colorQSET)
 		insertionPoint++
 		segment[len(tarballs)+1] = blank
 	}

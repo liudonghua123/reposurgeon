@@ -4137,9 +4137,11 @@ func (rs *Reposurgeon) HelpAdd() {
 	rs.helpOutput(`
 SELECTION add { "D" PATH | "M" PERM {MARK|SHA1} PATH | "R" SOURCE TARGET | "C" SOURCE TARGET }
 
-PATH, SOURCE and TARGET athuments may b double-quoted strings contining whitespace.
+PATH, SOURCE and TARGET athuments may be double-quoted strings
+containing whitespace.
 
-In a specified commit, add a specified fileop.
+In specified commits, add a specified fileop.  The selection set does
+not have to be a singleton, but typically will be.
 
 For a D operation to be valid there must be an M operation for the path
 in the commit's ancestry.
@@ -4158,6 +4160,9 @@ not checked, as it is expected to refer to a Git submodule link.
 
 For an R or C operation to be valid, there must be an M operation
 for the SOURCE path in the commit's ancestry.
+
+Clears Q bits, then sets the Q bit of every commit to which a fileop
+is added.
 
 Some examples:
 
@@ -4272,6 +4277,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 		croak("unknown operation type %c in add command", optype)
 		return false
 	}
+	repo.clearColor(colorQSET)
 	for it := repo.commitIterator(rs.selection); it.Next(); {
 		fileop := newFileOp(rs.chosen())
 		if optype == opD {
@@ -4282,6 +4288,7 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 			fileop.construct(optype, source, target)
 		}
 		it.commit().appendOperation(fileop)
+		it.commit().addColor(colorQSET)
 	}
 	return false
 }
@@ -4514,6 +4521,9 @@ Optionally you may also specify another argument in the form [+-]hhmm,
 a timezone literal to apply tio each attribution in the range.  To
 apply a timezone without an offset, use an offset literal of 0, +0 or
 -0.
+
+Clears Q bits, then sets the Q bit for every tag or commit with a
+modified timestamp. 
 `)
 }
 
@@ -4583,12 +4593,14 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 		}
 		loc = time.FixedZone(parse.args[1], zoffset)
 	}
+	rs.chosen().clearColor(colorQSET)
 	rs.chosen().walkEvents(rs.selection, func(idx int, event Event) bool {
 		if tag, ok := event.(*Tag); ok {
 			if tag.tagger.isValid() {
 				tag.tagger.date.timestamp = tag.tagger.date.timestamp.Add(offset)
 				if len(parse.args) > 1 {
 					tag.tagger.date.timestamp = tag.tagger.date.timestamp.In(loc)
+					tag.addColor(colorQSET)
 				}
 			}
 		} else if commit, ok := event.(*Commit); ok {
@@ -4601,6 +4613,7 @@ func (rs *Reposurgeon) DoTimeoffset(line string) bool {
 					author.date.timestamp = author.date.timestamp.In(loc)
 				}
 			}
+			commit.addColor(colorQSET)
 		}
 		return true
 	})
@@ -5100,7 +5113,7 @@ This command will throw an error if you try to make a merge link to a
 parentless (e.g. root) commit, as that would produce an invalid
 fast-import stream.
 
-If the command succeedsm all Q bits are cleared, then the Q bits
+If the command succeeds, all Q bits are cleared, then the Q bits
 of the two commits are set. 
 `)
 }
@@ -5147,7 +5160,7 @@ commit's first parent, but doesn't need you to find the first parent yourself,
 saving time and avoiding errors when nearby surgery would make a manual first
 parent argument stale.
 
-If the command succeedsm all Q bits are cleared, then the Q bits
+If the command succeeds, all Q bits are cleared, then the Q bits
 of the unmerged commit is set. 
 `)
 }
@@ -6943,7 +6956,7 @@ completeness, think twice before actually using it.  Normally a reset
 should only be deleted or renamed when its associated branch is, and
 the branch command does this.
 
-When creating blobs, tags, or resets. all Q bits are cleared; then any
+When creating blobs, tags, or resets, all Q bits are cleared; then any
 objects created get their Q bit set.
 `)
 }
@@ -7156,6 +7169,8 @@ content from leaking forward.
 
 Information about symlinks in the tarball is preserved; if written out 
 as a Git repository, the result will have those symlinks.
+
+Clears Q bits, than sets thw Q bits of every incorporated commit.
 `)
 }
 
