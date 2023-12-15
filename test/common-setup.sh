@@ -313,14 +313,15 @@ vc() {
 	    done
 	    ;;
 	tag)
-	    # Create lightweight tag.
+	    # Create lightweight tag on current head commit.
 	    tagname="$1"
 	    case "${repotype}" in
 		bzr|brz|git|hg)
 		    "${repotype}" tag "${tagname}"
 		    ;;
 		fossil)
-		    # FIXME: Figure out how to make Fossil tags with Git lightweight tag behavior
+		    # In Git terms this creates an annotated tag with empty data
+		    fossil tag add "sym-${tagname}" "$(fossil timeline -F "%H" | head -1)"
 		    ;;
 		src)
 		    src tag create "${tagname}"

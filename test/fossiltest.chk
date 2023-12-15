@@ -49,3 +49,7 @@ Third commit
 from :6
 M 100644 :3 sample
 
+tag sym-foobar
+from :7
+tagger Fred J. Foonly <fred@foonly.org> 250 +0000
+data 0
