@@ -3519,16 +3519,15 @@ The ENCODING argument must name one of the codecs listed at
 https://www.iana.org/assignments/character-sets/character-sets.xhtml
 and known to the Go standard codecs library. 
 
-If a transcode attempt faikls on a particular repostory object, the
+If a transcode attempt fails on a particular repository object, the
 object ID and field is logged and the data is left unchanged.
 
-The theory behind the design of this command is that the
-repository might contain a mixture of encodings used to enter commit
-metadata by different people at different times. After using "=I" to
-identify metadata containing non-Unicode high bytes in text, a human
-must use context to identify which particular encodings were used in
-particular event spans and compose appropriate transcode commands
-to fix them up.
+The theory behind the design of this command is that the repository
+might contain a mixture of encodings used to enter commit metadata by
+different people at different times. After using "=I" to identify
+metadata containing non-Unicode high bytes in text, a human must use
+context to identify which particular encodings were used in particular
+event spans and compose appropriate transcode commands to fix them up.
 
 This command sets Q bits; objects actually modified by the command
 get true, all other events get false.
