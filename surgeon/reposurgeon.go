@@ -5059,6 +5059,8 @@ the default 'emptycommit-<ident>'.
 The third option is '--tagify-merges' that makes reposurgeon also
 tagify merge commits that have no fileops.  When this is done the
 merge link is moved to the tagified commit's parent.
+
+This command cleaes all Q bits, then seta the Q bits of all tags it creates.
 `)
 }
 

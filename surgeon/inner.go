@@ -5928,7 +5928,7 @@ func (repo *Repository) writeLegacyMap(fp io.Writer, baton *Baton) error {
 }
 
 // Turn a commit into a tag.
-func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string, legend string, delete bool, baton *Baton) {
+func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string, legend string, delete bool, baton *Baton) *Tag {
 	if logEnable(logEXTRACT) {
 		commitID := commit.mark
 		if commit.legacyID != "" {
@@ -5954,14 +5954,15 @@ func (repo *Repository) tagifyNoCheck(commit *Commit, name string, target string
 	if delete {
 		commit.delete([]string{"--tagback"}, baton)
 	}
+	return tag
 }
 
 // Turn a commit into a tag.
-func (repo *Repository) tagify(commit *Commit, name string, target string, legend string, delete bool, baton *Baton) {
+func (repo *Repository) tagify(commit *Commit, name string, target string, legend string, delete bool, baton *Baton) *Tag {
 	if len(commit.operations()) > 0 {
 		panic("Attempting to tagify a commit with fileops.")
 	}
-	repo.tagifyNoCheck(commit, name, target, legend, delete, baton)
+	return repo.tagifyNoCheck(commit, name, target, legend, delete, baton)
 }
 
 // Default scheme to name tags generated from empty commits
@@ -6038,12 +6039,13 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 				}
 				commit.setOperations(nil)
 				if createTags {
-					repo.tagify(commit,
+					tag := repo.tagify(commit,
 						name,
 						commit.firstParent().getMark(),
 						legend,
 						false,
 						baton)
+					tag.addColor(colorQSET)
 				}
 				deletiaMutex.Lock()
 				deletia.Add(index)
@@ -6072,6 +6074,7 @@ func (repo *Repository) tagifyEmpty(selection selectionSet, tipdeletes bool, tag
 		baton.twirl()
 	}
 
+	repo.clearColor(colorQSET)
 	if !selection.isDefined() || selection.Size() == 0 {
 		walkEvents(repo.events, func(index int, e Event) bool { tagifyEvent(index); return true })
 	} else {
