@@ -1333,6 +1333,11 @@ keywords, options, and arguments (wherever that makes semantic sense) is
 available. Entering a tab just after the command keyword will show you
 subcommands and options. 
 
+Commands that modify the history don't normally generate summaries
+of what bits they have changed. Instead there is a general mechanism
+called "Q bits" that helps you find and examine recently-modified
+things. See <<qbits>> for details.
+
 It is expected that interactive mode will be used mainly for exploring
 repository metadata, while conversion experiments will be captured in
 a script that is gradually improved until the day final cutover
@@ -1667,6 +1672,7 @@ include::docinclude/operators.adoc[]
 // TOPIC
 include::docinclude/redirection.adoc[]
 
+[[qbits]]
 === Q bits
 
 Each event has an associated "Q" bit that says whether it was touched
