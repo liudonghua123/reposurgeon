@@ -126,6 +126,7 @@ vc() {
 	    cd "${rbasedir}" >/dev/null || exit 1;
 	    case "${repotype}" in
 		bzr|brz|git|hg) "${repotype}" init;;
+		darcs) darcs --quiet .; mkdir -p _darcs/prefs;;
 		fossil) fossil init /tmp/fossil$$ >/dev/null && fossil open /tmp/fossil$$ >/dev/null && mkdir .fossil-settings;;
 		src) mkdir .src;;
 		svn) svnadmin create .; svn co "file://$(pwd)" working-copy ; tapcd working-copy;;
@@ -140,6 +141,7 @@ vc() {
 	    ignorefile=".${repotype}ignore"
 	    case "${repotype}" in
 		brz) ignorefile=".bzrignore";;
+		darcs) ignorefile="_darcs/prefs/boring";;
 		fossil) ignorefile=".fossil-settings/ignore-glob";;
 	    esac
 	    LF='
@@ -185,6 +187,7 @@ vc() {
 	    # we can ignore files.)
 	    case "${repotype}" in
 		bzr|brz) "${repotype}" status -S | grep -v '/$';;
+		darcs) darcs --summary;;	# Alas, ignore patterns don't affect the output from this.
 		fossil) fossil changes --all --extra --classify | sed '/^EXTRA/s//?/';;
 		git) git status --porcelain -uall;;
 		hg|src) "${repotype}" status;;
