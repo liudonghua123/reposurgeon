@@ -91,8 +91,8 @@ do
 	    count=$((count+1))
 	    vc ignore
 	    # shellcheck disable=SC2154
-	    vc ignore "${ignorefile}"
-	    vc ignore "${pattern}"
+	    vc ignore "${ignorefile}" >/dev/null
+	    vc ignore "${pattern}" >/dev/null
 	    vc status >/tmp/statusout$$ 2>&1
 	    
 	    if [ -n "${exceptions}" ] && (echo "${vcs}" | grep -E "${exceptions}" >/dev/null)
@@ -116,7 +116,7 @@ do
 	    fi
 	}
 	
-	vc init "$vcs"
+	vc init "$vcs" >/dev/null
 	case ${vcs} in
 	    bzr|brz|fossil|git|hg|src|svn)
 		printf "%s:    " "${vcs}" >>/tmp/ignoretable$$
