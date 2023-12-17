@@ -10008,18 +10008,18 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 
 var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_#]")
 
-func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
+func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, error) {
 	// Ignore blank lines. This may not work in CVS, but
 	// we never expect to be lifting to CVS.
 	if strings.TrimSpace(text) == "" {
-		return nil
+		return text, nil
 	}
 
 	// We cam't do anything useful if the target synta is regexp-based;
 	// pass it through and hope. This could change someday as it is
 	// theoretically possible to translate globs to regexps.
 	if preferred.hasCapability(ignRE) {
-		return nil
+		return text, nil
 	}
 
 	// It's all glob syntax past this point.
@@ -10029,13 +10029,13 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	// and lator mung these separators into linefeeds.
 	if preferred.hasCapability(ignWACKYSPACE) {
 		if strings.Contains(text, " ") {
-			return fmt.Errorf("%s treats spaces as pattern separators", preferred.name)
+			return "#" + text, fmt.Errorf("%s treats spaces as pattern separators", preferred.name)
 		}
 	}
 
 	// This has to be checked before we audit for normal negation
 	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
-		return errors.New("bzr/brz !! syntax needs to be translated by hand")
+		return "#" + text, errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
 
 	// Some VCSes also support prefix negation. If that's all that's left after
@@ -10044,7 +10044,7 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 		if preferred.hasCapability(ignNEG) {
 			text = text[1:]
 		} else {
-			return errors.New("pattern negation isn't supported")
+			return "#" + text, errors.New("pattern negation isn't supported")
 		}
 	}
 
@@ -10053,7 +10053,7 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 		wildcard string
 		legend   string
 	}{
-		{ignESC, `\`, "backslash esaxpes"},
+		{ignESC, `\`, "backslash escapes"},
 		{ignQUES, `?`, "wildcard"}, // Ugh...could false-match in a range
 		{ignBANG, `!`, "for range negation"},
 		{ignCARET, `^`, "for range negation"},
@@ -10061,7 +10061,7 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	}
 	for _, exclusion := range exclusions {
 		if strings.Contains(text, exclusion.wildcard) && !preferred.hasCapability(exclusion.flag) {
-			return fmt.Errorf("%s does not allow the %q %s",
+			return "#" + text, fmt.Errorf("%s does not allow the %q %s",
 				preferred.name, exclusion.wildcard, exclusion.legend)
 		}
 	}
@@ -10069,30 +10069,30 @@ func checkIgnoreSyntaxLine(preferred *VCS, text string) error {
 	// Most VCSes have #-led commwnts
 	if strings.HasPrefix(text, "#") {
 		if preferred.hasCapability(ignHASH | ignEXPORT) {
-			return nil
+			return text, nil
 		}
-		return fmt.Errorf("%s does not have # comments", preferred.name)
+		return "#" + text, fmt.Errorf("%s does not have # comments", preferred.name)
 	}
 
 	// Reject quirks.
 	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("RE:", text) {
-		return errors.New("bzr/brz RE: syntax needs to be translated by hand")
+		return "#" + text, errors.New("bzr/brz RE: syntax needs to be translated by hand")
 	}
 	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
-		return errors.New("bzr/brz !! syntax needs to be translated by hand")
+		return "#" + text, errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
 	if !preferred.hasCapability(ignDIRMATCH) && text[len(text)-1] == '/' {
-		return fmt.Errorf("terminating slash is't special in %s", preferred.name)
+		return "#" + text, fmt.Errorf("terminating slash is't special in %s", preferred.name)
 	}
 
 	if !preferred.hasCapability(ignFNMPATH) && strings.Contains(text, `*/`) {
-		return fmt.Errorf("*/ will be surprising in %s", preferred.name)
+		return "#" + text, fmt.Errorf("*/ will be surprising in %s", preferred.name)
 	}
 
 	// No way to syntax-check ignSLASHANCHORS, it only makes sense
 	// as a translation hint.
 
-	return nil
+	return text, nil
 
 }
 
@@ -10109,17 +10109,6 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 	out := make([]IgnoreProblem, 0)
 	ignorecount := 0
 	repo.clearColor(colorQSET)
-
-	translateLine := func(line string, _preferred *VCS) string {
-		// If the target sytem has glob syntax, comment out
-		// the suspect rule. If it has regexp syntax we cam't
-		// that - pass it through and hope for the besy.
-		if preferred.hasCapability(ignRE) {
-			return line
-		}
-		// Someday we night try doing nontrivial translation here.
-		return "#" + line
-	}
 
 	insertHeader := func(blobcontent string, preferred *VCS) string {
 		inserted := ""
@@ -10153,11 +10142,11 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 		if translate {
 			translated = ""
 			for ln, line := range strings.Split(blobcontent, "\n") {
-				if err := checkIgnoreSyntaxLine(preferred, line); err == nil {
+				if fixed, err := translateIgnoreLine(repo.vcs, preferred, line); err == nil {
 					translated += line + "\n"
 				} else {
 					if translate {
-						translated += translateLine(line, preferred) + "\n"
+						translated += fixed + "\n"
 					} else {
 						translated += line + "\n"
 					}
@@ -10206,20 +10195,20 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 			// ignorename for the repository's sourcetype. The problem with this
 			// is that we don't have any guarantee that the exporter has not
 			// already renamed the ignore files to match Git convention.
-			// We shouldn't even assume that the repository has a soucytype set.
+			// We shouldn't even assume that the repository has a sourcetype set.
 			// Instead, check and translate everything that migh be an ignore file.
 
 			//
 			// This could produce unexpected results in three known cases:
 			//
 			// 1. cvs-fast-export ships a stream that sets a CVS sourcetype but
-			//    has .gitignores in it.
+			//    already has its .cvsibnore files renamed to .gitignores.
 			//
 			// 2. A CVS repository with .cvsignore files got lifted to Subversion
 			//    without the .cvsignore files removed.  This logic will fire on those.
 			//
 			// 3. Any Subversion repository, as the stream reader turns per-directory
-			//    ignore propertoes into per-directory .gitignore files.
+			//    ignore properties into per-directory .gitignore files.
 			//
 			if isIgnoreBlob(b) {
 				ignorecount++
