@@ -130,7 +130,7 @@ do
 		ignorecheck 'ignorab[klm]e' 'ignorable' "check for range syntax"
 		ignorecheck 'ignorab[k-m]e' 'ignorable' "check for dash in ranges"
 		ignorecheck 'ignorab[!x-z]e' 'ignorable' "check for !-negated ranges" "fossil|hg" BANG
-		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges" "src" CARET
+		ignorecheck 'ignorab[^x-z]e' 'ignorable' "check for ^-negated ranges"
 		ignorecheck --nonempty '\*' 'ignorable' "check for backslash escaping" "bzr|brz" ESC
 		ignorecheck --nonempty 'ign* !ignorable' 'ignorable' "check for prefix negation" "fossil|hg" NEG
 		rm ignorable

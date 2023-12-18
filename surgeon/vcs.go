@@ -122,7 +122,7 @@ type VCS struct {
 // fossil:   *?[^-]\   no        no      no       no       yes      no       yes
 // git:      *?[^!-]\  yes       yes     yes      no       yes      yes      yes
 // hg:       *[^-]\    yes       no      yes      no       no       no       yes
-// src:      *?[!-]\   yes       yes     no       yes      no       yes      no
+// src:      *?[^!-]\  yes       yes     no       yes      no       yes      no
 // svn:      *?[^!-]\  yes       yes     no       no       no       yes      no
 // darcs:    [^-]\     no        no      yes      no       no       no       no
 //
@@ -164,7 +164,8 @@ type VCS struct {
 // issue.
 //
 // src uses Python's glob library and inherits those behaviors. It
-// adds support for prefix negation with !.
+// adds support for prefix negation with ! and for ^ as a range
+// negator.
 //
 // svn documents that it uses glob(3) and says "if you are migrating a
 // CVS working copy to Subversion, you can directly migrate the ignore
