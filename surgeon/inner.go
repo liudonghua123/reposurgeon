@@ -10012,29 +10012,82 @@ var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_
 func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, original string) (string, error) {
 	text := original
 	reToGlob := func(re string) (string, error) {
-		if strings.ContainsAny(re, `?|()`) {
-			return "#" + original, fmt.Errorf("exceptional regexp needs to be hand-translated")
+		glob := ""
+		state := 0
+		for _, c := range original {
+			if state == 0 { // plain character
+				if string(c) == `\` {
+					state = 1
+				} else if string(c) == `.` {
+					state = 2
+				} else if string(c) == `[` {
+					glob += `[`
+					state = 3
+				} else if strings.ContainsAny(string(c), `?|()`) {
+					return "#" + original, fmt.Errorf("exceptional regexp needs to be hand-translated")
+				} else {
+					glob += string(c)
+				}
+			} else if state == 1 { // escaped
+				if string(c) == `.` {
+					glob += `.`
+				} else {
+					glob += `\`
+					glob += string(c)
+				}
+				state = 0
+			} else if state == 2 { // after .
+				if string(c) == `*` {
+					glob += `*`
+				} else {
+					// Won't work translating to hg globs
+					glob += `?`
+					glob += string(c)
+				}
+				state = 0
+			} else if state == 3 { // in character range
+				glob += string(c)
+				if string(c) == `]` {
+					state = 0
+				}
+			}
 		}
-		// This might clobber unusual chartacter ranges
-		for _, pair := range [][2]string{{`\.`, `.`}, {`.`, `?`}, {`.*`, `*`}} {
-			re = strings.Replace(re, pair[0], pair[1], -1)
-		}
-		if re[len(re)-1] == '$' {
-			re = re[:len(re)-1]
-		}
-		return re, nil
-	}
-	globToRe := func(glob string) (string, error) {
-		if strings.Contains(glob, `\`) {
-			return "#" + original, fmt.Errorf("exceptional glob needs to be hand-translated")
-		}
-		// This array assumes that ? never occurs as a literal in ignore patterns under
-		// VCSes like hg that don't treat it with glob special meaning.  It might also clobber
-		// unusual character ranges.
-		for _, pair := range [][2]string{{`.`, `\.`}, {`*`, `.*`}, {`?`, `.`}, {`[!`, `[^`}} {
-			glob = strings.Replace(glob, pair[0], pair[1], -1)
+		if len(glob) > 0 && glob[len(glob)-1] == '$' {
+			glob = glob[:len(glob)-1]
 		}
 		return glob, nil
+	}
+	globToRe := func(glob string) (string, error) {
+		re := ""
+		state := 0
+		for _, c := range glob {
+			if state == 0 { // plain character
+				if string(c) == `\` {
+					state = 1
+				} else if string(c) == `*` {
+					re += `.*`
+				} else if string(c) == `.` {
+					re += `\.`
+				} else if string(c) == `?` {
+					re += `.`
+				} else if string(c) == `[` {
+					re += `[`
+					state = 2
+				} else {
+					re += string(c)
+				}
+			} else if state == 1 { // escaped
+				re += `\`
+				re += string(c)
+				state = 0
+			} else if state == 2 { // in character range
+				re += string(c)
+				if string(c) == `]` {
+					state = 0
+				}
+			}
+		}
+		return re + "$", nil
 	}
 	// Ignore blank lines and #-led comments. These may fail in CVS, but
 	// we never expect to be lifting to CVS.

@@ -141,8 +141,41 @@ func TestIgnoreCompatibility(t *testing.T) {
 	for testnum, item := range tests {
 		cvs := findVCS("cvs")
 		if _, v := translateIgnoreLine(&reLatch, cvs, findVCS(item.vcs), item.line); (v != nil) == item.match {
-			t.Errorf("TestIgnore %d, %s %q: expected %v, saw %v",
+			t.Errorf("TestIgnoreCompatibility %d, %s %q: expected %v, saw %v",
 				testnum+1, item.vcs, item.line, item.match, v)
+		}
+	}
+}
+
+func TestIgnoreTranslation(t *testing.T) {
+	type testEntry struct {
+		line       string
+		svcs, tvcs string
+		expect     string
+	}
+	tests := []testEntry{
+		{`#Comment`, `git`, `darcs`, `#Comment`},
+		{`foobar`, `git`, `darcs`, `foobar$`},
+		{`fo?bar`, `git`, `darcs`, `fo.bar$`},
+		{`*.obj`, `git`, `darcs`, `.*\.obj$`},
+		{`*.py[co]`, `git`, `darcs`, `.*\.py[co]$`},
+		{`a[.]b$`, `darcs`, `git`, `a[.]b`},
+		{`a[?]b$`, `darcs`, `git`, `a[?]b`},
+		{`a[.*]b$`, `darcs`, `git`, `a[.*]b`},
+	}
+	var reLatch bool
+	for testnum, item := range tests {
+		svcs := findVCS(item.svcs)
+		tvcs := findVCS(item.tvcs)
+		reLatch = svcs.hasCapability(ignRE)
+		if seen, e := translateIgnoreLine(&reLatch, svcs, tvcs, item.line); seen != item.expect {
+			t.Errorf("TestIgnoreTranslation %d (forward), %s->%s %q: expected %q, saw %q, error %s",
+				testnum+1, item.svcs, item.tvcs, item.line, item.expect, seen, e)
+		}
+		reLatch = tvcs.hasCapability(ignRE)
+		if seen, e := translateIgnoreLine(&reLatch, tvcs, svcs, item.expect); seen != item.line {
+			t.Errorf("TestIgnoreTranslation %d (backward), %s->%s %q: expected %q, saw %q, error %s",
+				testnum+1, item.tvcs, item.svcs, item.expect, item.line, seen, e)
 		}
 	}
 }
