@@ -118,7 +118,7 @@ type VCS struct {
 //           Specials  FNMPATH  NEG      LOOSE    FNMDOT   DSTAR    ASLASH   DIRMATCH
 //           --------  -------  -------  -------  -------  -------  -------  -------
 // bzr/brz:  *?[^!-]   no        yes     yes      no       yes      no       no
-// cvs:      *?[^!-]\  no        no      no       no       yes      no       no
+// cvs:      *?[^!-]\  no        no      no       no       no       no       no
 // fossil:   *?[^-]\   no        no      no       no       yes      no       yes
 // git:      *?[^!-]\  yes       yes     yes      no       yes      yes      yes
 // hg:       *[^-]\    yes       no      yes      no       no       no       yes

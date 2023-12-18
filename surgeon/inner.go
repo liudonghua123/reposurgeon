@@ -10009,13 +10009,20 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_#]")
 
 func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, error) {
-	// Ignore blank lines. This may not work in CVS, but
+	// Ignore blank lines and #-led comments. These may fail in CVS, but
 	// we never expect to be lifting to CVS.
-	if strings.TrimSpace(text) == "" {
+	if sourcetype == preferred || strings.TrimSpace(text) == "" || strings.HasPrefix(text, "#") {
 		return text, nil
 	}
 
-	// We cam't do anything useful if the target synta is regexp-based;
+	// If the source and target systems have regexp ignore syntax,
+	// pass it through and hope. A case this will not catch, alas, is
+	// if hg has optionally enabled regexp syntax.
+	if sourcetype.hasCapability(ignRE) && preferred.hasCapability(ignRE) {
+		return text, nil
+	}
+
+	// We can't do anything useful if the target syntax is regexp-based;
 	// pass it through and hope. This could change someday as it is
 	// theoretically possible to translate globs to regexps.
 	if preferred.hasCapability(ignRE) {
@@ -10024,9 +10031,9 @@ func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, 
 
 	// It's all glob syntax past this point.
 
-	// Should happen only on very old CS repos, and then only if
-	// you have an opd version of cvs-fast-export Versions 1.62
-	// and lator mung these separators into linefeeds.
+	// Should happen only on very old CVS repos, and then only if
+	// you have an old version of cvs-fast-export Versions 1.62
+	// and later mung these separators into linefeeds.
 	if preferred.hasCapability(ignWACKYSPACE) {
 		if strings.Contains(text, " ") {
 			return "#" + text, fmt.Errorf("%s treats spaces as pattern separators", preferred.name)
@@ -10041,14 +10048,12 @@ func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, 
 	// Some VCSes also support prefix negation. If that's all that's left after
 	// stripping out basic glob characters, we're fine.
 	if strings.HasPrefix(text, "!") {
-		if preferred.hasCapability(ignNEG) {
-			text = text[1:]
-		} else {
+		if !preferred.hasCapability(ignNEG) {
 			return "#" + text, errors.New("pattern negation isn't supported")
 		}
 	}
 
-	// hg can firte this logic.
+	// hg can fire this logic.
 	if !preferred.hasCapability(ignBANG) && strings.Contains(text, "!") {
 		text = strings.Replace(text, "[!", "[^", -1)
 	}
@@ -10068,14 +10073,6 @@ func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, 
 			return "#" + text, fmt.Errorf("%s does not allow the %q %s",
 				preferred.name, exclusion.wildcard, exclusion.legend)
 		}
-	}
-
-	// Most VCSes have #-led commwnts
-	if strings.HasPrefix(text, "#") {
-		if preferred.hasCapability(ignHASH | ignEXPORT) {
-			return text, nil
-		}
-		return "#" + text, fmt.Errorf("%s does not have # comments", preferred.name)
 	}
 
 	// Reject quirks.

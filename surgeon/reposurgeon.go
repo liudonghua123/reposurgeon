@@ -5632,26 +5632,26 @@ ignores [--translate] [--defaults]
 
 Intelligent handling of ignore-pattern files.
 
-This command fails if no repository has been selected or no preferred write
-type has been set for the repository.  It does not take a selection set.
+This command fails if no repository has been selected, or no preferred
+write type has been set for the repository.  It does not take a
+selection set.
 
-If --translate is present, and the preferref system has a glob(3)-like
-ignre-pattern syntax, translation of each ignore file is
-attempted. Pattern lines it can't translate get commented out;
-interactively, these are reported. If the target system uses full
-regexps for ignore patterns no translation is attempted.
+If --translate is present, the command will fail if the loaded
+repository has no source type; oytherwise, translation of each ignore
+file is attempted. Pattern lines it can't translate get commented out;
+interactively, these are reported along with useful error messages.
 
 After this, all ignore-pattern files are renamed to whatever is
 appropriate for the preferred type - e.g. .gitignore for git,
 .hgignore for hg, etc.
 
-If --defaults is present, the command attempts to prepend these
-default patterns to all ignore files. If no ignore file is created by
-the first commit, it will be modified to create one containing the
-defaults.  This command will error out when the VCS type selectec by
-prefer has no default ignore patterns (git and hg, in particular).  It
-will also error out when it knows the import tool has already set
-default patterns.
+If --defaults is present, the command attempts to prepend default
+patterns for the preferred VCS to all ignore files. If no ignore file
+is created by the first commit, it will be modified to create one
+containing the defaults.  This command will error out when the VCS
+type selected by prefer has no default ignore patterns (git and hg, in
+particular).  It will also error out when it knows the import tool has
+already set default patterns.
 
 All Q bits are cleared, then the Q bit of each modified commit or blob
 is set.
@@ -5683,6 +5683,10 @@ func (rs *Reposurgeon) DoIgnores(line string) bool {
 			croak("no default ignores in %s", rs.preferred.name)
 			return false
 		}
+	}
+	if parse.options.Contains("--translate") && repo.vcs == nil {
+		croak("must have a known source type to translate ignores.")
+		return false
 	}
 	problems, changecount := repo.translateIgnores(rs.preferred,
 		parse.options.Contains("--defaults"),

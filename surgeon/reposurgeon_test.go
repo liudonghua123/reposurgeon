@@ -138,7 +138,8 @@ func TestIgnoreCompatibility(t *testing.T) {
 		{"x[!0-9]y", "src", true},
 	}
 	for testnum, item := range tests {
-		if _, v := translateIgnoreLine(nil, findVCS(item.vcs), item.line); (v != nil) == item.match {
+		cvs := findVCS("cvs")
+		if _, v := translateIgnoreLine(cvs, findVCS(item.vcs), item.line); (v != nil) == item.match {
 			t.Errorf("TestIgnore %d, %s %q: expected %v, saw %v",
 				testnum+1, item.vcs, item.line, item.match, v)
 		}
