@@ -2927,7 +2927,7 @@ func (rs *Reposurgeon) DoView(line string) bool {
 					git := findVCS("git")
 					repo.innerRebuildRepo(git, nullStringSet, control.baton)
 					runProcess(git.checkout, "view checkout")
-					runShellProcess(git.viewer, "viewer")
+					runShellProcess("TZ=UTC "+git.viewer, "viewer")
 				}
 			}
 		}
@@ -2953,7 +2953,7 @@ func (rs *Reposurgeon) DoView(line string) bool {
 			} else if vcs.viewer == "" {
 				croak("no viewer is reistered for %s", vcs.name)
 			}
-			runShellProcess(vcs.viewer, "viewer")
+			runShellProcess("TZ=UTC "+vcs.viewer, "viewer")
 		}
 	} else {
 		croak("view command requires zero or one arguments.")

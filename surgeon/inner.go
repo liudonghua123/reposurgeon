@@ -383,7 +383,7 @@ func runShellProcess(dcmd string, legend string) error {
 	return nil
 }
 
-// findBinary tells whethere a specified progra, is in our execution path.
+// findBinary tells whethere a specified program is in our execution path.
 func findBinary(program string) bool {
 	found := false
 	for _, dir := range strings.Split(os.Getenv("PATH"), ":") {
