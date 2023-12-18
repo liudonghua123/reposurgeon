@@ -10009,12 +10009,32 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 
 var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_#]")
 
-func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, text string) (string, error) {
-	reToGlob := func(text string) (string, error) {
-		return text, nil
+func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, original string) (string, error) {
+	text := original
+	reToGlob := func(re string) (string, error) {
+		if strings.ContainsAny(re, `?|()`) {
+			return "#" + original, fmt.Errorf("exceptional regexp needs to be hand-translated")
+		}
+		// This might clobber unusual chartacter ranges
+		for _, pair := range [][2]string{{`\.`, `.`}, {`.`, `?`}, {`.*`, `*`}} {
+			re = strings.Replace(re, pair[0], pair[1], -1)
+		}
+		if re[len(re)-1] == '$' {
+			re = re[:len(re)-1]
+		}
+		return re, nil
 	}
-	globToRe := func(text string) (string, error) {
-		return text, nil
+	globToRe := func(glob string) (string, error) {
+		if strings.Contains(glob, `\`) {
+			return "#" + original, fmt.Errorf("exceptional glob needs to be hand-translated")
+		}
+		// This array assumes that ? never occurs as a literal in ignore patterns under
+		// VCSes like hg that don't treat it with glob special meaning.  It might also clobber
+		// unusual character ranges.
+		for _, pair := range [][2]string{{`.`, `\.`}, {`*`, `.*`}, {`?`, `.`}, {`[!`, `[^`}} {
+			glob = strings.Replace(glob, pair[0], pair[1], -1)
+		}
+		return glob, nil
 	}
 	// Ignore blank lines and #-led comments. These may fail in CVS, but
 	// we never expect to be lifting to CVS.
@@ -10059,7 +10079,7 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, text st
 	// and later mung these separators into linefeeds.
 	if preferred.hasCapability(ignWACKYSPACE) {
 		if strings.Contains(text, " ") {
-			return "#" + text, fmt.Errorf("%s treats spaces as pattern separators", preferred.name)
+			return "#" + original, fmt.Errorf("%s treats spaces as pattern separators", preferred.name)
 		}
 	}
 
@@ -10093,7 +10113,7 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, text st
 	}
 	for _, exclusion := range exclusions {
 		if strings.Contains(text, exclusion.wildcard) && !preferred.hasCapability(exclusion.flag) {
-			return "#" + text, fmt.Errorf("%s does not allow the %q %s",
+			return "#" + original, fmt.Errorf("%s does not allow the %q %s",
 				preferred.name, exclusion.wildcard, exclusion.legend)
 		}
 	}
@@ -10103,15 +10123,12 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, text st
 		return "#" + text, errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
 	if !preferred.hasCapability(ignDIRMATCH) && text[len(text)-1] == '/' {
-		return "#" + text, fmt.Errorf("terminating slash is't special in %s", preferred.name)
+		return "#" + original, fmt.Errorf("terminating slash is't special in %s", preferred.name)
 	}
 
 	if !preferred.hasCapability(ignFNMPATH) && strings.Contains(text, `*/`) {
-		return "#" + text, fmt.Errorf("*/ will be surprising in %s", preferred.name)
+		return "#" + original, fmt.Errorf("*/ will be surprising in %s", preferred.name)
 	}
-
-	// No way to syntax-check ignSLASHANCHORS, it only makes sense
-	// as a translation hint.
 
 	return text, nil
 

@@ -5637,7 +5637,7 @@ write type has been set for the repository.  It does not take a
 selection set.
 
 If --translate is present, the command will fail if the loaded
-repository has no source type; oytherwise, translation of each ignore
+repository has no source type; otherwise, translation of each ignore
 file is attempted. Pattern lines it can't translate get commented out;
 interactively, these are reported along with useful error messages.
 
@@ -5652,6 +5652,9 @@ containing the defaults.  This command will error out when the VCS
 type selected by prefer has no default ignore patterns (git and hg, in
 particular).  It will also error out when it knows the import tool has
 already set default patterns.
+
+Results of this command should be reviewed by a human. The translation
+rules may be leaky in unusual cases.
 
 All Q bits are cleared, then the Q bit of each modified commit or blob
 is set.
