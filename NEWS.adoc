@@ -16,9 +16,10 @@ Repository head::
      Move to Go-style match references (${1}) from Python ones (\1).
      repotool initialize becomes repotool makemake.
      Tested support for reading darcs repositories.
-     The ignores command sets Q bits
+     The ignores, add, timequake, and timeoffset commands set Q bits
      Source types of stream dumps can be deduced from ignore file names.
-     Fossil import/export from checkouts is supported; --fornmat=fossil is gone.
+     Fossil import/export from checkouts is supported; --format=fossil is gone.
+     Ignore pattrern translation is available with "ignores --translate".
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
