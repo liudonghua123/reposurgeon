@@ -487,7 +487,7 @@ branch is renamed to 'master'.
 			notes:        "Assumes no boringfile preference has been set.",
 			idformat:     "%s",
 			flags:        ignRE,
-			// darcs doesn't have wired defaukts. Instead there is a nonempty
+			// darcs doesn't have wired defaults. Instead there is a nonempty
 			// default ignore-pattern file which we'll rename when required.
 			dfltignores: ``,
 		},
@@ -716,7 +716,7 @@ core
 			project:      "https://www.gnu.org/software/cssc/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT | ignASLASH, // Through src
+			flags:        ignEXPORT | ignNEG | ignFNMATCH | ignFNMDOT | ignASLASH, // Through src
 		},
 		{
 			name:         "rcs",
@@ -741,7 +741,7 @@ core
 			project:      "https://www.gnu.org/software/rcs/",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignEXPORT | ignFNMATCH | ignNEG | ignFNMDOT | ignASLASH, // Through src
+			flags:        ignEXPORT | ignNEG | ignFNMATCH | ignFNMDOT | ignASLASH, // Through src
 		},
 		{
 			name:         "src",
@@ -767,7 +767,7 @@ core
 			project:      "http://catb.org/~esr/src",
 			notes:        "",
 			idformat:     "%s",
-			flags:        ignHASH | ignGLOB | ignBANG | ignQUES | ignNEG | ignESC | ignFNMPATH | ignASLASH | ignFNMDOT,
+			flags:        ignHASH | ignNEG | ignFNMATCH | ignFNMDOT | ignASLASH,
 		},
 		{
 			// Styleflags may need tweaking for round-tripping
