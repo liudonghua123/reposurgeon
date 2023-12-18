@@ -5102,6 +5102,7 @@ type Repository struct {
 	readtime    time.Time
 	vcs         *VCS
 	stronghint  bool
+	regexpsOn   bool
 	sourcedir   string
 	seekstream  *os.File
 	basedir     string
@@ -10008,25 +10009,47 @@ func (repo *Repository) reduce(ignoreFileops bool) {
 
 var medialSlash *regexp.Regexp = regexp.MustCompile("[a-zA-Z0-9~_#]/[a-zA-Z0-9~_#]")
 
-func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, error) {
+func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, text string) (string, error) {
+	reToGlob := func(text string) (string, error) {
+		return text, nil
+	}
+	globToRe := func(text string) (string, error) {
+		return text, nil
+	}
 	// Ignore blank lines and #-led comments. These may fail in CVS, but
 	// we never expect to be lifting to CVS.
 	if sourcetype == preferred || strings.TrimSpace(text) == "" || strings.HasPrefix(text, "#") {
 		return text, nil
 	}
 
-	// If the source and target systems have regexp ignore syntax,
-	// pass it through and hope. A case this will not catch, alas, is
-	// if hg has optionally enabled regexp syntax.
-	if sourcetype.hasCapability(ignRE) && preferred.hasCapability(ignRE) {
-		return text, nil
+	if sourcetype.name == "hg" {
+		if strings.HasPrefix("syntax: regexp", text) {
+			*reLatch = true
+			return "", nil
+		} else if strings.HasPrefix("syntax: glob", text) {
+			*reLatch = true
+			return "", nil
+		}
+	} else if preferred.hasCapability(ignBZR) && strings.HasPrefix("RE:", text) {
+		if preferred.hasCapability(ignRE) {
+			return strings.TrimSpace(text), nil
+		}
+		// otherwise fall through to glob processing.
+		// The error message will be slightly wrong
+		// if translation fails
+		return reToGlob(strings.TrimSpace(text))
 	}
 
-	// We can't do anything useful if the target syntax is regexp-based;
-	// pass it through and hope. This could change someday as it is
-	// theoretically possible to translate globs to regexps.
+	// Regexps are active on the source blob
+	if *reLatch {
+		if preferred.hasCapability(ignRE) {
+			return text, nil
+		}
+		return reToGlob(text)
+	}
+	// Regxps are not active on the source blob
 	if preferred.hasCapability(ignRE) {
-		return text, nil
+		return globToRe(text)
 	}
 
 	// It's all glob syntax past this point.
@@ -10076,9 +10099,6 @@ func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, 
 	}
 
 	// Reject quirks.
-	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("RE:", text) {
-		return "#" + text, errors.New("bzr/brz RE: syntax needs to be translated by hand")
-	}
 	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
 		return "#" + text, errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
@@ -10110,6 +10130,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 	out := make([]IgnoreProblem, 0)
 	ignorecount := 0
 	repo.clearColor(colorQSET)
+	var reLatch bool
 
 	insertHeader := func(blobcontent string, preferred *VCS) string {
 		inserted := ""
@@ -10143,7 +10164,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 		if translate {
 			translated = ""
 			for ln, line := range strings.Split(blobcontent, "\n") {
-				if fixed, err := translateIgnoreLine(repo.vcs, preferred, line); err == nil {
+				if fixed, err := translateIgnoreLine(&reLatch, repo.vcs, preferred, line); err == nil {
 					translated += line + "\n"
 				} else {
 					if translate {
@@ -10198,7 +10219,6 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 			// already renamed the ignore files to match Git convention.
 			// We shouldn't even assume that the repository has a sourcetype set.
 			// Instead, check and translate everything that migh be an ignore file.
-
 			//
 			// This could produce unexpected results in three known cases:
 			//
@@ -10222,6 +10242,7 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 			}
 		}
 	}
+	repo.regexpsOn = repo.vcs.hasCapability(ignRE)
 	for _, commit := range repo.commits(undefinedSelectionSet) {
 		for _, fileop := range commit.operations() {
 			if fileop.isIgnore() != nil && fileop.inline != nil {
