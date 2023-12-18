@@ -10048,6 +10048,11 @@ func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, 
 		}
 	}
 
+	// hg can firte this logic.
+	if !preferred.hasCapability(ignBANG) && strings.Contains(text, "!") {
+		text = strings.Replace(text, "[!", "[^", -1)
+	}
+
 	var exclusions = []struct {
 		flag     uint
 		wildcard string
@@ -10055,7 +10060,6 @@ func translateIgnoreLine(sourcetype *VCS, preferred *VCS, text string) (string, 
 	}{
 		{ignESC, `\`, "backslash escapes"},
 		{ignQUES, `?`, "wildcard"}, // Ugh...could false-match in a range
-		{ignBANG, `!`, "for range negation"},
 		{ignCARET, `^`, "for range negation"},
 		{ignDSTAR, `**`, "wildcard"},
 	}
