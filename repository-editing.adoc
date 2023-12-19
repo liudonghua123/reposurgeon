@@ -1130,21 +1130,6 @@ repository.
 Windows users accustomed to working through TortoiseSVN can move to
 https://tortoisegit.org/[TortoiseGIT].
 
-Developers who like hg can use the https://hg-git.github.com/[hg-git
-mercurial plugin]. There is an Ubuntu package "mercurial-git" for
-this, and other distributions are likely to carry it as well. It
-installs a Mercurial plugin called hg-git.
-
-There are some hg-git limitations to be aware of. In order to
-simulate git behavior, hg-git keeps some local state in the .hg
-directories; a map from git branch names to Mercurial commits, a list
-of Mercurial bookmarks describing git branches (which have
-bookmark-like behavior different from a Mercurial named branch) and a
-file mapping git SHA1 hashes to hg SHA1 hashes (both systems use them
-as commit IDs).  The problem is that hg doesn't copy any of this local
-state when it clones a repo, so clones of hg-git repos lose their
-git branches and tags.
-
 If you have developers attached to the CVS interface, it is possible
 (and in fact relatively easy) to set up a gateway interface that lets
 them continue using their CVS client tools.  Consult the documentation
