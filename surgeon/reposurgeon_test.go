@@ -152,16 +152,19 @@ func TestIgnoreTranslation(t *testing.T) {
 		line       string
 		svcs, tvcs string
 		expect     string
+		reversible bool
 	}
 	tests := []testEntry{
-		{`#Comment`, `git`, `darcs`, `#Comment`},
-		{`foobar`, `git`, `darcs`, `foobar$`},
-		{`fo?bar`, `git`, `darcs`, `fo.bar$`},
-		{`*.obj`, `git`, `darcs`, `.*\.obj$`},
-		{`*.py[co]`, `git`, `darcs`, `.*\.py[co]$`},
-		{`a[.]b$`, `darcs`, `git`, `a[.]b`},
-		{`a[?]b$`, `darcs`, `git`, `a[?]b`},
-		{`a[.*]b$`, `darcs`, `git`, `a[.*]b`},
+		{`#Comment`, `git`, `darcs`, `#Comment`, true},
+		{`foobar`, `git`, `darcs`, `foobar$`, true},
+		{`fo?bar`, `git`, `darcs`, `fo.bar$`, true},
+		{`*.obj`, `git`, `darcs`, `.*\.obj$`, true},
+		{`*.py[co]`, `git`, `darcs`, `.*\.py[co]$`, true},
+		{`a[.]b$`, `darcs`, `git`, `a[.]b`, true},
+		{`a[?]b$`, `darcs`, `git`, `a[?]b`, true},
+		{`a[.*]b$`, `darcs`, `git`, `a[.*]b`, true},
+		{`[!a-z]`, `git`, `hg`, `[^a-z]`, false},
+		{`!!foobar`, `bzr`, `git`, `#!!foobar`, false},
 	}
 	var reLatch bool
 	for testnum, item := range tests {
@@ -169,13 +172,15 @@ func TestIgnoreTranslation(t *testing.T) {
 		tvcs := findVCS(item.tvcs)
 		reLatch = svcs.hasCapability(ignRE)
 		if seen, e := translateIgnoreLine(&reLatch, svcs, tvcs, item.line); seen != item.expect {
-			t.Errorf("TestIgnoreTranslation %d (forward), %s->%s %q: expected %q, saw %q, error %s",
+			t.Errorf("TestIgnoreTranslation %d (forward), %s->%s %q: expected %q, saw %q, error %v",
 				testnum+1, item.svcs, item.tvcs, item.line, item.expect, seen, e)
 		}
-		reLatch = tvcs.hasCapability(ignRE)
-		if seen, e := translateIgnoreLine(&reLatch, tvcs, svcs, item.expect); seen != item.line {
-			t.Errorf("TestIgnoreTranslation %d (backward), %s->%s %q: expected %q, saw %q, error %s",
-				testnum+1, item.tvcs, item.svcs, item.expect, item.line, seen, e)
+		if item.reversible {
+			reLatch = tvcs.hasCapability(ignRE)
+			if seen, e := translateIgnoreLine(&reLatch, tvcs, svcs, item.expect); seen != item.line {
+				t.Errorf("TestIgnoreTranslation %d (backward), %s->%s %q: expected %q, saw %q, error %v",
+					testnum+1, item.tvcs, item.svcs, item.expect, item.line, seen, e)
+			}
 		}
 	}
 }

@@ -10137,7 +10137,7 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, origina
 	}
 
 	// This has to be checked before we audit for normal negation
-	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
+	if !preferred.hasCapability(ignBZR) && strings.HasPrefix(text, "!!") {
 		return "#" + text, errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
 
@@ -10150,7 +10150,7 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, origina
 	}
 
 	// hg can fire this logic.
-	if !preferred.hasCapability(ignBANG) && strings.Contains(text, "!") {
+	if !preferred.hasCapability(ignBANG) && strings.Contains(text, "[!") {
 		text = strings.Replace(text, "[!", "[^", -1)
 	}
 
@@ -10172,9 +10172,6 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, origina
 	}
 
 	// Reject quirks.
-	if !preferred.hasCapability(ignBZR) && strings.HasPrefix("!!", text) {
-		return "#" + text, errors.New("bzr/brz !! syntax needs to be translated by hand")
-	}
 	if !preferred.hasCapability(ignDIRMATCH) && text[len(text)-1] == '/' {
 		return "#" + original, fmt.Errorf("terminating slash is't special in %s", preferred.name)
 	}
