@@ -7,12 +7,20 @@
 # is only one test point per test failure, so test enumeration for purposes
 # of checking plan underrun and overrun will be compromised. 
 #
-# The reason testing CVS, darcs, and mtn aren't supported is that
+# The reason testing CVS isn't supported is that
 # there's no way to get from them a tabular status command reporting
-# on each file/directory in your working directory. If there were such a thing
-# in CVS, it turns out ignore patterns only apply to the commands
-# "update", "import" and release; an ignored files's status
+# on each file/directory in your working directory. If there were such
+# a thing in CVS, it turns out ignore patterns only apply to the
+# commands "update", "import" and "release"; an ignored files's status
 # report does not change.
+#
+# Testing darcs isn't supported because not clear whether there is a
+# usable status command in darcs. The documentation if the status
+# command is poor and poking at it doesn't yield enbcouraging results.
+#
+# Testing mtn is not supported because it's been moribund since 2011.
+# Some evidence of continuing use will be needc before the effort is
+# justified.
 #
 # This is not a generator.
 

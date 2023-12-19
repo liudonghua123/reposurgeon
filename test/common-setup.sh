@@ -125,7 +125,8 @@ vc() {
 	    # shellcheck disable=SC2164
 	    cd "${rbasedir}" >/dev/null || exit 1;
 	    case "${repotype}" in
-		bzr|brz|git|hg) "${repotype}" init;;
+		bzr|brz) "${repotype}" init -q;;	# Without -q bzr/brz plays annoying games om a tty. 
+		git|hg) "${repotype}" init;;
 		darcs) darcs --quiet .; mkdir -p _darcs/prefs;;
 		fossil) fossil init /tmp/fossil$$ >/dev/null && fossil open /tmp/fossil$$ >/dev/null && mkdir .fossil-settings;;
 		src) mkdir .src;;
