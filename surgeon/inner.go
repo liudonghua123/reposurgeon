@@ -10113,9 +10113,13 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, origina
 		return reToGlob(strings.TrimSpace(text))
 	}
 
-	// Regexps are active on the source blob
+	// Regexps are active on the source blob.  The reason for the
+	// odd logic here is that we list hg without the ignRE quirk because
+	// is default is globs, but if we're translating to hg and the
+	// source system has ignRE the right thing to do is to tell hg
+	// to use that syntax.
 	if *reLatch {
-		if preferred.hasCapability(ignRE) {
+		if preferred.hasCapability(ignRE) || preferred.name == "hg" {
 			return text, nil
 		}
 		return reToGlob(text)
@@ -10179,10 +10183,16 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, origina
 	}
 
 	// When translating from a system with unanchored matches to one with anchored matches, we need
-	// to prtepend an anchor. Also if the target system switches to anchoring behavior on pathnames.
+	// to prepend an anchor. Also if the target system switches to anchoring behavior on pathnames.
 	if preferred.hasCapability(ignLOOSE) && (!sourcetype.hasCapability(ignLOOSE) || medialSlash.MatchString(text)) {
 		return "./" + text, nil
 	}
+
+	// It's unclear what to do in the opposite case - target
+	// system does anchored matching, source has loose matching
+	// and no medial slash is present. Cases of this could be
+	// {git,hg,darcs}->{cvs,fossil,src,svn}. Punt this until
+	// an issue lands.
 
 	return text, nil
 
@@ -10205,13 +10215,12 @@ func (repo *Repository) translateIgnores(preferred *VCS, defaults, translate, wr
 
 	insertHeader := func(blobcontent string, preferred *VCS) string {
 		inserted := ""
-		// Not necessary - glob is the default hg syntax
-		//if preferred.name == "hg" {
-		//	const hgHeader = "syntax: glob\n"
-		//	if !strings.HasPrefix(blobcontent, hgHeader) {
-		//		inserted = hgHeader
-		//	}
-		//}
+		if preferred.name == "hg" && repo.vcs.hasCapability(ignRE) {
+			const hgHeader = "syntax: regexp\n"
+			if !strings.HasPrefix(blobcontent, hgHeader) {
+				inserted = hgHeader
+			}
+		}
 		return inserted
 	}
 
