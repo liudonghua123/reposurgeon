@@ -10178,6 +10178,12 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, origina
 		return "#" + original, fmt.Errorf("*/ will be surprising in %s", preferred.name)
 	}
 
+	// When translating from a system with unanchored matches to one with anchored matches, we need
+	// to prtepend an anchor. Also if the target system switches to anchoring behavior on pathnames.
+	if preferred.hasCapability(ignLOOSE) && (!sourcetype.hasCapability(ignLOOSE) || medialSlash.MatchString(text)) {
+		return "./" + text, nil
+	}
+
 	return text, nil
 
 }

@@ -155,6 +155,7 @@ func TestIgnoreTranslation(t *testing.T) {
 		reversible bool
 	}
 	tests := []testEntry{
+		// Moving between globs abd regexps
 		{`#Comment`, `git`, `darcs`, `#Comment`, true},
 		{`foobar`, `git`, `darcs`, `foobar$`, true},
 		{`fo?bar`, `git`, `darcs`, `fo.bar$`, true},
@@ -163,8 +164,14 @@ func TestIgnoreTranslation(t *testing.T) {
 		{`a[.]b$`, `darcs`, `git`, `a[.]b`, true},
 		{`a[?]b$`, `darcs`, `git`, `a[?]b`, true},
 		{`a[.*]b$`, `darcs`, `git`, `a[.*]b`, true},
+		// The omly glob translation we can do
 		{`[!a-z]`, `git`, `hg`, `[^a-z]`, false},
+		//Check for quirks
 		{`!!foobar`, `bzr`, `git`, `#!!foobar`, false},
+		{`foobar**`, `git`, `hg`, `#foobar**`, false},
+		{`foo\?bar`, `git`, `bzr`, `#foo\?bar`, false},
+		// Check for forced anchoring
+		{`foobar`, `cvs`, `hg`, `./foobar`, false},
 	}
 	var reLatch bool
 	for testnum, item := range tests {

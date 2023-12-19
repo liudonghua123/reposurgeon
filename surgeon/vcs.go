@@ -459,7 +459,7 @@ bzr-orphans
 branch is renamed to 'master'.
 `,
 			idformat:    "%s",
-			flags:       ignHASH | ignGLOB | ignESC | ignCARET | ignLOOSE | ignDSTAR,
+			flags:       ignHASH | ignGLOB | ignESC | ignCARET | ignLOOSE | ignFNMPATH,
 			dfltignores: "",
 		},
 		{
