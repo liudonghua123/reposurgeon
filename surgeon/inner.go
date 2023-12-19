@@ -10141,8 +10141,6 @@ func translateIgnoreLine(reLatch *bool, sourcetype *VCS, preferred *VCS, origina
 		return "#" + text, errors.New("bzr/brz !! syntax needs to be translated by hand")
 	}
 
-	// Some VCSes also support prefix negation. If that's all that's left after
-	// stripping out basic glob characters, we're fine.
 	if strings.HasPrefix(text, "!") {
 		if !preferred.hasCapability(ignNEG) {
 			return "#" + text, errors.New("pattern negation isn't supported")
