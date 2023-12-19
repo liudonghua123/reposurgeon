@@ -1485,18 +1485,21 @@ func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
 [SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names|stats|sizes] [PATTERN] [>OUTFILE]
 
-With "commits" or no subcommand, display commits in a human-friendly
-format; the first column is raw event numbers, the second a timestamp
-in UTC. If the repository has legacy IDs, they will be displayed in
-the third column. The leading portion of the comment follows.
+Requires a loaded repository. Takes a selection set, defaulting to all
 
-With "tags", display tags of both kinds, annotated and resets in the
-tags namespace. Three fields, an event number and a type and a name.
-Branch tip commits associated with tags are also displayed with the
-type field 'commit'.
+With "commits" or no subcommand, display selected commits in a
+human-friendly format; the first column is raw event numbers, the
+second a timestamp in UTC. If the repository has legacy IDs, they will
+be displayed in the third column. The leading portion of the comment
+follows.
 
-With "stamps", display full action stamps corresponding to commits in
-a select.  The stamp is followed by the first line of the commit
+With "tags", display selercted tags of both kinds - annotated and
+resets in the tags namespace. Three fields, an event number and a type
+and a name.  Branch tip commits associated with tags are also
+displayed with the type field 'commit'.
+
+With "stamps", display full action stamps corresponding to selected
+commits.  The stamp is followed by the first line of the commit
 message.
 
 With "inspect", dump a fast-import stream representing selected events
@@ -1511,31 +1514,28 @@ reference; for a commit it's the commit branch; for a blob it's a
 space-separated list of the repository path of the files with the blob
 as content.
 
-With "manifest", print commit path lists. Takes an optional selection
-set argument defaulting to all commits, and an optional pattern
-expression. For each commit in the selection set, print the mapping of
+With "manifest", print commit path lists. Takes an optional pattern
+expression. For each selected commit, print the mapping of
 all paths in that commit tree to the corresponding blob marks,
 mirroring what files would be created in a checkout of the commit. If
 a regular expression PATTERN is given, only print "path -> mark" lines
 for paths matching it. See "help regexp" for more information about
 regular expressions.
 
-With "paths", list all paths touched by fileops in the selection
-set (which defaults to the entire repo).
+With "paths", list all paths touched by fileops on selected commits.
 
-With "names", list all known symbolic names of branches and tags. 
-Tells you what things are legal within angle brackets and
-parentheses.
+With "names", list all known symbolic names of branches, and of tags
+in the selection set.  Tells you what things are legal within angle
+brackets and parentheses.
 
-With "stats", report object counts for the loaded repository.
+With "stats", report counts of selected objects.
 
-With "sizes", report on data volume per branch; takes a selection set,
-defaulting to all events. The numbers tally the size of uncompressed
-blobs, commit and tag comments, and other metadata strings (a blob is
-counted each time a commit points at it).  Not an exact measure of
-storage size: intended mainly as a way to get information on how to
-efficiently partition a repository that has become large enough to be
-unwieldy.
+With "sizes", report on data volume per branch.  The numbers tally the
+size of selected uncompressed blobs, commit and tag comments, and
+other metadata strings (a blob is counted each time a commit points at
+it).  Not an exact measure of storage size: intended mainly as a way
+to get information on how to efficiently partition a repository that
+has become large enough to be unwieldy.
 
 Any list command can be safely interrupted with ^C, returning you to the
 prompt.
@@ -1549,7 +1549,7 @@ func (rs *Reposurgeon) CompleteList(text string) []string {
 
 // DoList generates a human-friendly listing of events.
 func (rs *Reposurgeon) DoList(lineIn string) bool {
-	parse := rs.newLineParse(lineIn, "list", parseREPO|parseNOOPTS, orderedStringSet{"stdout"})
+	parse := rs.newLineParse(lineIn, "list", parseREPO|parseALLREPO|parseNOOPTS, orderedStringSet{"stdout"})
 	defer parse.Closem()
 	w := screenwidth()
 	modifiers := orderedStringSet{}
@@ -1598,7 +1598,6 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 		rs.reportSelect(parse, f)
 	case "inspect":
 		repo := rs.chosen()
-		parse.flagcheck(parseALLREPO)
 		for it := rs.selection.Iterator(); it.Next(); {
 			eventid := it.Value()
 			event := repo.events[eventid]
@@ -1607,7 +1606,6 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			fmt.Fprint(parse.stdout, event.String())
 		}
 	case "index":
-		parse.flagcheck(parseALLREPO)
 		repo := rs.chosen()
 		// We could do all this logic using reportSelect() and index() methods
 		// in the events, but that would have two disadvantages.  First, we'd
@@ -1646,7 +1644,6 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			}
 		}
 	case "manifest":
-		parse.flagcheck(parseALLREPO)
 		var filterFunc = func(s string) bool { return true }
 		if len(parse.args) > 1 {
 			filterRE := parse.getPattern(parse.args[1], "path")
@@ -1690,7 +1687,6 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			}
 		}
 	case "paths":
-		parse.flagcheck(parseALLREPO)
 		allpaths := newOrderedStringSet()
 		for it := rs.chosen().commitIterator(rs.selection); it.Next(); {
 			allpaths = allpaths.Union(it.commit().paths(nil))
@@ -1703,14 +1699,14 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 		for _, branch := range branches {
 			fmt.Fprintf(parse.stdout, "branch %s\n", branch)
 		}
-		for _, event := range rs.chosen().events {
-			if tag, ok := event.(*Tag); ok {
+		for it := rs.selection.Iterator(); it.Next(); {
+			ei := it.Value()
+			if tag, ok := rs.chosen().events[ei].(*Tag); ok {
 				fmt.Fprintf(parse.stdout, "tag    %s\n", tag.tagname)
 
 			}
 		}
 	case "stats":
-		parse.flagcheck(parseALLREPO)
 		repo := rs.chosen()
 		var blobs, commits, tags, resets, passthroughs int
 		for it := rs.selection.Iterator(); it.Next(); {
@@ -1737,7 +1733,6 @@ func (rs *Reposurgeon) DoList(lineIn string) bool {
 			fmt.Fprintf(parse.stdout, "  Loaded from %s\n", repo.sourcedir)
 		}
 	case "sizes":
-		parse.flagcheck(parseALLREPO)
 		repo := rs.chosen()
 		sizes := make(map[string]int)
 		for it := rs.selection.Iterator(); it.Next(); {
