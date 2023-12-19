@@ -2460,6 +2460,7 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 				}
 			}
 		}
+		/* BEWARE, ADHESION */
 		// Things get a little weird and kludgy here. It's the
 		// price we gave to pay for deferring Subversion
 		// branch remapping to be done in gitspace rather than

@@ -15,10 +15,8 @@ import (
 )
 
 // Most knowledge about specific version-control systems lives in the
-// following class list. Exception; there's a git-specific hook in the
-// repo reader, and another small one in the repo0revuild logic; also
-// see the extractor classes; also see the branch rename
-// implementation (has amn svn special case).
+// following class list. But svnread.go is a large exception: smaller ones
+// elewhere in the code are marked "BEWARE, ADHESION".
 //
 // Import/export style flags are as follows:
 //     "no-nl-after-commit" = no extra NL after each commit
