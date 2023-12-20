@@ -263,9 +263,11 @@ with CVS's file-oriented model and the fragility of its repository
 structures; reposurgeon cannot entirely compensate for these flaws.
 See <<CVS>> for discussion and workarounds.
 
-CVS has top-tier support with good testing.  It is, however, not
-expected that write to CVS will ever be implemented. (This means:
-somebody would have to pay the maintainer real money to make it
+CVS has top-tier support with good testing. Iy has been used for many
+CVS-to-Git conversions.
+
+It is not expected that export to CVS will ever be implemented. (This
+means: somebody would have to pay the maintainer real money to make it
 happen.)
 
 === Subversion
@@ -285,8 +287,11 @@ gatewaying with git-svn can leave cruft in a Subversion history
 that needs to be cleaned out.  See <<subversion>> for discussion
 and workarounds.
 
-Subversion has top-tier support with excellent testing. It is,
-however, not likely that write to Subversion will ever be
+Subversion has top-tier support with excellent testing. It has been
+used for many, many Subversion lifts to Git; this is the best-tested
+of any of the comversion paths.
+
+It is not likely that export to Subversion will ever be
 implemented. (This means: somebody would have to pay the maintainer
 real money to make it happen, but there is a plausible future in which
 that happens.)
@@ -294,8 +299,8 @@ that happens.)
 === Mercurial
 
 Mercurial (hg): reposurgeon can import and export Mercurial
-repositories.  See <<mercurial>> for details. Reposurgeon has been
-used for successful history conversions from Mercurial to Git.
+repositories; see <<mercurial>> for details. Reposurgeon has been used
+for successful history conversions from Mercurial to Git.
 
 Mercurial has top-tier support, but only basic test coverage.
 
@@ -303,9 +308,9 @@ See <<mercurial>> for more details.
 
 === Bazaar/Breezy
 
-Bazaar and Breezy (bzr, brz): These are workalikes. Import and export have only basic
-test coverage, but reposurgeon has been successfully used for a major
-Bazaar-to-Git conversion (the history of Emacs).
+Bazaar and Breezy (bzr, brz): These are workalikes. Import and export
+have only basic test coverage, but reposurgeon has been successfully
+used for a major Bazaar-to-Git conversion (the history of Emacs).
 
 Some Bazaar extensions - per-commit properties and multiple authors -
 are directly supported in reposurgeon. On the other hand, nothing in
