@@ -308,10 +308,7 @@ version:
 # https://goreportcard.com/report/gitlab.com/esr/reposurgeon
 
 check: lint all test
-	#$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
-
-cicheck: lint all test
-	@echo "CI test complete"
+	$(MAKE) -C test --quiet check BINDIR=$(realpath $(CURDIR))
 
 fixme:
 	@if command -v rg >/dev/null; then \
