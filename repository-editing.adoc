@@ -2447,6 +2447,10 @@ include::docinclude/exit.adoc[]
 There is a built-in extractor class to perform extractions from
 Mercurial repositories.
 
+Before importing a Mercurial repository, you should resolve
+all branches so they have single heads. The extractor can't
+handle multiple-headed branches gracefully.
+
 Mercurial branches are exported as branches in the exported
 repository, and tags are exported as tags.
 
