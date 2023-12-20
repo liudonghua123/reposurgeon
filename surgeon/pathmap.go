@@ -1,7 +1,7 @@
 /*
  * Efficient Copy-On-Write path-to-object maps
  *
- * Copyright by Eric S. Raymond and Julien Rivaud
+ * SPDX-FileCopyrightText: Eric S. Raymond <esr@thyrsus.com>
  * SPDX-License-Identifier: BSD-2-Clause
  */
 

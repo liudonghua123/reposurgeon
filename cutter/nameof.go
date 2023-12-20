@@ -7,7 +7,7 @@
 
 package main
 
-// Copyright by Eric S. Raymond
+// SPDX-FileCopyrightText: Eric S. Raymond <esr@thyrsus.com>
 // SPDX-License-Identifier: BSD-2-Clause
 
 import (

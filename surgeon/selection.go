@@ -6,7 +6,7 @@ package main
 // evalSelectionSet() that is uses to produce a selection set using
 // the machine.
 //
-// Copyright by Eric S. Raymond
+// SPDX-FileCopyrightText: Eric S. Raymond <esr@thyrsus.com>
 // SPDX-License-Identifier: BSD-2-Clause
 
 import (

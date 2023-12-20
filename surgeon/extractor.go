@@ -34,7 +34,7 @@
 // The code also assumes a control block that includes a baton for
 // reports.
 //
-// Copyright by Eric S. Raymond
+// SPDX-FileCopyrightText: Eric S. Raymond <esr@thyrsus.com>
 // SPDX-License-Identifier: BSD-2-Clause
 
 package main

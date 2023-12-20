@@ -2,7 +2,7 @@
 //
 // This file includes the program main and defines the syntax for the DSL.
 //
-// Copyright by Eric S. Raymond
+// SPDX-FileCopyrightText: Eric S. Raymond <esr@thyrsus.com>
 // SPDX-License-Identifier: BSD-2-Clause
 
 package main
