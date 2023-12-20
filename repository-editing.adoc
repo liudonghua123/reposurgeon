@@ -245,28 +245,32 @@ encountered in the wild.
 === Git
 
 The internal representation reposurgeomn uses for repository states
-losslessly captures Git histories.
+losslessly captures Git histories. Both import and export are fully
+supported.
 
 Git has top-tier support with excellent testing.
 
 === CVS
 
-Reposurgeon can read, but not write, CVS repositories.  You must have
+Reposurgeon can import, but not export, CVS repositories.  You must have
 a copy of the repository master directory, and run reposurgeon pointed
-at that directory or one of its submodules; a checkout directory won't
-do.
+at that directory or one of its module subdirectories; a checkout
+directory won't do.
 
 Beware that the quality of CVS lifts may be poor, with individual
 lifts requiring serious hand-hacking. This is due to inherent problems
 with CVS's file-oriented model and the fragility of its repository
-structures; reposurgeonn cannot entirely compensate for these flaws.
+structures; reposurgeon cannot entirely compensate for these flaws.
 See <<CVS>> for discussion and workarounds.
 
-CVS has top-tier support with good testing.
+CVS has top-tier support with good testing.  It is, however, not
+expected that write to CVS will ever be implemented. (This means:
+somebody would have to pay the maintainer real money to make it
+happen.)
 
 === Subversion
 
-Reposurgeon can read Subversion dumpfiles or repositories. If you want
+Reposurgeon can import Subversion dumpfiles or repositories. If you want
 it to read a repository, you must run it within the top-level
 directory of the repository itself, *not* in a checkout directory made
 from the repository.
@@ -281,14 +285,17 @@ gatewaying with git-svn can leave cruft in a Subversion history
 that needs to be cleaned out.  See <<subversion>> for discussion
 and workarounds.
 
-Subversion has top-tier support with excellent testing.
+Subversion has top-tier support with excellent testing. It is,
+however, not likely that write to Subversion will ever be
+implemented. (This means: somebody would have to pay the maintainer
+real money to make it happen, but there is a plausible future in which
+that happens.)
 
 === Mercurial
 
-Mercurial (hg): reposurgeon can read a Mercurial repository using
-either of two methods, and write one using a Mercurial plugin.  See
-<<mercurial>> for details. Reposurgeon has been used for
-successful history conversions from Mercurial to Git.
+Mercurial (hg): reposurgeon can import and export Mercurial
+repositories.  See <<mercurial>> for details. Reposurgeon has been
+used for successful history conversions from Mercurial to Git.
 
 Mercurial has top-tier support, but only basic test coverage.
 
@@ -296,7 +303,7 @@ See <<mercurial>> for more details.
 
 === Bazaar/Breezy
 
-Bazaar and Breezy (bzr, brz): These are workalikes. Import has only basic
+Bazaar and Breezy (bzr, brz): These are workalikes. Import and export have only basic
 test coverage, but reposurgeon has been successfully used for a major
 Bazaar-to-Git conversion (the history of Emacs).
 
