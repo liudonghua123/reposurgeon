@@ -2443,23 +2443,48 @@ include::docinclude/exit.adoc[]
 // END-TOC
 
 [[mercurial]]
-== Working with Mercurial
+== Working with Mercurial (hg)
 There is a built-in extractor class to perform extractions from
-Mercurial repositories.
+hg repositories.
 
-Before importing a Mercurial repository, you should resolve
-all branches so they have single heads. The extractor can't
-handle multiple-headed branches gracefully.
+There are some important caveats about hg. Please read this section
+carefully before attempting conversion or surgery.
 
-Mercurial branches are exported as branches in the exported
-repository, and tags are exported as tags.
+In hg the "branch" of a commit is a name carried in the commit
+and inherited by any child of it that is created - it behaves
+like a color on the commit rather than being implied by an ancestry
+relationship to a named branch tip (as in git) or by a location
+in a directory layout (as in svn).
+
+When different people add commits to a branch, and then
+push their results to the same upstream repository, each person's
+commits become different commit sequences, each attached to wherever the
+branch head was at the time they last pulled. So a branch
+can have multiple heads.  The heads themselves do not have names,
+other than the hex IDs of their tip commits.
+
+Typically someone will then merge the changes from all the heads into
+following commits on their branch.  There is an
+https://wiki.mercurial-scm.org/BranchingExplained[illuminating
+diagram] of this.
+
+Before importing a Mercurial repository, *you should merge-resolve
+all branches so they have single heads* first. The extractor can't
+handle multiple-headed branches gracefully.  This is because
+reposurgeon internally uses a data model similar to git's, but
+enriching that model wouldn't help much because no other VCS
+has an analog multi-headed branches.
+
+In hg branches can have a "closed" status marking that line of
+development as terminated. This flag is not represented in reposurgeon
+abd can't be exported to other VCSes.
 
 /////////////////////////////////////////////////////
 Date: Wed, 20 Dec 2023 01:53:58 +0000
 From ec429@cantab.net  Tue Dec 19 21:03:27 2023
 From: Edward Cree <ec429@cantab.net>
 To: "Eric S. Raymond" <esr@thyrsus.com>
-Subject: Re: How does the extractor handlke branches with multople heads?
+Subject: Re: How does the extractor handlke branches with multiple heads?
 
 On 20/12/2023 00:42, Eric S. Raymond wrote:
 > You seem to be the person who contreibuted actual knowledge of
@@ -2494,10 +2519,17 @@ developers' clones) takes some especially bad practice, and it
 should always be possible to fix it in Hg with a dummy merge.
 /////////////////////////////////////////////////////
 
-By default, bookmarks are ignored. You can specify explicit handling
-for bookmarks by setting '```reposurgeon.bookmarks```' in your
-_.hg/hgrc_. Set the value to the prefix that reposurgeon should use
-for bookmarks.
+There is another feature in hg that resembles named branches:
+bookmarks - symbolic namesa for branch-tip commits that you assign, which
+won't be identical to the name of the branch you're on unless you set
+rthe that way, and which move to the new tip on the branch every time
+you add one. There's a https://wiki.mercurial-scm.org/Bookmarks[detailed
+description].
+
+By default, bookmarks are ignored in favor of the name of the branch
+they are on. You can specify explicit handling for bookmarks by
+setting '```reposurgeon.bookmarks```' in your _.hg/hgrc_. Set the
+value to the prefix that reposurgeon should use for bookmarks.
 
 For example, if your bookmarks represent branches, put this at
 the bottom of your _.hg/hgrc_:
@@ -2511,14 +2543,11 @@ If you do that, it's your responsibility to ensure that branch names
 do not conflict with bookmark names. You can add a prefix like
 '```bookmarks=heads/feature-```' to disambiguate as necessary.
 
-Alternatively, you can import directly using
-https://github.com/kilork/hg-git-fast-import[hg-git-fast-import].
-This importer is not yet well-tested, but may be substantially
-faster than using the extractor harness. You may wish to run
-test conversions using both methods and compare them.
+Mercurial tags are name-to-commit mappings stored in a (versioned)
+dotfile in your repository directory. They are exported to other
+VCSes as lightweight tags.
 
 [[hg-subrepo]]
-=== Mercurial subrepositories
 The hg extractor does not attempt to recursively handle subrepos.  Rather,
 it will extract the history of the top-level repo, in which _.hgsub_ and
 _.hgsubstate_ will be treated as regular files.  If you wish to translate
@@ -2526,7 +2555,7 @@ these into the semantics of your target VCS, you will need to do so with
 surgical primitives after reading the history into reposurgeon.
 
 [[subversion]]
-== Working with Subversion
+== Working with Subversion (svn)
 
 The transaction model of Subversion is nothing like that of the DVCSes
 (distributed version-control systems) that followed it. Two of the
@@ -2981,7 +3010,7 @@ something else first (like, say, "main") will foil the logic in the
 reposurgeon stream reader that wants to do branch and tag analysis.
 
 [[CVS]]
-== Working with CVS
+== Working with CVS (cvs)
 
 When you are converting a CVS repository using reposurgeon, most of the
 heavy lifting will have been done by the importer - cvs-fast-export.

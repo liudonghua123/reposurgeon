@@ -19,7 +19,8 @@ Repository head::
      The ignores, add, timequake, and timeoffset commands set Q bits
      Source types of stream dumps can be deduced from ignore file names.
      Fossil import/export from checkouts is supported; --format=fossil is gone.
-     Ignore pattrern translation is available with "ignores --translate".
+     Ignore pattern translation is available with "ignores --translate".
+     Documentation on working with hg has been much expanded.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.
@@ -68,7 +69,7 @@ Repository head::
      repocutter pathrename/sift/expunge REs now match only full path segments.
      --nobranch/--branchify are gone; use repocutter to prep nonstandard repos.
      repocutter reduce now has simpler behavior and can take input from stdin.
-     reposurgeon incorporarte can handle symlinks
+     reposurgeon incorporate can handle symlinks
      repocutter can now select and deselect node spans within revisions.
      In repocutter sift/expunge, new -f option disables regexp interpretation.
      In repocutter, new skipcopy and filecopy commands.
