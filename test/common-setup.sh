@@ -416,7 +416,7 @@ vc() {
 	    case "${repotype}" in
 		svn)
 		    # shellcheck disable=SC1117,SC1004,SC2006,SC2086
-		    cat /tmp/stream$$ | sed "1a\
+		    sed </tmp/stream$$ "1a\
 \ ## ${legend}
 " | sed "2a\
 \ # Generated - do not hand-hack!
