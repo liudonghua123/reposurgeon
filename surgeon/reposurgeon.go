@@ -4333,18 +4333,37 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 		return arg
 	}
 
-	opindex := popToken()
+	token := popToken()
+	var err error
+	var numeric int
+	//var path string
+	if numeric, err = strconv.Atoi(token); err != nil {
+		numeric = -1
+	}
 	optypes := "DMRCN"
 	regex := regexp.MustCompile("^[DMRCN]+$")
-	match := regex.FindStringIndex(opindex)
+	match := regex.FindStringIndex(token)
 	if match != nil {
-		optypes = opindex[match[0]:match[1]]
-		opindex = popToken()
+		optypes = token[match[0]:match[1]]
+		token = popToken()
 	}
-	rs.chosen().clearColor(colorQSET)
-	rs.chosen().clearColor(colorDELETE)
-	delCount := 0
-	for it := rs.selection.Iterator(); it.Next(); {
+	baseSelection := rs.selection
+	// Sigh, no, we can't get rid of the "to" clause.
+	// The problem is that an M op needs to drag a blob with it.
+	target := -1
+	if len(parse.args) > argindex {
+		verb := popToken()
+		if verb == "to" {
+			rs.setSelectionSet(popToken())
+			if rs.selection.Size() != 1 {
+				croak("remove to requires a singleton selection")
+				return false
+			}
+			target = rs.selection.Fetch(0)
+		}
+	}
+	rs.chosen().clearColor(colorQSET | colorDELETE)
+	for it := baseSelection.Iterator(); it.Next(); {
 		ei := it.Value()
 		ev := repo.events[ei]
 		event, ok := ev.(*Commit)
@@ -4352,7 +4371,7 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 			croak("Event %d is not a commit.", ei+1)
 			return false
 		}
-		if opindex == "deletes" {
+		if token == "deletes" {
 			ops := make([]*FileOp, 0)
 			for _, op := range event.operations() {
 				if op.op != opD {
@@ -4364,47 +4383,31 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 			return false
 		}
 		ind := -1
-		// first, see if opindex matches the filenames of any
+		// first, see if token matches the filenames of any
 		// of this event's operations
 		for i, op := range event.operations() {
 			if !strings.Contains(optypes, string(op.op)) {
 				continue
 			}
-			if op.Path == opindex || op.Source == opindex {
+			if op.Path == token || op.Source == token {
 				ind = i
 				break
 			}
 		}
 		// otherwise, perhaps it's an integer
 		if ind == -1 {
-			var err error
-			ind, err = strconv.Atoi(opindex)
-			ind--
-			if err != nil {
-				croak("remove has invalid or missing fileop specification '%s'", opindex)
+			if numeric == -1 {
+				croak("remove has invalid or missing fileop specification '%s'", token)
 				return false
 			}
+			ind = numeric - 1
 		}
-		// Sigh, no, we can't get ride of the "to" clause.
-		// The problem is that an M op needs to drag a nlob with it.
-		target := -1
-		if len(parse.args) > argindex {
-			verb := popToken()
-			if verb == "to" {
-				rs.setSelectionSet(popToken())
-				if rs.selection.Size() != 1 {
-					croak("remove to requires a singleton selection")
-					return false
-				}
-				target = rs.selection.Fetch(0)
-			}
-		}
-		ops := event.operations()
-		present := ind >= 0 && ind < len(ops)
-		if !present {
+		if !(ind >= 0 && ind < len(event.operations())) {
 			croak("out-of-range fileop index %d", ind)
 			return false
 		}
+
+		ops := event.operations()
 		removed := ops[ind]
 		event.fileops = append(ops[:ind], ops[ind+1:]...)
 		event.addColor(colorQSET)
@@ -4414,7 +4417,6 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 				blob.removeOperation(removed)
 				if len(blob.opset) == 0 {
 					blob.addColor(colorDELETE)
-					delCount++
 				} else {
 					blob.addColor(colorQSET)
 				}
