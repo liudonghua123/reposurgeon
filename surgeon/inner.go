@@ -1600,6 +1600,7 @@ func (b *Blob) moveto(repo *Repository) {
 
 // clone makes a fresh (uncolored) copy of this blob, pointing at the same file."
 func (b *Blob) clone(repo *Repository) *Blob {
+	bpath := relpath(b.getBlobfile(false))
 	c := b // copy scalar fields
 	c.repo = repo
 	c.blobseq = control.blobseq
@@ -1618,8 +1619,6 @@ func (b *Blob) clone(repo *Repository) *Blob {
 	c.opsetLock.Unlock()
 	c.colors.Clear()
 	if b.hasfile() {
-		// the relpath calls are for readability if we error out
-		bpath := relpath(b.getBlobfile(false))
 		cpath := relpath(c.getBlobfile(false))
 		if logEnable(logSHUFFLE) {
 			logit("blob clone for %s calls os.Link(): %s (%v) -> %s (%v)",
