@@ -1622,10 +1622,13 @@ func (b *Blob) clone(repo *Repository) *Blob {
 		bpath := relpath(b.getBlobfile(false))
 		cpath := relpath(c.getBlobfile(false))
 		if logEnable(logSHUFFLE) {
-			logit("blob clone for %s calls os.Link(): %s -> %s", b.mark, bpath, cpath)
+			logit("blob clone for %s calls os.Link(): %s (%v) -> %s (%v)",
+				b.mark, bpath, exists(bpath), cpath, exists(cpath))
 		}
-		err := os.Link(bpath, cpath)
-		if err != nil {
+		if err := os.MkdirAll(filepath.Dir(cpath), userReadWriteSearchMode); err != nil {
+			panic(fmt.Errorf("Blob clone: %v", err))
+		}
+		if err := os.Link(bpath, cpath); err != nil {
 			panic(fmt.Errorf("Blob clone: %v", err))
 		}
 	} else {
