@@ -3156,6 +3156,38 @@ func (commit *Commit) moveto(repo *Repository) {
 	commit.hash.invalidate()
 }
 
+// transplant moves a fileop to a target commit, or nowhere
+func (commit *Commit) transplant(ind int, target int) {
+	ops := commit.operations()
+	removed := ops[ind]
+	commit.fileops = append(ops[:ind], ops[ind+1:]...)
+	commit.addColor(colorQSET)
+	if target == -1 {
+		if removed.op == opM {
+			blob := commit.repo.markToEvent(removed.ref).(*Blob)
+			blob.removeOperation(removed)
+			if len(blob.opset) == 0 {
+				blob.addColor(colorDELETE)
+			} else {
+				blob.addColor(colorQSET)
+			}
+		}
+	} else {
+		destination := commit.repo.events[target].(*Commit)
+		destination.appendOperation(removed)
+		destination.addColor(colorQSET)
+		// Blob might have to move, too - we need to keep the
+		// relocated op from having an unresolvable forward
+		// mark reference.
+		if removed.ref != "" && target < commit.repo.markToIndex(commit.mark) {
+			i := commit.repo.markToIndex(removed.ref)
+			blob := commit.repo.events[i]
+			commit.repo.events = append(commit.repo.events[:i], commit.repo.events[i+1:]...)
+			commit.repo.insertEvent(blob, target, "blob move")
+		}
+	}
+}
+
 // parents gets a list of this commit's parents.
 func (commit *Commit) parents() []CommitLike {
 	var out []CommitLike

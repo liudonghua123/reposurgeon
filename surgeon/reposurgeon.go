@@ -4312,7 +4312,7 @@ references, false otherwise.
 
 // CompleteRemove is a completion hook over rempve keywords
 func (rs *Reposurgeon) CompleteRemove(text string) []string {
-	return []string{"deletes", "--filter", "to"}
+	return []string{"deletes", "to"}
 }
 
 // DoRemove deletes a fileop from a specified commit.
@@ -4360,6 +4360,16 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 				return false
 			}
 			target = rs.selection.Fetch(0)
+			present := target >= 0 && target < len(repo.events)
+			if !present {
+				croak("out-of-range target event %d", target+1)
+				return false
+			}
+			_, ok := repo.events[target].(*Commit)
+			if !ok {
+				croak("event %d is not a commit", target+1)
+				return false
+			}
 		}
 	}
 	rs.chosen().clearColor(colorQSET | colorDELETE)
@@ -4407,43 +4417,7 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 			return false
 		}
 
-		ops := event.operations()
-		removed := ops[ind]
-		event.fileops = append(ops[:ind], ops[ind+1:]...)
-		event.addColor(colorQSET)
-		if target == -1 {
-			if removed.op == opM {
-				blob := repo.markToEvent(removed.ref).(*Blob)
-				blob.removeOperation(removed)
-				if len(blob.opset) == 0 {
-					blob.addColor(colorDELETE)
-				} else {
-					blob.addColor(colorQSET)
-				}
-			}
-		} else {
-			present := target >= 0 && target < len(repo.events)
-			if !present {
-				croak("out-of-range target event %d", target+1)
-				return false
-			}
-			commit, ok := repo.events[target].(*Commit)
-			if !ok {
-				croak("event %d is not a commit", target+1)
-				return false
-			}
-			commit.appendOperation(removed)
-			commit.addColor(colorQSET)
-			// Blob might have to move, too - we need to keep the
-			// relocated op from having an unresolvable forward
-			// mark reference.
-			if removed.ref != "" && target < ei {
-				i := repo.markToIndex(removed.ref)
-				blob := repo.events[i]
-				repo.events = append(repo.events[:i], repo.events[i+1:]...)
-				repo.insertEvent(blob, target, "blob move")
-			}
-		}
+		event.transplant(ind, target)
 	}
 	repo.scavenge("remove")
 	return false
