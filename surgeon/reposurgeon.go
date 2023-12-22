@@ -4292,133 +4292,116 @@ func (rs *Reposurgeon) DoAdd(line string) bool {
 // FIXME: Odd syntax
 func (rs *Reposurgeon) HelpRemove() {
 	rs.helpOutput(`
-[SELECTION] remove {deletes | [DMRCN] PATH | INDEX ] [to TARGET]
+[SELECTION] remove {INDEX | ["D"|"M"|"R"|"C"|"N"] [PATH]} [to TARGET]
 
-From a specified commit, remove a specified fileop. The syntax:
-
-OP must be one of (a) the keyword 'deletes', (b) a file path, (c)
-a file path preceded by an op type set (some subset of the letters
-DMRCN), or (c) a 1-origin numeric index.  The 'deletes' keyword
-selects all D fileops in the commit; the others select one each.
+From a specified commit, removes all fileops matching the given
+selector(s). Selectors may consit of: a 1-origin index, or an optional fileop type 
+and an optional path.
 
 If the to clause is present, the removed op is appended to the
-commit specified by the following singleton selection set.  This option
-cannot be combined with 'deletes'.
+commit specified by the following singleton selection set.
 
 Sets Q bits: true for each commit modified and blob with altered 
 references, false otherwise.
+
+Examples:
+
+----
+# From the commit at :423, remove any fileop referencing foobar.txt
+:423 remove foobar.txt
+
+# From the commit at :423, remove the second fileop.
+:423 remove 2
+
+# From the commit at :423, remove all deletes
+:423 remove D
+----
+
 `)
 }
 
 // CompleteRemove is a completion hook over rempve keywords
 func (rs *Reposurgeon) CompleteRemove(text string) []string {
-	return []string{"deletes", "to"}
+	return []string{"deletes", "--filter", "to"}
 }
 
 // DoRemove deletes a fileop from a specified commit.
 func (rs *Reposurgeon) DoRemove(pline string) bool {
-	parse := rs.newLineParse(pline, "remove", parseREPO|parseNOOPTS, nil)
+	parse := rs.newLineParse(pline, "remove", parseREPO|parseNEEDARG|parseNOOPTS, nil)
 	defer parse.Closem()
 	if !rs.selection.isDefined() {
 		rs.selection = newSelectionSet()
 	}
-	repo := rs.chosen()
-	var argindex int
-	popToken := func() string {
-		if argindex >= len(parse.args) {
-			return ""
-		}
-		arg := parse.args[argindex]
-		argindex++
-		return arg
-	}
 
-	token := popToken()
-	var err error
-	var numeric int
-	//var path string
-	if numeric, err = strconv.Atoi(token); err != nil {
-		numeric = -1
-	}
-	optypes := "DMRCN"
-	regex := regexp.MustCompile("^[DMRCN]+$")
-	match := regex.FindStringIndex(token)
-	if match != nil {
-		optypes = token[match[0]:match[1]]
-		token = popToken()
+	repo := rs.chosen()
+	ind := -1
+	action := ""
+	path := ""
+	target := -1
+	hasIndex := false
+	hasDestination := false
+	var argindex int
+	for argindex = 0; argindex < len(parse.args); argindex++ {
+		token := parse.args[argindex]
+		if token == "to" {
+			hasDestination = true
+			break
+		} else if val, err := strconv.Atoi(token); err == nil {
+			ind = val - 1
+			hasIndex = true
+		} else if len(token) == 1 && strings.ContainsAny(token, "DMRCN") {
+			action = token
+		} else {
+			path = token
+		}
 	}
 	baseSelection := rs.selection
-	// Sigh, no, we can't get rid of the "to" clause.
-	// The problem is that an M op needs to drag a blob with it.
-	target := -1
-	if len(parse.args) > argindex {
-		verb := popToken()
-		if verb == "to" {
-			rs.setSelectionSet("=C & (" + popToken() + ")")
-			if rs.selection.Size() != 1 {
-				croak("remove to requires a singleton selection")
-				return false
-			}
-			target = rs.selection.Fetch(0)
-			present := target >= 0 && target < len(repo.events)
-			if !present {
-				croak("out-of-range target event %d", target+1)
-				return false
-			}
-			_, ok := repo.events[target].(*Commit)
-			if !ok {
-				croak("event %d is not a commit", target+1)
-				return false
-			}
+	if hasDestination {
+		argindex++ // skip 'to'
+		if !(argindex < len(parse.args)) {
+			croak("missing destination after 'to'.")
+			return false
 		}
+		rs.setSelectionSet("=C & " + parse.args[argindex])
+		if rs.selection.Size() != 1 {
+			croak("remove to requires a singleton commit selection.")
+			return false
+		}
+		target = rs.selection.Fetch(0)
 	}
-	rs.chosen().clearColor(colorQSET | colorDELETE)
+	if !hasIndex && action == "" && path == "" {
+		croak("no selectors in remove command.")
+		return false
+	}
+	repo.clearColor(colorDELETE | colorQSET)
 	for it := baseSelection.Iterator(); it.Next(); {
 		ei := it.Value()
 		ev := repo.events[ei]
-		event, ok := ev.(*Commit)
+		commit, ok := ev.(*Commit)
 		if !ok {
-			croak("Event %d is not a commit.", ei+1)
+			// Should never happen
+			croak("internal error: event %s is not a commit.", ev.idMe())
 			return false
 		}
-		if token == "deletes" {
-			ops := make([]*FileOp, 0)
-			for _, op := range event.operations() {
-				if op.op != opD {
-					ops = append(ops, op)
-				}
-			}
-			event.setOperations(ops)
-			event.addColor(colorQSET)
-			return false
-		}
-		ind := -1
-		// first, see if token matches the filenames of any
-		// of this event's operations
-		for i, op := range event.operations() {
-			if !strings.Contains(optypes, string(op.op)) {
-				continue
-			}
-			if op.Path == token || op.Source == token {
-				ind = i
-				break
-			}
-		}
-		// otherwise, perhaps it's an integer
-		if ind == -1 {
-			if numeric == -1 {
-				croak("remove has invalid or missing fileop specification '%s'", token)
-				return false
-			}
-			ind = numeric - 1
-		}
-		if !(ind >= 0 && ind < len(event.operations())) {
+		if hasIndex && !(ind >= 0 && ind < len(commit.operations())) {
 			croak("out-of-range fileop index %d", ind)
 			return false
 		}
-
-		event.transplant(ind, target)
+		for i, op := range commit.operations() {
+			dropme := false
+			if hasIndex {
+				dropme = (i == ind)
+			} else if action != "" {
+				dropme = (string(op.op) == action)
+			} else if path != "" {
+				dropme = (op.Path == path)
+			}
+			if dropme {
+				commit.transplant(i, target)
+			}
+		}
 	}
+
 	repo.scavenge("remove")
 	return false
 }
