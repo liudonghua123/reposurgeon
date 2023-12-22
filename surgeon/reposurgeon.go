@@ -4354,7 +4354,7 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 	if len(parse.args) > argindex {
 		verb := popToken()
 		if verb == "to" {
-			rs.setSelectionSet(popToken())
+			rs.setSelectionSet("=C & (" + popToken() + ")")
 			if rs.selection.Size() != 1 {
 				croak("remove to requires a singleton selection")
 				return false
