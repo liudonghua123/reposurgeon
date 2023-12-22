@@ -4391,6 +4391,8 @@ func (rs *Reposurgeon) DoRemove(pline string) bool {
 			dropme := false
 			if hasIndex {
 				dropme = (i == ind)
+			} else if action != "" && path != "" {
+				dropme = (string(op.op) == action) && (op.Path == path)
 			} else if action != "" {
 				dropme = (string(op.op) == action)
 			} else if path != "" {
