@@ -142,6 +142,8 @@ func relpath(dir string) string {
 	if err != nil {
 		panic(err)
 	}
+	// Probably not Unix-dependent, any path this sees
+	// should have been ToSlashed on the way in.
 	if !strings.HasPrefix(dir, "/") {
 		dir = "/" + dir
 	}
@@ -1390,7 +1392,7 @@ func (b *Blob) getBlobfile(create bool) string {
 	stem := fmt.Sprintf("%09d", b.blobseq)
 	// The point of the breaking up the ID into multiple sections
 	// is to use the filesystem to speed up lookup time.
-	parts := strings.Split(filepath.FromSlash(b.repo.subdir("")), "/")
+	parts := strings.Split(filepath.ToSlash(b.repo.subdir("")), "/")
 	parts = append(parts,
 		[]string{"blobs", stem[0:3], stem[3:6], stem[6:]}...)
 	if create {
@@ -2005,6 +2007,7 @@ func (t *Tag) ascii() bool {
 // branchname returns the full branch reference corresponding to a tag.
 func branchname(tagname string) string {
 	fulltagname := tagname
+	// import-stream path separeator issue
 	if strings.Count(tagname, "/") == 0 {
 		fulltagname = "tags/" + fulltagname
 	}
@@ -2070,6 +2073,7 @@ type Reset struct {
 
 // nameToRef expands a name to Git-style reference path
 func nameToRef(name string) string {
+	// import-stream path separeator issue
 	if !strings.Contains(name, "/") {
 		name = "heads/" + name
 	}
@@ -3926,11 +3930,11 @@ func (commit *Commit) alldeletes(killset ...optype) bool {
 // checkout makes a directory with links to files in a specified checkout.
 func (commit *Commit) checkout(directory string) string {
 	if directory == "" {
-		directory = filepath.FromSlash(commit.repo.subdir("") + "/" + commit.mark)
+		directory = filepath.ToSlash(commit.repo.subdir("") + "/" + commit.mark)
 	}
-	if !exists(directory) {
+	if !exists(filepath.FromSlash(directory)) {
 		commit.repo.makedir("checkout")
-		os.Mkdir(directory, userReadWriteSearchMode)
+		os.Mkdir(filepath.FromSlash(directory), userReadWriteSearchMode)
 	}
 
 	defer func() {
@@ -3941,9 +3945,9 @@ func (commit *Commit) checkout(directory string) string {
 
 	commit.manifest().iter(func(cpath string, pentry interface{}) {
 		entry := pentry.(*FileOp)
-		fullpath := filepath.FromSlash(directory +
-			"/" + cpath + "/" + entry.ref)
-		if !exists(fullpath) {
+		fullpath := directory +
+			"/" + cpath + "/" + entry.ref
+		if !exists(filepath.FromSlash(fullpath)) {
 			parts := strings.Split(fullpath, "/")
 			// os.MkdirAll is broken and rpike says they
 			// won't fix it.
@@ -4201,6 +4205,7 @@ func (commit Commit) commonDirectory() string {
 	if len(commit.fileops) == 0 {
 		return ""
 	}
+	// import-stream path separeator issue
 	prefix := path.Dir(commit.fileops[0].Path) + "/"
 	// Short-circuit single-element list
 	if len(commit.fileops) == 1 {
@@ -4227,6 +4232,8 @@ func (commit Commit) commonDirectory() string {
 			}
 		}
 	}
+	// Might be a Unix dependency. Do git-fast-import strams use local
+	// path separators?
 	if strings.Contains(prefix, "/") {
 		prefix = prefix[:strings.LastIndex(prefix, "/")+1]
 	}
@@ -6819,6 +6826,7 @@ func (repo *Repository) squash(selected selectionSet, policy orderedStringSet, b
 			}
 			if delete {
 				speak := fmt.Sprintf("warning: commit %s to be deleted has ", commit.mark)
+				// import-stream path separeator issue
 				if strings.Contains(commit.Branch, "/") && !strings.Contains(commit.Branch, "/heads/") {
 					if logEnable(logWARN) {
 						logit(speak + fmt.Sprintf("non-head branch attribute %s", commit.Branch))

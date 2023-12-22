@@ -2486,6 +2486,7 @@ func (rs *Reposurgeon) DoRename(line string) bool {
 						continue
 					}
 					subst := GoReplacer(sourceRE, tagname, newname)
+					// import-stream path separeator issue
 					tag.tagname = subst[strings.Index(subst, "/")+1:] + suffix
 					tag.addColor(colorQSET)
 				} else if reset, ok := event.(*Reset); ok {
@@ -2864,7 +2865,7 @@ func (rs *Reposurgeon) DoWrite(line string) bool {
 		rs.chosen().fastExport(rs.selection, parse.stdout, parse.options.toStringSet(), rs.preferred, control.baton)
 	} else {
 		if strings.HasSuffix(parse.args[0], "/") && !exists(parse.args[0]) {
-			os.Mkdir(parse.args[0], userReadWriteSearchMode)
+			os.Mkdir(filepath.FromSlash(parse.args[0]), userReadWriteSearchMode)
 		}
 		if isdir(parse.args[0]) {
 			err := rs.chosen().rebuildRepo(parse.args[0], parse.options.toStringSet(), rs.preferred, control.baton)
@@ -5551,10 +5552,12 @@ func (rs *Reposurgeon) DoBranchlift(line string) bool {
 
 	// We need a path prefix
 	pathprefix := parse.args[1]
+	// import-stream path separeator issue
 	if pathprefix == "" || pathprefix == "." || pathprefix == "/" {
 		croak("path prefix argument must be nonempty and not . or /.")
 		return false
 	}
+	// import-stream path separeator issue
 	if !strings.HasSuffix(pathprefix, "/") {
 		pathprefix += "/"
 	}
@@ -7742,7 +7745,7 @@ func main() {
 	defer func() {
 		maybePanic := recover()
 		saveAllProfiles()
-		files, err := ioutil.ReadDir("./")
+		files, err := ioutil.ReadDir(".")
 		if err == nil {
 			mePrefix := filepath.FromSlash(fmt.Sprintf(".rs%d", os.Getpid()))
 			for _, f := range files {
