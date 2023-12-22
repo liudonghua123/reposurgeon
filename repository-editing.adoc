@@ -231,6 +231,8 @@ prefer git
 rebuild project-git
 --------
 
+You can find more usage examples in <<tipsntricks>>.
+
 [[support]]
 == Supported Version Control Systems
 
@@ -3153,6 +3155,27 @@ The second recipe uses the fact that almost any delimiter character
 will actually do. But note that you can't use single quote; that is
 interpreted as instruction to match a literal string rather than a
 regexp.
+
+You also can't use double quotes, as those are striped off argument
+tokens before they are passed to the functionss that interpret them.
+Thus , in the following command...
+
+-----------------------------------
+rename path "foo/(.*)" "${1}"
+-----------------------------------
+
+...the first argument would be interpreted as a literal path name and
+not a regexp. However, this eould work as probably intended:
+
+-----------------------------------
+rename path ":foo/(.*):" "${1}"
+-----------------------------------
+
+That is, the double quotes will be stripped off at argument parsing
+time and then the matching colons will cause the first argumment to be
+recognized as a delimiyed regexp. This will be useful if you need to
+specify a delimited regexp that contains whitespace; you can
+string-quote it so the argument parser will pass it as a single token.
 
 === Use macros to avoid repeating boilerplate
 
