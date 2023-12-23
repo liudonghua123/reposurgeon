@@ -7226,7 +7226,7 @@ func (repo *Repository) gcBlobs() {
 func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, delete bool, notagify bool, baton *Baton) error {
 	// First pass: compute fileop deletions
 	alterations := make([]selectionSet, 0, selection.Size())
-	repo.clearColor(colorDELETE)
+	repo.clearColor(colorQSET)
 	for it := selection.Iterator(); it.Next(); {
 		event := repo.events[it.Value()]
 		deletia := newSelectionSet()
@@ -7290,7 +7290,7 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 			}
 		}
 		commit.setOperations(nondeletia)
-		commit.addColor(colorDELETE)
+		commit.addColor(colorQSET)
 	}
 	backreferences := make(map[string]int)
 	for _, commit := range repo.commits(undefinedSelectionSet) {
