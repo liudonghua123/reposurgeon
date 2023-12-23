@@ -1,0 +1,19 @@
+# This used to make cloning blow up.
+# It contains a fileop with a hash reference to an exernal repo.
+blob
+mark :4914
+data 95
+[submodule "externals/agito"]
+	path = externals/agito
+	url = git@github.com:fragglet/agito.git
+
+commit refs/tags/2.10
+mark :4916
+author Eric S. Raymond <esr@thyrsus.com> 1355204915 -0500
+committer Eric S. Raymond <esr@thyrsus.com> 1355204915 -0500
+data 34
+Add the capability to test agito.
+deleteall
+M 100644 :4914 .gitmodules
+M 160000 fe3b8a97ee6d294c7eb15351e3030c09a74b5fd6 externals/agito
+

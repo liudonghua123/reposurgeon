@@ -2492,10 +2492,7 @@ func (fileop *FileOp) clone(newRepo *Repository) *FileOp {
 	newop.inline = make([]byte, len(fileop.inline))
 	copy(newop.inline, fileop.inline)
 	newop.op = fileop.op
-	// FIXME: Third conjunct shouldn't be needed.
-	// markToEvent() should return ok = false on fe3b8a97ee6d294c7eb15351e3030c09a74b5fd6
-	// Test this by trying to clone the reposurgeon repo with that guard gone.
-	if newop.repo != nil && newop.ref != "inline" && strings.HasPrefix(newop.ref, ":") {
+	if newop.repo != nil && newop.ref != "inline" {
 		if blob, ok := newop.repo.markToEvent(newop.ref).(*Blob); ok {
 			blob.appendOperation(newop)
 		}
@@ -5225,16 +5222,16 @@ func (repo *Repository) clone() *Repository {
 		newRepo.aliases[key] = value
 	}
 	branchPosition := make(map[string]*Commit)
-	newRepo.events = make([]Event, len(repo.events))
-	for i, event := range repo.events {
+	newRepo.events = make([]Event, 0)
+	for _, event := range repo.events {
 		switch event.(type) {
 		case *Passthrough:
 			passthrough := *event.(*Passthrough)
-			newRepo.events[i] = passthrough.clone()
+			newRepo.addEvent(passthrough.clone())
 		case *Blob:
 			blob := *event.(*Blob)
 			newblob := blob.clone(&newRepo)
-			newRepo.events[i] = newblob
+			newRepo.addEvent(newblob)
 		case *Commit:
 			commit := *event.(*Commit)
 			newcommit := commit.clone(&newRepo)
@@ -5260,20 +5257,20 @@ func (repo *Repository) clone() *Repository {
 				newcommit.implicitParent = true
 			}
 			branchPosition[newcommit.Branch] = newcommit
-			newRepo.events[i] = newcommit
+			newRepo.addEvent(newcommit)
 		case *Callout:
 			callout := *event.(*Callout)
-			newRepo.events[i] = callout.clone()
+			newRepo.addEvent(callout.clone())
 		case *Tag:
 			tag := *event.(*Tag)
 			newtag := tag.clone()
 			newtag.remember(&newRepo, tag.committish)
-			newRepo.events[i] = newtag
+			newRepo.addEvent(newtag)
 		case *Reset:
 			reset := *event.(*Reset)
 			newreset := reset.clone()
 			newreset.remember(&newRepo, reset.committish)
-			newRepo.events[i] = newreset
+			newRepo.addEvent(newreset)
 		default:
 			// This should never happen
 			panic("unknown event type while cloning")
@@ -5354,6 +5351,15 @@ func (repo *Repository) markToIndex(mark string) int {
 		}
 		for i := repo._markToIndexLen; i < L; i++ {
 			event := repo.events[i]
+			// This will crash and burn if the event array
+			// ever contains nils. We found this out the
+			// nard way when we tried to micro-optimize the
+			// Repository clone function by preallocating
+			// the entire event array for the c;one in one go
+			// rather than starting it empty and appending
+			// event copies. If you get a crash on the next
+			// line you have probably footgunned yourself in
+			// a similar way.
 			seenMark := event.getMark()
 			if seenMark == "" {
 				if _, ok := event.(MarkSettable); ok {
