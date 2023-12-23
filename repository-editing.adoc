@@ -621,6 +621,13 @@ requirement for a remote rsyncd that an rsync URL fed directly to
 rsync itself does; internally, repotool turns them into a single-colon
 host plus path rsync source specification.
 
+If what you have is a Subversion checkout directory, the following
+command will tell you the URL for its source repository. You may
+
+--------
+svn info --show-item repos-root-url
+--------
+
 If your first access attempt failed with some message about access
 control, you may need to uncomment the RUSERNAME and RPASSWORD and
 set them to a valid credential pair.
@@ -2456,118 +2463,6 @@ include::docinclude/exit.adoc[]
 
 // END-TOC
 
-[[mercurial]]
-== Working with Mercurial (hg)
-There is a built-in extractor class to perform extractions from
-hg repositories.
-
-There are some important caveats about hg. Please read this section
-carefully before attempting conversion or surgery.
-
-In hg the "branch" of a commit is a name carried in the commit
-and inherited by any child of it that is created - it behaves
-like a color on the commit rather than being implied by an ancestry
-relationship to a named branch tip (as in git) or by a location
-in a directory layout (as in svn).
-
-When different people add commits to a branch, and then
-push their results to the same upstream repository, each person's
-commits become different commit sequences, each attached to wherever the
-branch head was at the time they last pulled. So a branch
-can have multiple heads.  The heads themselves do not have names,
-other than the hex IDs of their tip commits.
-
-Typically someone will then merge the changes from all the heads into
-following commits on their branch.  There is an
-https://wiki.mercurial-scm.org/BranchingExplained[illuminating
-diagram] of this.
-
-Before importing a Mercurial repository, *you should merge-resolve
-all branches so they have single heads* first. The extractor can't
-handle multiple-headed branches gracefully.  This is because
-reposurgeon internally uses a data model similar to git's, but
-enriching that model wouldn't help much because no other VCS
-has an analog multi-headed branches.
-
-In hg branches can have a "closed" status marking that line of
-development as terminated. This flag is not represented in reposurgeon
-abd can't be exported to other VCSes.
-
-/////////////////////////////////////////////////////
-Date: Wed, 20 Dec 2023 01:53:58 +0000
-From ec429@cantab.net  Tue Dec 19 21:03:27 2023
-From: Edward Cree <ec429@cantab.net>
-To: "Eric S. Raymond" <esr@thyrsus.com>
-Subject: Re: How does the extractor handlke branches with multiple heads?
-
-On 20/12/2023 00:42, Eric S. Raymond wrote:
-> You seem to be the person who contreibuted actual knowledge of
-> Mercurial to repoosurgeon's Mercurial extractor class. So I
-> have a question.
->
-> What does it do with Mercurial branches that have multiple heads?
-
-If I ever knew this for certain I've long since forgotten, sorry.
-My best guess, based on re-reading the code and a few tests in a
-toy Hg repo, is as follows:
-Every commit will get branch coloured according to which branch
-Hg says it belongs to.
-refs/heads/ will contain only one head for each branch, whichever
-one 'hg branches' outputs (I think this is the most recent head
-on the branch in the linear local ordering, which is horrifically
-arbitrary but hey that's Mercurial).
-Consequently the other heads will not be reachable from any
-branch ref; user will probably want to create new branches from
-them otherwise they'll get GCed by git.
-
-If you wanted to improve this I guess the starting point would be
-to run
-    hg heads -T "{node|short}\t{branch}\n"
-to generate a list of all heads and the branches they're on, and
-then create disambiguated branch names so you could give every
-one of them a ref.
-
-I don't think I considered this issue at the time because getting
-multiple heads into your central Hg repo (rather than individual
-developers' clones) takes some especially bad practice, and it
-should always be possible to fix it in Hg with a dummy merge.
-/////////////////////////////////////////////////////
-
-There is another feature in hg that resembles named branches:
-bookmarks - symbolic namesa for branch-tip commits that you assign, which
-won't be identical to the name of the branch you're on unless you set
-rthe that way, and which move to the new tip on the branch every time
-you add one. There's a https://wiki.mercurial-scm.org/Bookmarks[detailed
-description].
-
-By default, bookmarks are ignored in favor of the name of the branch
-they are on. You can specify explicit handling for bookmarks by
-setting '```reposurgeon.bookmarks```' in your _.hg/hgrc_. Set the
-value to the prefix that reposurgeon should use for bookmarks.
-
-For example, if your bookmarks represent branches, put this at
-the bottom of your _.hg/hgrc_:
-
---------
-[reposurgeon]
-bookmarks=heads/
---------
-
-If you do that, it's your responsibility to ensure that branch names
-do not conflict with bookmark names. You can add a prefix like
-'```bookmarks=heads/feature-```' to disambiguate as necessary.
-
-Mercurial tags are name-to-commit mappings stored in a (versioned)
-dotfile in your repository directory. They are exported to other
-VCSes as lightweight tags.
-
-[[hg-subrepo]]
-The hg extractor does not attempt to recursively handle subrepos.  Rather,
-it will extract the history of the top-level repo, in which _.hgsub_ and
-_.hgsubstate_ will be treated as regular files.  If you wish to translate
-these into the semantics of your target VCS, you will need to do so with
-surgical primitives after reading the history into reposurgeon.
-
 [[subversion]]
 == Working with Subversion (svn)
 
@@ -2788,11 +2683,10 @@ generated from Subversion properties. On the other hand, the
 `--no-automatic-ignores` option discards
 Subversion `svn:ignore` and `svn:global-ignores` properties without translation.
 
-Normally, _.cvsignore_ files left over from a Subversion repository's
-ancient history as a CVS repository are deleted. The assumption is
-that the repository users want the (presumably more up-to-date)
-Subversion ignore properties to be translated.  However, this
-deletion can be prevented with the `--cvsignores` read option.
+Any _.cvsignore_ files left over from a Subversion repository's
+ancient history as a CVS repository are deleted. Instead the
+(presumably more up-to-date) Subversion ignore properties are
+translated.
 
 `svn:mergeinfo` properties are interpreted.  Any `svn:mergeinfo` property on a
 revision A with a merge source containing all revisions on a branch from the
@@ -2834,19 +2728,6 @@ Reposurgeon tries hard to silently do the right thing, but there are
 Subversion edge cases in which it emits warnings because a human may
 need to intervene and perform fixups by hand. Here are the less
 obvious messages it may emit:
-
-user-created .gitignore ignored::
-   This message means reposurgeon has found a _.gitignore_ file in the
-   Subversion repository it is analyzing. This probably happened
-   because somebody was using `git-svn` as a live gateway, and created
-   ignores which may or may not be congruent with those in the
-   generated _.gitignore_ files that the Subversion ignore properties
-   will be translated into.  You'll need to make a policy decision
-   about which set of ignores to use in the conversion, and possibly
-   set the `--user-ignores` option on `<<read_cmd>>` to pass through
-   user-created _.gitignore_ files and possibly merge them with files
-   generated from Subversion ignore properties; in that case this
-   warning will not be emitted.
 
 properties set::
    reposurgeon has detected a setting of a user-defined property, or
@@ -3126,6 +3007,118 @@ Conversion bugs are disproportionately likely to occur on older
 branches or tags made with CVS version before CVS got commit IDs in
 2006 (version 2.12). Often the most efficient remedy is simply to
 delete junk branches and tags; reposurgeon(1) makes this easy to do.
+
+[[mercurial]]
+== Working with Mercurial (hg)
+There is a built-in extractor class to perform extractions from
+hg repositories.
+
+There are some important caveats about hg. Please read this section
+carefully before attempting conversion or surgery.
+
+In hg the "branch" of a commit is a name carried in the commit
+and inherited by any child of it that is created - it behaves
+like a color on the commit rather than being implied by an ancestry
+relationship to a named branch tip (as in git) or by a location
+in a directory layout (as in svn).
+
+When different people add commits to a branch, and then
+push their results to the same upstream repository, each person's
+commits become different commit sequences, each attached to wherever the
+branch head was at the time they last pulled. So a branch
+can have multiple heads.  The heads themselves do not have names,
+other than the hex IDs of their tip commits.
+
+Typically someone will then merge the changes from all the heads into
+following commits on their branch.  There is an
+https://wiki.mercurial-scm.org/BranchingExplained[illuminating
+diagram] of this.
+
+Before importing a Mercurial repository, *you should merge-resolve
+all branches so they have single heads* first. The extractor can't
+handle multiple-headed branches gracefully.  This is because
+reposurgeon internally uses a data model similar to git's, but
+enriching that model wouldn't help much because no other VCS
+has an analog multi-headed branches.
+
+In hg branches can have a "closed" status marking that line of
+development as terminated. This flag is not represented in reposurgeon
+abd can't be exported to other VCSes.
+
+/////////////////////////////////////////////////////
+Date: Wed, 20 Dec 2023 01:53:58 +0000
+From ec429@cantab.net  Tue Dec 19 21:03:27 2023
+From: Edward Cree <ec429@cantab.net>
+To: "Eric S. Raymond" <esr@thyrsus.com>
+Subject: Re: How does the extractor handlke branches with multiple heads?
+
+On 20/12/2023 00:42, Eric S. Raymond wrote:
+> You seem to be the person who contreibuted actual knowledge of
+> Mercurial to repoosurgeon's Mercurial extractor class. So I
+> have a question.
+>
+> What does it do with Mercurial branches that have multiple heads?
+
+If I ever knew this for certain I've long since forgotten, sorry.
+My best guess, based on re-reading the code and a few tests in a
+toy Hg repo, is as follows:
+Every commit will get branch coloured according to which branch
+Hg says it belongs to.
+refs/heads/ will contain only one head for each branch, whichever
+one 'hg branches' outputs (I think this is the most recent head
+on the branch in the linear local ordering, which is horrifically
+arbitrary but hey that's Mercurial).
+Consequently the other heads will not be reachable from any
+branch ref; user will probably want to create new branches from
+them otherwise they'll get GCed by git.
+
+If you wanted to improve this I guess the starting point would be
+to run
+    hg heads -T "{node|short}\t{branch}\n"
+to generate a list of all heads and the branches they're on, and
+then create disambiguated branch names so you could give every
+one of them a ref.
+
+I don't think I considered this issue at the time because getting
+multiple heads into your central Hg repo (rather than individual
+developers' clones) takes some especially bad practice, and it
+should always be possible to fix it in Hg with a dummy merge.
+/////////////////////////////////////////////////////
+
+There is another feature in hg that resembles named branches:
+bookmarks - symbolic namesa for branch-tip commits that you assign, which
+won't be identical to the name of the branch you're on unless you set
+rthe that way, and which move to the new tip on the branch every time
+you add one. There's a https://wiki.mercurial-scm.org/Bookmarks[detailed
+description].
+
+By default, bookmarks are ignored in favor of the name of the branch
+they are on. You can specify explicit handling for bookmarks by
+setting '```reposurgeon.bookmarks```' in your _.hg/hgrc_. Set the
+value to the prefix that reposurgeon should use for bookmarks.
+
+For example, if your bookmarks represent branches, put this at
+the bottom of your _.hg/hgrc_:
+
+--------
+[reposurgeon]
+bookmarks=heads/
+--------
+
+If you do that, it's your responsibility to ensure that branch names
+do not conflict with bookmark names. You can add a prefix like
+'```bookmarks=heads/feature-```' to disambiguate as necessary.
+
+Mercurial tags are name-to-commit mappings stored in a (versioned)
+dotfile in your repository directory. They are exported to other
+VCSes as lightweight tags.
+
+[[hg-subrepo]]
+The hg extractor does not attempt to recursively handle subrepos.  Rather,
+it will extract the history of the top-level repo, in which _.hgsub_ and
+_.hgsubstate_ will be treated as regular files.  If you wish to translate
+these into the semantics of your target VCS, you will need to do so with
+surgical primitives after reading the history into reposurgeon.
 
 [[tipsntricks]]
 == Tips and Tricks
