@@ -3177,15 +3177,45 @@ recognized as a delimiyed regexp. This will be useful if you need to
 specify a delimited regexp that contains whitespace; you can
 string-quote it so the argument parser will pass it as a single token.
 
+=== Extracting the history of a single file
+
+You can use a negative selection to extract the history of a single
+file. Using the reposurgeon repository itself as an example:
+
+-----------------------------------
+read .
+clone
+delete path --not ci/prepare.sh
+rename path :ci/(.*): "${1}"
+-----------------------------------
+
+After thus rommands, the reposurgeon-clone repository will
+contain only the history of ci/prepare.sh, with the "ci" directory
+popped off the filenamw in the way indicated in the previous tip.
+
 === Use macros to avoid repeating boilerplate
 
+We can encapsulate that technique for stripping off a directory as
+follows:
+
+-----------------------------------
+define pop rename path %{0}/(.*): "${1}"
+-----------------------------------
+
+You could then say:
+
+-----------------------------------
+do pop junkdir
+-----------------------------------
+
+Here's a less trivial example:
 In CVS repositories of projects that use the GNU ChangeLog convention,
 a very common pre-conversion artifact is a commit with the comment
 "```++*** empty log message ***++```" that modifies only a ChangeLog
 entry explaining the commit immediately previous to it. The following
 
 --------
-define changelog <%{0}<> & /empty log message/ squash --pushback
+define changelog <%{0}> & /empty log message/ squash --pushback
 do changelog 2012-08-14T21:51:35Z
 do changelog 2012-08-08T22:52:14Z
 do changelog 2012-08-07T04:48:26Z
