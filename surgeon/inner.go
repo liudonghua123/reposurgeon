@@ -7269,9 +7269,12 @@ func (repo *Repository) expunge(selection selectionSet, expunge *regexp.Regexp, 
 					ei+1, fileop.Path)
 			} else if fileop.op == opM {
 				if fileop.ref != "inline" {
-					bi := repo.markToIndex(fileop.ref)
-					blob := repo.events[bi].(*Blob)
-					blob.removeOperation(fileop)
+					// This lookup can legitimately fail, like
+					// if the ref is a hex ID.
+					if bi := repo.markToIndex(fileop.ref); bi > 0 {
+						blob := repo.events[bi].(*Blob)
+						blob.removeOperation(fileop)
+					}
 				}
 				respond("at %d, expunging M %s", ei+1, fileop.Path)
 			}
