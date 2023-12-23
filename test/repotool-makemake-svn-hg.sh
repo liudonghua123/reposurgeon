@@ -1,9 +1,9 @@
 #!/bin/sh
-## Test repotool makemake, svn->hg
+## Test repotool initmake, svn->hg
 
 mkdir /tmp/test-workdir$$
 cd /tmp/test-workdir$$ >/dev/null || ( echo "$0: cd failed" >&2; exit 1 )
-${REPOTOOL:-repotool} makemake xyzzy svn hg >/tmp/out$$
+${REPOTOOL:-repotool} initmake xyzzy svn hg >/tmp/out$$
 echo Return code: $? >>/tmp/out$$
 cd - >/dev/null || ( echo "$0: cd failed" >&2; exit 1 )
 ./dir-md5 /tmp/test-workdir$$ >>/tmp/out$$

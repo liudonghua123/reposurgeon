@@ -19,7 +19,7 @@ tapcd "${TMPDIR}/scratch$$"
 "${testdir}/svn-to-svn" -q -n vanilla-prime <"${testdir}/vanilla.svn"
 
 # Make the workflow file.
-repotool makemake -q vanilla-secundus svn git || ( echo "not ok - $0: initialization failed"; exit 1)
+repotool initmake -q vanilla-secundus svn git || ( echo "not ok - $0: initialization failed"; exit 1)
 
 # Mirror vanilla-prime into vanilla-secundus and invoke standard workflow
 # These variables are unset so the following make invocation won't try to

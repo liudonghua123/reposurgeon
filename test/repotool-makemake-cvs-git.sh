@@ -1,9 +1,9 @@
 #!/bin/sh
-## Test repotool makemake, cvs->git
+## Test repotool initmake, cvs->git
 
 mkdir /tmp/test-workdir$$
 cd /tmp/test-workdir$$ || ( echo "$0: cd failed"; exit 1 )
-${REPOTOOL:-repotool} makemake xyzzy cvs git >/tmp/out$$
+${REPOTOOL:-repotool} initmake xyzzy cvs git >/tmp/out$$
 echo Return code: $? >>/tmp/out$$
 # shellcheck disable=2064
 cd - >/dev/null || ( echo "$0: cd failed"; exit 1 )

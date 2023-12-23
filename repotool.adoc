@@ -71,7 +71,7 @@ The compare operation accepts the following options:
 -i::
 	Perform comparison of normally ignored dot directories
 
-In older versions of this tool, the "makemake" command was named
+In older versions of this tool, the "initmake" command was named
 "initialize". It was renamed in order to avoid confusion with the
 "init" command in various version-control systems.
 

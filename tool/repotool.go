@@ -325,7 +325,7 @@ func makeStub(name string, contents string) {
 	fp.WriteString(contents)
 }
 
-func makemake(args []string) {
+func initmake(args []string) {
 	WriteSupport := newStringSet()
 	for _, vcs := range vcstypes {
 		if vcs.importer != "" {
@@ -341,11 +341,11 @@ func makemake(args []string) {
 	// Hacky special case implemented through extractor class
 	ReadSupport.Add("hg")
 	if verbose {
-		fmt.Printf("makemake args: %v\n", args)
+		fmt.Printf("initmake args: %v\n", args)
 	}
 	var squishy squishyParts
 	if len(args) < 1 {
-		croak("makemake requires a project name.")
+		croak("initmake requires a project name.")
 	}
 	project, args := args[0], args[1:]
 	squishy.Project = project
@@ -1187,10 +1187,10 @@ var helpdict = map[string]struct {
 	oneliner string
 	text     string
 }{
-	"makemake": {
-		"makemake",
+	"initmake": {
+		"initmake",
 		"create Makefile and stub files for standard conversion workflow",
-		`The "makemake" option takes a project name (and, optionally,
+		`The "initmake" option takes a project name (and, optionally,
 following source and target VCS types) and generates a
 Makefile that will sequence various steps of a repository
 conversion. It also generates stub lift and options files. This is
@@ -1314,7 +1314,7 @@ With a following argument that is a command name, display detailed help for that
 }
 
 var narrativeOrder []string = []string{
-	"makemake",
+	"initmake",
 	"export",
 	"mirror",
 	"branches",
@@ -1390,8 +1390,8 @@ func main() {
 	}
 
 	args := flags.Args()
-	if operation == "makemake" {
-		makemake(args)
+	if operation == "initmake" {
+		initmake(args)
 	} else if operation == "export" {
 		export()
 	} else if operation == "mirror" {
