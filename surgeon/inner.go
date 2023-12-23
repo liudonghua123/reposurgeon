@@ -2492,7 +2492,10 @@ func (fileop *FileOp) clone(newRepo *Repository) *FileOp {
 	newop.inline = make([]byte, len(fileop.inline))
 	copy(newop.inline, fileop.inline)
 	newop.op = fileop.op
-	if newop.repo != nil && newop.ref != "inline" {
+	// FIXME: Third conjunct shouldn't be needed.
+	// markToEvent() should return ok = false on fe3b8a97ee6d294c7eb15351e3030c09a74b5fd6
+	// Test this by trying to clone the reposurgeon repo with that guard gone.
+	if newop.repo != nil && newop.ref != "inline" && strings.HasPrefix(newop.ref, ":") {
 		if blob, ok := newop.repo.markToEvent(newop.ref).(*Blob); ok {
 			blob.appendOperation(newop)
 		}
