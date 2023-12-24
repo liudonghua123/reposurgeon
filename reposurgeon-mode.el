@@ -12,7 +12,7 @@
   "Delimiter line used in the output of svn log")
 
 (defconst reposurgeon-mail-delimiter
-  "------------------------------------------------------------------------------\n"
+  "------------------------------------------------------------------------\n"
   "Delimiter line used in reposurgeon comment msgboxes.")
 
 (defun decimal-digit-after ()
@@ -78,14 +78,10 @@ and headers so it's in the same format as the rest of the msgbox."
   (interactive)
   (query-replace-regexp "\\brevision \\([0-9][0-9.]+\\)\\b" "[[BZR:\\1]]"))
 
-(defun clean-until-committer ()
-  "Remove all headers from next mbox entry until Committer and Committer-Date."
+(defun brz-reference-lift ()
+  "Interactively lift probable Bazaar revision numbers into ref cookies en masse."
   (interactive)
-  (re-search-forward (concat "^" reposurgeon-mail-delimiter))
-  (let ((kill-whole-line t))
-    (while (not (looking-at "^Committer:\\|^$"))
-      (kill-line)))
-  )
+  (query-replace-regexp "\\brevision \\([0-9][0-9.]+\\)\\b" "[[BRZ:\\1]]"))
 
 (defun kill-comment-entry ()
   "Remove current msgbox entry, move to next."
@@ -98,26 +94,6 @@ and headers so it's in the same format as the rest of the msgbox."
       (kill-line))
     (kill-line))
   )
-
-(defun svn-index ()
-  "Show Subversion dump structure by eliding most lines."
-  (interactive)
-  (grep (format "grep -nHE -e \"Node-path|Revision-number|Node-copyfrom\" %s " (buffer-file-name))))
-
-(defun strip-msgbox-headers ()
-  "Strip all headers from a msgbox comment dump except Event-Mark."
-  (interactive)
-  (goto-char (point-min))
-  (let ((seen-state nil))
-    (while (not (eobp))
-      (cond ((looking-at reposurgeon-mail-delimiter) (setq seen-state "header"))
-	    ((string= seen-state "header")
-	     (cond ((looking-at "\n")
-		    (setq seen-state "text"))
-		   ((not (looking-at "Event-Mark:"))
-		    (progn (kill-whole-line) (forward-line -1))))))
-      (forward-line 1))))
-      
 
 (defvar reposurgeon-mode-map nil "Keymap for reposurgeon-mode")
 
