@@ -265,10 +265,10 @@ with CVS's file-oriented model and the fragility of its repository
 structures; reposurgeon cannot entirely compensate for these flaws.
 See <<CVS>> for discussion and workarounds.
 
-CVS has top-tier support with good testing. Iy has been used for many
+CVS has top-tier support with good testing. It has been used for many
 CVS-to-Git conversions.
 
-It is not expected that export to CVS will ever be implemented. (This
+It is extremely unlikely that export to CVS will ever be implemented. (This
 means: somebody would have to pay the maintainer real money to make it
 happen.)
 
@@ -291,7 +291,7 @@ and workarounds.
 
 Subversion has top-tier support with excellent testing. It has been
 used for many, many Subversion lifts to Git; this is the best-tested
-of any of the comversion paths.
+of any of the conversion paths.
 
 It is not likely that export to Subversion will ever be
 implemented. (This means: somebody would have to pay the maintainer
@@ -356,11 +356,15 @@ which is pretty good but exports only versioned ignore patterns (in
 through the Web interface. The Fossil tag model has complexities that
 an export to Git or other systems will not fully capture. Export also
 leaves behind other data such as the wiki content, events, and
-tickets.
+tickets.  Also be aware that Fossil does not have separate committer
+and author fields - that distinction will be lost if you export to it.
 
 darcs: reposurgeon declares an importer-exporter pair, but the
 capability has only been lightly tested. There are almost certainly
-undiscovered data-model issues here.
+undiscovered data-model issues here.  There has been no motivation to
+diagnose these problems, as darcs has seen little use since 2010 and
+may be extinct in the wild. The support in reposurgeon is maintained
+in case it is necessary to rescue a legacy darcs history.
 
 === Third-tier systems
 
@@ -395,10 +399,10 @@ Perforce user IDs to a Git-style name/address pair will be desirable.
 AccuRev: There are a couple of tools for translating AccuRev
 repositories to live Git repositories. Of these
 https://stackoverflow.com/questions/10983442/how-to-export-accurev-to-another-vcs[the
-most developed appears to be called "ac2git.py"]; you should be able
+most developed appears to be called "ac2git"]; you should be able
 to find it with a search engine.  We recommend you use this tool to
 get a first-pass conversion to Git, then use reposurgeon to clean up
-the result. The ac2git.py converter's goal is to produce an accurate
+the result. The ac2git converter's goal is to produce an accurate
 representation of a collection of AccuRev streams, as multiple
 disconnected git branches; while there is functionality to identify
 branch and merge points, actually weaving the streams into a single
@@ -406,9 +410,9 @@ DAG is something best done in reposurgeon.
 
 === Unsupported VCSes
 
-Pijul, which is still new and in intensive development as of 2023, will be
-supported when it grows an importer/exporter pair for Git fast-import
-streams.
+https://pijul.org/[Pijul], which is still new and in intensive
+development as of late 2023, will be supported when it grows an
+importer/exporter pair for Git fast-import streams.
 
 Arch, ArX, DCVS: these systems were open-source but have been dead
 since 2006 (with Arch officially deprecated by its maintainer in favor
@@ -653,13 +657,15 @@ entire conversion sequence will look like.
 [[authormap]]
 === Step One: The Author Map
 
-Subversion and CVS identify users by a Unix login name local to the
-repository host; DVCSes use pairs of fullnames and email addresses.
-Before you can finish your conversion, you'll need to put together an
-author map that maps the former to the latter; the Makefile assumes
-this is named $(PROJECT).map.  The author map should specify a full
-name and email address for each local user ID in the repo you're
-converting. Each line should be in the following form:
+You can skip this section if you're converting from a DVCS.
+
+SCCS, RCS, CVS, and Subversion identify users by a Unix login name
+local to the repository host; DVCSes use pairs of fullnames and email
+addresses.  Before you can finish your conversion, you'll need to put
+together an author map that maps the former to the latter; the
+Makefile assumes this is named $(PROJECT).map.  The author map should
+specify a full name and email address for each local user ID in the
+repo you're converting. Each line should be in the following form:
 
 ...................................................................
 foonly = Fred Foonly <foonly@foobar.com>
@@ -730,7 +736,7 @@ have to watch the baton spin for a few minutes.  For very large
 repositories it could be more than a few minutes.
 
 This will convert your repository to git. If you need to export
-to something else, reposurgeon has write support for a couple of
+to something else, reposurgeon has write support for swveral
 other modern VCSes.
 
 If you are exporting from CVS, it may be a good idea to run some trial
@@ -746,11 +752,12 @@ For more detailed discussion of CVS conversion and troubleshooting see
 <<CVS>>.
 
 On the other hand, while Subversion conversion has its complexities it
-is robust and well-tested. Normally reposurgeon will do branch
-analysis for you.  On most Subversion repositories, and in particular
-anything with a standard trunk/tags/branches layout, it will do the
-right thing. It will also cope with adventitious branches in the root
-directory of the repo, such as some projects use for website content.
+is robust and well-tested. Normally reposurgeon will do a complete
+branch analysis for you.  On most Subversion repositories, and in
+particular anything with a standard trunk/tags/branches layout, it
+will do the right thing. It will also cope with adventitious branches
+in the root directory of the repo, such as some projects use for
+website content.
 
 There is, however, a minor problem around tags, and a slightly
 more significant problem around Subversion merges. Also, some
@@ -788,18 +795,12 @@ Use reposurgeon's '```<<lint_cmd>>```' command to find anomalies like
 detached branches that may need manual correction.
 
 If you are converting from CVS, use reposurgeon's
-'```<<graph_cmd>>```' command to examine the conversion, looking (in
-particular) for misplaced tags or branch joins. Often these can be
+'```<<view_cmd>>```' command to examine the conversion, looking (in
+particular) for misplaced tags or missing branch joins. Often these can be
 manually repaired with little effort. These flaws do 'not' necessarily
 imply bugs in cvs-fast-export or reposurgeon; they may simply indicate
 previously undetected malformations in the history. However, reporting
 them may help improve cvs-fast-export.
-
-Warning: As of September 2016, stock CVS is known buggy in ways which
-may affect checking the correctness of conversions. For best results,
-use a CVS version with the MirOS patches.  These are carried by Debian
-Linux and derivatives; you can check by Looking for "MirDebian" in the
-output of cvs --version.
 
 [[cleanup]]
 === Step Four: Cleanup
@@ -811,123 +812,146 @@ Here's a checklist of cleanup steps, which we'll expand on later in
 this section. If you're using the makefile generated by repotool, some
 of these will be done by commands in your lift script.
 
-. SCCS, RCS, CVS, SVN: Map author IDs from local to DVCS form.
+==== Apply your author map
 
-. SVN: Check for leftover cvs2svn junk commits and remove them if possible.
+This step applies to SCCS, RCS, CVS, and SVN. Map author IDs from
+local to DVCS form.  The reposurgeon command for this is "authors
+read"; see '```<<authors_cmd>> read```'.
 
-. Lift references in commit comments.
+==== Mine changelogs
 
-. Massage comments into summary-line-plus-continuation form.
+If you don't know what a GNU ChangeLog is you can skip this step.
 
-. If the project used the GNU ChangeLog convention, run "<<changelogs_cmd>>".
+If you're converting form a VCS that doesn't have separate committer
+and author attributions (e.g. CVS, SVN, Fossil), and the project
+you're converting used the GNU ChangeLog convention, include
+"<<changelogs_cmd>>" somewhere in your lift script to capture
+authorship information.
 
-. CVS, SVN: Remove empty and delete-only tip commits where appropriate.
+The command:
 
-. CVS, SVN: Review generated tags, pruning and fixing locations as appropriate.
+--------
+changelogs
+--------
 
-. Look for branch merge points and patch parent marks to make them.
+==== Clean up after legacy character sets
 
-. CVS: Resolve any <<zombie>> files in a CVS conversion by patching in D ops.
+You may have metadata in your repository in an encoding incompatible
+with UTF-8. The most common glitch of this kind is Latin-1 chracters
+in committer names.
 
-. If there's a root branch, check for and remove junk commits on it.
+Unfortunately, this process can't be automated; the fact that the
+encoding of a text in a legacy character set like Latin-1 or GB18030
+can't be deduced just by looking at the bits is exactly what led
+to the development of Unicode and UTF-8.
 
-. Use the transcode command to fix up metadata in non-UTF8 encoding.
+The selector `=I` will choose all commits with attributions and
+comments that don't decode to UTF-8 in both the commit comment and
+attribution parts. You can use `=I list inspect` to view them.
 
-. Run lint to detect remaining anomalies that might need to be patched.
+It's up to you to figure out what the encoding is and apply the
+'```<<transcode_cmd>>```' command to re-encode in UTF-8.
 
-. CVS, SVN: Fix up or remove $-keyword cookies in the latest revision.
+Anm example command:
 
-. For the record, make a tag noting time and date of the repo lift.
+--------
+=I transcode latin1
+--------
 
-. If your target was git, run  `git gc --aggressive`.
+==== Convert ignore files
 
-Most of the work will be in the comment-fixup and reference-lifting
-stages. These normally take only a couple of hours even on very large
-repos with thousands of commits. An entire conversion is usually less
-than two days of work.
+If you're using reposurgeon for a CVS- or Subversion-to-git conversion
+cvs-fast-export and reposugeon will convert ignore patterns for you
+automatically, both expressing Subversion svn:ignore and
+svn:global-ignores properties as .gitignore files and lifting
+.cvsignore files to .gitignore files.
 
-More about common forms of cruft:
+Any .gitignore files found in a Subversion repository *before
+conversion* were almost certainly created by git-svn users ad hoc and
+will be discarded by the importer; it is up to the human doing the
+conversion to look through them and rescue any ignore patterns that
+should be merged into the converted repository.  This behavior can be
+reversed with the `--user-ignores` option, which will retain that
+information and merge it with the ignore patterns generated from
+svn:ignore and svn:global-ignores properties.
 
-Commit comments and attributions containing non-UTF8 data::
-    You could have metadata in your repository in an encoding
-    incompatible with UTF-8 (Latin-1 is the most common offender). You
-    will probably want to <<transcode_cmd>> the repo to UTF-8.
+Other conversions may need this command:
 
-Subversion and CVS commit references::
-    Often Subversion references will be in the form 'r' followed by a
-    string of digits referring to a Subversion commit number. But not
-    always; humans come up with lots of ambiguous ways to write these.
-    CVS commit references are even harder to spot mechanically, as they're
-    just groups of digits separated by dots with no identifying prefix.  A
-    clean conversion should turn all these into VCS-independent commit
-    references, which will be described later in this document.
+--------
+ignores --translate --defaults
+--------
 
-Multi-line contents with no summary::
-    git and hg both encourage comments to begin with a summary line
-    that can stand alone as a short description of the change; this
-    practice produces more readable output from `git log`
-    and `hg log`. For a really high-quality conversion,
-    multi-line comments should be edited into this form.
+==== Remove junk tags
 
-Tags from Subversion no-fileop commits::
-    Commits with no fileops are automatically transformed into tags
-    when reading a Subversion repository.  Other importers may generate
-    them for various reasons; you can detect them as the =Z visibility
-    set. You will probably want to delete these; they're preserved
-    just in case something about the metadata is interesting.
+Your conversion may contain mechanically-generated tags (both
+lightweight and annotated) that convey no actual information.  There
+are clutter and should be removed
 
-Tags from CVS -root commits::
-    Branch root markers are made by CVS for internal purposes. These
-    often persist through up-conversions to SVN.  "tag delete /-root$/"
-    will clean those up; this is not done automatically
-    because implicit magic that deletes data generally turns out
-    to be a bad idea.
+You can examine the repository's tags with
 
-Branch tip deletes, deletealls, and unexpressed merges::
-    In Subversion it is common practice to delete a branch directory
-    when that line of development is finished or merged to trunk; this
-    makes sense because it reduces the checkout size of the repo in later
-    revisions. In a DVCS, deletes at a branch tip don't save you any
-    storage, so it makes more sense to leave the branch with all of its
-    tip content live if you're not going to delete it entirely. Sometimes
-    editing a later commit to have the branch tip as a parent (creating
-    a merge that Subversion could not express) makes sense; look for
-    svn:mergeinfo properties as clues.  Reposurgeon tries to interpret
-    svn:mergeinfo properties to create these merges automatically, but
-    Subversion merging is tricky enough that these proprties are often
-    not set when they should have been.
+--------
+list tags
+--------
 
-Commits generated by *cvs2svn* to carry tag information::
-    These lurk in the history of a lot of Subversion projects.
-    Sometimes these junk commits are empty (no file operations associated
-    with them at all); sometimes they're translated as long lists of
-    spurious delete fileops, and sometimes they have actual file content
-    (duplicating parent file versions, or referring randomly to file
-    versions far older than the junk commit). Older versions of
-    `cvs2svn` seem to have generated all kinds of meaningless
-    crud into these.
+CVS makes tags that are branch root markers for internal
+purposes. These are not deleted automatically by cvs-fast-export
+because implicit magic that deletes data generally turns out to be a
+bad idea. They often persist through up-conversions to SVN. This
+command will clean these up:
 
-Metadata inserted by *git-svn*::
-    `git-svn` inserts lines at the end of each commit
-    comment that refer back to the Subversion commit it is derived from.  This
-    is necessary for live-gatewaying, and useful during one-shot
-    conversions, but you may not want it in the final repo.
+--------
+delete tag /-root$/
+--------
 
-Remnant SCCS, RCS, CVS and Subversion dollar cookies::
-    Under older version-control systems there was a custom of
-    embedding magic cookies in master files that would be expanded
-    on checkout with various metadata like the commit date and
-    committer ID. These are useless clutter under modern VCSes
-    and should be removed.
+SVN commits with no fileops are automatically transformed into
+annotated tags when reading a Subversion repository. These are
+especially likely to occur if you are converting a Subversion
+repository that had a shady past as a CVS tree and was converted using
+cvs2svn. This command will clean these up:
 
-You can use the `<<authors_cmd>> read` command to perform the
-author-ID mapping operation with reposurgeon.
+--------
+delete tag /emptycommit/
+--------
 
-You can find empty commits as the =Z visibility set and clean them up
-with the command `<<tagify_cmd>>`, or simply delete them.
+==== Remove junk commits
 
-If your repository is small, a good way to spot junk commits is to
-eyeball the picture of the commit DAG created by the reposurgeon
+Importers may generate commits that are emoty (have no fileops) for
+various reasons. You will probably want to delete these; they're
+preserved just in case something about the metadata is interesting.
+
+You can review empty commits with:
+
+--------
+=Z list
+--------
+
+You can save any that have interesting comments as tags attached
+to their parent commit with '```<<tagify_cmd>>```'.
+
+The rest of this instruction step applies only if you are
+convertung a Subversion repository.
+
+Junk generated by *cvs2svn* to carry tag information lurk in the
+history of many Subversion projects. When these junk commits
+are empty, either the importer will already have tagified them
+(in which case you cleaned them up in the previous step) or
+you just caught them with "=Z list".
+
+Less commonly, generated junk commits have long lists of spurious
+delete fileops.  These can be listed with the =D selector:
+
+--------
+=D list
+--------
+
+The trickiest kind has actual file content duplicating parent file
+versions, or referring randomly to file versions far older than the
+junk commit.  You can sometimes spot these because they have commit
+comments that are empty or consist of the string "*** empty log
+message ***",
+
+Either <<view_cmd>> or <<graph_cmd>> can be q good way to spot junk commits.
+Use them to eyeball the picture of the commit DAG created by the reposurgeon
 'graph' command - they tend to stand out visually as leaf nodes in odd
 places. Be aware that the <<graph_cmd>> command outputs DOT, the
 language interpreted by the http://www.graphviz.org/[graphviz] suite;
@@ -935,50 +959,152 @@ you will need a DOT rendering program and an image viewer.
 Unfortunately, for large repositories the sheer size of the graph image
 makes this impractical.
 
-See the documentation of the `<<stampify_cmd>>` command for details
-on how fix up Subversion and CVS changeset references in comments so
-they're still meaningful.
+==== Fix up references in commit comments
 
-The command `=L <<msgout_cmd>>` is good for extracting commits with
-multi-line comments in a form that can be deleted and merged back in
-with the msgin command.
+Different version-control systems have different conventions for how
+a commit comment can refer to a previous commit. Modern DVCSes
+useually use opaque hexadecimal strings that express some hash
+function of the content of the commit and its ancestors. Subversion,
+which is centralized, uses integer revision numbers starting from 1.
+CVS occasionally uses per-file versions that look like numerals
+separated by dots.
 
-The reposurgeon command `=H <<list>> inspect` will show you tip commits
-which may contain only deletes and deletealls.
+What all these have in common is that they stop being usefuk when you
+move your history to a new version-control system.  There are
+two different ways to deal with this, and you need to make a
+policy decision about which fits your needs.
 
-Tags can be inspected with `=T <<list>> inspect`. Junk tags can be
-removed with the `<<delete_cmd>>` command. Tag comments can be
-modified with a msgin/msgout sequence.  Check that the creation date of tags
-matches what you see in the source repository; this is the easiest way
-to spot when one has been attached to the wrong commit, something that
-can be manually fixed by editing its "from" field.
+One way is to use '```<<append_cmd>>```' to add a line to each commit
+giving its identifier. This allows you to chace references by
+searching in the text of comments. This is a good choice if you have
+references to commits outside the repository (say, in mailing-list
+archives) that you want to stay valid.
 
-The command `=I` will select all commits with attributions and
-comments that don't decode to UTF-8 in both the commit comment and
-attribution parts.  You can eyeball those to figure out what the
-encoding is and apply the `<<transcode_cmd>>` command to fix things.
+The other way is to convert these references into action stamps -
+identifiers that are independent of the VCS you are in,  This has the
+advantage of being future-proof and cluttering your conversion less. 
 
-Reposurgeon has a `<<merge_cmd>>` command specifically for performing
-branch merges.  The `<<msgin_cmd>>` command will also allow you to add
-a parent mark to a commit.
+You due the latter thing with '```<<stampify_cmd>>```',  But there
+is a preparation step you have to do first, which is to hack the
+exising references into reference cookies that
+'```<<stampify_cmd>>```' can see.
 
-One minor feature you lose in moving from SCCS, CVS, Subversion, or
-BitKeeper to a DVCS is keyword expansion.  You should go through the last
-revision of the code and remove `$Id$`, `$Date$`, `$Revision$`, and other
-keyword cookies lest they become unhelpful relics. The full Subversion
-set is `$Date$`, `$Revision$`, `$Author$`, `$HeadURL$` and `$Id$`. CVS
-uses `$Author$`, `$Date$`, `$Header$`, `$Id$`, `$Log$`, `$Revision$`,
-also (rarely) `$Locker$`, `$Name$`, `$RCSfile$`, `$Source$`, and
-`$State$`. A command like `grep -R '$[A-Z]' .` may be helpful.
+There's a detailed of this process and its commands at
+<<reference-lifting>>.
 
-After conversion of a branchy repository, look to see if there is a
-'root' branch.  If there are any commits with a sufficiently
-pathological structure that reposurgeon can't figure out
-what branch they belong to, they'll wind up there.
+==== Massage comments into summary-line-plus-continuation form.
+
+git and hg both encourage comments to begin with a summary line that
+can stand alone as a short description of the change; this practice
+produces more readable output from `git log` and `hg log`.
+
+For a really high-quality conversion, multi-line comments should be
+edited into this form. Some of this can be done with,
+'```<<gitify_cmd>>```', but you'll need to go through and fix
+remaining cases by hand.  The =L selector is good for finding these.
+
+Here is a workflow for this cleanup step:
+
+1. Do "=L msgout --id >message.box" to dump comments that lack
+a spacer line after the first to a mailbox file.  The actual name
+of the mailbox file doesn't matter of course.
+
+2. Use your preferred text editor to fix up the comments.
+
+3. Do "msgin <message.box" to apply the fixes.
+
+==== Patch in missing branch merges.
+
+You can skip this step if you're converting from a DVCS, it will
+already have branch merges expressed.  But CVS has no concept of
+mering branches at all. Under Subversion, eposurgeon tries to
+interpret svn:mergeinfo properties to create merges automatically, but
+Subversion merging is tricky enough that these properties are often
+not set when they could have been.
+
+You can review your branch tip commits with the =H selector. By
+examining commits near in time to each tip, you may be able to
+identify when there is an unexpressed branch merge.  Under Subversion,
+look for svn:mergeinfo properties as clues (but see the warnings
+about this at <<subversion>>).
+
+You can use '```<<merge_cmd>>```' to fix these up. This is safe
+because adding a merge link doesn't modify any later content;
+it's only used for ancestry tracking when computing diffs.
+
+====  Subversion only: Review branch tip deletes and deletealls
+
+In Subversion it is common practice to delete a branch directory when
+that line of development is finished or merged to trunk; this makes
+sense because it reduces the checkout size of the repo in later
+revisions.
+
+In a DVCS, deletes at a branch tip don't save you any storage, so it
+makes more sense to leave the branch with all of its tip content live
+if you're not going to delete it entirely.  
+
+It;s a judgment call whether to delete these. They could be considered
+clutter, or they could be considered documentation of the fact that
+development on a branch has closed.
+
+==== CVS only: Resolve zombie files
+
+CVS conversions occasionally have <<zombie>> files - that is, filesa
+which persist in conversion commits after timestampted they were
+deleted in the CVS repository.
+
+The easiest way to detect these is to run a trial conversion with
+cvsconvert(1).  It will report content mismatches, including this
+kind. You will be able to fix them by patching D fileops into the
+history.
+
+There is a more detailed discussion of this issue at <<CVS>>.
+
+==== Subversion only: check for a root branch
+
+After conversion of a branchy Subversion repository, look to see if
+there is a 'root' branch.  If there are any commits with a
+sufficiently odd that reposurgeon can't figure out what branch they
+belong to, they'll wind up there.
+
+This command will tell you if you have a root branch in your conversion:
+
+--------
+list names
+--------
+
+If this happens, it's likely those commits will be junk.  It's up to
+you to delete or transplant them appropriately.
+
+==== Fix up or remove $-keyword cookies in the latest revision.
+
+One minor feature you lose in moving from SCCS, RCS, CVS, Subversion,
+or BitKeeper to a DVCS is keyword expansion. There was a practice of
+embedding magic cookies in master files that would be expanded on
+checkout with various metadata like the commit date and committer
+ID. These are useless clutter under modern VCSes and should be
+removed.
+
+You should go through the last revision of the code and remove `$Id$`,
+`$Date$`, `$Revision$`, and other keyword cookies lest they become
+unhelpful relics. The full Subversion set is `$Date$`, `$Revision$`,
+`$Author$`, `$HeadURL$` and `$Id$`. CVS uses `$Author$`, `$Date$`,
+`$Header$`, `$Id$`, `$Log$`, `$Revision$`, also (rarely) `$Locker$`,
+`$Name$`, `$RCSfile$`, `$Source$`, and `$State$`. A command like `grep
+-R '$[A-Z]' .` may be helpful.
+
+==== Run lint to detect remaining anomalies
+
+Run <<lint_cmd>> to detect remaining anomalies that might need to be
+patched.
+
+==== Record the conversion into the history
 
 It's good practice to leave an annotated tag at the conversion point
 noting the date and time of the repo lift.  See the next section on
-conversion comments for discussion. Here's an example of how to make a tag:
+conversion comments for discussion.
+
+Here's an example of how to make an informative conversion tag:
 
 --------
 msgin --create <<EOF
@@ -998,8 +1124,13 @@ pack or otherwise optimize for space when it populates a repo from a
 dump file; this produces large repositories.  Running `git repack` and
 `git gc --aggressive` can slim them down quite a lot.
 
+==== Garbage-collect the conversion
+
+If your target was git, run  `git gc --aggressive`. This can reduxe it
+in size considerably.
+
 [[conversion-comments]]
-==== Conversion comments
+==== A note on conversion comments
 
 Sometimes, in converting a repository, you may need to insert an
 explanatory comment - for example, if metadata has been garbled or
@@ -1011,44 +1142,8 @@ comments.  Enclosing translation notes in [[ ]] is recommended; this
 has the advantage of being visually similar to the [ ] traditionally
 used for editorial comments in text.
 
-It is good practice to include, in either the root commit of the
-repository or the conversion tag, a note dating and attributing the
-conversion work and explaining these conventions.  Example:
-
-------------------------------------------------------------------
-[[This repository was converted from Subversion to git on 2012-10-24
-by Eric S. Raymond &lt;esr@thyrsus.com&gt;.  Here and elsewhere, conversion
-notes are enclosed in double square brackets. Junk commits generated
-by cvs2svn have been removed, commit references have been mapped into
-a uniform VCS-independent syntax, and some comments edited into
-summary-plus-continuation form.]]
-------------------------------------------------------------------
-
-You should also, as previously noted, leave a tag in the normal commit
-sequence noting the switchover.  You can do this with the
-`<<msgin_cmd>> --create` command.
-
-[[nonsurgical]]
-==== Nonsurgical cleanup steps
-
-A step that too often gets missed and then inelegantly patched in
-later is converting the declarations that tell the version-control
-system to ignore derived files. reposurgeon does this for you if
-you're using it for CVS- or Subversion-to-git conversion, both
-expressing Subversion svn:ignore and svn:global-ignores properties as
-.gitignore files and lifting .cvsignore files to .gitignore files; see
-<<limitations>> if other DVCSes are involved.
-
-Any .gitignore files found in a repository were almost certainly
-created by git-svn users ad hoc and should be discarded; it is up to
-the human doing the conversion to look through them and rescue any
-ignore patterns that should be merged into the converted repository.
-This behavior can be reversed with the `--user-ignores` option, which
-will retain that information and merge it with the ignore patterns
-generated from svn:ignore and svn:global-ignores properties.
-
 [[recovering]]
-==== Recovering from errors
+==== A note on recovering from errors
 
 Occasionally you'll discover problems with a conversion after you've
 pushed it to a project's hosting site, typically to a bare repo that
@@ -1196,7 +1291,7 @@ than a period should be used to indicate that the summary line is
 incomplete and continues after the separator; "..." is conventional.
 
 For best results, stay within 72 characters per line.  Don't go
-over 80.
+over 80.  The Linux kernel developers like to stay at 65 or under.
 
 Good comment practice produces more readable output from `git
 log` and `hg log`, and makes it easy to take in
@@ -2181,11 +2276,17 @@ include::docinclude/ignores.adoc[]
 This group of commands is meant for fixing up references in commits
 that are in the format of older version-control systems.  The general
 workflow is this: first, go over the comment history and change all
-old-fashioned commit references into machine-parseable cookies.  Then,
+old-fashioned commit references into machine-parseable reference cookies.  Then,
 automatically turn the machine-parseable cookie into action stamps.
 The point of dividing the process this way is that the first part is
 hard for a machine to get right, while the second part is prone to errors
 when a human does it.
+
+Often Subversion references will be in the form 'r' followed by a
+string of digits referring to a Subversion commit number. But not
+always; humans come up with lots of ambiguous ways to write these.
+CVS commit references are even harder to spot mechanically, as they're
+just groups of digits separated by dots with no identifying prefix.
 
 A Subversion cookie is a comment substring of the form
 '```++[[SVN:ddddd]]++```' (example: '```++[[SVN:2355]]++```')
@@ -2933,12 +3034,6 @@ changes flying in loose formation - in fact, old CVS operator errors
 can sometimes make it impossible. Bad tools silently propagate such
 damage forward into your translation. Good tools, like cvs-fast-export
 and reposurgeon, warn you of problems and help you recover.
-
-A comman pitfall is to expect CVS tags to become tag objects in
-reposurgeon and expect to be able to rename or delete them with the
-"tag" command. CVS does not have annotated tags, they get mapped to
-lightweight tags by cvs-fast-export, which are actually resets;
-you have to manipulate them with the "reset" command instead.
 
 Here are the kinds of conversion glitches to watch for:
 
