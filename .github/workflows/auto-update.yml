@@ -1,0 +1,50 @@
+on:
+    schedule:
+      - cron:  '0 7 * * *' # scheduled at 07:00 everyday
+    workflow_dispatch:
+      inputs:
+        upstream_url:
+          description: 'The upstream url'
+          required: false
+          default: 'https://gitlab.com/esr/reposurgeon.git'
+        remote_branch:
+          description: 'The branch of the upstream'
+          required: false
+          default: 'master'
+        local_branch:
+          description: 'The branch of the local'
+          required: false
+          default: 'master' 
+  
+jobs:
+  sync_upstream:
+    runs-on: ubuntu-latest
+    name: Sync latest commits from upstream repo
+
+    steps:
+    # REQUIRED step
+    # Step 1: run a standard checkout action, provided by github
+    - name: Checkout target repo
+      uses: actions/checkout@v3
+      with:
+        # optional: set the branch to checkout,
+        # sync action checks out your 'target_sync_branch' anyway
+        ref:  ${{ github.event.inputs.local_branch }}
+
+    # REQUIRED step
+    # Step 2: run the sync action
+    - name: Sync upstream changes
+      id: sync
+      run: |
+        git branch
+        git status
+        git remote add upstream ${{ github.event.inputs.upstream_url }}
+        git remote -v
+        git branch -a
+        git fetch upstream
+        # ignore local changes
+        git reset --hard HEAD
+        # TODO: pull and track all the branch of upstream, maybe use git mirror clone
+        git pull upstream ${{ github.event.inputs.remote_branch }}
+        git branch -a
+        git push --all
