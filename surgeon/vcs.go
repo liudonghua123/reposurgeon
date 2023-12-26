@@ -201,7 +201,7 @@ type VCS struct {
 // completeness.  "The glob must match the entire canonical file name
 // to be considered a match."
 //
-// There's no surect p4 support yet. What's recorded here anticipates
+// There's no direct p4 support yet. What's recorded here anticipates
 // that that might someday change. There's a supplement to the p4 docs at
 // https://stackoverflow.com/questions/18240084/how-does-perforce-ignore-file-syntax-differ-from-gitignore-syntax
 //

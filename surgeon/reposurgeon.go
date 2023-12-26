@@ -1493,7 +1493,7 @@ second a timestamp in UTC. If the repository has legacy IDs, they will
 be displayed in the third column. The leading portion of the comment
 follows.
 
-With "tags", display selercted tags of both kinds - annotated and
+With "tags", display selected tags of both kinds - annotated and
 resets in the tags namespace. Three fields, an event number and a type
 and a name.  Branch tip commits associated with tags are also
 displayed with the type field 'commit'.
@@ -7345,8 +7345,8 @@ More ways to construct event sets:
 =E         all branch root commits (earliest on branch)
 =F         all fork (multiple-child) commits
 =H         all head (childless branch tip) commits
-=I         all commits not decodable to UTF-8
-=J         all commits with non=ASCII (possible ISO 8859) characters
+=I         all commits with metadata not decodable to UTF-8
+=J         all commits with non-ASCII (possible ISO 8859) characters
 =L         all commits with unclean multi-line comments
 =M         all merge commits
 =N         all commits and tags matching a cookie (legacy-ID) format.
