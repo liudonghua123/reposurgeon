@@ -297,6 +297,20 @@ endif # if brz
 
 # ENDS: Tests requiring brz
 
+# BEGINS: Tests requiring darcs
+
+ifneq ($(call AVAILABLE darcs),)
+
+DARCS_TARGETS=darcs-test-check
+darcs-test-check:
+	@(./export-test.sh darcs | tapdiffer "darcs export test" darcstest.chk) || echo "$@" >>$(FAILLOG)
+darcs-buildcheck:
+	@./export-test.sh darcs >darcstest.chk
+
+endif # if darcs
+
+# ENDS: Tests requiring brz
+
 # BEGINS: Tests requiring fossil
 
 ifneq ($(call AVAILABLE fossil),)
@@ -338,7 +352,7 @@ $(SPORADIC_TARGETS): sporadic-test-%:
 # so those tests start first.
 TEST_TARGETS = $(LIFTCHECK_TARGETS) $(SVNCHECK_TARGETS) \
 		$(GIT_EXTRACTOR_TARGETS) $(HGSTREAMS_EXTRACTOR_TARGETS) $(HG_EXTRACTOR_TARGETS) \
-		$(BZR_TARGETS) $(BRZ_TARGETS) $(FOSSIL_TARGETS) \
+		$(BZR_TARGETS) $(BRZ_TARGETS) $(DARCS_TARGETS) $(FOSSIL_TARGETS) \
 		$(ROUNDTRIP_TARGETS) $(ROUNDTRIP_COMPRESS_TARGETS) $(MESSAGEBOX_TARGETS) \
 		$(COMMAND_TARGETS) $(SVNLOAD_TARGETS) $(LEGACY_TARGETS) \
 		$(REPOMAPPER_TARGETS) $(REPOTOOL_TARGETS) $(REPOCUTTER_TARGETS) \
@@ -364,7 +378,7 @@ parallel-tap: clean
 # noisy failure here because the alternative is that checkfiles might
 # silently not get updated, leadin to vast confusion later.
 buildcheck: command-buildcheck svnload-buildcheck legacy-buildcheck \
-	hg-buildcheck bzr-buildcheck brz-buildcheck fossil-buildcheck repomapper-buildcheck \
+	hg-buildcheck bzr-buildcheck brz-buildcheck darcs-buildcheck fossil-buildcheck repomapper-buildcheck \
 	repotool-buildcheck repocutter-buildcheck svncheck-buildcheck 
 
 # Test productions end here.

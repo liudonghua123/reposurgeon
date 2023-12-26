@@ -127,7 +127,7 @@ vc() {
 	    case "${repotype}" in
 		bzr|brz) "${repotype}" init -q;;	# Without -q bzr/brz plays annoying games om a tty. 
 		git|hg) "${repotype}" init;;
-		darcs) darcs --quiet .; mkdir -p _darcs/prefs;;
+		darcs) darcs init; mkdir -p _darcs/prefs;;
 		fossil) fossil init /tmp/fossil$$ >/dev/null && fossil open /tmp/fossil$$ >/dev/null && mkdir .fossil-settings;;
 		src) mkdir .src;;
 		svn) svnadmin create .; svn co "file://$(pwd)" working-copy ; tapcd working-copy;;
@@ -222,6 +222,13 @@ vc() {
 		    }
 		    # Doesn't force timestamps or committer.
 		    "${repotype}" commit -m "${comment}${LF}" --author "${fred}"
+		    ;;
+		darcs)
+		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
+			darcs add "${file}" && echo "${file}" >>"/tmp/addlist$$"
+		    }
+		    # Doesn't force timestamps or committer.
+		    darcs record --no-interactive -m "${comment}"
 		    ;;
 		fossil)
 		    grep "${file}" "/tmp/addlist$$" >/dev/null || { 
@@ -323,6 +330,9 @@ vc() {
 		bzr|brz|git|hg)
 		    "${repotype}" tag "${tagname}"
 		    ;;
+		darcs)
+		    darcs tag -A "${fred}" "${tagname}"
+		    ;;
 		fossil)
 		    # In Git terms this creates an annotated tag with empty data
 		    fossil tag add "sym-${tagname}" "$(fossil timeline -F "%H" | head -1)"
@@ -395,6 +405,7 @@ vc() {
 	    }
 	    case "${repotype}" in
 		bzr|brz) "${repotype}" fast-export -q | neutralize >/tmp/stream$$;;
+		darcs) darcs convert export | neutralize >/tmp/stream$$;;
 		fossil) fossil export --git | neutralize >/tmp/stream$$;;
 		git) git fast-export --all >/tmp/stream$$;;
 		hg)

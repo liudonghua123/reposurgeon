@@ -1,0 +1,47 @@
+## darcs test repository
+# Generated - do not hand-hack!
+progress (reading repository)
+progress 1: First commit
+commit refs/heads/master
+mark :1
+committer Fred J. Foonly <fred@foonly.org> 70 +0000
+data 12
+First commit
+M 100644 inline sample
+data 30
+First line of sample content.
+
+progress 2: Second commit
+commit refs/heads/master
+mark :2
+committer Fred J. Foonly <fred@foonly.org> 130 +0000
+data 13
+Second commit
+from :1
+M 100644 inline sample
+data 61
+First line of sample content.
+Second line of sample content.
+
+progress 3: Third commit
+commit refs/heads/master
+mark :3
+committer Fred J. Foonly <fred@foonly.org> 190 +0000
+data 12
+Third commit
+from :2
+M 100644 inline sample
+data 91
+First line of sample content.
+Second line of sample content.
+Third line of sample content.
+
+progress TAG foobar
+tag foobar
+from :3
+tagger Fred J. Foonly <fred@foonly.org> 190 +0000
+data 7
+foobar
+progress (patches converted)
+progress (cleaning up)
+progress done
