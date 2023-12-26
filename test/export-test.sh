@@ -3,8 +3,6 @@
 #
 # This is a GENERATOR
 
-engine="${1:-bzr}"
-
 # shellcheck disable=SC1091
 . ./common-setup.sh
 
@@ -23,6 +21,8 @@ do
 done
 # shellcheck disable=SC2004
 shift $(($OPTIND - 1))
+
+engine="${1:-bzr}"
 
 here=$(pwd)
 {
