@@ -66,21 +66,22 @@ type VCS struct {
 
 // Capability flags for grokking ignore file syntax.
 //
-// This is a compilcated and murky area because VCSs are very bad
+// This is a complicated and murky area because VCSs are very bad
 // at documenting their actual rules. Here are some references:
 //
-// CVS: https://www.gnu.org/software/trans-coord/manual/cvs/html_node/cvsignore.html
-// svn: https://svnbook.red-bean.com/nightly/en/svn.advanced.props.special.ignore.html
-// Git: https://git-scm.com/docs/gitignore
-// darcs: https://darcs.net/Using/Configuration#boring
-// bzr/brz: https://documentation.help/Bazaar-help/controlling_registration.html
-// hg: https://www.selenic.com/mercurial/hgignore.5.html
 // bk: https://www.bitkeeper.org/man/ignore.html
-// mtn: https://www.monotone.ca/docs/Regexps.html
-// Fossil: https://fossil-scm.org/home/doc/trunk/www/globs.md
+// bzr/brz: https://documentation.help/Bazaar-help/controlling_registration.html
+// cvs: https://www.gnu.org/software/trans-coord/manual/cvs/html_node/cvsignore.html
 // darcs: https://darcs.net/Using/Configuration#boring
+// fossil: https://fossil-scm.org/home/doc/trunk/www/globs.md
+// git: https://git-scm.com/docs/gitignore
+// hg: https://www.selenic.com/mercurial/hgignore.5.html
+// mtn: https://www.monotone.ca/docs/Regexps.html
 // p4: https://www.perforce.com/manuals/v15.2/cmdref/P4IGNORE.html
-// SCCS and RCS don't have an ignore facility.
+// svn: https://svnbook.red-bean.com/nightly/en/svn.advanced.props.special.ignore.html
+//
+// SCCS and RCS don't have a native ignore facility.
+//
 // POSIX fnmatch(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
 // POSIX glob(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/glob.html
 // Python glob(3): https://docs.python.org/3/library/glob.html
@@ -93,7 +94,7 @@ type VCS struct {
 //
 // Predicting features from knowing which library is used isn't
 // simple, because POSIX glob(3) optionally has features that
-// original shell globbing did not, inclusing dash ranges,
+// original shell globbing did not, including dash ranges,
 //
 // Just to make things more confusing, there are different versions of
 // the fnmatch library, not all of them have the same features, and
@@ -110,22 +111,22 @@ type VCS struct {
 //
 // The presence of a / in a path may change whether A or B applies.
 //
-// Glob behavior of all of the except cvs and fossil are
+// Glob behavior of most of these (brz, bzr, fossil, git, hg, src, svn) are
 // verified by our test suite. cvs behavior is checked by code
-// inspection, fossil is checked againsts its (excellent) documentation.
-// p4 is checked against its not -so-excellent documentation.
+// inspection. bk, darcs, and p4 are checked against their documentation.
 //
-//           Specials  FNMPATH  NEG      LOOSE    FNMDOT   DSTAR    ASLASH   DIRMATCH
-//           --------  -------  -------  -------  -------  -------  -------  -------
+//           Specials  FNMPATH   NEG     LOOSE    FNMDOT   DSTAR    ASLASH   DIRMATCH
+//           --------  -------   ------  -------  -------  -------  -------  -------
+// bk        *         ?         no      yes      ?        no       yes      ?
 // bzr/brz:  *?[^!-]   no        yes     yes      no       yes      no       no
 // cvs:      *?[^!-]\  no        no      no       no       no       no       no
+// darcs:    [^-]\     no        no      yes      no       no       no       no
 // fossil:   *?[^-]\   no        no      no       no       yes      no       yes
 // git:      *?[^!-]\  yes       yes     yes      no       yes      yes      yes
 // hg:       *[^-]\    yes       no      yes      no       no       no       yes
 // p4:       *         yes       yes     yes      ?        yes      yes      yes
 // src:      *?[^!-]\  yes       yes     no       yes      no       yes      no
 // svn:      *?[^!-]\  yes       yes     no       no       no       yes      no
-// darcs:    [^-]\     no        no      yes      no       no       no       no
 //
 // All these systems have #-led comments. CVS doesn't, but the only
 // CVS ignore patterns we'll ever see are in .cvsignore and .gitignore
@@ -148,7 +149,13 @@ type VCS struct {
 // from the documentation, because there is no variant of git status
 // for which they affect the output.
 //
-// fossil explicitly documents that ? and * can match /.
+// fossil explicitly documents that ? and * can match /. It has two
+// different mechanisms for ignore patters: the ignore-glob setting
+// through the Web interface or CLI, and local (versioned) settings in
+// a dotfile.  The unversioned ignore-glob setting isn't supported
+// because fossil fast-export doesn't ship it in the output stream.
+// We describe its capabilities for completeness.  "The glob must
+// match the entire canonical file name to be considered a match."
 //
 // git does an equivalent of fnmatch(3) with FNM_PATHNAME on,
 // FNM_NOESCAPE. and FNM_PERIOD off. ignLOOSE applies unless there's
@@ -161,7 +168,7 @@ type VCS struct {
 //
 // mtn has been moribund since 2011, isn't packaged for Linux, and is
 // probably no longer in live use anywhere; the effort required to
-// test it can't rerally be justified it until somebody files an
+// test it can't really be justified it until somebody files an
 // issue.
 //
 // src uses Python's glob library and inherits those behaviors. It
@@ -191,15 +198,7 @@ type VCS struct {
 // slash are matched against the pathname of the file relative to the
 // root of the repository.  Using './' at the start of a pattern means
 // the pattern applies only to the repository root."  Rule A, with the
-// ignSLASHANCHORS feature.
-//
-// Fossil has two different mechanisms for ignore patters: the
-// ignore-glob setting through the Webn interface or CLI, and local
-// (versioned) settings in a dotfile.  The unversioned ignore-glob
-// setting isn't supported because fossil fast-export doesn't ship it
-// in the output stream.  We describe its capabilities for
-// completeness.  "The glob must match the entire canonical file name
-// to be considered a match."
+// ignASLASH feature.
 //
 // There's no direct p4 support yet. What's recorded here anticipates
 // that that might someday change. There's a supplement to the p4 docs at
@@ -208,22 +207,22 @@ type VCS struct {
 // Yes, the capability flags defined below aren't all used. Yet.
 
 const (
-	ignESC        uint = 1 << iota // Backslash escape glob characters
+	ignASLASH     uint = 1 << iota // A / changes matching from LOOSE to anchored
 	ignBANG                        // Negate rangest with !
-	ignGLOB                        // Basic globbing: *[-]
 	ignBZR                         // bzr or its clone, brz; RE: syntax
 	ignCARET                       // Negate rangest with !
+	ignDIRMATCH                    // Terminal slash matches directories
 	ignDSTAR                       // Match multiple path segments
+	ignESC                         // Backslash escape glob characters
 	ignEXPORT                      // Ignore patterns are visible via fast-export only
-	ignFNMPATH                     // Glob wildcards can't match / (POSIX FNM_PATHNAME)
 	ignFNMDOT                      // Leading period requires explicit match (POSIX FNM_PERIOD)
+	ignFNMPATH                     // Glob wildcards can't match / (POSIX FNM_PATHNAME)
+	ignGLOB                        // Basic globbing: *[-]
 	ignHASH                        // Has native ignorefile comments led by hash
+	ignLOOSE                       // Ignore patterns apply to subdirectories
 	ignNEG                         // Ignore patterns allow prefix negation with !
 	ignQUES                        // Allow ? to match any character
-	ignLOOSE                       // Ignore patterns apply to subdirectories
 	ignRE                          // Patterns are full regular expressions
-	ignASLASH                      // A / changes matching from LOOSE to anchored
-	ignDIRMATCH                    // Terminal slash matches directories
 	ignWACKYSPACE                  // Spaces are treated as pattern separators
 )
 
@@ -662,8 +661,8 @@ _darcs
 			checkignore:  "CVS",
 			idformat:     "%s",
 			flags:        ignEXPORT | ignFNMATCH | ignWACKYSPACE,
-			// "\#*" is quoted because, while natively CVS
-			// doesn't have # comments, thse defaults are
+			// "\#*" is escaped because, while natively CVS
+			// doesn't have # comments, these defaults are
 			// in git format.  Also, WACKYSPACE is only set for
 			// documentation purposes; cvs-fast-export
 			// will have changed those into newlines.
