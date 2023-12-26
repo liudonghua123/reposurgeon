@@ -21,6 +21,7 @@ Repository head::
      Fossil import/export from checkouts is supported; --format=fossil is gone.
      Ignore pattern translation is available with "ignores --translate".
      Documentation on working with hg has been much expanded.
+     Added --encode option to list and msgout comands.
 
 4.38: 2023-06-14::
      Experimental Perforce (p4) mirroring support in repotool.

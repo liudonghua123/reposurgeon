@@ -196,6 +196,7 @@ type LineParse struct {
 	closem       []io.Closer
 	proc         *exec.Cmd
 	args         []string
+	decode       func(text string, id string) string
 }
 
 // Parse precondition flags
@@ -437,6 +438,26 @@ skipout:
 	}
 	if (len(lp.args) == 0) && (lp.flags&parseNEEDARG) != 0 {
 		return fmt.Errorf(lp.name + " command requires a subcommand verb or mode")
+	}
+
+	if val, ok := lp.OptVal("--decode"); !ok {
+		lp.decode = func(text string, id string) string { return text }
+	} else {
+		enc, err := ianaindex.IANA.Encoding(val)
+		if err != nil {
+			croak("can't set up codec %s: error %v", val, err)
+			return nil
+		}
+		decoder := enc.NewDecoder()
+
+		lp.decode = func(txt string, id string) string {
+			out, err := decoder.Bytes([]byte(txt))
+			if err != nil {
+				croak("decode error during transcoding of %s: %v", id, err)
+				return txt
+			}
+			return string(out)
+		}
 	}
 	return nil
 }
@@ -777,7 +798,9 @@ func (rs *Reposurgeon) reportSelect(parse *LineParse, display func(*LineParse, i
 	}
 	for it := selection.Iterator(); it.Next(); {
 		eventid := it.Value()
-		summary := display(parse, eventid, repo.events[eventid])
+		event := repo.events[eventid]
+		summary := display(parse, eventid, event)
+		summary = parse.decode(summary, event.idMe())
 		if summary != "" {
 			if strings.HasSuffix(summary, control.lineSep) {
 				fmt.Fprint(parse.stdout, summary)
@@ -1483,7 +1506,7 @@ func (rs *Reposurgeon) DoCount(lineIn string) bool {
 // HelpList says "Shut up, golint!"
 func (rs *Reposurgeon) HelpList() {
 	rs.helpOutput(`
-[SELECTION] list [commits|tags|stamps|inspect|index|manifest|paths|names|stats|sizes] [PATTERN] [>OUTFILE]
+[SELECTION] list [--decode=CODEC] [commits|tags|stamps|inspect|index|manifest|paths|names|stats|sizes] [PATTERN] [>OUTFILE]
 
 Requires a loaded repository. Takes a selection set, defaulting to all
 
@@ -1536,6 +1559,11 @@ other metadata strings (a blob is counted each time a commit points at
 it).  Not an exact measure of storage size: intended mainly as a way
 to get information on how to efficiently partition a repository that
 has become large enough to be unwieldy.
+
+With the --decode option, the CODEC argument must name one of the
+codecs known to the Go standard codecs library; see the dcumentation
+of the transcode command for details. Transcode the output to UTF-8
+using the specified codec. Transciding errors abort the command.
 
 Any list command can be safely interrupted with ^C, returning you to the
 prompt.
@@ -3073,7 +3101,7 @@ You can substitute in your own preferred image viewer, of course.
 // Most comment characters we want to fit in a commit box
 const graphCaptionLength = 32
 
-// Some links to reopository viewers to look at for styling ideas:
+// Some links to repository viewers to look at for styling ideas:
 //
 // https://gitlab.com/techtonik/repodraw/-/blob/master/plotrepo.rb
 // https://github.com/gto76/ascii-git-graph-to-png
@@ -3135,7 +3163,7 @@ func (rs *Reposurgeon) DoRebuild(line string) bool {
 // HelpMsgout says "Shut up, golint!"
 func (rs *Reposurgeon) HelpMsgout() {
 	rs.helpOutput(`
-[SELECTION] msgout [--id] [--filter=PATTERN] [--blobs]
+[SELECTION] msgout [--id] [--filter=PATTERN] [--decode=CODEC] [--blobs]
 
 Emit a file of messages in Internet Message Format representing the
 contents of repository metadata. Takes a selection set; members of the
@@ -3150,6 +3178,11 @@ pattern expression. See "help regexp" for information on the regexp
 syntax.
 
 Blobs may be included in the output with the option --blobs.
+
+With the --decode option, the CODEC argument must name one of the
+codecs known to the Go standard codecs library; see the dcumentation
+of the transcode command for details. Transcode the output to UTF-8
+using the specified codec. Transciding errors abort the command.
 
 The following example produces a mailbox of commit comments in a
 decluttered form that is convenient for editing:
@@ -3180,14 +3213,14 @@ func (rs *Reposurgeon) DoMsgout(line string) bool {
 		// this is pretty stupid; pretend you didn't see it
 		switch v := e.(type) {
 		case *Passthrough:
-			return v.emailOut(orderedStringSet{}, i, filterRegexp)
+			return parse.decode(v.emailOut(orderedStringSet{}, i, filterRegexp), e.idMe())
 		case *Commit:
-			return v.emailOut(orderedStringSet{}, i, filterRegexp)
+			return parse.decode(v.emailOut(orderedStringSet{}, i, filterRegexp), e.idMe())
 		case *Tag:
-			return v.emailOut(orderedStringSet{}, i, filterRegexp)
+			return parse.decode(v.emailOut(orderedStringSet{}, i, filterRegexp), e.idMe())
 		case *Blob:
 			if parse.options.Contains("--blobs") {
-				return v.emailOut(orderedStringSet{}, i, filterRegexp)
+				return parse.decode(v.emailOut(orderedStringSet{}, i, filterRegexp), e.idMe())
 			}
 			return ""
 		default:
@@ -3547,7 +3580,7 @@ func (rs *Reposurgeon) DoTranscode(line string) bool {
 
 	enc, err := ianaindex.IANA.Encoding(parse.args[0])
 	if err != nil {
-		croak("can's set up codec %s: error %v", parse.args[0], err)
+		croak("can't set up codec %s: error %v", parse.args[0], err)
 		return false
 	}
 	decoder := enc.NewDecoder()
