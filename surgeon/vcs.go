@@ -79,6 +79,7 @@ type VCS struct {
 // mtn: https://www.monotone.ca/docs/Regexps.html
 // Fossil: https://fossil-scm.org/home/doc/trunk/www/globs.md
 // darcs: https://darcs.net/Using/Configuration#boring
+// p4: https://www.perforce.com/manuals/v15.2/cmdref/P4IGNORE.html
 // SCCS and RCS don't have an ignore facility.
 // POSIX fnmatch(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
 // POSIX glob(3): https://pubs.opengroup.org/onlinepubs/9699919799/functions/glob.html
@@ -96,7 +97,7 @@ type VCS struct {
 //
 // Just to make things more confusing, there are different versions of
 // the fnmatch library, not all of them have the same features, and
-// not all document everything they support. CVS uses a local poty of
+// not all document everything they support. CVS uses a local port of
 // a very old version. The Python fnmatch library doesn't document its
 // support for dash ranges.
 //
@@ -112,6 +113,7 @@ type VCS struct {
 // Glob behavior of all of the except cvs and fossil are
 // verified by our test suite. cvs behavior is checked by code
 // inspection, fossil is checked againsts its (excellent) documentation.
+// p4 is checked against its not -so-excellent documentation.
 //
 //           Specials  FNMPATH  NEG      LOOSE    FNMDOT   DSTAR    ASLASH   DIRMATCH
 //           --------  -------  -------  -------  -------  -------  -------  -------
@@ -120,6 +122,7 @@ type VCS struct {
 // fossil:   *?[^-]\   no        no      no       no       yes      no       yes
 // git:      *?[^!-]\  yes       yes     yes      no       yes      yes      yes
 // hg:       *[^-]\    yes       no      yes      no       no       no       yes
+// p4:       *         yes       yes     yes      ?        yes      yes      yes
 // src:      *?[^!-]\  yes       yes     no       yes      no       yes      no
 // svn:      *?[^!-]\  yes       yes     no       no       no       yes      no
 // darcs:    [^-]\     no        no      yes      no       no       no       no
@@ -197,6 +200,10 @@ type VCS struct {
 // in the output stream.  We describe its capabilities for
 // completeness.  "The glob must match the entire canonical file name
 // to be considered a match."
+//
+// There's no surect p4 support yet. What's recorded here anticipates
+// that that might someday change. There's a supplement to the p4 docs at
+// https://stackoverflow.com/questions/18240084/how-does-perforce-ignore-file-syntax-differ-from-gitignore-syntax
 //
 // Yes, the capability flags defined below aren't all used. Yet.
 
