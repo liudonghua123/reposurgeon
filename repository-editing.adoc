@@ -304,7 +304,7 @@ Mercurial (hg): reposurgeon can import and export Mercurial
 repositories; see <<mercurial>> for details. Reposurgeon has been used
 for successful history conversions from Mercurial to Git.
 
-Mercurial has top-tier support, but only basic test coverage.
+Mercurial has top-tier support and good test coverage.
 
 See <<mercurial>> for more details.
 
@@ -434,17 +434,13 @@ exporter/importer pair, or the vendor documents a CLI sufficient for
 an extractor class. These will probably never have first-class
 support, unless someobody with a lot of money decides to pay for it.
 
-For other systems, see the archived page on
-https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Interaction_with_other_Revision_Control_Systems[Git
-wiki page on conversion tools]. Warning: the information on it may be
-out of date.
-
 [[conversion]]
 == A Guide to Repository Conversion
 
 One of the main uses for reposurgeon is converting repositories
 between different version-control systems. Since around 2015
-has almost always meant converting from something else to Git.
+has almost always meant converting from something else to Git,
+but reposurgeon keeps other possibilities open.
 
 This section is a guide to up-converting your repository, and adopting
 practices that will reduce process friction to a minimum.  It is meant
@@ -455,9 +451,7 @@ If you are aiming at something other than a repository conversion,
 you can safely skip this section.
 
 In 90% of cases you'll be converting from CVS or Subversion, and those
-are the cases we'll discuss in detail.  If you're using something
-older or weirder, see the section on other VCSes for some hints,
-but you're mostly on your own.
+are the cases we'll discuss in detail.
 
 [[why-reposurgeon]]
 === Why convert with reposurgeon?
