@@ -1,5 +1,5 @@
-## Test incorporate command - before case
+## Test import command - before case
 set flag fakeuser
 read <min.fi
-@min(=C) incorporate sample.tar
+@min(=C) import sample.tar
 write -

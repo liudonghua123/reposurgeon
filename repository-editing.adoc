@@ -1908,7 +1908,7 @@ insert those releases at the front of the repository history.
 Do do this, use this command:
 
 // COMMAND
-include::docinclude/incorporate.adoc[]
+include::docinclude/import.adoc[]
 
 [[lists]]
 === The repository list
@@ -3728,8 +3728,8 @@ just "rename", not "rename repo"; The "delete path" command was named
 was a "script" command separate from "do". The "reference list"
 command was removed (it duplicated the =N delector); "references
 lift" became "stampify"; "timings" became "checkpoint"; "attribution"
-bnecomes "attribute". The syntax of the "renove" command was dufferent
-and more compolex.
+bnecomes "attribute". The syntax of the "remove" command was dufferent
+and more compolex. The "import" command was "incorporate".
 
 In versions 4.30 and earlier, the read command had a --branchify
 option. This has been retired, you are now expected to do the
@@ -4063,7 +4063,7 @@ gc [GOGC]
 [SELECTION] hash [--tree] [>OUTFILE]
 help [COMMAND]
 history
-{SELECTION} incorporate [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
+{SELECTION} import [--date=YY-MM-DDTHH:MM:SS|--after|--firewall] [TARBALL...]
 [SELECTION] lint [--OPTION...] [>OUTFILE]
 log [[+-]LOG-CLASS]...
 {SELECTION} merge

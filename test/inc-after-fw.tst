@@ -1,5 +1,5 @@
-## Test incorporate command - after case with --firewall
+## Test import command - after case with --firewall
 set flag fakeuser
 read <min.fi
-@min(=C) incorporate --after --firewall sample.tar
+@min(=C) import --after --firewall sample.tar
 write -

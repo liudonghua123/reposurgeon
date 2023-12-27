@@ -9767,7 +9767,7 @@ func extractTar(dst string, r io.Reader) ([]tar.Header, error) {
 	}
 }
 
-func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip int, firewall bool, after bool, date string) {
+func (repo *Repository) doImport(tarballs []string, commit *Commit, strip int, firewall bool, after bool, date string) {
 	// The extra three slots are for the previous commit,
 	// the firewall commit (if any) and the following commit.
 	// The slots representing leaduing and following commits
@@ -9815,7 +9815,7 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 		op.construct(deleteall)
 		blank.appendOperation(op)
 
-		// Incorporate the tarball content
+		// Import the tarball content
 		tarfile, err := os.Open(filepath.Clean(tarpath))
 		if err != nil {
 			croak("open or read failed on %s", tarpath)
@@ -9825,7 +9825,7 @@ func (repo *Repository) doIncorporate(tarballs []string, commit *Commit, strip i
 		if logEnable(logSHUFFLE) {
 			logit("extracting %s into %s", tarpath, repo.subdir(""))
 		}
-		repo.makedir("incorporate")
+		repo.makedir("import")
 		headers, err := extractTar(repo.subdir(""), tarfile)
 		if err != nil {
 			croak("error while extracting tarball %s: %s", tarpath, err.Error())

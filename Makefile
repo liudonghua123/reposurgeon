@@ -134,7 +134,7 @@ BNF_TOPICS = \
 	help \
 	history \
 	ignores \
-	incorporate \
+	import \
 	legacy \
 	lint \
 	list \
