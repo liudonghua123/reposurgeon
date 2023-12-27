@@ -4282,7 +4282,7 @@ You should assume that none of these tools do reference-lifting.
 
 === cvs2svn
 
-http://cvs2svn.tigris.org/features.html
+https://github.com/mhagger/cvs2svn
 
 Just after the turn of the 21st century, when Subversion was the
 new thing in version control, most projects that were using version
@@ -4297,6 +4297,9 @@ actually malformed; more often they contains noisy commits or commit
 duplications that made little sense under Subversion and make even
 less under the new target system.
 
+As of late 2023, cvs2svn is "is now in maintenance mode and is not
+actively being developed".
+
 !LINEAR, ?MIXEDBRANCH, DOCUMENTATION
 
 === cvs-fast-export
@@ -4308,6 +4311,8 @@ the X.org repositories, which it did a good job on.  Now maintained by
 me; reposurgeon uses it to read CVS repositories.  It is *extremely*
 fast and can thus be productively used even on huge repositories.
 
+cvs-fast-export is under active maintainance.
+
 !ABANDONED, !LINEAR, !NO_IGNORES, !DOCUMENTATION, !CONFIGURATION
 
 === cvsps
@@ -4318,6 +4323,8 @@ Don't use this.  Just plain don't.  The author maintained version 3.x
 until end-of-lifing it in favor of cvs-fast-export due to
 fundamental, unfixable problems.  It gets branch topology wrong in
 ways that are difficult to detect.
+
+ABANDONED
 
 === git-svn
 
@@ -4375,9 +4382,9 @@ MIXEDBRANCH, NO_TAGS, NO_IGNORES, ABANDONED.
 https://github.com/stevenharman/git-svn-import
 
 A trivial wrapper around git-svn.  All the reasons not to use git-svn
-apply to it as well.
+apply to it as well. As of late 2023 has not seen an update in ten years.
 
-MIXEDBRANCH, NO_TAGS, NO_IGNORES, !ABANDONED.
+MIXEDBRANCH, NO_TAGS, NO_IGNORES, ABANDONED.
 
 === svn-fe
 
@@ -4417,16 +4424,10 @@ been abandoned in 2016.
 https://github.com/nirvdrum/svn2git
 
 A batch-conversion wrapper around git-svn that creates real tag
-objects. This is the one written in Ruby.  Has all pf git-svn's
+objects. This is the one written in Ruby.  Has all of git-svn's
 problems, alas.
 
 !ABANDONED, !NO_TAGS, NO_IGNORES, ABANDONED.
-
-If you could use reposurgeon for some reason, this was another
-alternative that was not too horrible (but beware of possible
-history damage if your Subversion repo has malformations that
-confuse git-svn).  As of 2023 it seems to have been abandoned
-since 2016.
 
 === svn2git (Schemenauer version)
 
@@ -4444,7 +4445,7 @@ Written in C++. Says it's also named svn2git and might be genertically
 related to Nyblom svn2git.  Was used to convert the KDE subversion
 repository to Git. Looks like it might not be terrible, but requires
 very elaborate configuraion to make Subversion branch structure to
-git branch structure. Actively mauntained in 2023.
+git branch structure. Actively maintained in 2023.
 
 CONFIGURATION, !ABANDONED.
 
@@ -4473,7 +4474,7 @@ LINEAR, NO_TAGS, NO_IGNORES, NO_DOCUMENTATION, ABANDONED.
 http://repo.or.cz/w/svn-all-fast-export.git
 
 May be genetically related to the Nyblom svn2git, but if so they
-diverged in 2008. As of 2023 
+diverged in 2008. As of 2023,
 
 LINEAR, NO_TAGS, NO_IGNORES, NO_DOCUMENTATION, ABANDONED.
 
